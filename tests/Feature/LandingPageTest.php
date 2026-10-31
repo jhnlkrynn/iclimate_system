@@ -300,15 +300,16 @@ class LandingPageTest extends TestCase
 
     public function test_contact_links_use_mailto_and_directions_open_in_a_new_tab(): void
     {
+        app()->setLocale('en');
         $this->get('/')->assertOk()
-            ->assertSee('class="questions-faq"', false)
-            ->assertSee('class="questions-contact"', false)
-            ->assertSee('class="contact-map', false)
-            ->assertSee("All NSIC-registered rice varieties. When you choose the variety you planted, iClimate estimates your harvest date from that variety's days to maturity for the season and planting method.", false)
+            ->assertSee('questions-faq', false)
+            ->assertSee('questions-contact', false)
+            ->assertSee('contact-map', false)
+            ->assertSee(e(__('landing.questions.items.0.a')), false)
             ->assertSee('href="mailto:mao_lian@yahoo.com"', false)
             ->assertSee('href="https://www.google.com/maps/dir/?api=1&amp;destination=Lian%20Municipal%20Hall%2C%20Lian%2C%20Batangas" target="_blank" rel="noopener noreferrer"', false)
             ->assertSee('Municipal Agriculture Office, Lian Municipal Hall, Poblacion, Lian, Batangas')
-            ->assertSee('src="https://maps.google.com/maps?q=Lian%20Municipal%20Hall%2C%20Lian%2C%20Batangas&amp;ll=13.992,120.648&amp;z=11&amp;output=embed"', false)
+            ->assertSee('src="https://maps.google.com/maps?ll=13.992,120.648&amp;z=11&amp;output=embed"', false)
             ->assertDontSee('officeMap', false);
     }
 

@@ -766,9 +766,9 @@ test('C2 email links use mailto: (no phone number is published yet)', async ({ p
     await expect(page.locator('a[href^="tel:"]')).toHaveCount(0);
 });
 
-test('C3 Get directions opens Google Maps directions to Lian Municipal Hall in a new tab', async ({ page }) => {
+test('C3 Open in Maps opens Google Maps directions to Lian Municipal Hall in a new tab', async ({ page }) => {
     await openLanding(page);
-    const link = page.locator('[data-directions]');
+    const link = page.locator('[data-map-link]');
     await expect(link).toHaveAttribute('target', '_blank');
     await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
     const [popup] = await Promise.all([page.waitForEvent('popup'), link.click()]);
@@ -781,7 +781,7 @@ test('C4 the Google map of Lian Municipal Hall is embedded in #contact', async (
     await expect(map).toHaveCount(1);
     await expect(map).toHaveAttribute('title', 'Map of the Municipal Agriculture Office, Lian Municipal Hall, Lian, Batangas');
     const src = await map.getAttribute('src');
-    expect(src).toContain('Lian%20Municipal%20Hall');
+    expect(src).toContain('ll=13.992,120.648');
     expect(src).toContain('output=embed');
     await expect(map).toHaveAttribute('loading', 'lazy');
     await map.scrollIntoViewIfNeeded();
@@ -1054,6 +1054,19 @@ test('S13 Questions and contact uses two rows and keeps form fields readable', a
         if (layout.fieldColumns === 2) expect(Math.min(...layout.fieldWidths)).toBeGreaterThanOrEqual(240);
         if (width < 516) expect(layout.fieldColumns).toBe(1);
     }
+});
+
+test('S14 Questions and contact keeps one heading, clickable FAQ rows and a clean map embed', async ({ page }) => {
+    await openLanding(page);
+    await expect(page.locator('#contact h2')).toHaveCount(1);
+    await expect(page.locator('#contact')).not.toContainText('Frequently asked questions');
+    await expect(page.locator('#contact .questions-intro')).toContainText('Common questions about iClimate. For anything else, send the MAO a message below.');
+    await expect(page.locator('#contact .questions-office h3')).toHaveText('Contact the MAO');
+    await expect(page.locator('#contact [data-accordion-trigger] svg')).toHaveCount(3);
+    await expect(page.locator('#contact [data-accordion-trigger]').first()).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('#contact [data-map-link]')).toHaveText('Open in Maps ↗');
+    await expect(page.locator('#contact [data-directions]')).toHaveCount(0);
+    await expect(page.locator('#contact iframe[data-office-map]')).toHaveAttribute('src', /[?&]ll=13\.992,120\.648/);
 });
 
 test('S12 the four How it works columns fit the requested desktop and mobile widths', async ({ page }) => {

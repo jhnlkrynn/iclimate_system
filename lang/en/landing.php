@@ -50,9 +50,8 @@ return [
     ],
     'questions' => [
         'title' => 'Questions and contact',
-        'faq_title' => 'Frequently asked questions',
         'contact_title' => 'Contact the MAO',
-        'lead' => 'Find an answer or send a message to the Municipal Agriculture Office.',
+        'lead' => 'Common questions about iClimate. For anything else, send the MAO a message below.',
         'items' => [
             ['q' => 'Which rice varieties and harvest dates are listed?', 'a' => "All NSIC-registered rice varieties. When you choose the variety you planted, iClimate estimates your harvest date from that variety's days to maturity for the season and planting method."],
             ['q' => 'Can a farmers’ association use iClimate?', 'a' => 'Ask the Municipal Agriculture Office about access for an association or a group of farmers.'],

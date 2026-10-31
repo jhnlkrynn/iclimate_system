@@ -31,6 +31,10 @@
         scroll-margin-top: 0;
     }
 
+    ::selection {
+        @apply bg-sage-200 text-sage-950;
+    }
+
     :focus-visible {
         @apply outline-none ring-2 ring-sage-500 ring-offset-2;
     }
@@ -128,10 +132,6 @@
         @apply mt-4 text-[1.875rem] font-bold leading-[1.15] tracking-[-0.02em] text-ink sm:text-[2.5rem];
     }
 
-    .lp-h3 {
-        @apply text-2xl font-semibold leading-tight text-ink sm:text-[1.75rem];
-    }
-
     .questions-layout {
         @apply grid gap-16;
     }
@@ -174,6 +174,10 @@
 
     .contact-role {
         padding-right: 3rem !important;
+    }
+
+    #contact {
+        padding-top: 3rem;
     }
 
     @container (min-width: 516px) {
@@ -392,6 +396,10 @@ html[data-theme="dark"] #roles .text-brand { color: var(--sage-200); }
     .questions-row { grid-template-columns: minmax(0, 1fr); }
     .how-steps { @apply mt-8 grid-cols-1 gap-8; }
     .how-fragment { @apply mt-4 max-w-[22rem]; }
+}
+
+@media (min-width: 1024px) {
+    #contact { padding-top: 4rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
