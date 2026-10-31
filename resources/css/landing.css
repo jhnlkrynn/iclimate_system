@@ -144,8 +144,8 @@
         @apply mx-auto block w-full max-w-[800px];
     }
 
-    .questions-intro {
-        @apply mx-auto max-w-[640px] text-center;
+    .questions-heading {
+        @apply mx-auto w-full max-w-[800px] text-center;
     }
 
     .questions-accordion {

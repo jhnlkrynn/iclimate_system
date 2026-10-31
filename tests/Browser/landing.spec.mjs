@@ -1033,7 +1033,8 @@ test('S13 Questions and contact uses two rows and keeps form fields readable', a
             return {
                 faqDisplay: getComputedStyle(faq).display,
                 faqWidth: faq.getBoundingClientRect().width,
-                introWidth: section.querySelector('.questions-intro').getBoundingClientRect().width,
+                headingDisplay: getComputedStyle(section.querySelector('.questions-heading')).textAlign,
+                introWidth: section.querySelector('.questions-heading p').getBoundingClientRect().width,
                 contactColumns: getComputedStyle(contact).gridTemplateColumns.split(' ').length,
                 mapRatio: map.getBoundingClientRect().width / map.getBoundingClientRect().height,
                 fieldColumns: getComputedStyle(fields).gridTemplateColumns.split(' ').length,
@@ -1047,6 +1048,7 @@ test('S13 Questions and contact uses two rows and keeps form fields readable', a
         expect(Math.abs(layout.mapRatio - 16 / 9)).toBeLessThan(0.03);
         expect(layout.faqWidth).toBeLessThanOrEqual(Math.min(width - 32, 800));
         expect(layout.introWidth).toBeLessThanOrEqual(Math.min(width - 32, 640));
+        expect(layout.headingDisplay).toBe('center');
         expect(layout.selectPaddingRight).toBeGreaterThanOrEqual(40);
         if (width >= 1024) {
             expect(layout.faqDisplay).toBe('block');
@@ -1064,8 +1066,10 @@ test('S14 Questions and contact keeps one heading, clickable FAQ rows and a clea
     await openLanding(page);
     await expect(page.locator('#contact h2')).toHaveCount(1);
     await expect(page.locator('#contact')).not.toContainText('Frequently asked questions');
-    await expect(page.locator('#contact .questions-intro')).toContainText('Common questions about iClimate. For anything else, send the MAO a message below.');
+    await expect(page.locator('#contact .questions-heading')).toContainText('Questions and contact');
+    await expect(page.locator('#contact .questions-heading p')).toContainText('Common questions about iClimate. For anything else, send the MAO a message below.');
     await expect(page.locator('#contact .questions-office h3')).toHaveText('Contact the MAO');
+    await expect(page.locator('#contact .questions-office h3')).toHaveCSS('text-align', 'center');
     await expect(page.locator('#contact [data-accordion-trigger] svg')).toHaveCount(3);
     await expect(page.locator('#contact [data-accordion-trigger]').first()).toHaveAttribute('aria-expanded', 'true');
     await expect(page.locator('#contact [data-map-link]')).toHaveText('Open in Maps ↗');
