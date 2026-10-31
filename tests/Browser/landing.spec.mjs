@@ -1019,23 +1019,28 @@ test('S11 the landing page uses plain section headings and the new service-site 
     await expect(page.locator('#contactForm')).toBeVisible();
 });
 
-test('S13 Questions and contact uses two rows and keeps form fields readable', async ({ page }) => {
-    for (const width of [1440, 1024, 768, 375]) {
+test('S13 Questions and contact uses the centered responsive column layout', async ({ page }) => {
+    for (const width of [1440, 1280, 1024, 768, 375]) {
         await page.setViewportSize({ width, height: 800 });
         await openLanding(page);
         const layout = await page.locator('#contact').evaluate((section) => {
             const faq = section.querySelector('.questions-faq');
             const contact = section.querySelector('.questions-contact');
+            const layout = section.querySelector('.questions-layout');
+            const accordion = section.querySelector('.questions-accordion');
             const map = section.querySelector('[data-office-map-box]');
             const form = section.querySelector('#contactForm');
             const fields = section.querySelector('.contact-form-row');
             const select = section.querySelector('#contact-role');
             return {
                 faqDisplay: getComputedStyle(faq).display,
-                faqWidth: faq.getBoundingClientRect().width,
+                faqWidth: accordion.getBoundingClientRect().width,
+                layoutColumns: getComputedStyle(layout).gridTemplateColumns.split(' ').length,
                 headingDisplay: getComputedStyle(section.querySelector('.questions-heading')).textAlign,
                 introWidth: section.querySelector('.questions-heading p').getBoundingClientRect().width,
                 contactColumns: getComputedStyle(contact).gridTemplateColumns.split(' ').length,
+                officeX: section.querySelector('.questions-office').getBoundingClientRect().x,
+                formX: form.getBoundingClientRect().x,
                 mapRatio: map.getBoundingClientRect().width / map.getBoundingClientRect().height,
                 fieldColumns: getComputedStyle(fields).gridTemplateColumns.split(' ').length,
                 fieldWidths: [...fields.children].map((el) => el.getBoundingClientRect().width),
@@ -1046,19 +1051,21 @@ test('S13 Questions and contact uses two rows and keeps form fields readable', a
         });
         expect(layout.pageWidth).toBeLessThanOrEqual(width);
         expect(Math.abs(layout.mapRatio - 16 / 9)).toBeLessThan(0.03);
-        expect(layout.faqWidth).toBeLessThanOrEqual(Math.min(width - 32, 800));
+        expect(layout.faqWidth).toBeLessThanOrEqual(width - 32);
         expect(layout.introWidth).toBeLessThanOrEqual(Math.min(width - 32, 640));
         expect(layout.headingDisplay).toBe('center');
         expect(layout.selectPaddingRight).toBeGreaterThanOrEqual(40);
-        if (width >= 1024) {
-            expect(layout.faqDisplay).toBe('block');
+        expect(layout.fieldColumns).toBe(1);
+        if (width >= 1280) {
+            expect(layout.layoutColumns).toBe(3);
+            expect(layout.faqDisplay).toBe('contents');
+            expect(layout.formX).toBeGreaterThan(layout.officeX);
+        } else if (width >= 768) {
+            expect(layout.layoutColumns).toBe(1);
             expect(layout.contactColumns).toBe(2);
         } else {
-            expect(layout.faqDisplay).toBe('block');
             expect(layout.contactColumns).toBe(1);
         }
-        if (layout.fieldColumns === 2) expect(Math.min(...layout.fieldWidths)).toBeGreaterThanOrEqual(240);
-        if (width < 516) expect(layout.fieldColumns).toBe(1);
     }
 });
 
@@ -1068,8 +1075,7 @@ test('S14 Questions and contact keeps one heading, clickable FAQ rows and a clea
     await expect(page.locator('#contact')).not.toContainText('Frequently asked questions');
     await expect(page.locator('#contact .questions-heading')).toContainText('Questions and contact');
     await expect(page.locator('#contact .questions-heading p')).toContainText('Common questions about iClimate. For anything else, send the MAO a message below.');
-    await expect(page.locator('#contact .questions-office h3')).toHaveText('Contact the MAO');
-    await expect(page.locator('#contact .questions-office h3')).toHaveCSS('text-align', 'center');
+    await expect(page.locator('#contact .questions-office h3')).toHaveCount(0);
     await expect(page.locator('#contact [data-accordion-trigger] svg')).toHaveCount(3);
     await expect(page.locator('#contact [data-accordion-trigger]').first()).toHaveAttribute('aria-expanded', 'true');
     await expect(page.locator('#contact [data-map-link]')).toHaveText('Open in Maps ↗');

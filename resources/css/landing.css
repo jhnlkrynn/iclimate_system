@@ -47,6 +47,10 @@
         @apply mx-auto w-full max-w-[calc(1200px+4rem)] px-4 sm:px-8;
     }
 
+    .questions-container {
+        max-width: calc(1320px + 4rem);
+    }
+
     /* Every section below the hero: 96px top and bottom on desktop, 56px on phones. Backgrounds alternate
        white, surface and (twice: the numbers band and the closing call to action) deep brand green. */
     .lp-section {
@@ -141,7 +145,7 @@
     }
 
     .questions-faq {
-        @apply mx-auto block w-full max-w-[800px];
+        @apply min-w-0;
     }
 
     .questions-heading {
@@ -149,7 +153,7 @@
     }
 
     .questions-accordion {
-        @apply mt-8;
+        @apply min-w-0;
     }
 
     .questions-contact {
@@ -202,12 +206,6 @@
 
     .contact-role {
         padding-right: 3rem !important;
-    }
-
-    @container (min-width: 516px) {
-        .contact-form-row {
-            grid-template-columns: repeat(2, minmax(240px, 1fr));
-        }
     }
 
     .how-steps {
@@ -417,9 +415,35 @@ html[data-theme="dark"] #roles .text-brand { color: var(--sage-200); }
 }
 
 @media (max-width: 1023.98px) {
-    .questions-row { grid-template-columns: minmax(0, 1fr); }
+    .questions-faq { grid-template-columns: minmax(0, 1fr); }
     .how-steps { @apply mt-8 grid-cols-1 gap-8; }
     .how-fragment { @apply mt-4 max-w-[22rem]; }
+}
+
+@media (min-width: 768px) and (max-width: 1279.98px) {
+    .questions-layout { grid-template-columns: minmax(0, 1fr); }
+    .questions-contact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 767.98px) {
+    .questions-contact { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (min-width: 1280px) {
+    .questions-layout {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        align-items: start;
+        gap: 2rem;
+    }
+
+    .questions-faq,
+    .questions-contact {
+        display: contents;
+    }
+
+    .questions-accordion { grid-column: 1; }
+    .questions-office { grid-column: 2; }
+    .contact-form { grid-column: 3; }
 }
 
 @media (prefers-reduced-motion: reduce) {
