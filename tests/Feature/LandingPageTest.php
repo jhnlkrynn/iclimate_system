@@ -190,15 +190,19 @@ class LandingPageTest extends TestCase
             'faq' => 'white', 'contact' => 'surface', 'get-started' => 'dark'], $backgrounds);
     }
 
-    public function test_how_it_works_uses_the_season_timeline_and_static_ui_fragments(): void
+    public function test_how_it_works_uses_four_ordered_columns_and_static_ui_fragments(): void
     {
         $html = $this->get('/')->assertOk()->getContent();
 
-        $this->assertStringContainsString('data-season-timeline', $html);
+        $this->assertStringContainsString('data-steps', $html);
+        $this->assertSame(4, substr_count($html, 'class="how-step"'));
         $this->assertStringContainsString('data-ui-fragment="farm"', $html);
         $this->assertStringContainsString('data-ui-fragment="forecast"', $html);
         $this->assertStringContainsString('data-ui-fragment="advisory"', $html);
         $this->assertStringContainsString('Days to harvest: 69 · around Jan 8, 2027', $html);
+        $this->assertStringNotContainsString('data-season-timeline', $html);
+        $this->assertStringNotContainsString('data-season-month', $html);
+        $this->assertStringNotContainsString('data-step-number', $html);
         $this->assertStringNotContainsString('data-dashboard-shot', $html);
         $this->assertStringNotContainsString('farmer-dashboard.jpg', $html);
     }
