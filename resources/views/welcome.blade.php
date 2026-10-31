@@ -11,7 +11,7 @@
     if (auth()->guest()) {
         // The same lists RegisteredUserController::create() gives /register.
         try {
-            $farmerOrganizations = \App\Models\FarmerOrganization::query()->orderBy('id')->get();
+            $farmerOrganizations = \App\Services\Farms\FarmAssociations::organizations();
         } catch (\Throwable) {
             $farmerOrganizations = collect();
         }
@@ -30,16 +30,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    {{-- Scroll reveal (resources/js/landing.js): hide [data-reveal] content only when it can be shown again, set before
-         the first paint so nothing flashes. If landing.js has not taken over within 2s, everything is shown. --}}
-    <script>
-        (() => {
-            const root = document.documentElement;
-            if (! ('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-            root.classList.add('js-reveal');
-            setTimeout(() => { if (root.dataset.reveal !== 'ready') root.classList.remove('js-reveal'); }, 2000);
-        })();
-    </script>
     @vite(['resources/css/landing.css', 'resources/js/landing.js'])
     @guest
         {{-- After the Tailwind build, so the sign-up form keeps the same look as on /register. --}}
@@ -62,9 +52,7 @@
     @include('landing.numbers')
     @include('landing.how')
     @include('landing.roles')
-    @include('landing.faq')
-    @include('landing.contact')
-    @include('landing.cta')
+    @include('landing.questions-contact')
 </main>
 
 @include('landing.footer')

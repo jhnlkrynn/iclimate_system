@@ -14,7 +14,7 @@
     }
 
     body {
-        @apply bg-white font-inter text-ink antialiased;
+        @apply bg-white font-inter text-[17px] text-ink antialiased;
     }
 
     /* Height of the top nav (components/public-nav.blade.php), its bottom line included. */
@@ -90,9 +90,9 @@
         @apply text-white/80;
     }
 
-    /* Cards: a plain white box with a 3px sage-500 top edge; no icons. */
+    /* Keep the few functional boxes quiet; informational content uses rules and whitespace. */
     .lp-card {
-        @apply rounded-lg border border-line border-t-[3px] border-t-sage-500 bg-white p-6;
+        @apply rounded-lg border border-line bg-white p-6;
     }
 
     .lp-card-title {
@@ -348,31 +348,3 @@ html[data-theme="dark"] #roles .text-brand { color: var(--sage-200); }
     [data-auth-panel], [data-auth-card] { transition: none; }
 }
 
-/* Scroll reveal (resources/js/landing.js): content fades in and rises 16px as it enters the screen, once. Content is
-   visible by default; it is only hidden while <html> has .js-reveal (set in welcome.blade.php's head). Opacity and
-   transform only, so nothing shifts the layout. */
-html.js-reveal [data-reveal] {
-    opacity: 0;
-    transform: translateY(16px);
-}
-html.js-reveal [data-reveal].is-visible {
-    opacity: 1;
-    transform: none;
-    transition: opacity .55s cubic-bezier(.2, .7, .2, 1), transform .55s cubic-bezier(.2, .7, .2, 1);
-    transition-delay: var(--reveal-delay, 0ms);
-}
-/* The hero plays once on load and finishes quickly. The card keeps its width change between Log in and Create account. */
-html.js-reveal [data-reveal='hero'].is-visible { transition-duration: .4s; }
-html.js-reveal [data-auth-card].is-visible {
-    transition: opacity .4s cubic-bezier(.2, .7, .2, 1), transform .4s cubic-bezier(.2, .7, .2, 1), width .2s ease;
-    transition-delay: var(--reveal-delay, 0ms), var(--reveal-delay, 0ms), 0ms;
-}
-/* Reached through a link (nav, anchors): shown at once, no waiting. */
-html.js-reveal [data-reveal].reveal-now { transition: none; }
-@media (prefers-reduced-motion: reduce) {
-    html.js-reveal [data-reveal] { opacity: 1; transform: none; }
-    html.js-reveal [data-reveal].is-visible { transition: none; }
-}
-@media print {
-    html.js-reveal [data-reveal] { opacity: 1 !important; transform: none !important; }
-}
