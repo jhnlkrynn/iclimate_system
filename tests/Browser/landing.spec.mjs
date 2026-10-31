@@ -794,7 +794,7 @@ test('C4 the Google map of Lian Municipal Hall is embedded in #contact', async (
 
 // ─── FOOTER ──────────────────────────────────────────────────────────────
 
-for (const id of ['about', 'features', 'roles', 'contact']) {
+for (const id of ['about', 'features', 'how', 'questions', 'contact']) {
     test(`T1 footer Explore link to #${id}`, async ({ page }) => {
         await openLanding(page);
         await page.locator(`[data-footer-link="${id}"]`).click();
@@ -1015,69 +1015,55 @@ test('S11 the landing page uses plain section headings and the new service-site 
     await expect(page.locator('#numbers .lp-band-photo, #get-started .lp-band-photo')).toHaveCount(0);
     await expect(page.locator('#features [data-feature]')).toHaveCount(6);
     await expect(page.locator('#roles article')).toHaveCount(3);
+    await expect(page.locator('#questions')).toContainText('Common questions');
     await expect(page.locator('#contact iframe[data-office-map]')).toHaveCount(1);
     await expect(page.locator('#contactForm')).toBeVisible();
 });
 
-test('S13 Questions and contact uses the centered responsive column layout', async ({ page }) => {
-    for (const width of [1440, 1280, 1024, 768, 375]) {
+test('S13 Questions and contact are separate centered responsive sections', async ({ page }) => {
+    for (const width of [1440, 1024, 375]) {
         await page.setViewportSize({ width, height: 800 });
         await openLanding(page);
-        const layout = await page.locator('#contact').evaluate((section) => {
-            const faq = section.querySelector('.questions-faq');
-            const contact = section.querySelector('.questions-contact');
-            const layout = section.querySelector('.questions-layout');
-            const accordion = section.querySelector('.questions-accordion');
-            const map = section.querySelector('[data-office-map-box]');
-            const form = section.querySelector('#contactForm');
-            const fields = section.querySelector('.contact-form-row');
-            const select = section.querySelector('#contact-role');
+        const layout = await page.locator('#questions').evaluate((questions) => {
+            const contact = document.querySelector('#contact');
+            const map = contact.querySelector('[data-office-map-box]');
+            const form = contact.querySelector('#contactForm');
+            const fields = form.querySelector('.contact-form-row');
             return {
-                faqDisplay: getComputedStyle(faq).display,
-                faqWidth: accordion.getBoundingClientRect().width,
-                layoutColumns: getComputedStyle(layout).gridTemplateColumns.split(' ').length,
-                headingDisplay: getComputedStyle(section.querySelector('.questions-heading')).textAlign,
-                introWidth: section.querySelector('.questions-heading p').getBoundingClientRect().width,
-                contactColumns: getComputedStyle(contact).gridTemplateColumns.split(' ').length,
-                officeX: section.querySelector('.questions-office').getBoundingClientRect().x,
+                questionsHeading: getComputedStyle(questions.querySelector('.questions-heading')).textAlign,
+                questionsWidth: questions.querySelector('.questions-accordion').getBoundingClientRect().width,
+                contactHeading: getComputedStyle(contact.querySelector('.questions-heading')).textAlign,
+                contactColumns: getComputedStyle(contact.querySelector('.contact-layout')).gridTemplateColumns.split(' ').length,
                 formX: form.getBoundingClientRect().x,
+                officeX: contact.querySelector('.questions-office').getBoundingClientRect().x,
                 mapRatio: map.getBoundingClientRect().width / map.getBoundingClientRect().height,
                 fieldColumns: getComputedStyle(fields).gridTemplateColumns.split(' ').length,
-                fieldWidths: [...fields.children].map((el) => el.getBoundingClientRect().width),
-                selectPaddingRight: parseFloat(getComputedStyle(select).paddingRight),
-                formWidth: form.getBoundingClientRect().width,
                 pageWidth: document.documentElement.scrollWidth,
             };
         });
         expect(layout.pageWidth).toBeLessThanOrEqual(width);
         expect(Math.abs(layout.mapRatio - 16 / 9)).toBeLessThan(0.03);
-        expect(layout.faqWidth).toBeLessThanOrEqual(width - 32);
-        expect(layout.introWidth).toBeLessThanOrEqual(Math.min(width - 32, 640));
-        expect(layout.headingDisplay).toBe('center');
-        expect(layout.selectPaddingRight).toBeGreaterThanOrEqual(40);
+        expect(layout.questionsWidth).toBeLessThanOrEqual(760);
+        expect(layout.questionsHeading).toBe('center');
+        expect(layout.contactHeading).toBe('center');
         expect(layout.fieldColumns).toBe(1);
-        if (width >= 1280) {
-            expect(layout.layoutColumns).toBe(3);
-            expect(layout.faqDisplay).toBe('contents');
-            expect(layout.formX).toBeGreaterThan(layout.officeX);
-        } else if (width >= 768) {
-            expect(layout.layoutColumns).toBe(1);
+        if (width >= 768) {
             expect(layout.contactColumns).toBe(2);
+            expect(layout.formX).toBeGreaterThan(layout.officeX);
         } else {
             expect(layout.contactColumns).toBe(1);
         }
     }
 });
 
-test('S14 Questions and contact keeps one heading, clickable FAQ rows and a clean map embed', async ({ page }) => {
+test('S14 Questions and contact keep separate headings, clickable FAQ rows and a clean map embed', async ({ page }) => {
     await openLanding(page);
-    await expect(page.locator('#contact h2')).toHaveCount(1);
-    await expect(page.locator('#contact')).not.toContainText('Frequently asked questions');
-    await expect(page.locator('#contact .questions-heading')).toContainText('Questions and contact');
-    await expect(page.locator('#contact .questions-heading p')).toContainText('Common questions about iClimate. For anything else, send the MAO a message below.');
-    await expect(page.locator('#contact .questions-office h3')).toHaveCount(0);
-    await expect(page.locator('#contact [data-accordion-trigger] svg')).toHaveCount(3);
-    await expect(page.locator('#contact [data-accordion-trigger]').first()).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('#questions h2')).toHaveText('Common questions');
+    await expect(page.locator('#questions .questions-heading p')).toContainText('Common questions about iClimate and how to get help.');
+    await expect(page.locator('#contact h2')).toHaveText('Contact the MAO');
+    await expect(page.locator('#contact .questions-heading p')).toContainText('Visit the office in Lian or send us a message.');
+    await expect(page.locator('#questions [data-accordion-trigger] svg')).toHaveCount(3);
+    await expect(page.locator('#questions [data-accordion-trigger]').first()).toHaveAttribute('aria-expanded', 'true');
     await expect(page.locator('#contact [data-map-link]')).toHaveText('Open in Maps ↗');
     await expect(page.locator('#contact [data-directions]')).toHaveCount(0);
     await expect(page.locator('#contact iframe[data-office-map]')).toHaveAttribute('src', /[?&]ll=13\.992,120\.648/);
@@ -1108,7 +1094,7 @@ test('G1 live weather endpoint answers; the live reading is in the nav chip only
 });
 
 const VIEWPORTS = [[375, 667], [390, 844], [768, 1024], [1280, 800], [1440, 900], [1920, 1080]];
-const SECTIONS = ['hero', 'about', 'features', 'numbers', 'how', 'roles', 'contact'];
+const SECTIONS = ['hero', 'about', 'features', 'numbers', 'how', 'roles', 'questions', 'contact'];
 
 for (const [width, height] of [[1280, 800], [1440, 900]]) {
     test(`G2 at ${width}x${height} the whole hero, login card included, is visible without scrolling`, async ({ page }, testInfo) => {

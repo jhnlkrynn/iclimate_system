@@ -43,7 +43,7 @@ class LandingPageTest extends TestCase
     {
         $response = $this->get('/')->assertOk();
 
-        foreach (['hero', 'about', 'features', 'numbers', 'how', 'roles', 'contact', 'top'] as $id) {
+        foreach (['hero', 'about', 'features', 'numbers', 'how', 'roles', 'questions', 'contact', 'top'] as $id) {
             $response->assertSee('id="'.$id.'"', false);
         }
         $response->assertDontSee('id="advisory"', false);
@@ -302,8 +302,9 @@ class LandingPageTest extends TestCase
     {
         app()->setLocale('en');
         $this->get('/')->assertOk()
-            ->assertSee('questions-faq', false)
-            ->assertSee('questions-contact', false)
+            ->assertSee('id="questions"', false)
+            ->assertSee('questions-accordion', false)
+            ->assertSee('contact-layout', false)
             ->assertSee('contact-map', false)
             ->assertSee('data-map-marker', false)
             ->assertSee(e(__('landing.questions.items.0.a')), false)
