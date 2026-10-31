@@ -949,17 +949,23 @@ test('S6 the numbers band shows real counts from the database', async ({ page })
     expect(values.barangays).toBeLessThanOrEqual(Math.max(values.farms, 0));
 });
 
-test('S7 How it works: four numbered steps beside the Farmer Dashboard screenshot', async ({ page }) => {
+test('S7 How it works is an iClimate season timeline with real UI fragments', async ({ page }, testInfo) => {
     await openLanding(page);
     const steps = page.locator('#how [data-steps] > li');
     await expect(steps).toHaveCount(4);
     await expect(steps.locator('[data-step-number]')).toHaveText(['01', '02', '03', '04']);
-    expect(await steps.first().locator('[data-step-number]').evaluate((el) => getComputedStyle(el).color)).toBe('rgb(91, 102, 93)'); // muted
-    await expect(steps.locator('svg')).toHaveCount(0);
-    const shot = page.locator('#how [data-dashboard-shot] img');
-    await shot.scrollIntoViewIfNeeded();
-    await expect.poll(() => shot.evaluate((img) => img.complete && img.naturalWidth)).toBe(2560);
-    await expect(shot).toHaveAttribute('alt', /Farmer Dashboard/);
+    await expect(steps.locator('h3')).toHaveText(['Add your farm', 'Check your barangay forecast', "Follow the MAO's planting advisory", 'Know your harvest date']);
+    await expect(page.locator('#how [data-season-month]')).toHaveText(['Jun', 'Jul', 'Aug', 'Sep', 'Oct']);
+    await expect(page.locator('#how [data-season-line], #how .season-track')).toHaveCount(1);
+    await expect(page.locator('#how [data-ui-fragment]')).toHaveCount(4);
+    await expect(page.locator('[data-ui-fragment="farm"]')).toContainText('NSIC Rc 222');
+    await expect(page.locator('[data-ui-fragment="forecast"]')).toContainText('Prenza · 72%');
+    await expect(page.locator('[data-ui-fragment="advisory"]')).toContainText('Plant after the rain');
+    await expect(page.locator('[data-ui-fragment="harvest"]')).toContainText('Days to harvest: 69 · around Jan 8, 2027');
+    await expect(page.locator('#how [data-dashboard-shot], #how figure, #how img, #how figcaption')).toHaveCount(0);
+    const line = await page.locator('#how .season-track').evaluate((el) => getComputedStyle(el));
+    expect(line.boxShadow).toBe('none');
+    if (!isMobile(testInfo)) expect((await page.locator('#how .season-steps').evaluate((el) => getComputedStyle(el).gridTemplateColumns)).split(' ').length).toBe(4);
 });
 
 test.skip('S8 the closing call to action opens the sign-in card in either mode', async ({ page }, testInfo) => {
@@ -1014,6 +1020,21 @@ test('S11 the landing page uses plain section headings and the new service-site 
     await expect(page.locator('#roles article')).toHaveCount(3);
     await expect(page.locator('#contact iframe[data-office-map]')).toHaveCount(1);
     await expect(page.locator('#contactForm')).toBeVisible();
+});
+
+test('S12 the season strip fits the requested desktop and mobile widths', async ({ page }) => {
+    for (const width of [1440, 1024, 768, 375]) {
+        await page.setViewportSize({ width, height: width < 1024 ? 740 : 800 });
+        await openLanding(page);
+        await page.locator('#how').scrollIntoViewIfNeeded();
+        const layout = await page.locator('#how .season-track').evaluate((track) => {
+            const r = track.getBoundingClientRect();
+            return { width: r.width, height: r.height, pageWidth: document.documentElement.scrollWidth, viewport: window.innerWidth };
+        });
+        expect(layout.pageWidth, `${width}px horizontal overflow`).toBeLessThanOrEqual(width);
+        if (width >= 1024) expect(layout.width, `${width}px horizontal season line`).toBeGreaterThan(layout.height * 100);
+        else expect(layout.height, `${width}px vertical season line`).toBeGreaterThan(layout.width * 20);
+    }
 });
 
 test('G1 live weather endpoint answers; the live reading is in the nav chip only', async ({ page, request }) => {

@@ -190,6 +190,19 @@ class LandingPageTest extends TestCase
             'faq' => 'white', 'contact' => 'surface', 'get-started' => 'dark'], $backgrounds);
     }
 
+    public function test_how_it_works_uses_the_season_timeline_and_static_ui_fragments(): void
+    {
+        $html = $this->get('/')->assertOk()->getContent();
+
+        $this->assertStringContainsString('data-season-timeline', $html);
+        $this->assertStringContainsString('data-ui-fragment="farm"', $html);
+        $this->assertStringContainsString('data-ui-fragment="forecast"', $html);
+        $this->assertStringContainsString('data-ui-fragment="advisory"', $html);
+        $this->assertStringContainsString('Days to harvest: 69 · around Jan 8, 2027', $html);
+        $this->assertStringNotContainsString('data-dashboard-shot', $html);
+        $this->assertStringNotContainsString('farmer-dashboard.jpg', $html);
+    }
+
     public function test_the_hero_card_holds_both_the_login_and_the_create_account_form(): void
     {
         $html = $this->get('/')->assertOk()->getContent();

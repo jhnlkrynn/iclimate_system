@@ -128,6 +128,62 @@
         @apply mt-4 text-[1.875rem] font-bold leading-[1.15] tracking-[-0.02em] text-ink sm:text-[2.5rem];
     }
 
+    .season-timeline {
+        @apply relative;
+    }
+
+    .season-months {
+        @apply grid grid-cols-5 text-sm font-medium text-muted;
+    }
+
+    .season-months span {
+        @apply text-center first:text-left last:text-right;
+    }
+
+    .season-track {
+        @apply pointer-events-none absolute left-0 right-0 top-10 h-0.5 bg-sage-300;
+    }
+
+    .season-steps {
+        @apply relative mt-4 grid grid-cols-4 gap-4;
+    }
+
+    .season-step {
+        @apply relative min-w-0;
+    }
+
+    .season-point {
+        @apply absolute left-0 top-0 z-10 h-3 w-3 -translate-x-1/2 rounded-full border-2 border-white bg-brand;
+    }
+
+    .season-step-copy {
+        @apply border-t border-transparent pt-5;
+    }
+
+    .season-number {
+        @apply block text-sm font-semibold tabular-nums text-muted;
+    }
+
+    .season-step h3 {
+        @apply mt-2 text-lg font-semibold leading-snug text-ink;
+    }
+
+    .season-step-copy p {
+        @apply mt-1 text-base leading-relaxed text-muted;
+    }
+
+    .season-fragment {
+        @apply mt-5 flex min-h-[88px] flex-col justify-center rounded-lg border border-line bg-white px-4 py-3 text-sm leading-snug text-muted;
+    }
+
+    .season-fragment strong {
+        @apply mt-1 text-base font-semibold text-ink;
+    }
+
+    .fragment-label {
+        @apply text-xs font-semibold uppercase tracking-[0.08em] text-brand;
+    }
+
     .lp-band .lp-h2 {
         @apply text-white;
     }
@@ -300,6 +356,16 @@ html[data-theme="dark"] #roles .text-brand { color: var(--sage-200); }
 }
 @media (min-width: 1024px) {
     .lp-hero { padding-top: calc(var(--nav-h) + 3rem); padding-bottom: 3rem; }
+}
+
+@media (max-width: 1023.98px) {
+    .season-months { @apply mb-6; }
+    .season-track { @apply bottom-8 left-1 top-[4.5rem] right-auto h-auto w-0.5; }
+    .season-steps { @apply mt-0 grid-cols-1 gap-8 pl-8; }
+    .season-step { @apply pl-4; }
+    .season-point { @apply left-[-2rem] top-1 translate-x-0; }
+    .season-step-copy { @apply pt-0; }
+    .season-fragment { @apply mt-4 max-w-[22rem]; }
 }
 
 @media (prefers-reduced-motion: reduce) {

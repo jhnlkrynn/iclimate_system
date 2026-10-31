@@ -31,12 +31,13 @@ return [
     ],
     'how' => [
         'title' => 'How it works',
-        'lead' => 'Four steps connect weather data with practical advice.',
+        'lead' => 'Use iClimate through one wet season, from setting up your farm to knowing when to harvest.',
+        'months' => ['Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
         'steps' => [
-            ['title' => 'Climate data comes in', 'text' => 'Real-time and historical data arrives from trusted sources such as PAGASA.'],
-            ['title' => 'Advisories go out', 'text' => 'The data is reviewed into planting and fertilizer recommendations.'],
-            ['title' => 'Risks are watched', 'text' => 'Weather risks and climate patterns that may affect crops are tracked.'],
-            ['title' => 'Results are reported', 'text' => 'Reports and yield forecasts guide the next season’s decisions.'],
+            ['title' => 'Add your farm', 'text' => 'Choose your barangay, farm type and the rice variety you planted.'],
+            ['title' => 'Check your barangay forecast', 'text' => 'See the rain, heat and typhoon outlook for your barangay.'],
+            ['title' => "Follow the MAO's planting advisory", 'text' => 'Know when to plant and what field conditions to watch for.'],
+            ['title' => 'Know your harvest date', 'text' => 'See the estimate based on your variety’s days to maturity.'],
         ],
     ],
     'roles' => [
