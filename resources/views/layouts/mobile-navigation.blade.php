@@ -27,6 +27,21 @@
         : array_values(array_filter($isMao
             ? [$mobileLink('dashboard'), $mobileLink('heatmap'), $mobileLink('advisories'), $mobileLink('records-and-barangays')]
             : [$mobileLink('dashboard'), $mobileLink('user-management'), $mobileLink('reports'), $mobileLink('messages')]));
+    $mobileBarLabel = function (array $link) use ($isFarmer, $navLocale): string {
+        $key = $link[6] ?? '';
+        return match ($key) {
+            'dashboard' => $isFarmer ? ($navLocale === 'fil' ? 'Ngayon' : 'Today') : 'Home',
+            'user-management' => 'Users',
+            'reports' => 'Reports',
+            'messages' => $isFarmer && $navLocale === 'fil' ? 'Mensahe' : 'Messages',
+            'heatmap' => 'Heat Map',
+            'advisories' => $isFarmer && $navLocale === 'fil' ? 'Advice' : 'Advisories',
+            'records-and-barangays' => 'Records',
+            'my-farm' => $isFarmer && $navLocale === 'fil' ? 'Aking Farm' : 'My Farm',
+            'weather' => 'Forecast',
+            default => $link[0],
+        };
+    };
 
     $mobileMoreGroups = [];
     if ($isFarmer) {
@@ -88,7 +103,7 @@
             @php($linkKey = $link[6] ?? '')
             <a class="mobile-tab {{ $mobileActive($link) ? 'is-active' : '' }}" href="{{ $link[5] ? route($link[1]).'#'.$link[5] : route($link[1]) }}" @if ($mobileActive($link)) aria-current="page" @endif>
                 <span class="mobile-tab-icon" aria-hidden="true">{!! $mobileIcon($link[3]) !!}</span>
-                <span class="mobile-tab-label">{{ $link[0] }}</span>
+                <span class="mobile-tab-label">{{ $mobileBarLabel($link) }}</span>
                 @if (($count = $mobileBadge($linkKey)) > 0)<span class="mobile-tab-badge">{{ $count > 99 ? '99+' : $count }}</span>@endif
             </a>
         @endforeach

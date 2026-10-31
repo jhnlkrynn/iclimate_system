@@ -46,10 +46,10 @@
         </div>
     </section>
 
-    @if (in_array($routeName, ['climate-records', 'rice-productions'], true))
+    @if (in_array($routeName, ['climate-records', 'rice-productions', 'historical-rice-productions'], true))
         {{-- Records (2026-10): Climate Records and Rice Production are two tabs of one sidebar item. --}}
         <nav class="ic-tabs mb-4" aria-label="Records" data-records-tabs>
-            @foreach (['climate-records' => 'Climate Records', 'rice-productions' => 'Rice Production'] as $tabRoute => $tabLabel)
+            @foreach (['climate-records' => 'Climate Records', 'rice-productions' => 'Rice Production', 'historical-rice-productions' => 'Historical Benchmarks'] as $tabRoute => $tabLabel)
                 <a href="{{ route($tabRoute.'.index') }}" @class(['ic-tab', 'is-active' => $routeName === $tabRoute]) @if ($routeName === $tabRoute) aria-current="page" @endif>{{ $tabLabel }}</a>
             @endforeach
             {{-- Manuscript – Naicel (2026-10-08): Barangays (location, rice area, risk classification) is a third tab for the MAO. --}}
@@ -244,11 +244,11 @@
             <div class="card-body ic-table-cards">
                 @foreach ($records as $record)
                     @php $recordKey = $record instanceof \Illuminate\Database\Eloquent\Model ? $record : data_get($record, 'id'); @endphp
-                    <div class="ic-table-card">
+                    <div class="ic-table-card" data-crud-row-card>
                         @foreach ($columns as $field => $label)
                             <div class="ic-table-card-row">
                                 <div class="ic-table-card-label">{{ $label }}</div>
-                <div class="ic-table-card-value">
+                                <div class="ic-table-card-value {{ in_array($field, ['name', 'full_name', 'farmer_name', 'title', 'subject'], true) ? 'is-primary' : '' }} {{ $field === 'email' ? 'is-email' : '' }}" @if ($field === 'email') title="{{ data_get($record, $field) }}" @endif>
                                     @if ($field === 'is_read')
                                         <span class="badge text-bg-{{ $record->is_read ? 'success' : 'warning' }}">{{ $record->is_read ? 'Read' : 'Unread' }}</span>
                                     @elseif ($field === 'farm_type' && data_get($record, $field))
@@ -261,7 +261,9 @@
                                 </div>
                             </div>
                         @endforeach
-                        @if ($showRecordActions)<div class="ic-table-card-actions">
+                        @if ($showRecordActions)<details class="ic-table-card-menu">
+                            <summary aria-label="Actions">⋯</summary>
+                            <div class="ic-table-card-actions">
                             @if (data_get($record, 'is_source_dataset'))
                                 <span class="small text-muted" title="{{ data_get($record, 'source_note') }}">Dataset · read-only</span>
                             @else
@@ -284,7 +286,8 @@
                                 </form>
                             @endif
                             @endif
-                        </div>@endif
+                            </div>
+                        </details>@endif
                     </div>
                 @endforeach
             </div>

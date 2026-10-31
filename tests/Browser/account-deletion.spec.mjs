@@ -20,6 +20,9 @@ test('D1 IT deletes an account with a reason, then the person sees why when sign
     await logIn(page, 'it@browser.test', '**/admin/dashboard');
     await page.goto(`/users?search=${encodeURIComponent(person.name)}`);
 
+    if (testInfo.project.name.startsWith('mobile-')) {
+        await page.locator('[data-crud-row-card]').first().locator('.ic-table-card-menu > summary').click();
+    }
     await page.locator('[data-user-delete]:visible').first().click();
     const dialog = page.locator('[data-user-delete-dialog]');
     await expect(dialog).toBeVisible();
