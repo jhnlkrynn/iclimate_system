@@ -134,7 +134,7 @@
                 let queued = false;
                 const update = () => {
                     queued = false;
-                    nav.dataset.navState = hero.getBoundingClientRect().bottom > nav.offsetHeight ? 'hero' : 'solid';
+                    nav.dataset.navState = window.scrollY > 8 ? 'solid' : 'hero';
                 };
                 const queue = () => { if (!queued) { queued = true; requestAnimationFrame(update); } };
                 window.addEventListener('scroll', queue, { passive: true });

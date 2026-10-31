@@ -205,7 +205,7 @@ test('N14 the drawer Log in opens the sign-in card', async ({ page }, testInfo) 
     await expect(page.locator('#login-email')).toBeFocused();
 });
 
-test('N15 the header is 72px, aligned with the hero, transparent over the hero and solid white past it', async ({ page }, testInfo) => {
+test('N15 the header is 72px, aligned with the hero, and turns solid after 8px of scroll', async ({ page }, testInfo) => {
     await openLanding(page);
     const nav = page.locator('[data-public-nav]');
     const read = () => page.evaluate(() => {
@@ -241,9 +241,14 @@ test('N15 the header is 72px, aligned with the hero, transparent over the hero a
     await expect(nav.locator('.lp-logo-on-dark')).toBeVisible();
     await expect(nav.locator('.lp-logo-on-light')).toBeHidden();
 
-    // Still over the hero halfway down it.
+    // Any scroll over the hero switches to the solid header.
     await page.evaluate(() => window.scrollTo({ top: document.getElementById('hero').offsetHeight / 2, behavior: 'instant' }));
+    await expect(nav).toHaveAttribute('data-nav-state', 'solid');
+
+    await page.evaluate(() => window.scrollTo({ top: 8, behavior: 'instant' }));
     await expect(nav).toHaveAttribute('data-nav-state', 'hero');
+    await page.evaluate(() => window.scrollTo({ top: 9, behavior: 'instant' }));
+    await expect(nav).toHaveAttribute('data-nav-state', 'solid');
 
     await page.evaluate(() => window.scrollTo({ top: document.getElementById('about').offsetTop - 72, behavior: 'instant' }));
     await expect(nav).toHaveAttribute('data-nav-state', 'solid');
@@ -1018,6 +1023,18 @@ test('S11 the landing page uses plain section headings and the new service-site 
     await expect(page.locator('#questions')).toContainText('Common questions');
     await expect(page.locator('#contact iframe[data-office-map]')).toHaveCount(1);
     await expect(page.locator('#contactForm')).toBeVisible();
+});
+
+test('S11a About iClimate is a centered reading column with inline data sources', async ({ page }) => {
+    await openLanding(page);
+    const about = page.locator('#about');
+    await expect(about.locator('h2')).toHaveText('About iClimate');
+    await expect(about.locator('.about-container')).toHaveCSS('max-width', '720px');
+    await expect(about.locator('.about-container')).toHaveCSS('text-align', 'center');
+    await expect(about.locator('blockquote')).toHaveCSS('border-left-width', '0px');
+    await expect(about.locator('blockquote')).toHaveCSS('font-size', '20px');
+    await expect(about.locator('.about-sources')).toHaveText('PAGASA advisories · Open-Meteo forecasts · Stored climate records · MAO rice production records');
+    await expect(about.locator('ul, li')).toHaveCount(0);
 });
 
 test('S13 Questions and contact are separate centered responsive sections', async ({ page }) => {
