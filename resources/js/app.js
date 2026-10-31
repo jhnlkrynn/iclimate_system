@@ -8,6 +8,7 @@ import Alpine from 'alpinejs';
 import { initUiEnhancements } from './ui-enhancements';
 import { initTheme, registerChartTheme } from './theme';
 import './app-magic';
+import './mobile-navigation';
 import { watchPanelRevisions } from './panel-revisions';   // thesis panel revisions (docs/panel-revisions.md)
 
 const wrapChartLabel = (label, maxLineLength = 14, maxLines = 3) => {

@@ -420,3 +420,68 @@ html[data-theme="dark"] body .mhd .mhd-tile:first-child * { color: #111111 !impo
 html[data-theme="dark"] body .mao-hero { background: #171717; }
 html[data-theme="dark"] body :is(.mfd, .mtd) a:not([class*="btn"]):not([class*="tile"]):not([class*="kpi"]):not(.ic-tab) { color: #f5f5f5; }
 html[data-theme="dark"] body :is(.mfd-kicker, .mtd-kicker, .fh-kicker, .itd-kicker) { color: #a1a1aa !important; }
+/* Mobile account navigation: a flat five-item bar, rendered from the same route records as the drawer. */
+.ic-mobile-greeting,
+.mobile-nav-shell,
+.mobile-more-layer { display: none; }
+
+@media (max-width: 767.98px) {
+    html body { background: var(--sage-50); }
+    html body .topbar.ic-topbar { position: sticky; top: 0; z-index: 1020; min-height: 58px; padding: 6px 12px; background: #fff; color: var(--palette-ink); border-bottom: 1px solid var(--sage-200); box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+    html body .topbar.ic-topbar .ic-topbar-left { width: 100%; min-width: 0; gap: 8px; }
+    html body .topbar.ic-topbar .ic-topbar-left > .ic-icon-btn[data-bs-toggle="offcanvas"], html body .topbar.ic-topbar .topbar-farm, html body .topbar.ic-topbar .ic-topbar-group, html body .topbar.ic-topbar .mao-identity, html body .mao-coverage-bar { display: none !important; }
+    html body .topbar.ic-topbar .ic-topbar-brand { gap: 6px; min-width: 0; margin-right: auto; }
+    html body .topbar.ic-topbar .gov-mao-logo { width: 32px; height: 32px; }
+    html body .topbar.ic-topbar .gov-app-logo { width: 42px; height: 34px; }
+    html body .topbar.ic-topbar .gov-brand-text, html body .topbar.ic-topbar .ic-topbar-greeting { display: none; }
+    html body .topbar.ic-topbar .ic-mobile-greeting { display: block; min-width: 0; max-width: 34vw; margin: 0 4px 0 0; overflow: hidden; color: var(--sage-700); font-size: .76rem; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+    html body .topbar.ic-topbar .ic-topbar-right { flex: 0 0 auto; gap: 2px; }
+    html body .topbar.ic-topbar .ic-icon-btn, html body .topbar.ic-topbar .ic-avatar-btn { color: var(--sage-700); }
+    html body .topbar.ic-topbar .ic-icon-btn:hover, html body .topbar.ic-topbar .ic-avatar-btn:hover { background: var(--sage-50); }
+    html body .app-main { margin-left: 0; }
+    html body .page-shell { padding-bottom: calc(92px + env(safe-area-inset-bottom)) !important; }
+
+    html body .mobile-nav-shell { position: fixed; right: 0; bottom: 0; left: 0; z-index: 1035; display: block; padding-bottom: env(safe-area-inset-bottom); background: #fff; border-top: 1px solid var(--sage-200); color: var(--palette-ink); }
+    html body .mobile-season-line { position: absolute; top: -3px; right: 0; left: 0; height: 3px; overflow: hidden; background: var(--sage-100); }
+    html body .mobile-season-line.is-plain { background: var(--sage-200); }
+    html body .mobile-season-line > span { display: block; height: 100%; background: var(--sage-500); }
+    html body .mobile-context-strip { display: block; height: 28px; padding: 5px 12px 4px; overflow: hidden; color: var(--sage-700); font-size: .75rem; line-height: 19px; text-align: center; text-overflow: ellipsis; text-decoration: none; white-space: nowrap; }
+    html body .mobile-context-strip:hover { background: var(--sage-50); color: var(--sage-800); }
+    html body .mobile-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); min-height: 58px; }
+    html body .mobile-tab { position: relative; display: flex; min-width: 0; min-height: 58px; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 7px 2px 5px; border: 0; background: transparent; color: var(--sage-500); font: inherit; text-decoration: none; }
+    html body .mobile-tab::before { content: ''; position: absolute; top: 0; right: 22%; left: 22%; height: 2px; background: transparent; }
+    html body .mobile-tab.is-active { color: var(--sage-700); }
+    html body .mobile-tab.is-active::before { background: var(--sage-700); }
+    html body .mobile-tab-icon { display: block; width: 18px; height: 18px; line-height: 0; }
+    html body .mobile-tab-icon svg { width: 18px; height: 18px; }
+    html body .mobile-tab-label { max-width: 100%; overflow: hidden; font-size: .6875rem; line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
+    html body .mobile-tab-badge { position: absolute; top: 4px; right: 21%; min-width: 14px; padding: 1px 3px; color: #fff; background: var(--sage-700); border-radius: 8px; font-size: .6rem; line-height: 12px; text-align: center; }
+    html body .mobile-tab:focus-visible { outline: 2px solid var(--sage-500); outline-offset: -2px; }
+
+    html body .mobile-more-layer[hidden] { display: none; }
+    html body .mobile-more-layer { position: fixed; inset: 0; z-index: 2140; display: block; }
+    html body .mobile-more-backdrop { position: absolute; inset: 0; background: rgb(var(--sage-950-rgb) / .34); }
+    html body .mobile-more-sheet { position: absolute; right: 0; bottom: 0; left: 0; display: flex; max-height: 85dvh; flex-direction: column; padding: 8px 16px max(12px, env(safe-area-inset-bottom)); overflow: hidden; background: #fff; color: var(--palette-ink); border-top: 1px solid var(--sage-200); }
+    html body .mobile-more-handle { width: 42px; height: 3px; margin: 0 auto 8px; background: var(--sage-300); }
+    html body .mobile-more-head { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--sage-200); }
+    html body .mobile-more-head h2 { margin: 0; padding: 8px 0 10px; color: var(--sage-800); font-size: 1.15rem; font-weight: 650; }
+    html body .mobile-more-close { padding: 8px 0 10px 12px; border: 0; background: transparent; color: var(--sage-700); font: inherit; font-size: .8rem; }
+    html body .mobile-more-scroll { overflow-y: auto; overscroll-behavior: contain; }
+    html body .mobile-more-group { padding: 12px 0 4px; }
+    html body .mobile-more-group h3 { margin: 0 0 3px; color: var(--sage-500); font-size: .75rem; font-weight: 650; }
+    html body .mobile-more-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 51px; padding: 8px 0; border-bottom: 1px solid var(--sage-100); color: var(--palette-ink); text-decoration: none; }
+    html body .mobile-more-row:hover, html body .mobile-more-row:focus-visible { background: var(--sage-50); }
+    html body .mobile-more-row.is-active { color: var(--sage-700); }
+    html body .mobile-more-row strong, html body .mobile-more-row small { display: block; }
+    html body .mobile-more-row strong { font-size: .88rem; font-weight: 600; }
+    html body .mobile-more-row small { margin-top: 1px; color: var(--sage-500); font-size: .75rem; line-height: 1.35; }
+    html body .mobile-more-row em { flex: none; min-width: 16px; padding: 1px 4px; color: #fff; background: var(--sage-700); border-radius: 8px; font-size: .65rem; font-style: normal; text-align: center; }
+    html body .mobile-more-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding-top: 14px; }
+    html body .mobile-more-farm { flex: 1 1 100%; color: var(--sage-500); font-size: .75rem; }
+    html body .mobile-more-language { display: flex; gap: 10px; }
+    html body .mobile-more-language button { padding: 0; border: 0; background: transparent; color: var(--sage-700); font: inherit; font-size: .8rem; }
+    html body .mobile-more-footer .ic-sb-logout-form, html body .mobile-more-footer .ic-logout-form { margin-left: auto; }
+    html body .mobile-more-footer .sidebar-link { min-height: 36px; padding: 5px 0; color: #b42318; }
+    html body.mobile-nav-open { overflow: hidden; }
+    html body:has(.mobile-nav-shell) #icAiLauncher { bottom: calc(92px + env(safe-area-inset-bottom)); }
+}

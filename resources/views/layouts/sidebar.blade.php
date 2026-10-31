@@ -46,7 +46,7 @@
         'notifications' => ['notifications.index', ['notifications.*']],
         'climate-records' => ['climate-records.index', ['climate-records.*']],
         'weather' => ['weather-predictions.index', ['weather-predictions.*', 'analysis.*']],   // Manuscript – Naicel: + analysis tabs
-        'rice-production' => ['rice-productions.index', ['rice-productions.*']],
+        'rice-production' => ['rice-productions.index', ['rice-productions.*', 'historical-rice-productions.*']],
         'farmer-profiles' => ['farmer-profiles.index', ['farmer-profiles.*']],
         'reports' => ['reports.index', ['reports.*']],
         'user-management' => ['users.index', ['users.*']],
@@ -69,11 +69,11 @@
     $navLink = function (string $label, string $routeKey, string $iconKey, ?int $badge = null) use ($routeDefs): array {
         [$route, $patterns] = $routeDefs[$routeKey];
 
-        return [$label, $route, $patterns, $iconKey, $badge, null];
+        return [$label, $route, $patterns, $iconKey, $badge, null, $routeKey];
     };
 
     $navLinkAnchor = function (string $label, string $anchor, string $iconKey) use ($dashboardRoute): array {
-        return [$label, $dashboardRoute, [$dashboardRoute], $iconKey, null, $anchor];
+        return [$label, $dashboardRoute, [$dashboardRoute], $iconKey, null, $anchor, null];
     };
 
     if ($isFarmer) {
@@ -153,7 +153,7 @@
             $html .= '<div class="sidebar-section" id="'.$labelId.'">'.e($sectionLabel).'</div>';
             // --sb-count: how many links, so the stylesheet can cap how far they spread (resources/css/sidebar.css).
             $html .= '<div class="sidebar-stack" style="--sb-count: '.count($links).'">';
-            foreach ($links as [$label, $route, $patterns, $iconKey, $badge, $anchor]) {
+            foreach ($links as [$label, $route, $patterns, $iconKey, $badge, $anchor, $routeKey]) {
                 $active = request()->routeIs(...$patterns) ? 'active' : '';
                 $href = $anchor ? route($route).'#'.$anchor : route($route);
                 $html .= '<a class="sidebar-link '.$active.'" href="'.e($href).'"'.($active ? ' aria-current="page"' : '').'>';
@@ -196,3 +196,4 @@
         <div class="sidebar-foot">&copy; 2026 iClimate Research Group<br>BatStateU ARASOF-Nasugbu</div>
     </div>
 </div>
+@include('layouts.mobile-navigation')

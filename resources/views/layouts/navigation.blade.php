@@ -50,6 +50,7 @@
         @unless ($isMaoNav)
             <p class="ic-topbar-greeting">{{ $navGreeting }}</p>
         @endunless
+    <p class="ic-mobile-greeting">{{ $navGreeting }}</p>
     </div>
 
     @if ($isMaoNav)
