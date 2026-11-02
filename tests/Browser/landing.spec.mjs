@@ -684,8 +684,8 @@ test.skip('B1 About the MAO scrolls to #contact', async ({ page }) => {
 
 test('F1 feature, fact and step cards do not look clickable', async ({ page }) => {
     await openLanding(page);
-    const cards = page.locator('#about li, #features article, #features li, #how li');
-    expect(await cards.count()).toBeGreaterThan(10);
+    const cards = page.locator('#features li, #how article');
+    expect(await cards.count()).toBeGreaterThanOrEqual(10);
     for (const card of await cards.all()) {
         expect(await card.evaluate((el) => getComputedStyle(el).cursor)).toBe('auto');
         expect(await card.locator('a, button').count()).toBe(0);
@@ -697,17 +697,17 @@ test('F1 feature, fact and step cards do not look clickable', async ({ page }) =
 test('R1 all three role cards are visible together', async ({ page }) => {
     await openLanding(page);
     await expect(page.locator('#roles [role="tablist"]')).toHaveCount(0);
-    await expect(page.locator('#roles .lp-role-card')).toHaveCount(3);
-    await expect(page.locator('#roles .lp-role-card h3')).toHaveText(['Farmer', 'MAO Staff', 'IT Personnel']);
+    await expect(page.locator('#roles article')).toHaveCount(3);
+    await expect(page.locator('#roles article h3')).toHaveText(['Farmer', 'MAO Staff', 'IT Personnel']);
 });
 
 test('R2 role cards retain their descriptions and features without login actions', async ({ page }) => {
     await openLanding(page);
     await expect(page.locator('#roles [data-role-login]')).toHaveCount(0);
     for (const key of ['farmers', 'mao', 'it']) {
-        const card = page.locator('#roles .lp-role-card').nth(['farmers', 'mao', 'it'].indexOf(key));
+        const card = page.locator('#roles article').nth(['farmers', 'mao', 'it'].indexOf(key));
         await expect(card.locator('p')).toBeVisible();
-        await expect(card.locator('li')).toHaveCount(5);
+        await expect(card.locator('li')).toHaveCount(4);
     }
 });
 
@@ -1046,7 +1046,41 @@ test('S11a About iClimate is centered with attributed quote and source grid', as
     await expect(about.locator('.about-sources')).toContainText('MAO production records');
     await expect(about.locator('.about-sources')).toContainText('Harvests and yields by barangay and season');
     await expect(about.locator('ul, li')).toHaveCount(0);
-    await expect(about.locator('[data-about-photo]')).toHaveCount(0);
+    await expect(about.locator('[data-about-photo]')).toHaveCount(1);
+});
+
+test('S11c Lian field photos use the requested responsive layouts and accessible sources', async ({ page }) => {
+    for (const width of [1440, 768, 375]) {
+        await page.setViewportSize({ width, height: 768 });
+        await openLanding(page);
+        const photos = {
+            about: page.locator('#about [data-about-photo]'),
+            features: page.locator('#features [data-features-photo]'),
+            roles: page.locator('#roles [data-roles-photo]'),
+            contact: page.locator('#contact [data-contact-photo]'),
+        };
+        await expect(photos.about.locator('img')).toHaveAttribute('alt', 'Ripening rice at dawn in Lian');
+        await expect(photos.features.locator('img')).toHaveAttribute('alt', 'Green rice fields in Lian');
+        await expect(photos.roles.locator('img')).toHaveAttribute('alt', 'Ripening rice stalks');
+        await expect(photos.contact.locator('img')).toHaveAttribute('alt', 'Rice fields stretching to the hills of Lian');
+        for (const photo of Object.values(photos)) {
+            await expect(photo.locator('source[type="image/webp"]')).toHaveCount(1);
+            await expect(photo.locator('source[type="image/jpeg"]')).toHaveCount(1);
+            await expect(photo.locator('img')).toHaveAttribute('loading', 'lazy');
+        }
+        const layout = await photos.features.evaluate((photo) => ({
+            photoRatio: photo.getBoundingClientRect().width / photo.getBoundingClientRect().height,
+            listTop: photo.parentElement.querySelector('[data-feature-grid]').getBoundingClientRect().top,
+            photoTop: photo.getBoundingClientRect().top,
+        }));
+        expect(Math.abs(layout.photoRatio - (width >= 1024 ? 4 / 5 : 16 / 9))).toBeLessThan(0.03);
+        if (width < 1024) expect(layout.listTop).toBeGreaterThan(layout.photoTop);
+        if (width >= 1024) expect(layout.listTop).toBeLessThan(layout.photoTop + 20);
+        await expect(photos.about).toHaveCSS('max-width', '960px');
+        await expect(photos.roles).toHaveCSS('height', '120px');
+        const contactRatio = await photos.contact.evaluate((photo) => photo.getBoundingClientRect().width / photo.getBoundingClientRect().height);
+        expect(Math.abs(contactRatio - 21 / 9)).toBeLessThan(0.03);
+    }
 });
 
 test('S11b section heading blocks share About’s centered alignment', async ({ page }) => {

@@ -13,7 +13,7 @@ return [
         'attribution' => 'Municipal Agriculture Office, Lian, Batangas',
         'sources' => 'Where the data comes from',
         'photo_alt' => 'Rice fields in Lian, Batangas',
-        'photo_caption' => 'The agricultural landscape iClimate helps the MAO and farmers understand.',
+        'photo_caption' => 'Rice fields in Lian, Batangas',
         'source_items' => [
             ['name' => 'PAGASA', 'text' => 'Official advisories and typhoon bulletins'],
             ['name' => 'Open-Meteo', 'text' => 'Daily forecasts for each barangay'],

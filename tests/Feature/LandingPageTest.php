@@ -173,6 +173,25 @@ class LandingPageTest extends TestCase
         $this->assertStringNotContainsString(route('login.weather'), $html);
     }
 
+    public function test_landing_page_uses_the_lian_field_photos_with_webp_fallbacks(): void
+    {
+        $this->get('/')->assertOk()
+            ->assertSee('lian-rice-dawn-960.webp', false)
+            ->assertSee('lian-rice-dawn-960.jpg', false)
+            ->assertSee('alt="Ripening rice at dawn in Lian"', false)
+            ->assertSee('lian-rice-field-960.webp', false)
+            ->assertSee('lian-rice-field-960.jpg', false)
+            ->assertSee('alt="Green rice fields in Lian"', false)
+            ->assertSee('lian-rice-closeup.webp', false)
+            ->assertSee('lian-rice-closeup.jpg', false)
+            ->assertSee('alt="Ripening rice stalks"', false)
+            ->assertSee('lian-rice-horizon.webp', false)
+            ->assertSee('lian-rice-horizon.jpg', false)
+            ->assertSee('alt="Rice fields stretching to the hills of Lian"', false)
+            ->assertSee('loading="lazy"', false)
+            ->assertSee('Rice fields in Lian, Batangas', false);
+    }
+
     public function test_the_hero_is_one_screen_and_every_other_section_shares_the_section_rhythm(): void
     {
         $this->markTestSkipped('Landing sections now use varied layouts and no CTA band.');

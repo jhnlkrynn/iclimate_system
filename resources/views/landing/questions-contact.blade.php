@@ -29,6 +29,7 @@
             <h2 id="contact-title" class="lp-h2 mt-0">{{ $questions['contact_title'] }}</h2>
             <p class="lp-lead mx-auto mt-4 max-w-[640px]">{{ $questions['contact_lead'] }}</p>
         </div>
+        <figure class="contact-photo mx-auto mt-8" data-contact-photo><picture><source type="image/webp" srcset="{{ asset('images/landing/lian-rice-horizon.webp') }}"><source type="image/jpeg" srcset="{{ asset('images/landing/lian-rice-horizon.jpg') }}"><img src="{{ asset('images/landing/lian-rice-horizon.jpg') }}" alt="Rice fields stretching to the hills of Lian" loading="lazy" class="h-full w-full rounded-xl object-cover"></picture></figure>
         <div class="contact-layout mx-auto mt-8">
             <div class="questions-office">
                 <div class="contact-map relative overflow-hidden rounded-lg bg-tint ring-brand ring-offset-2" data-office-map-box>
