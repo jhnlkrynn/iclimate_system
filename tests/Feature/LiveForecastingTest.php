@@ -10,30 +10,7 @@ class LiveForecastingTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_live_forecasting_link_is_removed_from_all_user_role_sidebars_and_dashboards(): void
-    {
-        $farmer = User::factory()->create(['role' => User::ROLE_FARMER]);
-        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
-        $itExpert = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
 
-        $this->actingAs($farmer)
-            ->get(route('farmer.dashboard'))
-            ->assertOk()
-            ->assertDontSee('Live Forecasting')
-            ->assertDontSee('live-forecasting');
-
-        $this->actingAs($mao)
-            ->get(route('mao.dashboard'))
-            ->assertOk()
-            ->assertDontSee('Live Forecasting')
-            ->assertDontSee('live-forecasting');
-
-        $this->actingAs($itExpert)
-            ->get(route('admin.dashboard'))
-            ->assertOk()
-            ->assertDontSee('Live Forecasting')
-            ->assertDontSee('live-forecasting');
-    }
 
     public function test_visiting_old_live_forecasting_route_redirects_farmer_to_farmer_dashboard(): void
     {
@@ -61,18 +38,7 @@ class LiveForecastingTest extends TestCase
             ->assertRedirect(route('mao.dashboard'));
     }
 
-    public function test_visiting_old_live_forecasting_route_redirects_it_expert_to_admin_dashboard(): void
-    {
-        $itExpert = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
 
-        $this->actingAs($itExpert)
-            ->get('/live-forecasting')
-            ->assertRedirect(route('admin.dashboard'));
-
-        $this->actingAs($itExpert)
-            ->get('/live-forecasting/details')
-            ->assertRedirect(route('admin.dashboard'));
-    }
 
     public function test_unauthenticated_request_to_live_forecasting_redirects_to_login(): void
     {

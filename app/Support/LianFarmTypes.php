@@ -6,11 +6,18 @@ use Illuminate\Support\Collection;
 
 class LianFarmTypes
 {
+    /** Published federation totals from the Lian Federation of Farmers Association dataset. */
+    public const FEDERATION_TOTALS = [
+        'irrigated_area_hectares' => 636.98,
+        'rainfed_area_hectares' => 90.59,
+        'total_area_hectares' => 727.57,
+    ];
+
     private const ASSOCIATIONS = [
         ['barangay' => 'Balibago', 'association' => 'Balibago Farmers Association', 'farm_type' => 'Irrigated', 'area_hectares' => 34.27, 'farmers' => 51],
         ['barangay' => 'Binubusan', 'association' => 'Cuaco Irrigator\'s Association', 'farm_type' => 'Irrigated', 'area_hectares' => 77.97, 'farmers' => 102],
         ['barangay' => 'Bungahan', 'association' => 'Bungahan Baldeo Irrigators Association Inc', 'farm_type' => 'Irrigated', 'area_hectares' => 118.92, 'farmers' => 95],
-        ['barangay' => 'Kapito', 'association' => 'Molino-Resagwa Farmers Irrigators Association Inc', 'farm_type' => 'Irrigated', 'area_hectares' => 38.17, 'farmers' => 43],
+        ['barangay' => 'Kapito', 'association' => 'Molino-Resgawa Farmers Irrigators Association Inc', 'farm_type' => 'Irrigated', 'area_hectares' => 38.17, 'farmers' => 43],
         ['barangay' => 'Kapito', 'association' => 'Lumang Tubigan Farmers Association', 'farm_type' => 'Irrigated', 'area_hectares' => 45.51, 'farmers' => 48],
         ['barangay' => 'Kapito', 'association' => 'Saluysoy Farmers Association', 'farm_type' => 'Irrigated', 'area_hectares' => 27.00, 'farmers' => 37],
         ['barangay' => 'Luyahan', 'association' => 'Luyahan Farmers Association', 'farm_type' => 'Rainfed', 'area_hectares' => 20.27, 'farmers' => 43],
@@ -56,6 +63,25 @@ class LianFarmTypes
     public static function records(): Collection
     {
         return collect(self::ASSOCIATIONS);
+    }
+
+    /** Barangays represented by the federation rice-farm source, including the separately named Tan-ag source row. */
+    public static function riceBarangays(): array
+    {
+        return self::records()->pluck('barangay')->unique()->values()->push('TAN-AG SAN DIEGO')->all();
+    }
+
+    /** The source mapping used by Production Records; statuses are association-source values, not barangay defaults. */
+    public static function federationSummary(): array
+    {
+        return self::FEDERATION_TOTALS + [
+            'associations' => self::records()->map(fn (array $record): array => [
+                'barangay' => $record['barangay'],
+                'association' => $record['association'],
+                'area_hectares' => $record['area_hectares'],
+                'source_status' => $record['farm_type'],
+            ])->all(),
+        ];
     }
 
     public static function organizationOptions(): array

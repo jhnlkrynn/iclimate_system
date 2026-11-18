@@ -53,7 +53,7 @@ class FarmerMissingInfoNotifier
 
         $missing = $this->missing($user);
         $locale = $this->locale($user);
-        // A saved barangay that is not one official name (e.g. a bare "Poblacion": Lian has five) is asked to be confirmed.
+        // A saved barangay that is not one supported official name is asked to be confirmed.
         $stored = trim((string) ($user->farmerProfile?->barangay ?: $user->barangay));
         $words = fn (string $item): string => $item === 'barangay' && $stored !== '' ? 'barangay_confirm' : $item;
         $existing = Notification::query()
@@ -63,13 +63,15 @@ class FarmerMissingInfoNotifier
 
         $kept = [];
         $wrote = false;
-        // Saved without model events, then only the shared notification counts are marked changed (CacheScope): the
-        // bell and the Notifications page read these rows live, and the farmer's stored pages (Home) do not show them,
-        // so a reminder must not make Home rebuild.
-        Notification::withoutEvents(function () use ($existing, $missing, $words, $locale, $stored, $user, &$kept, &$wrote): void {
+        $broadcasts = [];
+        // The notification model broadcasts each committed create/update/delete; CacheScope still handles server-side caches.
+        // These setup rows do not belong to the cached Farmer Home payload, so suppressing model events here avoids
+        // invalidating that payload while retaining the user notification event explicitly below.
+        Notification::withoutEvents(function () use ($existing, $missing, $words, $locale, $stored, $user, &$kept, &$wrote, &$broadcasts): void {
             foreach ($existing as $note) {
                 $item = substr((string) $note->category, strlen(self::CATEGORY_PREFIX));
                 if (! in_array($item, $missing, true) || isset($kept[$item])) {
+                    $broadcasts[] = [$note->user_id, 'deleted', $note];
                     $note->delete();                                        // filled in, or a duplicate
                     $wrote = true;
 
@@ -79,12 +81,13 @@ class FarmerMissingInfoNotifier
                 $title = trans('farmer.missing_info.'.$words($item).'.title', [], $locale);
                 if ($note->title !== $title) {
                     $note->update(['title' => $title, 'message' => trans('farmer.missing_info.'.$words($item).'.message', ['barangay' => $stored], $locale)]);
+                    $broadcasts[] = [$note->user_id, 'updated', $note];
                     $wrote = true;
                 }
             }
 
             foreach (array_diff($missing, array_keys($kept)) as $item) {
-                Notification::query()->create([
+                $note = Notification::query()->create([
                     'user_id' => $user->id,
                     'title' => trans('farmer.missing_info.'.$words($item).'.title', [], $locale),
                     'message' => trans('farmer.missing_info.'.$words($item).'.message', ['barangay' => $stored], $locale),
@@ -92,12 +95,16 @@ class FarmerMissingInfoNotifier
                     'category' => self::CATEGORY_PREFIX.$item,
                     'is_read' => false,
                 ]);
+                $broadcasts[] = [$note->user_id, 'created', $note];
                 $wrote = true;
             }
         });
 
         if ($wrote) {
             \App\Support\CacheScope::changed(Notification::class);
+            foreach ($broadcasts as [$recipientId, $action, $notification]) {
+                \App\Events\NotificationChanged::dispatch((int) $recipientId, $action, $notification);
+            }
         }
 
         Cache::forget('sidebar:unread-notifications:'.$user->id);

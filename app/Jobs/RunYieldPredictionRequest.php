@@ -64,6 +64,8 @@ class RunYieldPredictionRequest implements ShouldQueue
             return;
         }
 
+        $request->forceFill(['status' => YieldPredictionRequest::PROCESSING])->save();
+
         try {
             $user = $request->scope === YieldPredictionRequest::SCOPE_FARM ? User::query()->with('farmerProfile')->find($request->user_id) : null;
             $target = CarbonImmutable::parse($request->target_month);

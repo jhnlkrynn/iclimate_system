@@ -288,6 +288,38 @@ document.querySelectorAll('[data-accordion]').forEach((accordion) => {
     }));
 });
 
+// Feature showcase: keep the preview on the landing page while each item also offers its real destination.
+const featureShowcase = document.querySelector('[data-features-preview]');
+if (featureShowcase) {
+    const items = [...document.querySelectorAll('[data-feature]')];
+    const selectFeature = (index) => {
+        items.forEach((item, itemIndex) => {
+            const active = itemIndex === index;
+            item.classList.toggle('is-active', active);
+            const control = item.querySelector('[data-feature-select]');
+            control?.setAttribute('aria-selected', String(active));
+            control?.setAttribute('tabindex', active ? '0' : '-1');
+        });
+        featureShowcase.querySelectorAll('[data-feature-preview]').forEach((panel, panelIndex) => {
+            panel.hidden = panelIndex !== index;
+            panel.classList.toggle('is-active', panelIndex === index);
+        });
+    };
+    items.forEach((item, index) => {
+        const control = item.querySelector('[data-feature-select]');
+        control?.addEventListener('click', () => selectFeature(index));
+        control?.addEventListener('keydown', (event) => {
+            if (! ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp'].includes(event.key)) return;
+            event.preventDefault();
+            const next = (index + (event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+            selectFeature(next);
+            items[next].querySelector('[data-feature-select]')?.focus();
+        });
+        item.addEventListener('mouseenter', () => selectFeature(index));
+        item.addEventListener('focusin', () => selectFeature(index));
+    });
+}
+
 // "Send a message": delivered to the MAO staff as a notification, without leaving the page.
 const contactForm = document.getElementById('contactForm');
 if (contactForm) {

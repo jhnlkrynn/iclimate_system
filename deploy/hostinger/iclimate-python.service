@@ -1,0 +1,23 @@
+[Unit]
+Description=iClimate Python analytics service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/iclimate_system/python_scripts
+EnvironmentFile=/etc/iclimate/iclimate.env
+Environment=PATH=/var/www/iclimate_system/.venv-ml/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+ExecStart=/var/www/iclimate_system/.venv-ml/bin/python -m uvicorn main:app --host 127.0.0.1 --port 8010
+Restart=always
+RestartSec=5
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=full
+ReadWritePaths=/var/www/iclimate_system/storage
+
+[Install]
+WantedBy=multi-user.target
+

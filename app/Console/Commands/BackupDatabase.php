@@ -12,7 +12,7 @@ class BackupDatabase extends Command
     protected $signature = 'iclimate:backup-database
         {--no-prune : Keep old backups instead of removing the ones past the retention window}';
 
-    protected $description = 'Back up the iClimate PostgreSQL schema with pg_dump and remove backups past the retention window.';
+    protected $description = 'Back up the configured iClimate MySQL/MariaDB or PostgreSQL database and prune old backups.';
 
     public function handle(DatabaseBackupService $backups): int
     {

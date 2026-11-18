@@ -13,6 +13,7 @@ return [
         'test',
         'invalid',
         'localhost',
+        'local',          // *.local is reserved for local networks (RFC 6762): it never receives mail
     ],
 
     // Queue the emails (QUEUE_CONNECTION) when a queue worker runs. Off: they are sent at once, while the page saves.

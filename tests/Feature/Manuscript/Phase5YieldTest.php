@@ -51,7 +51,7 @@ class Phase5YieldTest extends TestCase
         $this->modelReturns(null, ['rainfall']);
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER, 'preferred_language' => 'fil']);
 
-        $this->actingAs($farmer)->post(route('analysis.yield.store'), ['season' => 'Dry', 'farm_type' => 'Rainfed', 'barangay' => 'Cumba', 'area_hectares' => '1']);
+        $this->actingAs($farmer)->post(route('analysis.yield.store'), ['season' => 'Dry', 'farm_type' => 'Rainfed', 'barangay' => 'San Diego', 'area_hectares' => '1']);
 
         $request = YieldPredictionRequest::query()->sole();
         $this->assertSame(YieldPredictionRequest::FAILED, $request->status);
@@ -63,7 +63,7 @@ class Phase5YieldTest extends TestCase
     {
         $this->modelReturns(4.0);
         BarangayProfile::query()->where('barangay', 'Balibago')->update(['farm_area_hectares' => 100]);
-        BarangayProfile::query()->where('barangay', 'Cumba')->update(['farm_area_hectares' => 50]);
+        BarangayProfile::query()->where('barangay', 'San Diego')->update(['farm_area_hectares' => 50]);
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
         $this->actingAs($mao)->post(route('analysis.forecast.store'), ['scope' => 'municipal', 'season' => 'Wet', 'farm_type' => 'Irrigated'])->assertRedirect();
@@ -93,11 +93,11 @@ class Phase5YieldTest extends TestCase
     public function test_access_follows_the_manuscript_matrix(): void
     {
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER]);
-        $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
+        $it = User::factory()->create(['role' => 'IT Expert']);
 
         $this->actingAs($farmer)->get(route('analysis.forecast'))->assertStatus(403);
-        $this->actingAs($it)->get(route('analysis.yield'))->assertStatus(403);
-        $this->actingAs($it)->post(route('analysis.forecast.store'), [])->assertStatus(403);
+        $this->actingAs($it)->get(route('analysis.yield'))->assertRedirect(route('login'));
+        $this->actingAs($it)->post(route('analysis.forecast.store'), [])->assertRedirect(route('login'));
     }
 
     protected function tearDown(): void

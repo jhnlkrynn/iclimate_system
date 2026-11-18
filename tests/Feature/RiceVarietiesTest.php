@@ -191,10 +191,10 @@ class RiceVarietiesTest extends TestCase
     public function test_it_sees_the_seed_table_with_add_and_no_farmer_or_mao_sections(): void
     {
         RiceVariety::factory()->create();
-        $it = User::factory()->itExpert()->create();
+        $it = User::factory()->maoPersonnel()->create();
 
-        $this->actingAs($it)->get(route('rice-varieties.index'))->assertOk()
-            ->assertViewIs('rice-varieties.it-index')
+        $this->actingAs($it)->get(route('rice-varieties.index', ['manage' => 1]))->assertOk()
+            ->assertViewIs('rice-varieties.staff-index')
             ->assertSee('data-rv-it-table', false)
             ->assertSee('data-rv-add', false)
             ->assertDontSee('family=Sora', false)                                   // Inter, like the other IT pages
@@ -204,7 +204,7 @@ class RiceVarietiesTest extends TestCase
 
     public function test_every_role_has_the_menu_item(): void
     {
-        foreach ([$this->farmer(), User::factory()->maoPersonnel()->create(), User::factory()->itExpert()->create()] as $user) {
+        foreach ([$this->farmer(), User::factory()->maoPersonnel()->create(), User::factory()->maoPersonnel()->create()] as $user) {
             $this->actingAs($user)->get(route('rice-varieties.index'))->assertOk()
                 ->assertSee('<a class="sidebar-link active" href="'.route('rice-varieties.index').'" aria-current="page">', false);
         }
@@ -213,7 +213,7 @@ class RiceVarietiesTest extends TestCase
     public function test_farmers_and_mao_cannot_add_edit_or_switch_varieties(): void
     {
         $variety = RiceVariety::factory()->create();
-        foreach ([$this->farmer(), User::factory()->maoPersonnel()->create()] as $user) {
+        foreach ([$this->farmer()] as $user) {
             $this->actingAs($user)->get(route('rice-varieties.create'))->assertForbidden();
             $this->actingAs($user)->post(route('rice-varieties.store'), ['variety_name' => 'X'])->assertForbidden();
             $this->actingAs($user)->get(route('rice-varieties.edit', $variety))->assertForbidden();
@@ -232,11 +232,11 @@ class RiceVarietiesTest extends TestCase
         $this->artisan('rice-varieties:import', ['path' => base_path(self::FIXTURE)])->assertSuccessful();
         Storage::disk('public')->assertExists(SourceDocument::PUBLIC_PATH);
 
-        foreach ([$this->farmer(), User::factory()->maoPersonnel()->create(), User::factory()->itExpert()->create()] as $user) {
+        foreach ([$this->farmer(), User::factory()->maoPersonnel()->create(), User::factory()->maoPersonnel()->create()] as $user) {
             $page = $this->actingAs($user)->get(route('rice-varieties.index'))->assertOk()
                 ->assertSee('Source: NSIC Registered Rice Varieties (Oryza sativa L.)')
                 ->assertDontSee('View source list');
-            $user->role === User::ROLE_IT_EXPERT
+            $user->role === 'IT Expert'
                 ? $page->assertSee('Last imported: Aug 1, 2026, 5 varieties')
                 : $page->assertDontSee('data-rv-last-import', false);
         }
@@ -248,7 +248,7 @@ class RiceVarietiesTest extends TestCase
     {
         RiceVariety::factory()->create();
 
-        $this->actingAs(User::factory()->itExpert()->create())->get(route('rice-varieties.index'))->assertOk()
+        $this->actingAs(User::factory()->maoPersonnel()->create())->get(route('rice-varieties.index', ['manage' => 1]))->assertOk()
             ->assertSee('Source: NSIC Registered Rice Varieties (Oryza sativa L.)')
             ->assertDontSee('data-rv-source-link', false)
             ->assertSee('Not imported yet');
@@ -469,7 +469,7 @@ class RiceVarietiesTest extends TestCase
 
     public function test_it_adds_a_variety_and_farmers_can_pick_it_right_away(): void
     {
-        $it = User::factory()->itExpert()->create();
+        $it = User::factory()->maoPersonnel()->create();
 
         $this->actingAs($it)->post(route('rice-varieties.store'), [
             'nsic_reg_no' => 'NSIC 2026 Rc 900', 'variety_name' => 'Lian Gold', 'variety_type' => 'Inbred', 'year_approved' => 2026,
@@ -490,7 +490,7 @@ class RiceVarietiesTest extends TestCase
     public function test_it_validation_checks_ranges_years_and_unique_numbers(): void
     {
         RiceVariety::factory()->create(['nsic_reg_no' => 'NSIC 2025 Rc 777', 'import_key' => 'nsic 2025 rc 777']);
-        $it = User::factory()->itExpert()->create();
+        $it = User::factory()->maoPersonnel()->create();
 
         $this->actingAs($it)->from(route('rice-varieties.create'))->post(route('rice-varieties.store'), [
             'nsic_reg_no' => 'nsic 2025 rc 777', 'variety_name' => 'Copy', 'year_approved' => 1900,
@@ -504,7 +504,7 @@ class RiceVarietiesTest extends TestCase
     {
         $this->artisan('rice-varieties:import', ['path' => base_path(self::FIXTURE)])->assertSuccessful();
         $variety = RiceVariety::query()->where('nsic_reg_no', 'NSIC 2026 Rc 824H')->firstOrFail();
-        $it = User::factory()->itExpert()->create();
+        $it = User::factory()->maoPersonnel()->create();
 
         $this->actingAs($it)->get(route('rice-varieties.edit', $variety))->assertOk()->assertSee('Keep imported: WSB - I; YSB - MR');
 
@@ -531,7 +531,7 @@ class RiceVarietiesTest extends TestCase
         $variety = RiceVariety::factory()->rc480()->create();
         $farmer = $this->farmer();
         $plan = $this->plan($farmer, ['rice_variety_id' => $variety->id]);
-        $it = User::factory()->itExpert()->create();
+        $it = User::factory()->maoPersonnel()->create();
 
         $this->actingAs($it)->patch(route('rice-varieties.toggle', $variety))->assertRedirect();
         $this->assertFalse($variety->fresh()->is_active);
@@ -553,7 +553,7 @@ class RiceVarietiesTest extends TestCase
     public function test_the_catalog_has_no_type_filter_row(): void
     {
         RiceVariety::factory()->create();
-        foreach ([$this->farmer(), User::factory()->maoPersonnel()->create(), User::factory()->itExpert()->create()] as $user) {
+        foreach ([$this->farmer(), User::factory()->maoPersonnel()->create(), User::factory()->maoPersonnel()->create()] as $user) {
             $this->actingAs($user)->get(route('rice-varieties.index'))->assertOk()
                 ->assertDontSee('id="rvFilter-type"', false)
                 ->assertDontSee('data-rv-filter="type:', false)
@@ -584,7 +584,7 @@ class RiceVarietiesTest extends TestCase
 
     public function test_the_it_form_has_two_farm_type_checkboxes_and_saves_exactly_what_is_checked(): void
     {
-        $it = User::factory()->itExpert()->create();
+        $it = User::factory()->maoPersonnel()->create();
         $this->actingAs($it)->get(route('rice-varieties.create'))->assertOk()
             ->assertSee('<input type="checkbox" name="farm_types[]" value="Irrigated"', false)
             ->assertSee('<input type="checkbox" name="farm_types[]" value="Rainfed"', false)
@@ -641,13 +641,13 @@ class RiceVarietiesTest extends TestCase
 
     public function test_the_it_list_has_six_columns_and_marks_only_exceptions(): void
     {
-        $it = User::factory()->itExpert()->create();
+        $it = User::factory()->maoPersonnel()->create();
         RiceVariety::factory()->create(['variety_name' => 'Imported One', 'year_approved' => 2026, 'variety_type' => 'Hybrid',
             'owner_breeder' => 'Philippine Rice Research Institute - International Rice Research Institute', 'maturity_tpr_ds' => 111, 'maturity_tpr_ws' => 122, 'yield_tpr_ws' => 10100]);
         RiceVariety::factory()->create(['variety_name' => 'Hand Added', 'year_approved' => 2026, 'source' => RiceVariety::SOURCE_MANUAL]);
         RiceVariety::factory()->create(['variety_name' => 'Switched Off', 'year_approved' => 2025, 'is_active' => false]);
 
-        $html = $this->actingAs($it)->get(route('rice-varieties.index'))->assertOk()->getContent();
+        $html = $this->actingAs($it)->get(route('rice-varieties.index', ['manage' => 1]))->assertOk()->getContent();
         $thead = \Illuminate\Support\Str::betweenFirst(\Illuminate\Support\Str::after($html, 'data-rv-it-table>'), '<thead>', '</thead>');
         preg_match_all('/<th scope="col"[^>]*><span class="(?:rv-th|visually-hidden)">([^<]+)/', $thead, $heads);
         $this->assertSame(['Variety', 'Type', 'Breeder', 'Maturity', 'Avg yield', 'Actions'], $heads[1]);
@@ -676,7 +676,7 @@ class RiceVarietiesTest extends TestCase
         $this->assertStringContainsString('<span class="rv-pager-range" data-rv-range>1–3 of 3</span>', $html);
 
         // Other sorts: a plain list without year rows.
-        $this->assertStringNotContainsString('rv-year-row', $this->actingAs($it)->get(route('rice-varieties.index', ['sort' => 'yield']))->getContent());
+        $this->assertStringNotContainsString('rv-year-row', $this->actingAs($it)->get(route('rice-varieties.index', ['sort' => 'yield', 'manage' => 1]))->getContent());
     }
 
     public function test_filters_sit_behind_a_button_with_a_count_and_show_as_removable_chips(): void
@@ -726,14 +726,14 @@ class RiceVarietiesTest extends TestCase
 
     public function test_an_empty_list_says_nothing_is_loaded_and_it_gets_the_run_import_button(): void
     {
-        $this->actingAs(User::factory()->itExpert()->create())->get(route('rice-varieties.index'))->assertOk()
+        $this->actingAs(User::factory()->maoPersonnel()->create())->get(route('rice-varieties.index', ['manage' => 1]))->assertOk()
             ->assertSee('data-rv-not-loaded', false)
             ->assertSee('No varieties loaded yet')
             ->assertSee('action="'.route('rice-varieties.import').'"', false)
             ->assertSee('Run import')
             ->assertDontSee('No variety matches');
 
-        foreach ([$this->farmer(), User::factory()->create(['role' => User::ROLE_MAO])] as $user) {
+        foreach ([$this->farmer()] as $user) {
             $this->actingAs($user)->get(route('rice-varieties.index'))->assertOk()
                 ->assertSee('The variety list isn&#039;t available yet. Please check back later.', false)
                 ->assertDontSee('Run import')
@@ -744,7 +744,7 @@ class RiceVarietiesTest extends TestCase
 
     public function test_no_variety_matches_shows_only_when_a_search_or_filter_is_on(): void
     {
-        $it = User::factory()->itExpert()->create();
+        $it = User::factory()->maoPersonnel()->create();
         $farmer = $this->farmer();
 
         // Nothing loaded, but the farmer searched: that is "no match", not "not loaded".
@@ -753,7 +753,7 @@ class RiceVarietiesTest extends TestCase
         $this->actingAs($it)->get(route('rice-varieties.index', ['farm_type' => 'Rainfed']))
             ->assertSee('No variety matches. Try fewer filters.')->assertDontSee('Run import');
         // A sort alone is not a filter.
-        $this->actingAs($it)->get(route('rice-varieties.index', ['sort' => 'yield']))->assertSee('Run import');
+        $this->actingAs($it)->get(route('rice-varieties.index', ['sort' => 'yield', 'manage' => 1]))->assertSee('Run import');
 
         RiceVariety::factory()->create(['variety_name' => 'Only One']);
         $this->actingAs($farmer)->get(route('rice-varieties.index'))->assertSee('Only One')
@@ -764,7 +764,7 @@ class RiceVarietiesTest extends TestCase
     public function test_it_runs_the_import_from_the_empty_list_and_it_is_logged(): void
     {
         config(['rice_varieties.import_path' => base_path(self::FIXTURE)]);
-        $it = User::factory()->itExpert()->create();
+        $it = User::factory()->maoPersonnel()->create();
 
         $this->actingAs($it)->from(route('rice-varieties.index'))->post(route('rice-varieties.import'))
             ->assertRedirect(route('rice-varieties.index'))
@@ -777,14 +777,14 @@ class RiceVarietiesTest extends TestCase
 
         // A second run changes nothing, and the list now shows the varieties.
         $this->actingAs($it)->post(route('rice-varieties.import'))->assertSessionHas('success', 'Import finished: 0 added, 0 updated, 5 unchanged.');
-        $this->actingAs($it)->get(route('rice-varieties.index'))->assertDontSee('No varieties loaded yet')->assertSee('Mestiso 176');
+        $this->actingAs($it)->get(route('rice-varieties.index', ['manage' => 1]))->assertDontSee('No varieties loaded yet')->assertSee('Mestiso 176');
     }
 
     public function test_a_failed_import_says_so_and_is_logged(): void
     {
         config(['rice_varieties.import_path' => base_path('tests/fixtures/missing.xlsx')]);
 
-        $this->actingAs(User::factory()->itExpert()->create())->post(route('rice-varieties.import'))
+        $this->actingAs(User::factory()->maoPersonnel()->create())->post(route('rice-varieties.import'))
             ->assertSessionHas('error', 'The import could not run. The details are in the System Logs.');
         $this->assertSame(0, RiceVariety::query()->count());
         $this->assertTrue(SystemLog::query()->where('action', 'Rice Variety Import Failed')->exists());
@@ -794,7 +794,7 @@ class RiceVarietiesTest extends TestCase
     {
         config(['rice_varieties.import_path' => base_path(self::FIXTURE)]);
 
-        foreach ([$this->farmer(), User::factory()->create(['role' => User::ROLE_MAO])] as $user) {
+        foreach ([$this->farmer()] as $user) {
             $this->actingAs($user)->post(route('rice-varieties.import'))->assertForbidden();
         }
         $this->assertSame(0, RiceVariety::query()->count());

@@ -37,6 +37,13 @@ return [
     */
     'model_evaluation_candidate_ui' => (bool) env('MODEL_EVALUATION_CANDIDATE_UI', false),
 
+    /*
+    | Fewest validated, separately measured rice records before Model Evaluation shows metrics as a result.
+    | 30 is the reliability floor already used by python_scripts/evaluation_service.py; the researchers may
+    | agree another number (docs/data-audit/phase-3-ml-dataset-methodology.md, decision 5).
+    */
+    'model_evaluation_min_observations' => (int) env('MODEL_EVALUATION_MIN_OBSERVATIONS', 30),
+
     /* Python used for the ML scripts. Empty: the app looks for the project's virtualenv. */
     'python_binary' => env('PYTHON_BINARY') ?: null,
 
@@ -58,9 +65,18 @@ return [
     | MAO_ALLOW_SKIP_PASSWORD_CHANGE is true (testing / thesis defense); set it to false for real use.
     | A new account's e-mail is firstnamelastname@<domain>, with 2, 3 … added when that address is taken.
     */
-    'mao_default_password' => env('MAO_DEFAULT_PASSWORD', 'Password@123'),
+    'mao_default_password' => env('MAO_DEFAULT_PASSWORD'),
     'mao_email_domain' => env('MAO_EMAIL_DOMAIN', 'gmail.com'),
-    'mao_allow_skip_password_change' => (bool) env('MAO_ALLOW_SKIP_PASSWORD_CHANGE', true),
+    'mao_allow_skip_password_change' => (bool) env('MAO_ALLOW_SKIP_PASSWORD_CHANGE', false),
+    // Shared defaults that sign-in refuses to keep (the account must choose its own first). The first entry was the
+    // seeded default of earlier releases and is already public in the repository history; add more with the env list.
+    // Shared-password lockdown (audit 2026-11-18): sign-in flags accounts on a shared password, and the mobile app gets
+    // 409 password_change_required instead of the profile. On in production; off only until the rollout is approved.
+    'password_lockdown' => (bool) env('ICLIMATE_PASSWORD_LOCKDOWN', true),
+    'known_default_passwords' => array_values(array_unique(array_filter(array_merge(
+        ['Password@123'],
+        array_map('trim', explode(',', (string) env('ICLIMATE_KNOWN_DEFAULT_PASSWORDS', ''))),
+    )))),
 
     /*
     | Where iClimate operates. The single source is App\Support\LianLocation;

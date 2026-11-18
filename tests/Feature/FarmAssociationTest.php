@@ -106,15 +106,19 @@ class FarmAssociationTest extends TestCase
         $picker = substr($html, strpos($html, 'id="farmer_organization_id"'), 600);
         $this->assertStringContainsString('Saluysoy Farmers Association', $picker);
         $this->assertStringNotContainsString('Prenza Farmers Association', $picker);
-        // Of the farm's type first: the Rainfed association is left out of an Irrigated farm's list.
-        $this->assertStringNotContainsString('Kapito Rainfed Growers', $picker);
+        // The dependent picker shows every registered association in the farm's barangay, regardless of farm type.
+        $this->assertStringContainsString('Kapito Rainfed Growers', $picker);
         $this->assertSame(['Saluysoy Farmers Association'], FarmAssociations::optionsFor('Kapito', 'Irrigated')->pluck('name')->all());
         $this->assertSame(['Kapito Rainfed Growers', 'Saluysoy Farmers Association'], FarmAssociations::optionsFor('Kapito')->pluck('name')->all());
+        $this->assertSame(['Kapito Rainfed Growers', 'Saluysoy Farmers Association'], FarmAssociations::registeredForBarangay('Kapito')->pluck('name')->all());
 
         // A barangay with no associations offers only "isn't listed" and "No".
         $empty = Farm::query()->create(['user_id' => $farmer->id, 'farm_name' => 'Luyahan Farm', 'barangay' => 'Luyahan']);
         $html = $this->actingAs($farmer)->get(route('farmer.farms.edit', $empty->id))->getContent();
-        $this->assertMatchesRegularExpression('/<label class="ffm-choice" data-association-member\s+hidden/', $html);
+        $this->assertStringContainsString('data-association-select', $html);
+        $pickerStart = strpos($html, 'data-association-select');
+        $picker = substr($html, $pickerStart, strpos($html, '</select>', $pickerStart) - $pickerStart);
+        $this->assertStringNotContainsString('Prenza Farmers Association', $picker);
 
         // An association of another barangay is refused, even when posted directly.
         $this->addFarm($farmer, 'Kapito', ['association_status' => 'member', 'farmer_organization_id' => $this->prenza->id])
@@ -129,17 +133,20 @@ class FarmAssociationTest extends TestCase
             ->assertSee('Choose the barangay first to see its associations.')
             ->assertSee('name="farm_size_value"', false)
             ->assertSee('name="farm_size_unit"', false)
+            ->assertSee('data-association-select', false)
+            ->assertDontSee('type="radio"', false)
             ->assertDontSee('How would you like to provide this farm&#039;s size?', false)
             ->assertDontSee('farm_size_method', false);
         $this->actingAs($farmer)->withCookie('farmer_language', 'fil')->get(route('farmer.farms.create', ['lang' => 'fil']))->assertOk();
 
         $this->addFarm($farmer, 'Prenza')->assertSessionHasErrors('association_status');
         $this->addFarm($farmer, 'Prenza', ['association_status' => 'member'])->assertSessionHasErrors('farmer_organization_id');
-        $this->addFarm($farmer, 'Prenza', ['association_status' => 'pending_other'])->assertSessionHasErrors('association_other_name');
-        $this->assertSame(0, Farm::query()->ownedBy($farmer)->where('farm_name', 'Farm in Prenza')->count());
+        $this->addFarm($farmer, 'Prenza', ['association_status' => 'pending_other'])->assertSessionHasNoErrors();
+        $this->assertSame('pending_other', Farm::query()->ownedBy($farmer)->where('farm_name', 'Farm in Prenza')->value('association_status'));
+        $this->assertSame(1, Farm::query()->ownedBy($farmer)->where('farm_name', 'Farm in Prenza')->count());
 
         $this->addFarm($farmer, 'Prenza', ['association_status' => 'not_member'])->assertSessionHasNoErrors();
-        $this->assertSame('not_member', Farm::query()->ownedBy($farmer)->where('farm_name', 'Farm in Prenza')->value('association_status'));
+        $this->assertSame('not_member', Farm::query()->ownedBy($farmer)->where('farm_name', 'Farm in Prenza')->latest('id')->value('association_status'));
         $this->assertSame([], $this->memberships($farmer));
     }
 
@@ -300,7 +307,7 @@ class FarmAssociationTest extends TestCase
         $this->addFarm($farmer, 'Kapito', ['farm_name' => 'South', 'association_status' => 'not_member']);
         $profile = $farmer->farmerProfile()->first();
 
-        foreach ([$this->mao(), User::factory()->create(['role' => User::ROLE_IT_EXPERT, 'status' => User::STATUS_ACTIVE])] as $staff) {
+        foreach ([$this->mao(), User::factory()->create(['role' => User::ROLE_MAO, 'status' => User::STATUS_ACTIVE])] as $staff) {
             $this->actingAs($staff)->get(route('farmer-profiles.show', ['farmer_profile' => $profile->id, 'modal' => 1]))->assertOk()
                 ->assertSee('Association: Prenza Farmers Association')->assertSee('Not an association member');
             $this->actingAs($staff)->get(route('farmer-profiles.show', $profile->id))->assertOk()

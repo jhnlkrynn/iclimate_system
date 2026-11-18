@@ -56,7 +56,7 @@ class ClimoraPlaceholderRiskTest extends TestCase
 
         $english = $this->ask('What is the climate risk in Cumba?');
         $english->assertOk();
-        $this->assertStringContainsString('No calculated farm-risk rating', $english->json('chat.answer'));
+        $this->assertStringContainsString('No calculated farm-risk rating is available for this barangay yet.', $english->json('chat.answer'));
 
         $tagalog = $this->ask('Ano ang climate risk sa Cumba?');
         $tagalog->assertOk();
@@ -70,7 +70,7 @@ class ClimoraPlaceholderRiskTest extends TestCase
 
         $placeholder = $service->barangayAnswer($user, 'What is the risk in Bagong Pook?', 'English');
         $this->assertStringNotContainsString('Climate risk: Moderate', $placeholder['answer']);
-        $this->assertStringContainsString('No calculated farm-risk rating', $placeholder['answer']);
+        $this->assertStringContainsString('No calculated farm-risk rating is available for this barangay yet.', $placeholder['answer']);
 
         HeatmapArea::query()->where('barangay', 'Malaruhatan')->update([
             'risk_level' => 'High', 'risk_type' => 'Heat', 'risk_score' => 0.9,

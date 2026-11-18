@@ -153,7 +153,7 @@ final class FarmerDashboardService
 
         $weather = $this->weather($forceWeather || in_array('weather', $refresh, true), $now);
         $week = $this->week($weather, $now);
-        // A stored barangay that is not one official name (e.g. a bare "Poblacion": Lian has five) is never guessed.
+        // A stored barangay that is not one supported official name is never guessed.
         $stored = $farm !== null ? '' : trim((string) ($profile?->barangay ?: $user->barangay));
         $risk = $barangay === null && $stored !== '' ? ['state' => 'unverified', 'stored' => $stored] : $this->riskStatus($barangay);
         $harvest = $this->harvest($this->prediction($user, $farm, in_array('harvest', $refresh, true)), $farm, fn () => $profile, $now);
@@ -164,6 +164,9 @@ final class FarmerDashboardService
         }
         $typhoon = $this->typhoonCheckIn($user);
         $advisory = $this->latestPlantingAdvisory($barangay);
+        // The mobile shell's badge is part of the same prepared farmer snapshot; it must not issue a second query
+        // while the dashboard view is being rendered.
+        $advisoryCount = rescue(fn (): int => PlantingAdvisory::query()->published()->count(), 0, false);
         // With two or more farms the farmer's records are read for the farm being viewed; otherwise all of them.
         $onlyFarm = ActiveFarm::farms($user)->count() > 1 ? $farm : null;
         // Farmer – Naicel (2026-10-08): the key figures and the yield comparison, from the parts above and saved records.
@@ -188,6 +191,7 @@ final class FarmerDashboardService
             'harvest' => $harvest,
             'week' => $week,
             'advisory' => $advisory,
+            'advisory_count' => $advisoryCount,
             'typhoon' => $typhoon,
             // Farmer – Naicel (2026-10): the two Home charts; one farm's harvests when the farmer has two or more farms.
             'charts' => $charts,
@@ -368,6 +372,40 @@ final class FarmerDashboardService
         return ['state' => $days === [] ? 'nodata' : 'ok', 'days' => $days];
     }
 
+    /**
+     * A prepared Home is reused while the data it shows is unchanged, so its "Updated" times would stay at the fetch
+     * that built it. Each later successful fetch confirmed the same values: show that fetch's time. Only times move
+     * here; when values or the rating differ the prepared copy has been retired and rebuilt instead.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    public function withLatestFetchTimes(array $payload): array
+    {
+        $now = CarbonImmutable::now(self::TIMEZONE);
+
+        if (($payload['weather']['state'] ?? null) === 'ok') {
+            $fetched = rescue(fn () => $this->weather->lastFetchedAt(), null, false)?->timezone(self::TIMEZONE);
+            $shown = $payload['weather']['updated_at'] ?? null;
+            if ($fetched && (! $shown || $fetched->greaterThan($shown)) && ! $fetched->greaterThan($now->addMinute())) {
+                $payload['weather']['updated_at'] = $fetched;
+                $payload['weather']['stale'] = $fetched->diffInMinutes($now) > (int) config('farmer_dashboard.weather.stale_after_minutes', 60);
+            }
+        }
+
+        if (($payload['risk']['state'] ?? null) === 'ok' && ! empty($payload['risk']['barangay'])) {
+            $week = rescue(fn () => $this->weekRisk->forBarangay((string) $payload['risk']['barangay'], 'week'), null, false);
+            $rated = $week['updated_at'] ?? null;
+            $shown = $payload['risk']['updated_at'] ?? null;
+            // Same rating as the prepared card (a different one means a rebuild is on its way; never mix the two).
+            if ($rated && ($week['level'] ?? null) === ($payload['risk']['key'] ?? null) && (! $shown || CarbonImmutable::parse($rated)->greaterThan(CarbonImmutable::parse($shown)))) {
+                $payload['risk']['updated_at'] = $rated;
+            }
+        }
+
+        return $payload;
+    }
+
     // ------------------------------------------------------------------ 3. barangay risk (the Heat Map's [This Week] rating)
 
     /** @return array<string, mixed> state: ok | nodata | nobarangay (payload() adds: unverified) */
@@ -498,13 +536,17 @@ final class FarmerDashboardService
             $estimate = self::currentEstimate($user->id, $farmId);
         }
 
+        // YieldModelGate: an estimate (also one cached before the gate) outside the model's training range is not shown.
+        if ($estimate !== null && ! \App\Services\Prediction\YieldModelGate::shows(is_array($estimate['model_input'] ?? null) ? $estimate['model_input'] : null)) {
+            return ['state' => 'error', 'result' => null, 'cause' => 'unvalidated'];
+        }
         if ($estimate !== null) {
             return ['state' => 'ok', 'result' => $estimate];
         }
 
         $failure = Cache::get(self::predictionFailureKey($user->id, $farmId));
         if (is_array($failure)) {
-            return ['state' => 'error', 'result' => null, 'cause' => ($failure['lacks_records'] ?? false) ? 'records' : 'service'];
+            return ['state' => 'error', 'result' => null, 'cause' => ($failure['withheld'] ?? false) ? 'unvalidated' : (($failure['lacks_records'] ?? false) ? 'records' : 'service')];
         }
 
         return ['state' => 'loading', 'result' => null];
@@ -570,19 +612,22 @@ final class FarmerDashboardService
 
             Log::warning('Farmer dashboard yield prediction was not produced.', ['source' => 'rice-yield model', 'user_id' => $user->id, 'farm_id' => $farmId, 'reason' => $prediction['api_error'] ?? null, 'missing_inputs' => $prediction['missing_inputs'] ?? []]);
             $lacksRecords = ! empty($prediction['missing_inputs']) || str_contains(strtolower((string) ($prediction['api_error'] ?? '')), 'not enough');
+            $withheld = ($prediction['availability'] ?? null) === 'withheld';
         } catch (Throwable $e) {
             Log::warning('Farmer dashboard yield prediction failed.', ['source' => 'rice-yield model', 'user_id' => $user->id, 'farm_id' => $farmId, 'exception' => $e::class, 'message' => $e->getMessage()]);
             $lacksRecords = false;
         }
+        $withheld ??= false;
 
         // Missing farm data means the last estimate no longer fits this farm (e.g. its size was removed), so it is
         // dropped and the card says what to add. A service that could not be reached keeps the last verified estimate.
-        if ($lacksRecords) {
+        // A withheld (unvalidated) estimate also drops the earlier one: it was made the same way.
+        if ($lacksRecords || $withheld) {
             Cache::forget(self::predictionCacheKey($user->id, $farmId));
         }
         // Missing records do not change soon (30 minutes); a service that could not be reached is tried again sooner.
-        $failed = ['failed' => true, 'lacks_records' => $lacksRecords, 'at' => CarbonImmutable::now(self::TIMEZONE)->toIso8601String()];
-        Cache::put(self::predictionFailureKey($user->id, $farmId), $failed, now()->addMinutes($lacksRecords ? self::MISSING_RECORDS_RETRY_MINUTES : self::FAILURE_RETRY_MINUTES));
+        $failed = ['failed' => true, 'lacks_records' => $lacksRecords, 'withheld' => $withheld, 'at' => CarbonImmutable::now(self::TIMEZONE)->toIso8601String()];
+        Cache::put(self::predictionFailureKey($user->id, $farmId), $failed, now()->addMinutes($lacksRecords || $withheld ? self::MISSING_RECORDS_RETRY_MINUTES : self::FAILURE_RETRY_MINUTES));
 
         return $failed;
     }
@@ -630,6 +675,7 @@ final class FarmerDashboardService
                 'reason' => match (true) {
                     $missingArea => $farm !== null ? __('farms.yield.needs_size') : __('farmer.home.harvest.need_area'),
                     ($prediction['cause'] ?? null) === 'records' => __('farmer.home.harvest.need_records'),
+                    ($prediction['cause'] ?? null) === 'unvalidated' => __('farmer.home.harvest.unvalidated'),
                     default => __('farmer.home.harvest.unavailable'),
                 },
                 'needs_area' => $missingArea,

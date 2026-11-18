@@ -9,8 +9,9 @@
         // Re-read the page only for a request made in the last 3 minutes (a stuck one never reloads the page forever).
         $pending = $requests->contains(fn ($r) => $r->status === \App\Models\YieldPredictionRequest::QUEUED && $r->created_at?->gt(now()->subMinutes(3)));
         $levels = __('yield_request.impact_levels');
+        $predictionLabels = ['requested' => $Y('preparing'), 'processing' => $Y('preparing'), 'completed' => 'Completed', 'failed' => $Y('failed')];
     @endphp
-    <div class="fad wpx" data-yield-prediction @if ($pending) data-yield-pending @endif>
+    <div class="fad wpx" data-yield-prediction data-prediction-realtime data-prediction-labels='@json($predictionLabels)' @if ($pending) data-yield-pending @endif>
         @include('partials.manuscript-tabs', ['group' => 'analysis', 'label' => 'Predictions and analysis'])
         <header class="fad-hero">
             <div class="fad-hero-text">
@@ -62,17 +63,17 @@
                         <thead><tr><th>{{ $Y('for') }}</th><th>{{ $Y('per_ha') }}</th><th>{{ $Y('total') }}</th><th>{{ $Y('usual') }}</th><th>{{ $Y('impact') }}</th></tr></thead>
                         <tbody>
                             @foreach ($requests as $r)
-                                <tr data-request-status="{{ $r->status }}">
+                                <tr data-request-status="{{ $r->status }}" data-prediction-reference="{{ $r->id }}" data-prediction-status="{{ $r->status }}" data-prediction-status-url="{{ route('analysis.yield.status', $r->id) }}">
                                     <td><strong>{{ $Y(strtolower($r->season)) }}</strong>
-                                        <div class="small text-muted">{{ \App\Services\Risk\HeatMapPanel::displayName((string) $r->barangay) }} · {{ $Y(strtolower($r->farm_type)) }} · {{ $num($r->area_hectares) }} ha · {{ $Y('requested') }} {{ $r->created_at?->timezone(\App\Support\BusinessClock::timezone())->format('M j, Y') }}</div>
+                                        <div class="small text-muted">{{ \App\Services\Risk\HeatMapPanel::displayName((string) $r->barangay) }} · {{ $Y(strtolower($r->farm_type)) }} · {{ $num($r->area_hectares) }} ha · {{ $Y('requested') }} {{ $r->created_at?->timezone(\App\Support\BusinessClock::timezone())->format('M j, Y') }} <span class="badge text-bg-secondary" data-prediction-live-status>{{ $r->status === 'done' ? 'Completed' : ($r->status === 'failed' ? $Y('failed') : $Y('preparing')) }}</span></div>
                                     </td>
                                     @if ($r->status === 'done')
                                         {{-- Farmer Survey – Naicel (2026-10-09): the survey about this prediction. --}}
-                                        <td>{{ $Y('t_ha', ['value' => $num($r->predicted_yield)]) }}<div><a class="small" href="{{ route('farmer.survey.show', ['prediction' => $r->id]) }}" data-survey-link>{{ __('farmer.survey.rate_prediction') }}</a></div></td>
+                                        <td>{{ $Y('t_ha', ['value' => $num($r->predicted_yield)]) }} @include('components.unvalidated-estimate', ['compact' => true])<div><a class="small" href="{{ route('farmer.survey.show', ['prediction' => $r->id]) }}" data-survey-link>{{ __('farmer.survey.rate_prediction') }}</a></div></td>
                                         <td>{{ $r->total_tons !== null ? $Y('tons', ['value' => $num($r->total_tons)]) : '—' }}</td>
                                         <td>{{ $r->historical_average !== null ? $Y('t_ha', ['value' => $num($r->historical_average)]) : '—' }}</td>
                                         <td>@if ($r->impact_level)<span @class(['badge', 'text-bg-success' => $r->impact_level === 'Favorable', 'text-bg-secondary' => $r->impact_level === 'Normal', 'text-bg-danger' => $r->impact_level === 'At Risk'])>{{ $levels[$r->impact_level] ?? $r->impact_level }}</span>@else — @endif</td>
-                                    @elseif ($r->status === 'queued')
+                                    @elseif (in_array($r->status, ['queued', 'processing'], true))
                                         <td colspan="4" class="text-muted">{{ $Y('preparing') }}</td>
                                     @else
                                         <td colspan="4" class="text-muted">{{ $Y('failed') }}<div class="small">{{ $r->error }}</div></td>
@@ -86,10 +87,4 @@
             @endif
         </section>
     </div>
-    @if ($pending)
-        {{-- A prediction is still being prepared: read the page again shortly (at most a minute). --}}
-        <script>
-            setTimeout(() => window.location.reload(), 8000);
-        </script>
-    @endif
 </x-app-layout>

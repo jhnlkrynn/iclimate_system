@@ -33,10 +33,10 @@ class MaoRiskCountsPlaceholderTest extends TestCase
 
         Cache::flush();
         Http::fake(['*' => Http::response([], 500)]);              // page requests never compute the map anyway
-        $this->computedRiskRating('Bagong Pook', 'Low');
-        $this->computedRiskRating('Balibago', 'Moderate');
-        $this->computedRiskRating('Barangay 2 (Pob.)', 'High');
-        $this->computedRiskRating('Barangay 3 (Pob.)', 'Severe');
+        $this->computedRiskRating('Balibago', 'Low');
+        $this->computedRiskRating('Bungahan', 'Moderate');
+        $this->computedRiskRating('Kapito', 'High');
+        $this->computedRiskRating('Luyahan', 'Severe');
     }
 
     /** @return array<string, int> */
@@ -49,11 +49,11 @@ class MaoRiskCountsPlaceholderTest extends TestCase
 
     public function test_the_seed_rows_are_recognised_as_placeholders_and_computed_rows_are_not(): void
     {
-        $seeded = HeatmapArea::query()->whereNotIn('barangay', ['Bagong Pook', 'Balibago', 'Barangay 2 (Pob.)', 'Barangay 3 (Pob.)'])->get();
+        $seeded = HeatmapArea::query()->whereIn('barangay', LianBarangays::all())->whereNotIn('barangay', ['Balibago', 'Bungahan', 'Kapito', 'Luyahan'])->get();
 
-        $this->assertCount(15, $seeded);
+        $this->assertCount(count(LianBarangays::all()) - 4, $seeded);
         $this->assertTrue($seeded->every->isSeedPlaceholder());
-        $this->assertSame(['High', 'Low', 'Moderate'], $seeded->pluck('risk_level')->unique()->sort()->values()->all());   // demo levels too
+        $this->assertSame(['High', 'Moderate'], $seeded->pluck('risk_level')->unique()->sort()->values()->all());
         $this->assertSame(4, HeatmapArea::query()->computed()->count());
         $this->assertFalse(HeatmapArea::query()->where('barangay', 'Balibago')->first()->isSeedPlaceholder());
     }
@@ -63,8 +63,8 @@ class MaoRiskCountsPlaceholderTest extends TestCase
         $this->assertSame(['Low' => 1, 'Moderate' => 1, 'High' => 1, 'Severe' => 1], $this->counts());
 
         $barangays = app(DashboardData::class)->currentRiskRatings()->pluck('barangay')->all();
-        $this->assertNotContains('Bungahan', $barangays);       // seeded "Moderate / Pending climate update"
-        $this->assertNotContains('Malaruhatan', $barangays);    // seeded demo "High"
+        $this->assertNotContains('Matabungkay', $barangays);
+        $this->assertNotContains('Malaruhatan', $barangays);
     }
 
     public function test_the_latest_genuine_rating_is_used(): void
@@ -72,7 +72,7 @@ class MaoRiskCountsPlaceholderTest extends TestCase
         $this->travel(2)->hours();
         $this->computedRiskRating('Balibago', 'High');           // recomputed: Moderate -> High
 
-        $this->assertSame(['Low' => 1, 'Moderate' => 0, 'High' => 2, 'Severe' => 1], $this->counts());
+        $this->assertSame(['Low' => 0, 'Moderate' => 1, 'High' => 2, 'Severe' => 1], $this->counts());
         $this->assertSame('High', app(DashboardData::class)->currentRiskRatings()->firstWhere('barangay', 'Balibago')->risk_level);
     }
 
@@ -86,13 +86,13 @@ class MaoRiskCountsPlaceholderTest extends TestCase
         $this->assertSame(array_sum($risk['counts']), $risk['rated']);
         $this->assertSame(count(LianBarangays::all()), $risk['total']);
         $this->assertSame($risk['total'], $risk['rated'] + $risk['no_data']);
-        $this->assertSame('No Data', collect($risk['barangays'])->firstWhere('barangay', 'Bungahan')['level']);
+        $this->assertSame('Moderate', collect($risk['barangays'])->firstWhere('barangay', 'Bungahan')['level']);
         $this->assertSame('No Data', collect($risk['barangays'])->firstWhere('barangay', 'Malaruhatan')['level']);
     }
 
     public function test_with_only_placeholders_nothing_is_counted_and_no_warning_is_raised(): void
     {
-        HeatmapArea::query()->whereIn('barangay', ['Bagong Pook', 'Balibago', 'Barangay 2 (Pob.)', 'Barangay 3 (Pob.)'])
+        HeatmapArea::query()->whereIn('barangay', ['Balibago', 'Bungahan', 'Kapito', 'Luyahan'])
             ->update(['rainfall_status' => HeatmapArea::SEED_RAINFALL_STATUS, 'description' => HeatmapArea::SEED_DESCRIPTION]);
         Cache::flush();
 

@@ -105,15 +105,15 @@ class CalendarPageTest extends TestCase
     public function test_a_farmer_sees_only_their_own_dates_and_mao_sees_all_with_a_barangay_filter(): void
     {
         $farmer = $this->farmer();
-        $other = User::factory()->farmer()->create(['name' => 'Otilia Cumba', 'barangay' => 'Cumba']);
+        $other = User::factory()->farmer()->create(['name' => 'Otilia Balibago', 'barangay' => 'Balibago']);
         $farmer->forceFill(['name' => 'Pedro Prenza'])->save();
         $this->schedule($farmer, 'Prenza');
-        $this->schedule($other, 'Cumba');
+        $this->schedule($other, 'Balibago');
 
         // The farmer: their own planting, never the other farmer's; no barangay filter to reach it.
-        $own = $this->actingAs($farmer)->get(route('calendar.index', ['barangay' => 'Cumba']))->assertOk()->getContent();
+        $own = $this->actingAs($farmer)->get(route('calendar.index', ['barangay' => 'Balibago']))->assertOk()->getContent();
         $this->assertSame(1, substr_count($this->cell($own, 'Tuesday, October 20'), 'class="fcal-event"'));
-        $this->assertStringNotContainsString('Otilia Cumba', $own);
+        $this->assertStringNotContainsString('Otilia Balibago', $own);
         $this->assertStringNotContainsString('data-fcal-filter', $own);
 
         // MAO: every farmer's dates, named; then one barangay.
@@ -121,24 +121,24 @@ class CalendarPageTest extends TestCase
         $all = $this->actingAs($mao)->get(route('calendar.index'))->assertOk()->getContent();
         $day = $this->cell($all, 'Tuesday, October 20');
         $this->assertStringContainsString('Planting – Pedro Prenza', $day);
-        $this->assertStringContainsString('Planting – Otilia Cumba', $day);
+        $this->assertStringContainsString('Planting – Otilia Balibago', $day);
         $this->assertStringContainsString('data-fcal-filter', $all);
         $this->assertStringNotContainsString('Add My Planting Plan', $all);
 
-        $cumba = $this->actingAs($mao)->get(route('calendar.index', ['barangay' => 'Cumba']))->assertOk()->getContent();
-        $this->assertStringContainsString('<option value="Cumba" selected>', $cumba);
-        $this->assertStringContainsString('Planting – Otilia Cumba', $this->cell($cumba, 'Tuesday, October 20'));
+        $cumba = $this->actingAs($mao)->get(route('calendar.index', ['barangay' => 'Balibago']))->assertOk()->getContent();
+        $this->assertStringContainsString('<option value="Balibago" selected>', $cumba);
+        $this->assertStringContainsString('Planting – Otilia Balibago', $this->cell($cumba, 'Tuesday, October 20'));
         $this->assertStringNotContainsString('Pedro Prenza', $cumba);
         // The month links keep the barangay.
-        $this->assertStringContainsString('barangay=Cumba', html_entity_decode($cumba));
+        $this->assertStringContainsString('barangay=Balibago', html_entity_decode($cumba));
     }
 
     public function test_mao_activities_show_for_the_farmers_barangay_and_for_all_of_lian(): void
     {
         $this->advisory(['title' => 'Planting Advisory – Prenza', 'target_barangay' => 'Prenza', 'target_scope' => 'barangay',
             'metadata' => ['mao_activity' => 'Seed distribution at Prenza hall', 'mao_activity_date' => '2026-10-12']]);
-        $this->advisory(['title' => 'Planting Advisory – Cumba', 'target_barangay' => 'Cumba', 'target_scope' => 'barangay',
-            'metadata' => ['mao_activity' => 'Soil testing in Cumba', 'mao_activity_date' => '2026-10-12']]);
+        $this->advisory(['title' => 'Planting Advisory – Balibago', 'target_barangay' => 'Balibago', 'target_scope' => 'barangay',
+            'metadata' => ['mao_activity' => 'Soil testing in Balibago', 'mao_activity_date' => '2026-10-12']]);
         $this->advisory(['title' => 'Planting Advisory – All of Lian',
             'metadata' => ['mao_activity' => 'Farmers assembly', 'mao_activity_date' => '2026-10-14']]);
         // An activity on an advisory that is not published yet stays off the calendar.
@@ -148,7 +148,7 @@ class CalendarPageTest extends TestCase
         $day = $this->cell($html, 'Monday, October 12');
         $this->assertStringContainsString('Seed distribution at Prenza hall', $day);
         $this->assertStringContainsString('data-kind="activity"', $day);
-        $this->assertStringNotContainsString('Soil testing in Cumba', $html);
+        $this->assertStringNotContainsString('Soil testing in Balibago', $html);
         $this->assertStringContainsString('Farmers assembly', $this->cell($html, 'Wednesday, October 14'));
         $this->assertStringNotContainsString('Unapproved activity', $html);
         // The advisory's own title and text are not calendar entries.
@@ -156,7 +156,7 @@ class CalendarPageTest extends TestCase
 
         $mao = $this->actingAs(User::factory()->maoPersonnel()->create())->get(route('calendar.index'))->getContent();
         $this->assertStringContainsString('Seed distribution at Prenza hall', $mao);
-        $this->assertStringContainsString('Soil testing in Cumba', $mao);
+        $this->assertStringContainsString('Soil testing in Balibago', $mao);
     }
 
     public function test_days_and_today_follow_the_lian_clock_not_utc(): void

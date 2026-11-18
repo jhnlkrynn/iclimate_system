@@ -15,7 +15,7 @@
                 <dt class="col-sm-3">Reason</dt>
                 <dd class="col-sm-9">{{ \App\Services\Accounts\AccountDeletion::reasonLabel($user->deleted_reason, 'en') }}@if (filled($user->deleted_reason_other)): {{ $user->deleted_reason_other }}@endif</dd>
                 @if (filled($user->deleted_note_internal))
-                    <dt class="col-sm-3">Internal note <span class="small text-muted d-block">Only IT can see this</span></dt>
+                    <dt class="col-sm-3">Internal note <span class="small text-muted d-block">Only the MAO Head can see this</span></dt>
                     <dd class="col-sm-9" data-user-internal-note>{{ $user->deleted_note_internal }}</dd>
                 @endif
                 <dt class="col-sm-3">Restore</dt>

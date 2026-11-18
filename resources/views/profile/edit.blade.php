@@ -12,7 +12,7 @@
         {{-- Staff accounts (IT and MAO): the IT dashboard design system (.mfd / .itd parts, IT page parts in it-pages.css).
              The three forms are the same partials every role uses. --}}
         <div class="mfd itd itp itp-form">
-            <x-it.page-header kicker="Profile Center" title="Profile" lede="Manage your account information, password, and account access." />
+            <x-shared.page-header kicker="Profile Center" title="Profile" lede="Manage your account information, password, and account access." />
 
             <section class="itp-section" aria-labelledby="accountSummaryTitle">
                 <div class="itp-section-head"><h2 id="accountSummaryTitle">Profile Summary</h2></div>

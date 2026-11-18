@@ -13,6 +13,11 @@ use Illuminate\Support\Carbon;
  */
 class ExternalWeatherData extends Model
 {
+    use \App\Models\Concerns\KeepsDatabaseClockColumns;
+
+    /** MariaDB refreshes this column itself on UPDATE (Manila clock); see KeepsDatabaseClockColumns. */
+    public const DATABASE_CLOCK_COLUMNS = ['fetched_at'];
+
     protected $fillable = [
         'source',
         'location_name',

@@ -131,6 +131,37 @@ class RiceYieldPredictionService
             $this->assertCompleteResult($result);
         }
 
+        return $this->applyGate($result, $modelInput);
+    }
+
+    /**
+     * YieldModelGate: an estimate outside the model's training range is withheld (default) or marked unvalidated.
+     * The model's raw number is kept under predicted_yield_unvalidated for audit only; it is never displayed.
+     *
+     * @param  array<string, mixed>  $result
+     * @return array<string, mixed>
+     */
+    private function applyGate(array $result, mixed $modelInput): array
+    {
+        if ($result['predicted_yield'] === null || YieldModelGate::mode() === YieldModelGate::OFF) {
+            return $result;
+        }
+        $assessment = YieldModelGate::assess(is_array($modelInput) ? $modelInput : null);
+        $result['validation_status'] = $assessment['compatible'] ? 'within_training_range' : 'outside_training_range';
+        $result['outside_training_range'] = $assessment['outside'];
+        $result['accuracy_verified'] = false;
+        if ($assessment['compatible'] || YieldModelGate::mode() === YieldModelGate::LABEL) {
+            return $result;
+        }
+
+        $result['predicted_yield_unvalidated'] = $result['predicted_yield'];
+        foreach (['yield_tons_per_hectare', 'predicted_yield_raw', 'predicted_yield', 'predicted_yield_tons_per_hectare', 'estimated_total_production_tons'] as $key) {
+            $result[$key] = null;
+        }
+        $result['success'] = false;
+        $result['availability'] = 'withheld';
+        $result['unavailable_reason'] = YieldModelGate::REASON;
+
         return $result;
     }
 

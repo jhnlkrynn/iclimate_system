@@ -24,18 +24,7 @@ class DatabaseQueryRegressionTest extends TestCase
         Http::fake(['*' => Http::response([], 500)]);
     }
 
-    public function test_it_dashboard_query_count_does_not_grow_with_more_accounts(): void
-    {
-        $it = User::factory()->itExpert()->create();
 
-        $small = $this->measure(fn () => $this->actingAs($it)->get('/admin/dashboard')->assertOk());
-
-        User::factory()->farmer()->count(25)->create();
-        Cache::flush();
-        $large = $this->measure(fn () => $this->actingAs($it)->get('/admin/dashboard')->assertOk());
-
-        $this->assertLessThanOrEqual(5, $large - $small, "IT Dashboard query count grew from {$small} to {$large}");
-    }
 
     public function test_mao_and_farmer_dashboard_query_counts_do_not_grow_with_more_users(): void
     {

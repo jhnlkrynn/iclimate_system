@@ -207,7 +207,7 @@ class ReportController extends CrudController
      */
     private function displayColumns(array $columns, string $type, bool $forExport = false): array
     {
-        if ($type === 'climate_records') {
+        if ($type === 'climate_records' && ! $forExport) {
             unset($columns['wind_speed']);
         }
         if (! $forExport) {

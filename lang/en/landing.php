@@ -55,7 +55,6 @@ return [
         'items' => [
             ['title' => 'Farmer', 'text' => 'Check conditions, planting advice and seasonal information for your farm.', 'items' => ['Climate monitoring', 'Planting guidance', 'Weather risk alerts', 'Seasonal reports']],
             ['title' => 'MAO Staff', 'text' => 'Manage records, compare climate and yield, and prepare reports for the municipality.', 'items' => ['Production monitoring', 'Climate analysis', 'Report generation', 'Record validation']],
-            ['title' => 'IT Personnel', 'text' => 'Keep iClimate reliable, secure and available to the people who use it.', 'items' => ['Access support', 'Activity checks', 'Record upkeep', 'System reliability']],
         ],
     ],
     'questions' => [

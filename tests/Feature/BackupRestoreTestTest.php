@@ -204,6 +204,19 @@ class BackupRestoreTestTest extends TestCase
         $this->assertStringNotContainsString($run['env']['POSTGRES_PASSWORD'], implode(' ', array_map(fn ($c) => implode(' ', $c['command']), $this->calls)));
     }
 
+    public function test_a_mariadb_backup_is_reported_as_such_and_no_container_is_started(): void
+    {
+        $this->backup('iclimate_2026-11-10_0352.backup', "-- MariaDB dump 10.19  Distrib 10.4.28-MariaDB\n--\nCREATE TABLE `users` (`id` int);\n-- Dump completed on 2026-11-10  3:52:00\n");
+        $this->fakeDocker();
+
+        $result = $this->restoreTest();
+
+        $this->assertFalse($result['passed']);
+        $this->assertSame('mysql_backup', $result['reason']);
+        $this->assertStringContainsString('restore-isolated-mariadb.sh', BackupRestoreTestService::REASONS['mysql_backup']);
+        $this->assertSame([], $this->calls, 'no Docker command runs for a MariaDB dump');
+    }
+
     public function test_the_restore_never_targets_supabase_or_the_application_database(): void
     {
         $this->backup();

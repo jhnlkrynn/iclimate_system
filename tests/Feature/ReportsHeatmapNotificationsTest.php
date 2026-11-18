@@ -106,9 +106,10 @@ class ReportsHeatmapNotificationsTest extends TestCase
             'report' => $generatedReport->id,
         ]));
         $export->assertOk()->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
-        $this->assertStringContainsString('2026-09-10', $export->streamedContent());
-        $this->assertStringNotContainsString('Wind Speed', $export->streamedContent());
-        $this->assertStringNotContainsString('7.75', $export->streamedContent());
+        $csv = $export->streamedContent();
+        $this->assertStringContainsString('2026-09-10', $csv);
+        $this->assertStringContainsString('Wind Speed', $csv);
+        $this->assertStringContainsString('7.75', $csv);
     }
 
     public function test_reports_page_auto_loads_latest_saved_rows_without_showing_history_panel(): void
@@ -327,7 +328,7 @@ class ReportsHeatmapNotificationsTest extends TestCase
     {
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER]);
-        User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
+        User::factory()->create(['role' => User::ROLE_MAO]);
 
         $this->actingAs($mao)->post(route('notifications.store'), [
             'recipient_scope' => 'farmers',

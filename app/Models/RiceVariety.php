@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * An NSIC-registered rice variety (imported from the NSIC list by rice-varieties:import) or one added by IT Personnel.
+ * An NSIC-registered rice variety (imported from the NSIC list by rice-varieties:import) or one added by MAO Staff.
  *
  * Trial figures come per combination of crop establishment and season (COMBOS): tpr = transplanted, dwsr = direct
  * wet seeded; ds / ws = dry / wet season. Maturity is in days after sowing (DAS).

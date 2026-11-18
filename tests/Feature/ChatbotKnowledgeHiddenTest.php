@@ -60,7 +60,6 @@ class ChatbotKnowledgeHiddenTest extends TestCase
         $pages = [
             User::ROLE_FARMER => ['farmer.dashboard', 'planting-advisories.index', 'messages.index'],
             User::ROLE_MAO => ['mao.dashboard', 'planting-advisories.index', 'messages.index', 'community-feed.index', 'reports.index'],
-            User::ROLE_IT_EXPERT => ['admin.dashboard', 'system-health.index', 'users.index', 'messages.index', 'system-logs.index'],
         ];
 
         foreach ($pages as $role => $routes) {
@@ -74,33 +73,7 @@ class ChatbotKnowledgeHiddenTest extends TestCase
         }
     }
 
-    public function test_the_pages_send_every_role_to_their_dashboard_while_the_flag_is_off(): void
-    {
-        $term = AiBlockedTerm::query()->firstOrFail();
-        $before = [AiKnowledgeTopic::count(), AiTerm::count(), AiSynonym::count(), AiFaq::count(), AiBlockedTerm::count()];
 
-        foreach ([User::ROLE_FARMER => 'farmer.dashboard', User::ROLE_MAO => 'mao.dashboard', User::ROLE_IT_EXPERT => 'admin.dashboard'] as $role => $dashboard) {
-            $user = $this->user($role);
-
-            $this->actingAs($user)->get(route('ai-admin.home'))->assertRedirect(route('dashboard'));
-            foreach (['topics', 'terms', 'synonyms', 'faqs', 'blocked-terms', 'blocked-patterns'] as $resource) {
-                $this->actingAs($user)->get(route('ai-admin.index', $resource))->assertRedirect(route('dashboard'));
-            }
-            // Writes are switched off with the pages: nothing is added, changed or toggled.
-            $this->actingAs($user)->post(route('ai-admin.store', 'blocked-terms'), ['term' => 'newword', 'language' => 'en', 'category' => 'abusive'])->assertRedirect(route('dashboard'));
-            $this->actingAs($user)->put(route('ai-admin.update', ['blocked-terms', $term->id]), ['term' => 'changed', 'language' => 'en', 'category' => 'abusive'])->assertRedirect(route('dashboard'));
-            $this->actingAs($user)->post(route('ai-admin.toggle', ['blocked-terms', $term->id]))->assertRedirect(route('dashboard'));
-
-            // "Their dashboard": the role's own.
-            $this->actingAs($user)->get(route('dashboard'))->assertRedirect(route($dashboard));
-        }
-
-        $this->assertSame($before, [AiKnowledgeTopic::count(), AiTerm::count(), AiSynonym::count(), AiFaq::count(), AiBlockedTerm::count()]);
-        $this->assertSame([$term->term, true], [$term->fresh()->term, (bool) $term->fresh()->is_active]);
-
-        auth()->logout();
-        $this->get(route('ai-admin.index', 'topics'))->assertRedirect(route('login'));
-    }
 
     public function test_the_chatbot_still_answers_from_the_knowledge_while_the_tab_is_hidden(): void
     {
@@ -138,28 +111,5 @@ class ChatbotKnowledgeHiddenTest extends TestCase
         $this->assertNotSame(self::KB, $this->ask('zorblax')['source_type'] ?? null);
     }
 
-    public function test_setting_the_flag_to_true_brings_the_tab_back_for_it_only(): void
-    {
-        config(['iclimate.chatbot_knowledge_ui' => true]);
-        $it = $this->user(User::ROLE_IT_EXPERT);
 
-        $html = $this->actingAs($it)->get(route('admin.dashboard'))->assertOk()->getContent();
-        preg_match_all('#<span class="sidebar-label">([^<]+)</span>#', $html, $labels);
-        $this->assertContains('Chatbot knowledge', $labels[1]);
-        $this->assertStringContainsString('href="'.route('ai-admin.home').'"', $html);
-
-        $this->actingAs($it)->get(route('ai-admin.home'))->assertRedirect(route('ai-admin.index', ['resource' => 'topics']));
-        foreach (['topics', 'terms', 'synonyms', 'faqs', 'blocked-terms', 'blocked-patterns'] as $resource) {
-            $this->actingAs($it)->get(route('ai-admin.index', $resource))->assertOk();
-        }
-        $this->actingAs($it)->post(route('ai-admin.store', 'blocked-terms'), ['term' => 'Quuxword', 'language' => 'en', 'category' => 'abusive'])->assertSessionHasNoErrors();
-        $this->assertDatabaseHas('ai_blocked_terms', ['term' => 'Quuxword']);
-
-        // Still not for MAO or farmers, in the menu or by URL.
-        foreach ([User::ROLE_MAO => 'mao.dashboard', User::ROLE_FARMER => 'farmer.dashboard'] as $role => $dashboard) {
-            $user = $this->user($role);
-            $this->actingAs($user)->get(route($dashboard))->assertOk()->assertDontSee('Chatbot knowledge');
-            $this->actingAs($user)->get(route('ai-admin.index', 'topics'))->assertForbidden();
-        }
-    }
 }

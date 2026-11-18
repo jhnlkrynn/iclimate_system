@@ -5,6 +5,7 @@ namespace App\Services\Farmer;
 use App\Models\Farm;
 use App\Models\FarmerPlantingSchedule;
 use App\Models\RiceProduction;
+use App\Models\HistoricalRiceProduction;
 use App\Models\User;
 use App\Services\Weather\DailyForecastService;
 use App\Support\RiceSeason;
@@ -103,6 +104,15 @@ class FarmerHomeCharts
     private function barangayAverage(string $barangay, string $season, int $year): ?float
     {
         try {
+            $historical = HistoricalRiceProduction::query()
+                ->whereRaw('upper(barangay) = ?', [mb_strtoupper(trim($barangay))])
+                ->where('season', $season === RiceSeason::WET ? 'WS' : 'DS')
+                ->where('season_year', $year)
+                ->value('average_yield_t_per_hectare');
+            if ($historical !== null && (float) $historical > 0) {
+                return round((float) $historical, 2);
+            }
+
             $years = $season === RiceSeason::WET ? [$year] : [$year, $year + 1];
             $recorded = SampleData::without(RiceProduction::query(), 'rice_productions')
                 ->where('barangay', $barangay)->where('season', $season)->whereIn('year', $years)

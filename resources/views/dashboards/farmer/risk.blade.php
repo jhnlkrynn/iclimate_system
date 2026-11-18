@@ -7,7 +7,7 @@
     @if ($r['state'] === 'ok')
         <p class="fh-risk-badge is-{{ $r['tone'] }}">{{ $r['label'] }}</p>
         <p class="fh-words">{{ $r['meaning'] }}</p>
-        <x-updated-at :at="$r['updated_at']" :label="__('farmer.home.updated')" />
+        <x-updated-at :at="$r['updated_at']" :label="__('farmer.home.updated')" data-weather-fetched="barangays" />
         <a class="fh-link" href="{{ route('heat-map.index') }}">{{ __('farmer.home.risk.view') }}</a>
     @else
         <x-no-data :label="__('farmer.home.no_data')" :note="__('farmer.home.no_data_note')" />

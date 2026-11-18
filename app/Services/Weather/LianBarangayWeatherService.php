@@ -9,6 +9,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -360,6 +361,7 @@ class LianBarangayWeatherService
 
         $fetchedAt = now();
         $failed = [];
+        $changedBarangays = [];
         // Runs under the refresh lock, so this read-modify-write never races another refresh.
         $store = $this->store();
 
@@ -374,6 +376,9 @@ class LianBarangayWeatherService
                 continue;
             }
 
+            if ($this->weatherChanged($store['records'][$barangay] ?? null, $record)) {
+                $changedBarangays[] = $barangay;
+            }
             $store['records'][$barangay] = $record;
         }
 
@@ -390,9 +395,38 @@ class LianBarangayWeatherService
 
         Cache::forever(self::STORE_KEY, $store);
 
+        if ($changedBarangays !== []) {
+            // Prepared pages (Farmer Home's farm-risk card) rate from this store: retire them, so the re-read that
+            // weather.changed triggers shows the new rating and its time (before 2026-11-12 they kept the old ones
+            // until some other weather change, while the Heat Map already showed the new ones).
+            \App\Support\CacheScope::bump('weather');
+            \App\Events\WeatherChanged::dispatch(
+                array_values(array_unique($changedBarangays)),
+                (string) Str::uuid(),
+                $fetchedAt->toIso8601String(),
+            );
+        }
+
+        if ($failed === [] && count($targets) === count(LianBarangays::coordinates())) {
+            // Every reading on the map now has this fetch time (also when no value changed).
+            \App\Events\WeatherFetched::announce('barangays', $fetchedAt);
+        }
+
         if ($failed !== []) {
             Log::warning('Lian barangay weather: some barangays kept their last available reading.', ['failed' => $failed]);
         }
+    }
+
+    /** Cache bookkeeping timestamps are intentionally excluded from change detection. */
+    private function weatherChanged(mixed $previous, array $next): bool
+    {
+        if (! is_array($previous)) {
+            return true;
+        }
+
+        unset($previous['fetched_at'], $next['fetched_at']);
+
+        return $previous !== $next;
     }
 
     /** @return array<string, array{0: float, 1: float}> the farmer's own barangay first, then the others */

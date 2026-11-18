@@ -23,6 +23,8 @@ final class YieldPredictionStore
 {
     public const PERIODS = ['season', 'week', '2weeks'];
 
+    private static int $changedRows = 0;
+
     public function available(string $period = 'season'): bool
     {
         if (! SchemaCache::hasTable('yield_predictions')) {
@@ -91,13 +93,16 @@ final class YieldPredictionStore
     /** @return Collection<int, YieldPrediction> this season's farm rows for the period */
     public function farms(string $period = 'season'): Collection
     {
-        return $this->available($period) ? $this->query(YieldPrediction::SCOPE_FARM, $period)->get() : collect();
+        // Stored rows stay as history; ones the YieldModelGate would not show are left out of what pages display.
+        return $this->available($period) ? $this->query(YieldPrediction::SCOPE_FARM, $period)->get()
+            ->filter(fn (YieldPrediction $row) => YieldModelGate::showsStored($row->basis, $row->model_input))->values() : collect();
     }
 
     /** @return Collection<string, YieldPrediction> this season's barangay rows for the period, by canonical name */
     public function barangays(string $period = 'season'): Collection
     {
-        return $this->available($period) ? $this->query(YieldPrediction::SCOPE_BARANGAY, $period)->get()->keyBy('barangay') : collect();
+        return $this->available($period) ? $this->query(YieldPrediction::SCOPE_BARANGAY, $period)->get()
+            ->filter(fn (YieldPrediction $row) => YieldModelGate::showsStored($row->basis, $row->model_input))->keyBy('barangay') : collect();
     }
 
     /** @return \Illuminate\Database\Eloquent\Builder<YieldPrediction> */
@@ -115,12 +120,23 @@ final class YieldPredictionStore
         if (SchemaCache::hasColumn('yield_predictions', 'period')) {
             $key['period'] = $period;
         }
-        YieldPrediction::query()->updateOrCreate(
+        $row = YieldPrediction::query()->updateOrCreate(
             $key,
             $values + [
                 'classification' => self::classification((float) $values['predicted_yield']),
                 'season' => RiceSeason::window($start)['season'],
             ],
         );
+        if ($row->wasRecentlyCreated || $row->wasChanged()) {
+            self::$changedRows++;
+        }
+    }
+
+    /** Saved estimates that were new or different since the last call (bulk runs signal open pages once, at the end). */
+    public static function takeChangedCount(): int
+    {
+        [$count, self::$changedRows] = [self::$changedRows, 0];
+
+        return $count;
     }
 }

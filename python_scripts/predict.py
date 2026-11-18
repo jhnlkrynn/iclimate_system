@@ -1,4 +1,5 @@
 import json
+import math
 import os
 import sys
 import warnings
@@ -66,7 +67,19 @@ def build_features(payload):
 
     for input_name, model_name in FEATURE_MAP.items():
         value = payload[input_name]
-        row[model_name] = value if input_name == "season" else float(value)
+        if input_name == "season":
+            season = str(value).strip()
+            if season.lower() not in {"wet", "dry"}:
+                raise ValueError("Invalid season field.")
+            row[model_name] = season.title()
+            continue
+        try:
+            number = float(value)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"Invalid numeric field: {input_name}") from exc
+        if not math.isfinite(number) or number == -999.0:
+            raise ValueError(f"Invalid numeric field: {input_name}")
+        row[model_name] = number
 
     return pd.DataFrame([row], columns=list(FEATURE_MAP.values()))
 

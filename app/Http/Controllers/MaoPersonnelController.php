@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
@@ -45,12 +46,12 @@ class MaoPersonnelController extends Controller
         $data = $request->validate($this->rules() + [
             // Optional: left blank, it is made from the name (firstnamelastname@gmail.com, with 2, 3 … when taken).
             'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')],
-            // Optional: left blank, the account gets the default MAO password and must change it at the first sign-in.
-            'password' => ['nullable', 'string', Password::defaults()],
+            // Optional: left blank, the account gets a configured or generated one-time password.
+            'password' => ['nullable', 'string', Password::defaults(), new \App\Rules\NotKnownDefaultPassword],
         ]);
         $data['email'] = filled($data['email'] ?? null) ? strtolower($data['email']) : User::suggestMaoEmail($data['name']);
         $usesDefault = blank($data['password'] ?? null);
-        $data['password'] = $usesDefault ? (string) config('iclimate.mao_default_password', 'Password@123') : $data['password'];
+        $data['password'] = $usesDefault ? (config('iclimate.mao_default_password') ?: Str::password(24)) : $data['password'];
 
         $user = DB::transaction(function () use ($data): User {
             $user = new User([
@@ -76,7 +77,7 @@ class MaoPersonnelController extends Controller
         SystemAuditLogger::record('Created MAO account', $request, ['record_type' => 'MAO Personnel', 'record_id' => $user->id, 'record_label' => $user->maoTitle()]);
 
         return redirect()->route('mao.personnel.index')->with('success', $user->name.' can now sign in with '.$user->email
-            .($usesDefault ? ' and the default password' : '').'. They will be asked to change the password at the first sign-in.');
+            .($usesDefault ? ' and this one-time password: '.$data['password'] : '').'. They will be asked to change the password at the first sign-in.');
     }
 
     public function update(Request $request, User $user): RedirectResponse
@@ -112,21 +113,22 @@ class MaoPersonnelController extends Controller
         return redirect()->to(route('mao.personnel.index').'#mao-'.$user->id)->with('success', $user->name.' saved.');
     }
 
-    /** The Municipal Agriculturist puts an MAO account back on the default password (to be changed at the next sign-in). */
+    /** The Municipal Agriculturist resets an MAO account to a one-time password (to be changed at the next sign-in). */
     public function resetPassword(Request $request, User $user): RedirectResponse
     {
         $this->authorizeHead($request);
         abort_unless($user->isMao(), 404);
 
+        $oneTimePassword = config('iclimate.mao_default_password') ?: Str::password(24);
         $user->forceFill([
-            'password' => Hash::make((string) config('iclimate.mao_default_password', 'Password@123')),
+            'password' => Hash::make($oneTimePassword),
             'must_change_password' => true,
             'remember_token' => null,
         ])->save();
-        SystemAuditLogger::record('Reset password of '.$user->name.' to the default', $request, ['record_type' => 'MAO Personnel', 'record_id' => $user->id, 'record_label' => $user->maoTitle()]);
+        SystemAuditLogger::record('Reset password of '.$user->name, $request, ['record_type' => 'MAO Personnel', 'record_id' => $user->id, 'record_label' => $user->maoTitle()]);
 
         return redirect()->to(route('mao.personnel.index').'#mao-'.$user->id)
-            ->with('success', $user->name."'s password is back to the default. They must change it at the next sign-in.");
+            ->with('success', $user->name."'s password was reset. One-time password: ".$oneTimePassword.'. Deliver it securely; it must be changed at the next sign-in.');
     }
 
     /** Field personnel: switch between "My barangays" and the read-only municipal view. */

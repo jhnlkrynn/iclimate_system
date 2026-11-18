@@ -24,9 +24,9 @@ class ModelEvaluationService
             'reason' => 'Kept as a comparison model because the manuscript requires Multiple Linear Regression in the algorithm evaluation.',
         ],
         'Random Forest' => [
-            'summary' => 'Ensemble regression model that combines multiple decision trees to produce a more stable rice yield prediction.',
-            'interpretation' => 'Random Forest is deployed as the production model. Compare its RMSE, MAE, and R² against the other rows to see whether it is still the best-performing option on the current data.',
-            'reason' => 'Deployed as the rice yield model; saved as storage/models/rice_yield_model_final.pkl.',
+            'summary' => 'Candidate ensemble regression model that combines multiple decision trees to produce a more stable rice yield comparison.',
+            'interpretation' => 'This candidate row can be compared with the other algorithms on the target schema. Its metrics do not validate the separately deployed 12-feature artifact.',
+            'reason' => 'Candidate comparison only; the deployed artifact uses a different schema and requires independent validation.',
         ],
         'Gradient Boosting' => [
             'summary' => 'Sequential ensemble model that builds trees one after another to correct previous prediction errors.',
@@ -74,7 +74,7 @@ class ModelEvaluationService
             })
             ->all();
 
-        $message = 'Evaluation metrics computed live from the current exported training data.';
+        $message = 'Candidate evaluation metrics computed live from the current exported training data; these are not deployed-model accuracy results.';
 
         if (! empty($metrics['warning'])) {
             $message .= ' '.$metrics['warning'];

@@ -94,7 +94,7 @@ class DataProvenanceService
      * @param  array<string, mixed>|null  $systemStatus  the status block already computed for the IT dashboard
      * @return array<int, array<string, mixed>>
      */
-    public function it(?array $systemStatus = null): array
+    public function internalStatus(?array $systemStatus = null): array
     {
         $db = $this->databaseFacts();
 

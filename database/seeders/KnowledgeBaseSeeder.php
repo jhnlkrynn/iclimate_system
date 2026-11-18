@@ -462,13 +462,8 @@ class KnowledgeBaseSeeder extends Seeder
         return [
             [
                 'category' => $category, 'confidence' => 84,
-                'en' => ['q' => 'What system status information can IT personnel check?', 'a' => 'IT Expert accounts can ask the assistant for the number of registered users, database connectivity status, farming-AI API status, a recent system error summary, and whether the system is in maintenance mode.', 'k' => ['system status', 'it personnel', 'what can it check']],
-                'tl' => ['q' => 'Anong impormasyon sa system status ang puwedeng tignan ng IT personnel?', 'a' => 'Ang IT Expert account ay puwedeng magtanong sa assistant tungkol sa bilang ng rehistradong user, database connectivity, farming-AI API status, buod ng kamakailang error, at kung nasa maintenance mode ang system.', 'k' => ['system status', 'it personnel']],
-            ],
-            [
-                'category' => $category, 'confidence' => 84,
-                'en' => ['q' => 'What is the backup and maintenance policy for iClimate?', 'a' => 'iClimate does not currently have an automated backup system configured, so IT personnel should manually back up the database and files on a regular schedule until an automated solution is set up. Maintenance mode status can be checked to see if the system is temporarily down for updates.', 'k' => ['backup policy', 'maintenance policy', 'backup reminder', 'system maintenance']],
-                'tl' => ['q' => 'Ano ang backup at maintenance policy ng iClimate?', 'a' => 'Wala pang automated backup system ang iClimate sa ngayon, kaya dapat manual na i-back up ng IT personnel ang database at files nang regular hanggang magkaroon ng automated solution. Puwede ring tignan ang maintenance mode status ng system.', 'k' => ['backup', 'maintenance', 'sistema']],
+                'en' => ['q' => 'What is the backup and maintenance policy for iClimate?', 'a' => 'iClimate does not currently have an automated backup system configured, so server operators should manually back up the database and files on a regular schedule until an automated solution is set up. Maintenance mode status can be checked to see if the system is temporarily down for updates.', 'k' => ['backup policy', 'maintenance policy', 'backup reminder', 'system maintenance']],
+                'tl' => ['q' => 'Ano ang backup at maintenance policy ng iClimate?', 'a' => 'Wala pang automated backup system ang iClimate sa ngayon, kaya dapat manual na i-back up ng server operators ang database at files nang regular hanggang magkaroon ng automated solution. Puwede ring tignan ang maintenance mode status ng system.', 'k' => ['backup', 'maintenance', 'sistema']],
             ],
         ];
     }

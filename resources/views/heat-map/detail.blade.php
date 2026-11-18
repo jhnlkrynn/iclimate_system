@@ -32,7 +32,7 @@
     @if ($b['partial'])
         <p class="hmx-source">{{ $b['partial'] }}</p>
     @endif
-    <x-updated-at :at="$r['updated_at']" :label="trans('farmer.home.updated', [], $locale)" />
+    <x-updated-at :at="$r['updated_at']" :label="trans('farmer.home.updated', [], $locale)" :data-weather-fetched="($r['follows_fetch'] ?? false) ? 'barangays' : null" />
     @if ($r['delayed'] && $b['level'] !== 'nodata')
         <p class="hmx-source">{{ $t('delayed') }}</p>
     @endif

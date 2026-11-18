@@ -27,10 +27,10 @@ return [
         'note' => 'Note from the office:',
         'next' => 'What you can do:',
         'items' => [
-            'Correct your details and register again.',
+            'Submit corrections using your existing account.',
             'Or visit the Municipal Agriculture Office so they can help you.',
         ],
-        'button' => 'Register again',
+        'button' => 'Submit corrections',
     ],
 
     'deleted' => [

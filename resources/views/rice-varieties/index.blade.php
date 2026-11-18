@@ -16,6 +16,9 @@
             </div>
         </header>
         @include('rice-varieties._source')
+        @if (auth()->user()->isMao())
+            <a class="rv-btn is-primary mb-3" href="{{ route('rice-varieties.index', ['manage' => 1]) }}">{{ app()->getLocale() === 'fil' ? 'Pamahalaan ang mga binhi' : 'Manage varieties' }}</a>
+        @endif
 
         @if ($isFarmer && $myVariety)
             {{-- A. My Planted Variety --}}
@@ -92,7 +95,7 @@
             @include('rice-varieties._toolbar', ['filters' => $filters, 'total' => $varieties?->total() ?? 0])
 
             @if ($varieties && $varieties->isNotEmpty())
-                <ul class="rv-cards">
+                <ul class="rv-cards" data-live-region="varieties" data-live-areas="varieties">
                     @foreach ($varieties as $variety)
                         <li>
                             <button type="button" class="rv-card" data-rv-open="{{ $variety->id }}" data-rv-name="{{ $variety->variety_name }}" aria-label="{{ __('rice_varieties.catalog.open', ['name' => $variety->displayName()]) }}">

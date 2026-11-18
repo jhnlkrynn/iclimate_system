@@ -49,7 +49,6 @@ class HeatMapTerminologyTest extends TestCase
         $pages = [
             User::ROLE_FARMER => ['/farmer/dashboard', '/heat-map', '/planting-advisories', '/notifications'],
             User::ROLE_MAO => ['/mao/dashboard', '/heat-map', '/planting-advisories', '/notifications'],
-            User::ROLE_IT_EXPERT => ['/admin/dashboard', '/notifications'],
         ];
 
         $problems = [];
@@ -74,7 +73,7 @@ class HeatMapTerminologyTest extends TestCase
             ->assertOk()
             // Heat Map page (2026-10): the page title, and the legend's result label.
             ->assertSee('<h1 class="visually-hidden">Heat Map</h1>', false)
-            ->assertSee('Farm risk');
+            ->assertSee('Weather risk to crops');
 
         // The MAO dashboard's preview card is named "Heat Map" too (the Operations page was removed, 2026-10). Since
         // 2026-10-07 the card is shown only once a forecast is saved, so its name is checked in the view itself.

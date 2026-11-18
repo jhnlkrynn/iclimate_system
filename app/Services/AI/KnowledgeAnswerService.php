@@ -5,7 +5,7 @@ namespace App\Services\AI;
 /**
  * Answers farming and weather-vocabulary questions from the approved
  * knowledge in the database (terms and FAQs). It only ever returns text an
- * IT Expert or MAO officer entered. It never produces a weather value or a
+ * server operator or MAO officer entered. It never produces a weather value or a
  * yield figure; those questions stay with the live-data tools.
  */
 class KnowledgeAnswerService

@@ -16,7 +16,7 @@
     {{-- Same page styling as before: farmers get the farmer page header; MAO and IT keep the staff page header. --}}
     @unless ($isFarmer)
     <div class="mfd itd itp">
-        <x-it.page-header kicker="Weather and Rice Yield" title="Predictions" lede="The coming days' weather and this season's expected harvest for Lian." />
+        <x-shared.page-header kicker="Weather and Rice Yield" title="Predictions" lede="The coming days' weather and this season's expected harvest for Lian." />
     @endunless
     <div @class(['fad', 'wpx', 'is-farmer' => $isFarmer]) data-predictions>
         {{-- Manuscript – Naicel (2026-10-08): Weather Analysis, Yield Prediction / Impact Analysis, Yield Forecast tabs. --}}
@@ -24,6 +24,7 @@
         @if ($isFarmer)
             {{-- Farmers (2026-10): the week's answer first, in one sentence, with what to do (WeatherPredictionController::plainForecast). --}}
             @php $answer = $plain['answer']; @endphp
+            <div data-live-region="wpx-answer" data-live-areas="weather,predictions">
             <header class="wpx-answer is-{{ $answer['tone'] }}" data-wpx-answer="{{ $answer['key'] }}">
                 <span class="wpx-answer-icon" aria-hidden="true">@include('dashboards.mao.icon', ['name' => $answer['icon']])</span>
                 <div class="wpx-answer-text">
@@ -32,6 +33,7 @@
                     <p class="wpx-answer-action">{{ $answer['action'] }}</p>
                 </div>
             </header>
+            </div>
         @endif
 
         {{-- Farmer – Naicel (2026-10): "Tama ba ang taya ng panahon kahapon?" — small, can be skipped, one answer per day. --}}
@@ -69,6 +71,8 @@
                 </form>
             @endif
 
+            {{-- data-live-region: a new forecast (scheduled weather refresh) shows while the page is open (live-page.js). --}}
+            <div data-live-region="wpx-forecast" data-live-areas="weather,predictions">
             @if ($forecast['state'] !== 'ok')
                 <x-no-data :label="$noData" :note="__('farmer.home.no_data_note')" />
             @else
@@ -149,6 +153,7 @@
                     <p class="fad-support wpx-note" data-wpx-estimate-note>{{ __('farmer.predictions.estimate_note') }}</p>
                 @endif
             @endif
+            </div>
         </section>
 
         {{-- Expected yield this season: one big t/ha number and Normal / Mas mataas / Mas mababa. --}}
@@ -158,6 +163,7 @@
             <p class="fad-support">{{ $y['season'] }}@if ($staff) · {{ $barangay ? $barangay.', Lian' : __('farmer.predictions.all_lian') }}@endif</p>
             @if ($y['state'] === 'ok')
                 <p class="wpx-big">{{ number_format($y['yield'], 2) }} <small>t/ha</small></p>
+                <p class="fad-support">@include('components.unvalidated-estimate')</p>
                 @if ($y['compare_label'])
                     <p class="wpx-compare is-{{ ['typical' => 'info', 'above' => 'good', 'below' => 'watch'][$y['compare']] }}">{{ $y['compare_label'] }}</p>
                     <p class="fad-support">{{ __('farmer.home.harvest.compare_note') }}@if ($staff && $y['usual'] !== null) ({{ number_format($y['usual'], 2) }} t/ha)@endif</p>
@@ -193,7 +199,7 @@
                         <div><dt>{{ __('farmer.predictions.tech_model') }}</dt><dd>{{ $m['model'] ?? $nr }}</dd></div>
                         <div><dt>{{ __('farmer.predictions.tech_version') }}</dt><dd>{{ $m['version'] ?? $nr }}</dd></div>
                         @if ($key === 'weather')
-                            <div><dt>{{ __('farmer.predictions.tech_confidence') }}</dt><dd>{{ $m['confidence'] === null ? $nr : $m['confidence'].'%' }}</dd></div>
+                            <div><dt>{{ __('farmer.predictions.tech_confidence') }}</dt><dd>Confidence not measured</dd></div>
                             <div><dt>{{ __('farmer.predictions.tech_training') }}</dt><dd>{{ $m['training'] ?? $nr }}</dd></div>
                         @endif
                     </dl>

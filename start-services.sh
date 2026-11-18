@@ -22,7 +22,7 @@ php artisan serve --host=127.0.0.1 --port=8000 >> storage/logs/serve.log 2>&1 &
 WEB_PID=$!
 php artisan schedule:work >> storage/logs/scheduler.log 2>&1 &
 SCHEDULE_PID=$!
-php artisan queue:work --queue=analytics,default --tries=2 --timeout=120 >> storage/logs/queue.log 2>&1 &
+php artisan queue:work --queue=analytics,default,broadcasts --tries=2 --timeout=120 >> storage/logs/queue.log 2>&1 &
 QUEUE_PID=$!
 
 cleanup() {

@@ -49,7 +49,7 @@ class AnalyticsResultPersister
     private function persistAdvisories(AnalyticsRun $run, array $result): array
     {
         $postedBy = $run->requested_by
-            ?? User::query()->whereIn('role', [User::ROLE_MAO, User::ROLE_IT_EXPERT])->value('id');
+            ?? User::query()->whereIn('role', [User::ROLE_MAO])->value('id');
 
         foreach ((array) data_get($result, 'advisories', []) as $advisory) {
             $generationKey = (string) ($advisory['generation_key'] ?? '');

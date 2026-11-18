@@ -18,8 +18,8 @@ class Phase4RuntimePerformanceTest extends TestCase
 
         $this->assertIsString($source);
         $this->assertStringContainsString("if (!root || root.dataset.ready) return;", $source);
-        // Layer data, barangay detail, live refresh and the two boundary loads each have one.
-        $this->assertSame(5, substr_count($source, 'new AbortController()'));
+        // Layer data, barangay detail, the "updating" re-read, the live re-read (2026-11-11) and the two boundary loads.
+        $this->assertSame(6, substr_count($source, 'new AbortController()'));
         // A new layer or period cancels the request still on its way.
         $this->assertStringContainsString("apiController?.abort();\n        apiController = new AbortController();", $source);
         $this->assertStringContainsString('if (sequence !== apiSequence) return;', $source);
@@ -56,6 +56,20 @@ class Phase4RuntimePerformanceTest extends TestCase
         $this->assertStringContainsString('pollAbortController?.abort();', $source);
         $this->assertStringContainsString('if (!pollUrl || pollTimer || document.hidden) return;', $source);
         $this->assertStringContainsString("window.addEventListener('pagehide', stopPolling, { once: true });", $source);
+    }
+
+    public function test_messages_use_echo_with_polling_fallback_and_reconnect_recovery(): void
+    {
+        $source = file_get_contents(resource_path('views/messages/index.blade.php'));
+
+        $this->assertIsString($source);
+        $this->assertStringContainsString('window.Echo.private(`conversation.${realtimeConversationId}`)', $source);
+        $this->assertStringContainsString(".listen('.message.created'", $source);
+        $this->assertStringContainsString("window.addEventListener('iclimate:realtime-state'", $source);
+        $this->assertStringContainsString("if (state === 'connected' && realtimeWasConnected) void poll();", $source);
+        $this->assertStringContainsString('const POLL_INTERVAL_MS = 8000;', $source);
+        $this->assertStringContainsString('if (chatWindow.querySelector(`[data-message-id="${message.id}"]`)) return;', $source);
+        $this->assertStringContainsString('if (liveMessage) pending?.remove();', $source);
     }
 
     public function test_message_poll_only_returns_messages_after_the_cursor(): void

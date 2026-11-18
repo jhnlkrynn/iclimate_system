@@ -8,6 +8,11 @@ use Throwable;
 
 class WeatherFetchLog extends Model
 {
+    use \App\Models\Concerns\KeepsDatabaseClockColumns;
+
+    /** MariaDB refreshes this column itself on UPDATE (Manila clock); see KeepsDatabaseClockColumns. */
+    public const DATABASE_CLOCK_COLUMNS = ['started_at'];
+
     public const SUCCESS = 'success';
 
     public const FAILED = 'failed';

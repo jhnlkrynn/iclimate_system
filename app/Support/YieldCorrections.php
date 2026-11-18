@@ -9,6 +9,9 @@ use Illuminate\Support\Collection;
  * Predicted against actual yield, from the harvests farmers recorded (farmer_planting_schedules.predicted_yield and
  * actual_yield, both in tons per hectare). Read-only: shown on the MAO Dashboard (Survey Results) and on IT's Model
  * Evaluation as data for future retraining. Nothing here retrains a model.
+ *
+ * The demo seeders' harvests are left out (RecordProvenance): their "predicted" yield was generated from the
+ * "actual" one, so they say nothing about the model.
  */
 class YieldCorrections
 {
@@ -23,7 +26,7 @@ class YieldCorrections
             return collect();
         }
 
-        return FarmerPlantingSchedule::query()
+        return RecordProvenance::withoutDemoHarvests(FarmerPlantingSchedule::query())
             ->where('actual_yield', '>', 0)->where('predicted_yield', '>', 0)
             ->orderByDesc('harvested_on')->orderByDesc('id')
             ->get(['id', 'barangay', 'season', 'farm_type', 'harvested_on', 'predicted_yield', 'actual_yield'])

@@ -14,9 +14,9 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
 /**
- * Farmer Survey & Model Feedback – Naicel (2026-10-09): reads the farmers' survey answers for the IT Expert.
+ * Farmer Survey & Model Feedback – Naicel (2026-10-09): reads the farmers' survey answers for the server operator.
  *
- *   Farmer → Survey → IT Expert → Model Evaluation → Maintain or Retrain → Updated Insights
+ *   Farmer → Survey → server operator → Model Evaluation → Maintain or Retrain → Updated Insights
  *
  * Everything is counted from saved rows each time it is asked for, so a new survey answer, prediction, forecast or
  * model result shows on the next read (the Model Feedback page re-reads its Insights every few seconds). No provider is
@@ -110,7 +110,7 @@ class ModelFeedbackService
     }
 
     /**
-     * What the feedback says about the rice-yield model, and what the IT Expert last decided.
+     * What the feedback says about the rice-yield model, and what the server operator last decided.
      *
      * @return array<string, mixed>
      */
@@ -143,9 +143,9 @@ class ModelFeedbackService
             'active' => $active ? ['name' => $active->name, 'version' => $active->version, 'type' => $active->model_type, 'rmse' => $active->rmse, 'mae' => $active->mae, 'r2' => $active->r2] : null,
             'version' => self::modelVersion($active),
             'decision' => $decision,
-            // Answers about the model that arrived after the last decision: the IT Expert has not weighed them yet.
+            // Answers about the model that arrived after the last decision: the server operator has not weighed them yet.
             'new_since_decision' => $newSince,
-            // The status shown for the model: the IT Expert's decision once made, else the recommendation.
+            // The status shown for the model: the server operator's decision once made, else the recommendation.
             'status' => $decision?->decision ?? $recommended,
             'status_label' => $decision ? $decision->label() : ModelFeedbackDecision::LABELS[$recommended],
             'approved' => $decision !== null,
@@ -240,7 +240,7 @@ class ModelFeedbackService
             },
             'title' => 'Model: '.$model['recommended_label'],
             'text' => $model['reason'].' '.match (true) {
-                $decision === null && $model['recommended'] === ModelFeedbackDecision::NEEDS_RETRAINING => 'Waiting for the IT Expert to review before any retraining.',
+                $decision === null && $model['recommended'] === ModelFeedbackDecision::NEEDS_RETRAINING => 'Waiting for the server operator to review before any retraining.',
                 $decision === null => 'No IT decision recorded yet.',
                 default => 'IT decision on '.$decision->created_at->copy()->timezone(BusinessClock::timezone())->format('M j, Y').': '.$decision->label().'.'
                     .($model['new_since_decision'] > 0 ? ' '.$model['new_since_decision'].' new '.($model['new_since_decision'] === 1 ? 'answer' : 'answers').' since then.' : ''),

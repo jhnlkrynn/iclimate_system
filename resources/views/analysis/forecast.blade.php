@@ -7,10 +7,11 @@
         $num = fn ($v, string $unit = '') => $v === null ? '—' : rtrim(rtrim(number_format((float) $v, 2), '0'), '.').$unit;
         // Re-read the page only for a forecast queued in the last 3 minutes (a stuck one never reloads the page forever).
         $pending = $requests->contains(fn ($r) => $r->status === \App\Models\YieldPredictionRequest::QUEUED && $r->created_at?->gt(now()->subMinutes(3)));
+        $predictionLabels = ['requested' => 'Preparing…', 'processing' => 'Processing…', 'completed' => 'Completed', 'failed' => 'Failed'];
     @endphp
     <div class="mfd itd itp">
-        <x-it.page-header kicker="Weather and Rice Yield" title="Yield Forecast" lede="Forecast rice yield per barangay or for the whole municipality, by season and irrigation, and compare past forecasts with actual harvests." />
-        <div class="fad wpx" data-yield-forecast @if ($pending) data-yield-pending @endif>
+        <x-shared.page-header kicker="Weather and Rice Yield" title="Yield Forecast" lede="Forecast rice yield per barangay or for the whole municipality, by season and irrigation, and compare past forecasts with actual harvests." />
+        <div class="fad wpx" data-yield-forecast data-prediction-realtime data-prediction-labels='@json($predictionLabels)' @if ($pending) data-yield-pending @endif>
             @include('partials.manuscript-tabs', ['group' => 'analysis', 'label' => 'Predictions and analysis'])
 
             <form class="fad-card mb-3" method="POST" action="{{ route('analysis.forecast.store') }}" data-loading="true">
@@ -41,7 +42,7 @@
                 <button class="btn btn-primary mt-3" type="submit" data-loading-text="Queuing...">Run forecast</button>
             </form>
 
-            <section class="fad-card mb-3" aria-labelledby="yfHistory" data-forecast-history>
+            <section class="fad-card mb-3" aria-labelledby="yfHistory" data-forecast-history data-live-region="forecast-history" data-live-areas="yield-requests,rice">
                 <h2 class="h5 fw-bold" id="yfHistory">Forecast history</h2>
                 @if ($requests->isEmpty())
                     <p class="mb-0">No forecast has been run yet.</p>
@@ -51,17 +52,30 @@
                             <thead><tr><th>For</th><th>Season</th><th>Area</th><th>Predicted</th><th>Total</th><th>Usual</th><th>Outlook</th><th>Actual (records)</th><th>Run by</th></tr></thead>
                             <tbody>
                                 @foreach ($requests as $r)
-                                    <tr data-request-status="{{ $r->status }}">
-                                        <td>{{ $r->barangay ?? 'All of Lian' }}</td>
+                                    <tr data-request-status="{{ $r->status }}" data-prediction-reference="{{ $r->id }}" data-prediction-status="{{ $r->status }}" data-prediction-status-url="{{ route('analysis.yield.status', $r->id) }}">
+                                        <td>{{ $r->barangay ?? 'All of Lian' }} <span class="badge text-bg-secondary" data-prediction-live-status>{{ $r->status === 'done' ? 'Completed' : ($r->status === 'failed' ? 'Failed' : 'Preparing…') }}</span></td>
                                         <td>{{ $r->season }} {{ $r->target_month?->format('M Y') }} · {{ $r->farm_type }}</td>
                                         <td>{{ $num($r->area_hectares, ' ha') }}</td>
                                         @if ($r->status === 'done')
-                                            <td>{{ $num($r->predicted_yield, ' t/ha') }}</td>
+                                            <td>{{ $num($r->predicted_yield, ' t/ha') }} @include('components.unvalidated-estimate', ['compact' => true])</td>
                                             <td>{{ $num($r->total_tons, ' t') }}</td>
                                             <td>{{ $num($r->historical_average, ' t/ha') }}</td>
                                             <td>@if ($r->impact_level)<span @class(['badge', 'text-bg-success' => $r->impact_level === 'Favorable', 'text-bg-secondary' => $r->impact_level === 'Normal', 'text-bg-danger' => $r->impact_level === 'At Risk'])>{{ $r->impact_level }}</span>@else — @endif</td>
-                                            <td>{{ isset($actuals[$r->id]) ? $num($actuals[$r->id], ' t/ha') : 'Not recorded yet' }}</td>
-                                        @elseif ($r->status === 'queued')
+                                            {{-- Only a validated, separately measured record is an actual yield (App\Support\RecordProvenance). --}}
+                                            @php $actual = $actuals[$r->id] ?? null; @endphp
+                                            <td data-actual-provenance="{{ $actual['provenance'] ?? 'none' }}">
+                                                @if (($actual['provenance'] ?? null) === \App\Support\RecordProvenance::VERIFIED)
+                                                    {{ $num($actual['value'], ' t/ha') }}
+                                                @else
+                                                    No verified actual yield available
+                                                    @if (($actual['provenance'] ?? null) === \App\Support\RecordProvenance::DERIVED)
+                                                        <div class="small text-muted">Derived municipal allocation: {{ $num($actual['value'], ' t/ha') }}. A season total split across barangays, not a barangay measurement.</div>
+                                                    @elseif ($actual)
+                                                        <div class="small text-muted">Unverified MAO record: {{ $num($actual['value'], ' t/ha') }}. Not yet validated.</div>
+                                                    @endif
+                                                @endif
+                                            </td>
+                                        @elseif (in_array($r->status, ['queued', 'processing'], true))
                                             <td colspan="5" class="text-muted">Preparing…</td>
                                         @else
                                             <td colspan="5" class="text-muted small">{{ $r->error }}</td>
@@ -75,7 +89,7 @@
                 @endif
             </section>
 
-            <section class="fad-card" aria-labelledby="yfActual" data-predicted-vs-actual>
+            <section class="fad-card" aria-labelledby="yfActual" data-predicted-vs-actual data-live-region="forecast-actual" data-live-areas="model-feedback,rice,yield-requests">
                 <h2 class="h5 fw-bold" id="yfActual">Predicted vs actual (farmers' harvests)</h2>
                 @if (($corrections['count'] ?? 0) === 0)
                     <p class="mb-0">No farmer has recorded an actual harvest next to a prediction yet. Farmers answer "What was your real harvest?" on My Farm after harvest.</p>
@@ -95,9 +109,4 @@
             </section>
         </div>
     </div>
-    @if ($pending)
-        <script>
-            setTimeout(() => window.location.reload(), 8000);
-        </script>
-    @endif
 </x-app-layout>

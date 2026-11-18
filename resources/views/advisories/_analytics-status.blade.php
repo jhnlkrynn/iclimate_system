@@ -1,6 +1,6 @@
 @if (($analyticsRun ?? null) && in_array($analyticsRun->status, ['pending', 'processing'], true))
-    <div class="alert alert-info border" data-analytics-run="{{ route('analytics-runs.show', $analyticsRun) }}">
-        <strong>Preparing your advisories&hellip;</strong> Your saved advisories are still available below.
+    <div class="alert alert-info border" data-analytics-run="{{ route('analytics-runs.show', $analyticsRun) }}" data-prediction-realtime data-prediction-labels='{"requested":"Advisories requested","processing":"Preparing your advisories…","completed":"Advisories ready","failed":"Advisories failed"}'>
+        <strong data-prediction-status-text>Preparing your advisories&hellip;</strong> <span data-prediction-status-detail>Your saved advisories are still available below.</span>
     </div>
     <script>
         (() => {
@@ -10,7 +10,8 @@
                 try {
                     const response = await fetch(banner.dataset.analyticsRun, { headers: { Accept: 'application/json' }, loader: false });
                     const run = await response.json();
-                    if (run.status === 'completed' || run.status === 'failed') window.location.reload();
+                    window.iClimatePredictionApply?.(banner, run);
+                    banner.dispatchEvent(new CustomEvent('iclimate:prediction-poll', { detail: { element: banner, run } }));
                 } catch (_) {}
             }, 2500);
         })();

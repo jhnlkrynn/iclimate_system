@@ -26,6 +26,7 @@ class AdvisoriesListTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->travelTo(CarbonImmutable::parse('2026-10-06 10:00:00', 'Asia/Manila'));
         Cache::flush();
         Http::fake(['*' => Http::response(['error' => 'down'], 500)]);
     }
@@ -82,7 +83,7 @@ class AdvisoriesListTest extends TestCase
 
         $this->assertStringContainsString('<li class="adv-item is-high" data-adv-item="'.$advisory->id.'">', $html);   // the colour
         $text = $this->item($html, $advisory);
-        $this->assertStringStartsWith('High Prenza Valid: Oct 5 – Oct 12, 2026', $text);
+        $this->assertStringStartsWith('High Risk Prenza Valid: Oct 5 – Oct 12, 2026', $text);
         // One sentence each, not the whole message.
         $this->assertStringContainsString('Fields are ready for planting this week.', $text);
         $this->assertStringNotContainsString('Rain is expected to stay light.', $text);
@@ -173,9 +174,23 @@ class AdvisoriesListTest extends TestCase
         }
 
         $this->assertStringContainsString('<h1>Mga Payo</h1>', $html);
-        $this->assertStringContainsString('Mababa Prenza May bisa: ', $this->item($html, $own));
+        $this->assertStringContainsString('Mababang Panganib Prenza May bisa: ', $this->item($html, $own));
         $this->assertStringContainsString('Gawin: Start transplanting seedlings.', $this->item($html, $own));
         $this->assertStringContainsString('Buong Lian', $this->item($html, $lian));
+    }
+
+    public function test_the_page_listens_for_live_changes_and_a_new_advisory_signals_farmers(): void
+    {
+        $farmer = $this->farmer();
+        $this->actingAs($farmer)->get(route('planting-advisories.index'))->assertOk()
+            ->assertSee('data-adv-live data-dashboard-user-id="'.$farmer->id.'"', false)
+            ->assertSee('data-dashboard-role="farmer"', false);
+        $this->actingAs($this->mao())->get(route('planting-advisories.index'))->assertSee('data-dashboard-role="mao"', false);
+
+        \Illuminate\Support\Facades\Event::fake([\App\Events\DashboardChanged::class]);
+        $this->advisory();
+        \Illuminate\Support\Facades\Event::assertDispatched(\App\Events\DashboardChanged::class,
+            fn ($event): bool => in_array('advisories', $event->areas, true) && in_array(User::ROLE_FARMER, $event->roles, true));
     }
 
     public function test_staff_see_what_waits_for_approval_and_can_pick_a_barangay(): void
@@ -254,8 +269,8 @@ class AdvisoriesListTest extends TestCase
         // Every barangay's recommendation is in the page, so choosing another barangay needs no request.
         $this->assertSame(1, preg_match('#<script type="application/json" data-adv-suggestions>(.*?)</script>#s', $html, $m));
         $suggestions = json_decode($m[1], true);
-        $this->assertCount(20, $suggestions);                                                              // 19 barangays + all of Lian
-        $this->assertSame('low', $suggestions['Cumba']['severity']);
+        $this->assertCount(count(\App\Support\LianBarangays::all()) + 1, $suggestions);                 // supported barangays + all of Lian
+        $this->assertSame('low', $suggestions['Balibago']['severity']);
         $this->assertSame('high', $suggestions['']['severity']);                                           // all of Lian: the highest rating
         Http::assertNothingSent();
 

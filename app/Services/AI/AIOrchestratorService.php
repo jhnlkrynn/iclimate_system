@@ -808,7 +808,15 @@ class AIOrchestratorService
      */
     private function climateRisk(User $user, string $question, string $language, array $memory, array $entities): array
     {
-        $barangay = (string) ($entities['barangay'] ?? ($user->role === User::ROLE_FARMER ? $user->registeredBarangay() : ($user->barangay ?? $user->farmerProfile?->barangay)) ?? '');
+        // A place named in the question always wins over the asker's own barangay, including Lian barangays outside
+        // the supported list (the classifier only knows supported names): "Is Cumba high risk?" / "Ano ang climate
+        // risk sa Cumba?" must be answered for Cumba, in either language, never for the asker's profile barangay.
+        $explicitPlace = (is_string($entities['barangay'] ?? null) ? $entities['barangay'] : null)
+            ?? LianBarangays::namedIn($question);
+
+        $barangay = $explicitPlace
+            ?? ($user->role === User::ROLE_FARMER ? $user->registeredBarangay() : ($user->barangay ?? $user->farmerProfile?->barangay));
+        $barangay = (string) ($barangay ?? '');
 
         if ($barangay !== '') {
             return $this->climateRiskForBarangay($user, $question, $language, $memory, $barangay);
@@ -828,6 +836,7 @@ class AIOrchestratorService
         $tool = [
             'tool' => 'climate_risk',
             'success' => $current->isNotEmpty(),
+            'status' => $current->isNotEmpty() ? 'current' : 'no_data',
             'source' => 'iClimate Heat Map Risk Records',
             'data' => $current->map(fn (HeatmapArea $area): array => [
                 'barangay' => $area->barangay,
@@ -844,7 +853,7 @@ class AIOrchestratorService
 
         $answer = $this->groundedOrFallback($user, $question, $language, $tool, $memory, function () use ($tool, $language, $user) {
             if (! $tool['success']) {
-                return $this->translate($language, 'I could not find any current heat-map risk records right now.', 'Wala akong makitang current heat-map risk records ngayon.');
+                return ClimateRiskReplies::noData($language, forBarangay: false);
             }
 
             $first = $tool['data'][0];
@@ -855,10 +864,12 @@ class AIOrchestratorService
                     ? 'Check your field and keep drainage open.'
                     : 'Keep checking the weather and your field.';
 
+                // This branch only runs when the farmer's own barangay is unknown, so the rating shown belongs to the
+                // named barangay, never to "your area".
                 return $this->translate(
                     $language,
-                    'Your area has '.$first['risk_level'].' weather risk for '.$first['risk_type'].'. This may affect your rice field. '.$action,
-                    'May '.$first['risk_level'].' na panganib sa panahon sa lugar mo para sa '.$first['risk_type'].'. Maaari itong makaapekto sa palayan mo. '.($action === 'Check your field and keep drainage open.' ? 'Tingnan ang bukid at panatilihing bukas ang drainage.' : 'Patuloy na bantayan ang panahon at ang bukid.')
+                    $first['barangay'].' has '.$first['risk_level'].' weather risk for '.$first['risk_type'].'. This may affect rice fields there. '.$action,
+                    'May '.$first['risk_level'].' na panganib sa panahon sa '.$first['barangay'].' para sa '.$first['risk_type'].'. Maaari itong makaapekto sa mga palayan doon. '.($action === 'Check your field and keep drainage open.' ? 'Tingnan ang bukid at panatilihing bukas ang drainage.' : 'Patuloy na bantayan ang panahon at ang bukid.')
                 );
             }
 
@@ -897,18 +908,11 @@ class AIOrchestratorService
                 'message' => $exception->getMessage(),
             ]);
         }
-        $liveReportsNoData = $liveDetail !== null && ($liveDetail['risk_level'] ?? null) === 'No Data';
-
-        $status = match (true) {
-            $row === null => 'no_data',
-            $liveReportsNoData => 'no_data',
-            $row->isCurrentlyComputed() => 'current',
-            default => 'stale',
-        };
+        $status = ClimateRiskReplies::status($row, $liveDetail);
 
         $tool = [
             'tool' => 'climate_risk',
-            'success' => $status !== 'no_data',
+            'success' => $status !== ClimateRiskReplies::NO_DATA,
             'status' => $status,
             'source' => 'iClimate Heat Map Risk Records',
             'data' => $row ? [[
@@ -925,15 +929,11 @@ class AIOrchestratorService
         ];
 
         $answer = $this->groundedOrFallback($user, $question, $language, $tool, $memory, function () use ($tool, $language, $status, $row) {
-            if ($status === 'no_data' || $row === null) {
-                return $this->translate(
-                    $language,
-                    'No calculated farm-risk rating is available for this barangay yet. Check the latest weather and advisories.',
-                    'Wala pang available na farm-risk rating para sa barangay na ito. Bantayan muna ang latest weather at advisories.'
-                );
+            if ($status === ClimateRiskReplies::NO_DATA || $row === null) {
+                return ClimateRiskReplies::noData($language);
             }
 
-            if ($status === 'stale') {
+            if ($status === ClimateRiskReplies::STALE) {
                 $date = $row->risk_computed_at?->toFormattedDateString() ?? 'an earlier date';
 
                 return $this->translate(
@@ -1060,6 +1060,12 @@ class AIOrchestratorService
         $direct = (string) $fallback();
 
         if ($direct !== '' && ! config('ai.groq.phrase_system_answers', false)) {
+            return $direct;
+        }
+
+        // A climate-risk answer that is not CURRENT carries required wording (no rating / earlier rating). Re-worded
+        // AI text must never replace it, or it could drop the qualifier or name a level the data does not have.
+        if ($direct !== '' && ($tool['tool'] ?? null) === 'climate_risk' && ($tool['status'] ?? null) !== ClimateRiskReplies::CURRENT) {
             return $direct;
         }
 

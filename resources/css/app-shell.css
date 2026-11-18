@@ -62,6 +62,20 @@ html[data-theme="dark"] body .topbar.ic-topbar {
 .ic-topbar-left,
 .ic-topbar-right { display: flex; align-items: center; gap: 6px; min-width: 0; }
 
+.ic-live-clock {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    min-width: 134px;
+    padding: 0 8px;
+    color: rgba(255, 255, 255, .92);
+    line-height: 1.15;
+    font-variant-numeric: tabular-nums;
+}
+.ic-live-clock-label { font-size: .68rem; letter-spacing: .04em; text-transform: uppercase; opacity: .72; }
+.ic-live-clock time { font-size: .95rem; font-weight: 700; white-space: nowrap; }
+
 .ic-topbar-brand { display: flex; align-items: center; padding: 0 6px; border-radius: 10px; }
 .ic-topbar-brand img { height: 44px; width: auto; display: block; }
 .ic-topbar-brand:focus-visible { outline: 2px solid var(--sage-300); outline-offset: 2px; }

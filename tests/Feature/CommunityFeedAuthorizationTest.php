@@ -53,10 +53,10 @@ class CommunityFeedAuthorizationTest extends TestCase
         $response->assertRedirect();
     }
 
-    public function test_an_it_expert_can_update_another_users_post(): void
+    public function test_mao_cannot_update_another_users_post(): void
     {
         $author = User::factory()->maoPersonnel()->create();
-        $itExpert = User::factory()->itExpert()->create();
+        $itExpert = User::factory()->maoPersonnel()->create();
         $post = $this->makePost($author);
 
         $response = $this->actingAs($itExpert)->patch(route('community-feed.update', $post), [
@@ -66,6 +66,6 @@ class CommunityFeedAuthorizationTest extends TestCase
             'visibility' => 'All Farmers',
         ]);
 
-        $response->assertRedirect();
+        $response->assertForbidden();
     }
 }

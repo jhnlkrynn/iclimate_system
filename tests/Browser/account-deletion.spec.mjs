@@ -15,9 +15,9 @@ async function logIn(page, email, landing) {
     if (landing) await page.waitForURL(landing, { waitUntil: 'commit' });
 }
 
-test('D1 IT deletes an account with a reason, then the person sees why when signing in', async ({ page }, testInfo) => {
+test('D1 MAO Head deletes an account with a reason, then the person sees why when signing in', async ({ page }, testInfo) => {
     const person = PEOPLE[testInfo.project.name];
-    await logIn(page, 'it@browser.test', '**/admin/dashboard');
+    await logIn(page, 'mao@browser.test', '**/mao/dashboard');
     await page.goto(`/users?search=${encodeURIComponent(person.name)}`);
 
     if (testInfo.project.name.startsWith('mobile-')) {
@@ -28,7 +28,7 @@ test('D1 IT deletes an account with a reason, then the person sees why when sign
     await expect(dialog).toBeVisible();
     await expect(dialog.locator('[data-ud="name"]')).toHaveText(person.name);
     await expect(dialog.locator('[data-ud="email"]')).toHaveText(person.email);
-    await expect(dialog.getByText('Only IT can see this')).toBeVisible();
+    await expect(dialog.getByText('Only the MAO Head can see this')).toBeVisible();
     const submit = dialog.locator('[data-ud-submit]');
     await expect(submit).toBeDisabled();
 
@@ -61,7 +61,9 @@ test('D1 IT deletes an account with a reason, then the person sees why when sign
     await expect(page.locator('.flash-toast-message', { hasText: `${person.name}'s account was deleted.` })).toBeVisible();
 
     // The person signs in with the right password: the panel, not the app.
-    await page.context().clearCookies();
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+    await expect(page.locator('#login-email')).toBeVisible();
     await logIn(page, person.email);
     await page.waitForURL('**/account-deleted', { waitUntil: 'commit' });
     const panel = page.locator('[data-account-deleted]');

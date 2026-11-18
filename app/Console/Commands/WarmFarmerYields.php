@@ -104,6 +104,12 @@ class WarmFarmerYields extends Command
             }
         }
         app(\App\Services\Risk\HeatMapLayerService::class)->forgetCache();   // the map's 10-minute answer shows the new estimates
+        // Open Heat Maps, dashboards and forecast pages re-read once, only when an estimate really changed.
+        $changed = YieldPredictionStore::takeChangedCount();
+        if ($changed > 0) {
+            \App\Support\CacheScope::signal('yield');
+            $this->line("{$changed} saved estimate(s) changed; open pages were told.");
+        }
         $this->line('Barangay yield estimates: '.$barangayYields->whereNotNull('predicted_yield')->count().' of '.$barangayYields->count()
             .' ('.$barangayYields->where('basis', 'farm_average')->count().' from farm averages, '.$barangayYields->where('basis', 'barangay_model')->count().' from their own model run)');
         $unmatched = $barangays->unmatchedFarms();

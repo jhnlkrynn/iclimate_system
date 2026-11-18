@@ -17,6 +17,7 @@ away from this schema.
 """
 
 import hashlib
+import math
 import os
 import threading
 import warnings
@@ -166,6 +167,55 @@ def _feature(features: dict, key: str, default=None, *, required: bool = False):
     return features.get(key, default)
 
 
+# Physically possible values (inclusive), NOT the training ranges: a value outside these is a data error (wrong unit,
+# sign or sentinel) and is refused instead of producing a normal-looking prediction. Farm area must be positive.
+# Rainfall_6M / Seasonal_Rainfall allow a multi-month SUM, which is what the application sends today.
+PLAUSIBLE_RANGES = {
+    "rainfall": (0.0, 3000.0), "previous_rainfall": (0.0, 3000.0),
+    "rainfall_6m": (0.0, 20000.0), "seasonal_rainfall": (0.0, 20000.0),
+    "temp_avg": (0.0, 45.0), "previous_temp": (0.0, 45.0), "temp_3m": (0.0, 45.0), "temp_6m": (0.0, 45.0), "seasonal_temp": (0.0, 45.0),
+    "temp_range": (0.0, 40.0),
+    "previous_humidity": (0.0, 100.0), "humidity": (0.0, 100.0),
+    "previous_wind_speed": (0.0, 150.0), "wind_speed": (0.0, 150.0),
+    "area": (0.0001, 100000.0),
+    # month_num is checked by _month_feature (whole number 1-12, its own message).
+}
+
+
+def _numeric_feature(features: dict, key: str) -> float:
+    """Return a finite, physically possible model input; never pass sentinels or NaN to sklearn."""
+    value = _feature(features, key, required=True)
+    try:
+        number = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"Invalid numeric feature: {key}") from exc
+
+    if not math.isfinite(number) or number == -999.0:
+        raise ValueError(f"Invalid numeric feature: {key}")
+
+    low, high = PLAUSIBLE_RANGES.get(key, (-math.inf, math.inf))
+    if not low <= number <= high:
+        raise ValueError(f"Out-of-range numeric feature: {key} must be between {low:g} and {high:g}")
+
+    return number
+
+
+def _season_feature(features: dict) -> str:
+    value = _feature(features, "season", required=True)
+    season = str(value).strip()
+    if season.lower() not in {"wet", "dry"}:
+        raise ValueError("Invalid season feature")
+    return season.title()
+
+
+def _month_feature(features: dict) -> int:
+    value = _numeric_feature(features, "month_num")
+    month = int(value)
+    if value != month or not 1 <= month <= 12:
+        raise ValueError("Invalid month_num feature")
+    return month
+
+
 def _optional(features: dict, key: str):
     """float(features[key]) or None when missing / not numeric (no invented default)."""
     try:
@@ -176,29 +226,29 @@ def _optional(features: dict, key: str):
 
 def weather_features(features: dict) -> pd.DataFrame:
     return pd.DataFrame([{
-        "Previous_Rainfall": float(_feature(features, "previous_rainfall", required=True)),
-        "Previous_Temperature": float(_feature(features, "previous_temp", required=True)),
-        "Previous_Humidity": float(_feature(features, "previous_humidity", required=True)),
-        "Previous_Wind_Speed": float(_feature(features, "previous_wind_speed", required=True)),
-        "Month_Num": int(_feature(features, "month_num", required=True)),
-        "Season": str(_feature(features, "season", required=True)),
+        "Previous_Rainfall": _numeric_feature(features, "previous_rainfall"),
+        "Previous_Temperature": _numeric_feature(features, "previous_temp"),
+        "Previous_Humidity": _numeric_feature(features, "previous_humidity"),
+        "Previous_Wind_Speed": _numeric_feature(features, "previous_wind_speed"),
+        "Month_Num": _month_feature(features),
+        "Season": _season_feature(features),
     }])
 
 
 def rice_features(features: dict) -> pd.DataFrame:
     return pd.DataFrame([{
-        "RAINFALL": float(_feature(features, "rainfall", required=True)),
-        "TEMP_AVG": float(_feature(features, "temp_avg", required=True)),
-        "TEMP_RANGE": float(_feature(features, "temp_range", required=True)),
-        "Area": float(_feature(features, "area", required=True)),
-        "Previous_Rainfall": float(_feature(features, "previous_rainfall", required=True)),
-        "Previous_Temp": float(_feature(features, "previous_temp", required=True)),
-        "Rainfall_6M": float(_feature(features, "rainfall_6m", required=True)),
-        "Temp_3M": float(_feature(features, "temp_3m", required=True)),
-        "Temp_6M": float(_feature(features, "temp_6m", required=True)),
-        "Seasonal_Rainfall": float(_feature(features, "seasonal_rainfall", required=True)),
-        "Seasonal_Temp": float(_feature(features, "seasonal_temp", required=True)),
-        "Season": str(_feature(features, "season", required=True)),
+        "RAINFALL": _numeric_feature(features, "rainfall"),
+        "TEMP_AVG": _numeric_feature(features, "temp_avg"),
+        "TEMP_RANGE": _numeric_feature(features, "temp_range"),
+        "Area": _numeric_feature(features, "area"),
+        "Previous_Rainfall": _numeric_feature(features, "previous_rainfall"),
+        "Previous_Temp": _numeric_feature(features, "previous_temp"),
+        "Rainfall_6M": _numeric_feature(features, "rainfall_6m"),
+        "Temp_3M": _numeric_feature(features, "temp_3m"),
+        "Temp_6M": _numeric_feature(features, "temp_6m"),
+        "Seasonal_Rainfall": _numeric_feature(features, "seasonal_rainfall"),
+        "Seasonal_Temp": _numeric_feature(features, "seasonal_temp"),
+        "Season": _season_feature(features),
     }])
 
 

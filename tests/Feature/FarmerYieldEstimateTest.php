@@ -37,6 +37,8 @@ class FarmerYieldEstimateTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // The yield card's caching mechanics; YieldModelGate on the same card is tested in YieldModelGateTest.
+        config(['prediction.rice_yield.gate' => 'off']);
         Http::fake(['*' => Http::response([], 500)]);
         $this->mock(TyphoonSafetyService::class, fn ($mock) => $mock->shouldReceive('activeEvent')->andReturn(null));
     }
@@ -99,12 +101,13 @@ class FarmerYieldEstimateTest extends TestCase
         $this->model(4.0);
         $farmer = $this->farmer();
         Queue::fake();
-        $this->saved($farmer, 4.2, CarbonImmutable::now('Asia/Manila')->subHour());
+        $ranAt = CarbonImmutable::now('Asia/Manila')->subHour();
+        $this->saved($farmer, 4.2, $ranAt);
 
         $html = $this->home($farmer);
 
         $this->assertStringContainsString('4.20 t/ha', $this->card($html));
-        $this->assertStringContainsString('Updated: '.CarbonImmutable::now('Asia/Manila')->subHour()->format('g:i A'), $this->card($html));
+        $this->assertStringContainsString('Updated: '.$ranAt->format($ranAt->isToday() ? 'g:i A' : 'M j, g:i A'), $this->card($html));
         $this->assertStringNotContainsString('data-mfd-load="harvest"', $html);
         Queue::assertNotPushed(PrepareFarmerYieldEstimate::class);
         $this->assertSame(0, $this->modelCalls, 'a page never runs the model');

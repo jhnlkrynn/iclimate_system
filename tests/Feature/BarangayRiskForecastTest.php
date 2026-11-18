@@ -25,7 +25,9 @@ class BarangayRiskForecastTest extends TestCase
         parent::setUp();
         Cache::flush();
         // A month without a stored forecast only queues generation; the request itself never trains.
-        Bus::fake();
+        // Dashboard invalidation broadcasts are expected model-change work; keep the fake focused on prohibited
+        // prediction/background jobs that this read-only endpoint must never dispatch.
+        Bus::fake()->except(\Illuminate\Broadcasting\BroadcastEvent::class);
     }
 
     private function forecast(): array
@@ -48,9 +50,9 @@ class BarangayRiskForecastTest extends TestCase
         foreach ($json['months'] as $month) {
             $names = array_column($month['barangays'], 'barangay');
             $this->assertEqualsCanonicalizing(LianBarangays::all(), $names);
-            $this->assertCount(19, array_unique($names));
-            $this->assertSame(19, array_sum($month['summary']['counts']));
-            $this->assertSame(19, $month['summary']['monitored']);
+            $this->assertCount(count(LianBarangays::all()), array_unique($names));
+            $this->assertSame(count(LianBarangays::all()), array_sum($month['summary']['counts']));
+            $this->assertSame(count(LianBarangays::all()), $month['summary']['monitored']);
         }
     }
 
@@ -123,7 +125,7 @@ class BarangayRiskForecastTest extends TestCase
 
         $this->assertSame(['farm_type' => FarmerProfile::FARM_TYPE_IRRIGATED, 'farm_type_from_records' => true, 'yield_record' => null], $byName['Bungahan']['factors']);
         // No farmer records: the documented Rainfed default is used and labelled as assumed, and no yield is invented.
-        $this->assertSame(['farm_type' => FarmerProfile::FARM_TYPE_RAINFED, 'farm_type_from_records' => false, 'yield_record' => null], $byName['Cumba']['factors']);
+        $this->assertSame(['farm_type' => FarmerProfile::FARM_TYPE_RAINFED, 'farm_type_from_records' => false, 'yield_record' => null], $byName['San Diego']['factors']);
         // The prepared test forecasts carry no confidence label, so none is invented.
         $this->assertNull($month['confidence_level']);
         $this->assertStringNotContainsString('exposure', strtolower(json_encode($month['barangays'])));

@@ -46,7 +46,7 @@ class FarmerHomeKpis
     /** How many tiles the row shows. */
     public const MAX_TILES = 5;
 
-    public function __construct(private readonly SeasonYield $seasonYield) {}
+    public function __construct(private readonly SeasonYield $seasonYield, private readonly HistoricalYieldBenchmark $benchmark) {}
 
     /**
      * @param  ?Farm  $farm  the farm being viewed (null: no farms, or before the farms table exists)
@@ -342,9 +342,36 @@ class FarmerHomeKpis
         $usual = is_numeric($harvest['usual'] ?? null) ? (float) $harvest['usual'] : $this->seasonYield->usual((int) $now->month);
 
         $last = null;
+        $latestPlan = null;
         if (SchemaCache::hasColumn('farmer_planting_schedules', 'actual_yield')) {
             $record = $this->plans($user, $onlyFarm)->where('actual_yield', '>', 0)->orderByDesc('planting_date')->orderByDesc('id')->first();
             $last = $record ? round((float) $record->actual_yield, 2) : null;
+            $latestPlan = $record ?: $this->plans($user, $onlyFarm)->whereNotNull('planting_date')->latest('planting_date')->first();
+        }
+
+        // When the imported barangay/season benchmark exists, use it for the three-way comparison. The legacy
+        // municipality/month comparison remains the fallback for old plans without a farm or matching benchmark.
+        $historical = $this->benchmark->forPlan($latestPlan, $onlyFarm);
+        if ($historical?->average_yield_t_per_hectare !== null) {
+            $benchmark = round((float) $historical->average_yield_t_per_hectare, 2);
+            $bars = array_filter([
+                'predicted' => $estimate,
+                'actual' => $last,
+                'historical' => $benchmark,
+            ], fn (?float $value): bool => $value !== null && $value > 0);
+            if (count($bars) >= 2) {
+                $area = $onlyFarm?->knownHectares() ?? ($latestPlan?->farm_area_hectares !== null ? (float) $latestPlan->farm_area_hectares : null);
+                $totals = collect($bars)->map(fn (float $value): ?float => $area !== null ? round($value * $area, 2) : null)->all();
+                $deviations = collect($bars)->map(fn (float $value): ?float => $benchmark > 0 ? round(($value - $benchmark) / $benchmark * 100, 1) : null)->all();
+                $statuses = collect($deviations)->map(fn (?float $value): ?string => $value === null ? null : ($value > 10 ? 'above' : ($value < -10 ? 'below' : 'near')))->all();
+
+                return [
+                    'state' => 'ok', 'keys' => array_keys($bars),
+                    'labels' => array_map(fn (string $key): string => __('farmer.kpis.compare.'.$key), array_keys($bars)),
+                    'values' => array_values($bars), 'totals' => array_values($totals), 'deviations' => array_values($deviations), 'statuses' => array_values($statuses),
+                    'benchmark' => $benchmark, 'financial_status' => null,
+                ];
+            }
         }
 
         $bars = array_filter([

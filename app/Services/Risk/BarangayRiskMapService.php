@@ -15,6 +15,7 @@ use App\Support\LianBarangays;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -815,6 +816,7 @@ class BarangayRiskMapService
     {
         $rows = [];
         $unchangedIds = [];
+        $changedBarangays = [];
         $now = now();
 
         foreach ($writes as $write) {
@@ -838,12 +840,23 @@ class BarangayRiskMapService
                     ['latitude', 'longitude', 'risk_level', 'risk_type', 'risk_score', 'predicted_yield', 'rainfall_status', 'planting_advisory', 'irrigation_recommendation', 'description', 'main_risk_reason', 'suggested_action', 'risk_computed_at', 'updated_at'],
                 ));
                 \App\Support\CacheScope::changed(HeatmapArea::class);
+                $changedBarangays = array_values(array_unique(array_map('strval', array_column($rows, 'barangay'))));
             }
         } catch (Throwable $exception) {
             Log::warning('Barangay risk map: bulk persistence failed; retrying ratings individually.', ['message' => $exception->getMessage()]);
             foreach ($writes as $write) {
-                $this->persistOne($write, $computedAt);
+                if ($this->persistOne($write, $computedAt)) {
+                    $changedBarangays[] = (string) $write['barangay'];
+                }
             }
+        }
+
+        if ($changedBarangays !== []) {
+            \App\Events\RiskChanged::dispatch(
+                array_values(array_unique($changedBarangays)),
+                (string) Str::uuid(),
+                $computedAt->toIso8601String(),
+            );
         }
 
         $this->stampUnchanged($unchangedIds, $computedAt);
@@ -877,14 +890,18 @@ class BarangayRiskMapService
         ];
     }
 
-    private function persistOne(array $write, CarbonInterface $computedAt): void
+    private function persistOne(array $write, CarbonInterface $computedAt): bool
     {
         try {
             ($write['existing'] ?? new HeatmapArea(['barangay' => $write['barangay']]))
                 ->fill($this->riskAttributes($write['barangay'], $write['latitude'], $write['longitude'], $write['weather'], $write['evaluation'], $computedAt))
                 ->save();
+
+            return true;
         } catch (Throwable $exception) {
             Log::warning('Barangay risk map: failed to persist HeatmapArea row.', ['barangay' => $write['barangay'], 'message' => $exception->getMessage()]);
+
+            return false;
         }
     }
 

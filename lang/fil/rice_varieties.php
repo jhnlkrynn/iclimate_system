@@ -109,7 +109,7 @@ return [
         'establishment' => 'Paraan ng pagtatanim',
         'adaptation' => 'Detalye',
         'planted_this' => 'Ito ang itinanim ko',
-        'manual_entry' => 'Idinagdag ng IT Personnel',
+        'manual_entry' => 'Idinagdag ng MAO Staff',
     ],
     'reaction_levels' => ['resistant' => 'Matibay', 'intermediate' => 'Katamtaman', 'susceptible' => 'Mahina', 'not_tested' => 'Walang pagsubok'],
 

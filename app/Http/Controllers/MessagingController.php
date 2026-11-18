@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\MessageCreated;
 use App\Models\Conversation;
 use App\Models\ConversationMessage;
 use App\Models\User;
@@ -319,6 +320,7 @@ class MessagingController extends Controller
             // that the viewer is in the conversation. It is never reachable by a public /storage link.
             $path = $attachment?->store('message-attachments', 'local');
 
+            $messageWasCreated = false;
             $message = $clientMessageId === null
                 ? $conversation->messages()->create([
                     'sender_id' => $request->user()->id,
@@ -340,7 +342,19 @@ class MessagingController extends Controller
                     ],
                 );
 
+            $messageWasCreated = $message->wasRecentlyCreated;
+
             $conversation->update(['last_message_at' => now()]);
+
+            if ($messageWasCreated) {
+                MessageCreated::dispatch($message->load('sender'));
+                // The recipient's conversation list (or another open conversation) is not subscribed to this
+                // conversation: a signal on their own channel refreshes it. Area name only, never the message text.
+                $recipientId = (int) $conversation->participant_one_id === (int) $request->user()->id
+                    ? (int) $conversation->participant_two_id
+                    : (int) $conversation->participant_one_id;
+                \App\Events\DashboardChanged::dispatchFor(['messages'], [$recipientId]);
+            }
 
             return $message;
         });
@@ -431,7 +445,7 @@ class MessagingController extends Controller
             ->with('farmerProfile:id,user_id,barangay')
             ->where('id', '!=', $user->id)
             ->where('status', User::STATUS_ACTIVE)
-            ->whereIn('role', [User::ROLE_FARMER, User::ROLE_MAO, User::ROLE_IT_EXPERT])
+            ->whereIn('role', [User::ROLE_FARMER, User::ROLE_MAO])
             ->when($search, function ($query) use ($search): void {
                 $term = '%'.mb_strtolower($search).'%';
                 $query->where(function ($query) use ($term): void {
@@ -469,7 +483,7 @@ class MessagingController extends Controller
             'id' => (int) $user->id,
             'name' => (string) $user->name,
             'role' => $user->role,
-            'role_label' => $user->role === User::ROLE_IT_EXPERT ? 'IT Support' : $user->roleLabel(),
+            'role_label' => $user->roleLabel(),
             'barangay' => $isFarmer ? $user->registeredBarangay() : null,
             'initial' => mb_strtoupper(mb_substr(trim((string) $user->name), 0, 1) ?: 'U'),
             'online' => $user->isOnline(),
@@ -479,7 +493,7 @@ class MessagingController extends Controller
     private function canMessage(User $sender, User $recipient): bool
     {
         return $sender->id !== $recipient->id
-            && $recipient->status === User::STATUS_ACTIVE
-            && in_array($recipient->role, [User::ROLE_FARMER, User::ROLE_MAO, User::ROLE_IT_EXPERT], true);
+            && $recipient->hasApplicationAccess()
+            && in_array($recipient->role, [User::ROLE_FARMER, User::ROLE_MAO], true);
     }
 }

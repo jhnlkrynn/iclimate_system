@@ -20,7 +20,7 @@ final class HeatMapPanel
         return array_merge(self::COLORS, (array) config('weather_risk.colors', []));
     }
 
-    private const DISPLAY_NAMES = ['Barangay 1 (Pob.)' => 'Barangay 1 / Bonbon (Poblacion)', 'Barangay 5 (Pob.)' => 'Barangay 5 / Tabok City (Poblacion)'];
+    private const DISPLAY_NAMES = [];
 
     public function __construct(
         private readonly BarangayWeekRiskService $risk,
@@ -38,6 +38,7 @@ final class HeatMapPanel
             // heat map in heatmap_areas. A cleared/expired daily-forecast
             // cache must not turn that verified map gray; use the persisted
             // rating only for forecast entries that are actually missing.
+            $fetchTime = $rated['updated_at'];
             $rated = $this->fillFromStoredRiskMap($rated);
             $barangays = [];
             foreach ($rated['barangays'] as $name => $b) {
@@ -48,6 +49,9 @@ final class HeatMapPanel
                 'days' => $rated['days'],
                 'state' => $rated['state'],
                 'updated_at' => $rated['updated_at'],
+                // True when the time shown is the forecast's own fetch time (no older stored rating was filled in):
+                // only then may a later successful fetch move it on an open page (weather.fetched, kind "barangays").
+                'follows_fetch' => $fetchTime !== null && $rated['updated_at'] == $fetchTime,
                 'delayed' => $rated['delayed'] ?? false,
                 'title' => $this->t($range === 'week' ? 'summary_title' : 'summary_title_2weeks', $locale),
                 'counts' => $rated['counts'],

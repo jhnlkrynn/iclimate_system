@@ -17,39 +17,92 @@
 .ffm-card-place { color: var(--muted) !important; font-size: .9375rem; }
 .ffm-card-size { font-size: 1.125rem; font-weight: 700; }
 .ffm-card-size small { display: block; font-size: .8125rem; font-weight: 500; color: var(--muted); }
-.ffm-card-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.ffm-card-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--rule); }
 .ffm-card-actions form { display: inline; margin: 0; }
 .ffm-card-actions .fad-btn { min-height: 40px; }
 .ffm-remove { color: #a23a2c !important; }
 .ffm-empty { display: grid; gap: 8px; justify-items: start; padding: 20px; background: var(--subtle); border: 1px dashed var(--rule); border-radius: 6px; }
 
 /* ------------------------------------------------------------ Add / Edit Farm form */
-/* Full width like the green header, up to ~1200px. One column on a phone; two when the content area has room (the
+/* Full width like the green header, up to 1080px. One column on a phone; two when the content area has room (the
    layout follows the space beside the sidebar, container "fad"): Farm name | Farm type, Barangay | Sitio, the
    association question across both, Farm size | Unit, then Save / Cancel on the right. */
-.fad.ffm { width: 100%; max-width: 1200px; }
-.ffm-form { display: grid; gap: 16px 24px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.fad.ffm, .fad.ffm *, .fad.ffm *::before, .fad.ffm *::after { box-sizing: border-box; }
+.fad.ffm {
+    width: min(100%, 1080px);
+    max-width: 1080px;
+    margin-inline: auto;
+    padding: clamp(16px, 3vw, 32px);
+    padding-bottom: calc(62px + 24px + 24px);
+    background: linear-gradient(180deg, var(--sage-50) 0%, #f7faf8 54%, var(--sage-50) 100%);
+}
+.ffm .fad-hero {
+    padding: clamp(24px, 4vw, 36px);
+    border-radius: 16px;
+    box-shadow: 0 12px 28px rgb(var(--sage-700-rgb) / .14);
+}
+.ffm .fad-hero h1 { font-size: clamp(1.75rem, 3vw, 2.25rem); }
+.ffm .fad-hero p { max-width: 62ch; line-height: 1.65; }
+.ffm-form {
+    display: grid;
+    gap: 22px 28px;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    padding: clamp(22px, 4vw, 36px);
+    border: 1px solid var(--sage-100);
+    border-radius: 16px;
+    box-shadow: 0 16px 38px rgb(var(--sage-700-rgb) / .09);
+}
 .ffm-form > * { min-width: 0; }
 @container fad (min-width: 600px) {
     .ffm-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .ffm-form > .ffm-wide { grid-column: 1 / -1; }
 }
-.ffm-form .fad-input { width: 100%; }
+.ffm-form .fad-label,
+.ffm-form .fad-m-field-label {
+    color: var(--brand);
+    font-size: .8125rem;
+    font-weight: 750;
+    letter-spacing: .02em;
+}
+.ffm-form .fad-input {
+    width: 100%;
+    min-height: 48px;
+    padding: 11px 14px;
+    border: 1px solid var(--sage-200);
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgb(var(--sage-700-rgb) / .04);
+    transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+}
+.ffm-form .fad-input:hover { border-color: var(--sage-500); }
+.ffm-form .fad-input:focus {
+    border-color: var(--brand);
+    outline: 0;
+    box-shadow: 0 0 0 4px rgb(var(--sage-700-rgb) / .14), 0 1px 2px rgb(var(--sage-700-rgb) / .05);
+}
+.ffm-form .fad-m-small { color: #607269; line-height: 1.45; }
 @container fad (min-width: 760px) { .ffm-assoc .ffm-choices { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-.ffm-group { display: grid; gap: 12px; min-width: 0; margin: 0; padding: 0; border: 0; }
-.ffm-group > legend { float: none; width: auto; margin: 0 0 4px; padding: 0; }
+.ffm-group { display: grid; gap: 12px; min-width: 0; margin: 0; padding: 20px; border: 1px solid var(--sage-100); border-radius: 14px; background: #fbfdfb; }
+.ffm-group > legend { float: none; width: auto; margin: 0 0 2px; padding: 0; }
 .ffm-grid { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
 @container fad (min-width: 560px) { .ffm-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .ffm-choices { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
 @container fad (min-width: 560px) { .ffm-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.ffm-choice { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 10px 14px; border: 1px solid var(--field); border-radius: 6px; background: var(--card); cursor: pointer; font-weight: 600; color: var(--ink); }
+.ffm-choice { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 12px 14px; border: 1px solid var(--sage-200); border-radius: 10px; background: #fff; cursor: pointer; font-weight: 650; color: var(--ink); transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease; }
 .ffm-choice input { width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--brand); }
-.ffm-choice:has(input:checked) { border-color: var(--brand); background: var(--sage-50); }
-.ffm-size { display: grid; gap: 8px; padding: 12px 14px; background: var(--subtle); border: 1px solid var(--line); border-radius: 6px; }
+.ffm-choice:hover, .ffm-choice:has(input:focus-visible) { border-color: var(--sage-500); box-shadow: 0 2px 8px rgb(var(--sage-800-rgb) / .06); }
+.ffm-choice:has(input:checked) { border-color: var(--brand); background: var(--sage-50); box-shadow: 0 0 0 2px rgb(var(--sage-700-rgb) / .08); }
+.ffm-size { display: grid; gap: 8px; padding: 14px; background: var(--sage-50); border: 1px solid var(--sage-100); border-radius: 10px; }
 .ffm-size[hidden] { display: none; }
-.ffm-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.ffm-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; padding-top: 8px; border-top: 1px solid var(--sage-100); }
 @container fad (max-width: 459.98px) { .ffm-actions .fad-btn { flex: 1 1 100%; } }
-.ffm-actions .fad-btn { min-height: 44px; }
+.ffm-actions .fad-btn { min-height: 46px; min-width: 116px; border-radius: 10px; }
+
+@container fad (max-width: 599.98px) {
+    .ffm-form { gap: 18px; }
+    .ffm-group { padding: 16px; }
+}
 
 /* ------------------------------------------------------------ farm map page */
 .ffm-map { min-height: 460px; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }

@@ -59,9 +59,13 @@
                 'note' => $harvests ? ($harvests['count'] > 0 ? $t('tiles.harvests.note', ['hectares' => $num($harvests['hectares'], 1)]) : $t('tiles.harvests.none', ['days' => $dueDays])) : null],
             ['key' => 'production', 'label' => $t('tiles.production.label', ['year' => $production['year'] ?? '']), 'icon' => 'report', 'href' => route('rice-productions.index'),
                 'value' => $production ? $num($production['production'], 1) : null, 'unit' => $t('tiles.production.unit'),
-                'note' => $production ? ($production['yield'] !== null
-                    ? $t('tiles.production.note', ['area' => $num($production['area'], 1), 'yield' => $num($production['yield'], 2), 'count' => $production['barangays'], 'total' => $barangays])
-                    : $t('tiles.production.note_no_yield', ['count' => $production['barangays'], 'total' => $barangays])) : null],
+                // Season totals split across barangays are not barangay reports, and an unvalidated record says so.
+                'note' => $production ? (($production['provenance'] ?? null) === \App\Support\RecordProvenance::DERIVED
+                    ? $t('tiles.production.note_derived', ['area' => $num($production['area'], 1), 'yield' => $production['yield'] !== null ? $num($production['yield'], 2) : '—'])
+                    : (($production['yield'] !== null
+                        ? $t('tiles.production.note', ['area' => $num($production['area'], 1), 'yield' => $num($production['yield'], 2), 'count' => $production['barangays'], 'total' => $barangays])
+                        : $t('tiles.production.note_no_yield', ['count' => $production['barangays'], 'total' => $barangays]))
+                        .(($production['provenance'] ?? null) === \App\Support\RecordProvenance::VERIFIED ? '' : ' · '.$t('tiles.production.unverified')))) : null],
             ['key' => 'advisories', 'label' => $t('tiles.advisories.label'), 'icon' => 'advisory', 'href' => route('planting-advisories.index'),
                 'value' => $num($inEffect), 'unit' => null,
                 'note' => $inEffect === null ? null : ($inEffect > 0 ? $t('tiles.advisories.note') : $t('tiles.advisories.none'))],
@@ -120,7 +124,7 @@
         ];
     @endphp
 
-    <div class="mtd mhd" data-mao-dashboard lang="{{ $locale }}">
+    <div class="mtd mhd" data-mao-dashboard data-dashboard-realtime data-dashboard-user-id="{{ auth()->id() }}" data-dashboard-role="mao" lang="{{ $locale }}">
         <header class="mtd-header">
             <div class="mtd-header-main">
                 <span class="mtd-kicker">{{ $t('office') }}</span>
@@ -147,6 +151,9 @@
                 <a class="mhd-tile" href="{{ $tile['href'] }}" data-kpi="{{ $tile['key'] }}">
                     <span class="mhd-tile-label">@include('dashboards.mao.icon', ['name' => $tile['icon']]){{ $tile['label'] }}<i class="ic-go" aria-hidden="true"></i></span>
                     <span class="mhd-tile-value"><span data-kpi-value>{{ $tile['value'] }}</span>@if ($tile['unit'])<small>{{ $tile['unit'] }}</small>@endif</span>
+                    @if ($tile['key'] === 'yield')
+                        @include('components.unvalidated-estimate', ['compact' => true])
+                    @endif
                     @if ($tile['key'] === 'yield' && $y['change_percent'] !== null)
                         <span class="mtd-trend {{ $y['change_percent'] > 0 ? 'is-up' : ($y['change_percent'] < 0 ? 'is-down' : 'is-flat') }}" data-kpi-change>
                             <span aria-hidden="true">{{ $y['change_percent'] > 0 ? '↑' : ($y['change_percent'] < 0 ? '↓' : '→') }}</span>
@@ -387,7 +394,15 @@
             @if (! empty($acc['test']))
                 <p class="mhd-reading" data-accuracy-test>{{ $t('charts.accuracy.test_note', ['mape' => rtrim(rtrim(number_format($acc['test']['mape'], 1), '0'), '.'), 'count' => $acc['test']['count']]) }} {{ $t('charts.accuracy.train_note') }}</p>
             @endif
-            @if (! empty($acc['model']))<p class="mtd-sub">{{ $t('charts.accuracy.model', ['model' => $acc['model']]) }}</p>@endif
+            @if (! empty($acc['model']) && auth()->user()?->role !== \App\Models\User::ROLE_MAO)<p class="mtd-sub">{{ $t('charts.accuracy.model', ['model' => $acc['model']]) }}</p>@endif
+            {{-- What this comparison is and is not: a stored backtest against unvalidated records, with a plain guess beside it. --}}
+            @php $trimPct = fn ($v) => rtrim(rtrim(number_format((float) $v, 1), '0'), '.'); @endphp
+            <p class="mtd-sub" data-accuracy-provenance>
+                {{ $t('charts.accuracy.provenance', ['train' => $acc['train']['count'] ?? 0, 'count' => $acc['overall']['count'] ?? 0]) }}
+                @if (! empty($acc['baseline']) && ! empty($acc['test']))
+                    {{ $t('charts.accuracy.baseline_note', ['count' => $acc['test']['count'], 'baseline' => $trimPct($acc['baseline']['mape']), 'mape' => $trimPct($acc['test']['mape'])]) }}
+                @endif
+            </p>
 
             {{-- The rows behind the chart, for the selected years (filled by the page script; also readable without it). --}}
             <div class="mtd-table-wrap">
@@ -479,6 +494,31 @@
     <script type="application/json" id="mhdChartText">@json($text)</script>
     <script>
         (() => {
+            let dashboardRoot = document.querySelector('[data-mao-dashboard]');
+            if (!dashboardRoot) return;
+
+            // Re-render only the authorized dashboard root after an invalidation; the surrounding app shell stays put.
+            const refreshDashboard = async () => {
+                const response = await fetch(window.location.href, { headers: { Accept: 'text/html', 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' });
+                if (!response.ok) throw new Error('dashboard refresh failed');
+                const documentText = await response.text();
+                const parsed = new DOMParser().parseFromString(documentText, 'text/html');
+                const nextRoot = parsed.querySelector('[data-mao-dashboard]');
+                if (!nextRoot) throw new Error('dashboard fragment missing');
+                dashboardRoot.querySelectorAll('canvas').forEach((canvas) => window.Chart?.getChart(canvas)?.destroy());
+                dashboardRoot.replaceWith(nextRoot);
+                dashboardRoot = nextRoot;
+                dashboardRoot.querySelectorAll('script:not([type="application/json"])').forEach((script) => {
+                    // Execute only the fetched page's inline dashboard initializer; CSP can still refuse inline scripts.
+                    const runner = document.createElement('script');
+                    runner.textContent = script.textContent;
+                    document.body.appendChild(runner);
+                    runner.remove();
+                });
+                window.iClimateInitDashboardRealtime?.({ root: dashboardRoot, refresh: dashboardRoot.__icDashboardRefresh });
+            };
+            dashboardRoot.__icDashboardRefresh = refreshDashboard;
+
             // The language selector: sent as soon as a language is picked (the form also works without scripts).
             const language = document.querySelector('[data-mao-language] select');
             if (language) language.addEventListener('change', () => language.form.submit());

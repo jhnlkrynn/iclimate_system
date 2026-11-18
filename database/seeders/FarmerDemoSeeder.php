@@ -71,14 +71,13 @@ class FarmerDemoSeeder extends Seeder
         $people = $this->mergePeople($rows);
         $this->report['unique_people'] = count($people);
 
-        $password = Hash::make('Password@123');
-        DB::transaction(function () use ($people, $password, $freshActivity): void {
+        DB::transaction(function () use ($people, $freshActivity): void {
             if ($freshActivity) {
                 $this->removeDemoActivity();
             }
 
             foreach ($people as $person) {
-                $this->seedPerson($person, $password);
+                $this->seedPerson($person);
             }
 
             $this->seedAggregateProductionRows();
@@ -100,6 +99,9 @@ class FarmerDemoSeeder extends Seeder
 
             $association = trim($m[6]) === '—' || trim($m[6]) === '' ? null : $this->association(trim($m[6]));
             $barangay = $this->barangay($m[4], $association);
+            if (! in_array($barangay['value'], LianBarangays::all(), true)) {
+                continue;
+            }
             $rows[] = [
                 'number' => (int) $m[1], 'name' => trim($m[2]),
                 'rsbsa' => trim($m[3]) === '—' ? null : (trim($m[3]) ?: null),
@@ -130,7 +132,7 @@ class FarmerDemoSeeder extends Seeder
         return array_values($people);
     }
 
-    private function seedPerson(array $person, string $password): void
+    private function seedPerson(array $person): void
     {
         $firstFarm = $person['farms'][0];
         $profileRsbsa = null;
@@ -160,12 +162,17 @@ class FarmerDemoSeeder extends Seeder
         }
 
         $user = $existing ?: new User(['email' => $email]);
+        $oneTimePassword = null;
         $user->fill([
-            'name' => $person['name'], 'password' => $password, 'role' => User::ROLE_FARMER,
+            'name' => $person['name'], 'role' => User::ROLE_FARMER,
             'contact_number' => '0999'.str_pad((string) ($firstFarm['number'] % 10000000), 7, '0', STR_PAD_LEFT),
             'address' => 'Lian, Batangas', 'barangay' => $firstFarm['barangay'], 'status' => User::STATUS_ACTIVE,
             'email_verified_at' => now(),
         ]);
+        if (! $existing) {
+            $oneTimePassword = Str::password(24);
+            $user->password = Hash::make($oneTimePassword);
+        }
         if (Schema::hasColumn('users', 'must_change_password')) {
             $user->must_change_password = true;
         }
@@ -205,7 +212,7 @@ class FarmerDemoSeeder extends Seeder
 
         $this->seedSchedules($user, $farms);
         $this->report['credentials'][] = [
-            $firstFarm['number'], $person['name'], $email, 'Password@123', $firstFarm['rsbsa'],
+            $firstFarm['number'], $person['name'], $email, $oneTimePassword ?? 'unchanged-existing-account', $firstFarm['rsbsa'],
             $firstFarm['barangay'], $firstFarm['association'], number_format($person['area'], 2, '.', ''),
         ];
     }
@@ -324,7 +331,7 @@ class FarmerDemoSeeder extends Seeder
                 return ['value' => $fallback, 'fixed' => true];
             }
         }
-        $fixes = ['BALIBGO' => 'Balibago', 'SAN' => 'San Diego', 'BRGY.1' => 'Barangay 1 (Pob.)', 'BRGY. 1' => 'Barangay 1 (Pob.)', 'BARANGAY 4 POB' => 'Barangay 4 (Pob.)'];
+        $fixes = ['BALIBGO' => 'Balibago', 'SAN' => 'San Diego'];
         $candidate = $fixes[strtoupper($raw)] ?? $raw;
         $canonical = LianBarangays::canonicalName($candidate);
         if ($canonical === null) {
@@ -342,7 +349,7 @@ class FarmerDemoSeeder extends Seeder
         $key = $this->key($input);
         $aliases = [
             'BALIBAGO FA' => 'Balibago Farmers Association', 'CUACO IA' => "Cuaco Irrigator's Association",
-            'BUNGAHAN BALDEO IA' => 'Bungahan Baldeo Irrigators Association Inc', 'MOLINO FA' => 'Molino-Resagwa Farmers Irrigators Association Inc',
+            'BUNGAHAN BALDEO IA' => 'Bungahan Baldeo Irrigators Association Inc', 'MOLINO FA' => 'Molino-Resgawa Farmers Irrigators Association Inc',
             'LUMANG TUBIGAN FA' => 'Lumang Tubigan Farmers Association', 'SALUYSOY FA' => 'Saluysoy Farmers Association',
             'LUYAHAN FA' => 'Luyahan Farmers Association', 'MALARUHATAN FA' => 'Malaruhatan Farmers Association',
             'MATABUNGKAY FA' => 'Matabungkay Farmers Association', 'PRENZA BAGBAG BUNGAHAN FA' => 'Prenza Bagbag Bungahan Farmers Association',
@@ -423,7 +430,7 @@ class FarmerDemoSeeder extends Seeder
         $lines[] = ''; $lines[] = '## Duplicate merges'; foreach ($this->report['duplicate_names'] as $name => $count) $lines[] = "- {$name} ×{$count}; farm rows retained separately.";
         $lines[] = ''; $lines[] = '## Removal marker'; $lines[] = 'All generated schedules use `prediction_source=demo_seed`, generated farms use the `Farm {n}` name pattern, and aggregate production rows use `[demo_seed]` remarks.';
         $lines[] = ''; $lines[] = '## Recommended live-demo accounts';
-        foreach (array_slice($this->report['credentials'], 0, 5) as $row) $lines[] = "- {$row[1]} — {$row[2]} / Password@123 ({$row[5]})";
+        foreach (array_slice($this->report['credentials'], 0, 5) as $row) $lines[] = "- {$row[1]} — {$row[2]} / {$row[3]} ({$row[5]})";
         Storage::disk('local')->put('demo/seed-report.md', implode("\n", $lines)."\n");
     }
 }

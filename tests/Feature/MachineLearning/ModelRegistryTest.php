@@ -179,7 +179,7 @@ class ModelRegistryTest extends TestCase
 
     public function test_activation_swaps_active_model_and_writes_audit_log(): void
     {
-        $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
+        $it = User::factory()->create(['role' => User::ROLE_MAO, 'is_mao_head' => true]);
         $old = $this->activeOne('1.0.0');
         $new = $this->make('1.1.0');
         $registry = app(ModelRegistryService::class);
@@ -415,27 +415,5 @@ class ModelRegistryTest extends TestCase
         $this->assertNull(app(ModelRegistryService::class)->resolveActive());
     }
 
-    public function test_only_it_expert_can_view_or_change_the_registry(): void
-    {
-        $model = $this->make('1.1.0');
-        $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
 
-        foreach ([User::ROLE_FARMER, User::ROLE_MAO] as $role) {
-            $user = User::factory()->create(['role' => $role]);
-            $this->actingAs($user)->get(route('model-registry.index'))->assertForbidden();
-            $this->actingAs($user)->post(route('model-registry.validate', $model))->assertForbidden();
-            $this->actingAs($user)->post(route('model-registry.activate', $model))->assertForbidden();
-        }
-
-        $this->assertSame('candidate', $model->refresh()->status);
-
-        $response = $this->actingAs($it)->get(route('model-registry.index'))->assertOk();
-        $response->assertSee('ML Model Registry')->assertSee('rf_v1.1.0.pkl')->assertSee('0.3944');
-        $response->assertDontSee($this->dir);
-
-        $this->actingAs($it)->post(route('model-registry.validate', $model))->assertRedirect();
-        $this->assertSame('validated', $model->refresh()->status);
-        $this->actingAs($it)->post(route('model-registry.activate', $model))->assertRedirect();
-        $this->assertTrue($model->refresh()->is_active);
-    }
 }

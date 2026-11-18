@@ -29,7 +29,7 @@
                         </div>
                         <p class="adv-rec">{{ $response->note ?: 'No note was added.' }}</p>
                         <div class="adv-foot">
-                            <span class="adv-source">Checked in {{ $response->responded_at?->diffForHumans() }}</span>
+                            <span class="adv-source">Checked in <x-live-time :at="$response->responded_at" /></span>
                         </div>
                     </li>
                 @endforeach

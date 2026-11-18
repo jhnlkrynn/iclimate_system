@@ -4,7 +4,7 @@
         $tabLabels = [
             \App\Models\User::ROLE_FARMER => 'Farmers',
             \App\Models\User::ROLE_MAO => 'MAO Staff',
-            \App\Models\User::ROLE_IT_EXPERT => 'IT Expert',
+
         ];
         $rolesPresent = $conversations
             ->map(fn ($conversation) => $conversation->otherParticipant($currentUser)?->role)
@@ -213,12 +213,12 @@
          @endif
     >
         @if($isStaffPage)
-        <x-it.page-header kicker="Private Conversations" title="Messages" lede="Send private messages to MAO staff and farmers, and review your conversations.">
+        <x-shared.page-header kicker="Private Conversations" title="Messages" lede="Send private messages to MAO staff and farmers, and review your conversations.">
             <span class="mfd-pill is-good">@include('dashboards.mao.icon', ['name' => 'check'])<span>Private Channel</span></span>
             <div class="itd-header-actions">
                 <a href="{{ route('community-feed.index') }}" class="mfd-btn is-quiet">@include('dashboards.mao.icon', ['name' => 'farmers'])Announcements</a>
             </div>
-        </x-it.page-header>
+        </x-shared.page-header>
         @endif
 
         @if(session('success'))
@@ -323,6 +323,7 @@
                             </div>
                         </div>
                     </div>
+                    <div class="small text-muted px-3 pt-2" data-realtime-status role="status" aria-live="polite">Polling updates active</div>
                     <div class="chat-window" id="chatWindow">
                         @foreach($messages as $message)
                             <div class="bubble-row {{ $message->sender_id === $currentUser->id ? 'mine' : '' }}" data-message-id="{{ $message->id }}">
@@ -425,7 +426,8 @@
 
             /* ---------------- Tabs ---------------- */
             const tabs = document.querySelectorAll('.msg-tab');
-            const threadLinks = document.querySelectorAll('.thread-link');
+            // Looked up each time: the conversation list is refreshed in place when a new message arrives.
+            const threadLinks = { forEach: (fn) => document.querySelectorAll('.thread-link').forEach(fn), get length() { return document.querySelectorAll('.thread-link').length; } };
             let activeTabRole = 'all';
 
             const isConversationPayload = (data) => Boolean(
@@ -486,13 +488,49 @@
                 });
             });
 
-            threadLinks.forEach((link) => {
-                link.addEventListener('click', (event) => {
-                    event.preventDefault();
-                    if (link.classList.contains('active')) return;
-                    void navigateToConversation(link.href, link);
-                });
+            // Delegated, so conversations added by a live refresh of the list open the same way.
+            document.querySelector('[data-recent-list]')?.addEventListener('click', (event) => {
+                const link = event.target.closest('.thread-link');
+                if (!link) return;
+                event.preventDefault();
+                if (link.classList.contains('active')) return;
+                void navigateToConversation(link.href, link);
             });
+
+            /* ---------------- Live conversation list ----------------
+             * A new message in a conversation that is not open arrives as a dashboard.changed signal (area "messages")
+             * on the viewer's own channel. The list is re-read from the server; the open conversation is untouched.
+             * Without a live connection the list is re-read every 30 seconds while the page is visible. */
+            const recentList = document.querySelector('[data-recent-list]');
+            let inboxRefreshing = false;
+            const refreshInbox = async () => {
+                if (!recentList || inboxRefreshing) return;
+                inboxRefreshing = true;
+                try {
+                    const response = await fetch('{{ route('messages.index') }}', { headers: { Accept: 'text/html' }, credentials: 'same-origin', loader: false });
+                    if (!response.ok || response.redirected) return;
+                    const next = new DOMParser().parseFromString(await response.text(), 'text/html').querySelector('[data-recent-list]');
+                    if (!next || next.innerHTML === recentList.innerHTML) return;
+                    const activeHref = recentList.querySelector('.thread-link.active')?.href;
+                    recentList.innerHTML = next.innerHTML;
+                    recentList.querySelectorAll('.thread-link').forEach((link) => link.classList.toggle('active', Boolean(activeHref) && link.href === activeHref));
+                    applyThreadFilters();
+                } catch {
+                    // Keep the list shown; the next signal or check tries again.
+                } finally {
+                    inboxRefreshing = false;
+                }
+            };
+            const viewerId = Number(document.body.dataset.userId || 0);
+            if (window.Echo && viewerId) {
+                window.Echo.private(`user.${viewerId}`).listenToAll((event, payload) => {
+                    if (String(event || '').replace(/^\./, '') === 'dashboard.changed' && (payload?.areas || []).includes('messages')) void refreshInbox();
+                });
+            }
+            window.addEventListener('iclimate:realtime-state', (event) => { if (event.detail?.state === 'connected') void refreshInbox(); });
+            window.setInterval(() => {
+                if (document.visibilityState === 'visible' && window.iClimateRealtime?.state !== 'connected') void refreshInbox();
+            }, 30000);
 
             /* ---------------- Search (existing threads + new recipients) ---------------- */
             const searchInput = document.getElementById('threadSearch');
@@ -766,7 +804,7 @@
                 const wasNearBottom = isNearBottom();
 
                 messages.forEach((message) => {
-                    if (message.id <= lastMessageId && chatWindow.querySelector(`[data-message-id="${message.id}"]`)) return;
+                    if (chatWindow.querySelector(`[data-message-id="${message.id}"]`)) return;
                     chatWindow.insertAdjacentHTML('beforeend', renderMessage(message));
                     lastMessageId = Math.max(lastMessageId, message.id);
                 });
@@ -796,6 +834,47 @@
             let pollGeneration = 0;
             let pollAbortController = null;
             const POLL_INTERVAL_MS = 8000;
+            let realtimeChannel = null;
+            let realtimeConversationId = 0;
+            let realtimeWasConnected = window.iClimateRealtime?.state === 'connected';
+
+            const setRealtimeStatus = (state) => {
+                const status = document.querySelector('[data-realtime-status]');
+                if (!status) return;
+                const labels = {
+                    connected: 'Live updates on',
+                    connecting: 'Connecting to live updates...',
+                    reconnecting: 'Reconnecting — polling remains active',
+                    unavailable: 'Live updates unavailable — polling remains active',
+                    failed: 'Live updates unavailable — polling remains active',
+                    disabled: 'Polling updates active',
+                };
+                status.textContent = labels[state] || 'Polling updates active';
+                status.dataset.state = state;
+            };
+
+            const leaveRealtimeChannel = () => {
+                if (realtimeChannel && window.Echo) {
+                    window.Echo.leave(`conversation.${realtimeConversationId}`);
+                }
+                realtimeChannel = null;
+                realtimeConversationId = 0;
+            };
+
+            const subscribeRealtime = (conversationId) => {
+                leaveRealtimeChannel();
+                if (!window.Echo || !conversationId) {
+                    setRealtimeStatus('disabled');
+                    return;
+                }
+
+                realtimeConversationId = Number(conversationId);
+                realtimeChannel = window.Echo.private(`conversation.${realtimeConversationId}`)
+                    .listen('.message.created', (payload) => {
+                        if (Number(payload?.conversation_id) !== realtimeConversationId || !payload?.message) return;
+                        appendMessages([payload.message]);
+                    });
+            };
 
             const poll = async () => {
                 if (!pollUrl || pollInFlight || document.hidden) return;
@@ -862,6 +941,7 @@
                             <div><h2 class="h5 fw-bold mb-0">${escapeHtml(other.name || 'Conversation')}</h2><div class="small text-muted" id="headerStatusText">${escapeHtml(other.role || 'User')} &middot; ${online ? 'Online' : 'Offline'}</div></div>
                         </div>
                     </div>
+                    <div class="small text-muted px-3 pt-2" data-realtime-status role="status" aria-live="polite">Polling updates active</div>
                     <div class="chat-window" id="chatWindow">${(data.messages || []).map(renderMessage).join('')}</div>
                     <div class="msg-typing" id="typingIndicator">${escapeHtml(other.name || 'They')} is typing...</div>
                     <div class="msg-compose-wrap">
@@ -911,6 +991,7 @@
                 refreshConversationElements();
                 bindUnsendForms(conversationPanel);
                 bindCompose();
+                subscribeRealtime(activeConversationId);
                 scrollToBottom(false);
                 startPolling();
                 removeConversationLoadState();
@@ -964,6 +1045,13 @@
                 void navigateToConversation(window.location.href, activeLink, { historyMode: 'none' });
             });
 
+            window.addEventListener('iclimate:realtime-state', (event) => {
+                const state = event.detail?.state || 'disabled';
+                setRealtimeStatus(state);
+                if (state === 'connected' && realtimeWasConnected) void poll();
+                realtimeWasConnected = state === 'connected';
+            });
+
             document.addEventListener('visibilitychange', () => {
                 if (document.hidden) {
                     stopPolling();
@@ -975,6 +1063,8 @@
 
             window.addEventListener('pagehide', stopPolling, { once: true });
 
+            subscribeRealtime(activeConversationId);
+            setRealtimeStatus(window.iClimateRealtime?.state || 'disabled');
             startPolling();
 
             /* ---------------- Compose: attachment, emoji, enter-to-send, AJAX submit, typing ping ---------------- */
@@ -1074,7 +1164,10 @@
                         const response = await fetch(sendUrl, { method: 'POST', headers: { 'Accept': 'application/json' }, body: formData });
                         const data = await response.json().catch(() => ({}));
                         if (!response.ok || !data.message) throw new Error(data.message || 'Unable to send message');
-                        chatWindow?.querySelector(`[data-message-id="${pendingId}"]`)?.replaceWith(document.createRange().createContextualFragment(renderMessage(data.message)));
+                        const pending = chatWindow?.querySelector(`[data-message-id="${pendingId}"]`);
+                        const liveMessage = chatWindow?.querySelector(`[data-message-id="${data.message.id}"]`);
+                        if (liveMessage) pending?.remove();
+                        else pending?.replaceWith(document.createRange().createContextualFragment(renderMessage(data.message)));
                         lastMessageId = Math.max(lastMessageId, Number(data.message.id || 0));
                         composeInput.value = '';
                         composeForm.dataset.clientMessageId = '';

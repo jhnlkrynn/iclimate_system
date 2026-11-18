@@ -26,10 +26,10 @@ return [
         'note' => 'Paalala mula sa opisina:',
         'next' => 'Ang maaari ninyong gawin:',
         'items' => [
-            'Itama ang inyong mga detalye at magparehistro muli.',
+            'Isumite ang pagwawasto gamit ang inyong kasalukuyang account.',
             'O bumisita sa Municipal Agriculture Office para matulungan kayo.',
         ],
-        'button' => 'Magparehistro muli',
+        'button' => 'Isumite ang pagwawasto',
     ],
 
     'deleted' => [

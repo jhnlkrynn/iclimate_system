@@ -1,4 +1,4 @@
-{{-- IT Personnel: the "⋯" menu of a variety row (Edit, Deactivate / Activate). Arrow keys move, Esc closes
+{{-- MAO Staff: the "⋯" menu of a variety row (Edit, Deactivate / Activate). Arrow keys move, Esc closes
      (resources/js/rice-varieties.js); a click inside it never opens the details pop-up (data-rv-stop). --}}
 <div class="rv-menu" data-rv-menu data-rv-stop>
     <button type="button" class="rv-menu-btn" id="rvMenuBtn-{{ $variety->id }}" aria-haspopup="menu" aria-expanded="false" aria-controls="rvMenu-{{ $variety->id }}"

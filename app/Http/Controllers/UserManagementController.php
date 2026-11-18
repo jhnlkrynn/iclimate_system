@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Services\Accounts\AccountDeletion;
 use App\Support\LianBarangays;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class UserManagementController extends CrudController
@@ -22,9 +23,9 @@ class UserManagementController extends CrudController
 
     protected array $searchable = ['name', 'email', 'role', 'contact_number', 'address', 'barangay', 'status'];
 
-    protected array $filterable = ['role' => [User::ROLE_FARMER => User::ROLE_FARMER, User::ROLE_MAO => User::ROLE_MAO, User::ROLE_IT_EXPERT => 'IT Personnel'], 'status' => [...User::STATUSES, User::STATUS_DELETED]];   // Manuscript – Naicel; Deleted: closed accounts (hidden otherwise)
+    protected array $filterable = ['role' => [User::ROLE_FARMER => 'Farmer', User::ROLE_MAO => 'MAO Staff'], 'status' => [...User::STATUSES, User::STATUS_DELETED]];   // Manuscript – Naicel; Deleted: closed accounts (hidden otherwise)
 
-    protected array $manageableRoles = [User::ROLE_IT_EXPERT];
+    protected array $manageableRoles = [User::ROLE_MAO];
 
     protected array $sortOptions = ['name_asc' => 'Name A–Z', 'name_desc' => 'Name Z–A', 'newest' => 'Newest', 'oldest' => 'Oldest'];
 
@@ -34,7 +35,8 @@ class UserManagementController extends CrudController
             ['name' => 'name', 'label' => 'Name'],
             ['name' => 'email', 'label' => 'Email', 'type' => 'email'],
             ['name' => 'password', 'label' => 'Password', 'type' => 'password'],
-            ['name' => 'role', 'label' => 'Role', 'type' => 'select', 'options' => [User::ROLE_FARMER => User::ROLE_FARMER, User::ROLE_MAO => User::ROLE_MAO, User::ROLE_IT_EXPERT => 'IT Personnel']],
+            ['name' => 'role', 'label' => 'Role', 'type' => 'select', 'options' => [User::ROLE_FARMER => 'Farmer', User::ROLE_MAO => 'MAO Staff']],
+            ['name' => 'is_mao_head', 'label' => 'Municipal Agriculturist (MAO Head)', 'type' => 'checkbox'],
             ['name' => 'contact_number', 'label' => 'Contact Number'],
             ['name' => 'address', 'label' => 'Address', 'type' => 'textarea'],
             ['name' => 'barangay', 'label' => 'Barangay', 'type' => 'select', 'options' => LianBarangays::userManagementOptions()],
@@ -44,15 +46,24 @@ class UserManagementController extends CrudController
 
     protected function authorizeView(Request $request): void
     {
-        if ($request->user()->role !== User::ROLE_IT_EXPERT) {
+        if (! $request->user()->isMaoHead()) {
             abort(403);
         }
+    }
+
+    protected function canManage(Request $request): bool
+    {
+        return $request->user()?->isMaoHead() === true;
     }
 
     protected function rules(Request $request, ?int $id = null): array
     {
         $rules = $this->userRules($id);
         $rules['barangay'] = ['nullable', 'string', 'max:255', Rule::in(LianBarangays::userManagementInputValues())];
+        $rules['is_mao_head'] = ['nullable', 'boolean'];
+        if ($request->input('role') === User::ROLE_MAO) {
+            $rules['status'] = ['required', Rule::in([User::STATUS_ACTIVE, User::STATUS_INACTIVE])];
+        }
 
         return $rules;
     }
@@ -63,12 +74,14 @@ class UserManagementController extends CrudController
             $data['barangay'] = LianBarangays::canonicalName($data['barangay']) ?? $data['barangay'];
         }
 
-        return $this->hashPasswordWhenPresent($data);
+        $data = $this->hashPasswordWhenPresent($data);
+        if (($data['role'] ?? null) !== User::ROLE_MAO) $data['is_mao_head'] = false;
+        return $data;
     }
 
     /**
      * The system must always keep a working administrator: IT cannot delete, deactivate or demote their own
-     * account, and the last active IT Expert account cannot be deleted, deactivated or demoted by anyone.
+     * account, and the last active MAO Head account cannot be deleted, deactivated or demoted by anyone.
      */
     public function update(Request $request, int $id): \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
     {
@@ -77,14 +90,20 @@ class UserManagementController extends CrudController
         if ($target->isDeleted()) {
             return redirect()->route('users.show', $id)->with('error', 'This account is deleted. Restore it before editing.');
         }
-        $losesAccess = $request->input('role', $target->role) !== User::ROLE_IT_EXPERT
+        $losesAccess = $request->input('role', $target->role) !== User::ROLE_MAO || ! $request->boolean('is_mao_head')
             || $request->input('status', $target->status) !== User::STATUS_ACTIVE;
 
         if ($losesAccess && ($message = $this->protectedAccountMessage($request, $target, 'change the role or status of'))) {
             return back()->withInput($request->except('password'))->withErrors(['status' => $message]);
         }
 
-        return parent::update($request, $id);
+        return DB::transaction(function () use ($request, $id): \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse {
+            if ($request->input('role') === User::ROLE_MAO && $request->boolean('is_mao_head')) {
+                User::query()->where('role', User::ROLE_MAO)->whereKeyNot($id)->update(['is_mao_head' => false]);
+                \App\Services\SystemAuditLogger::record('Changed MAO Head assignment', $request, ['new_head_user_id' => $id]);
+            }
+            return parent::update($request, $id);
+        });
     }
 
     /**
@@ -149,7 +168,7 @@ class UserManagementController extends CrudController
     /** IT can open a deleted account's page (Deleted filter); editing it waits for a restore. */
     protected function findRecord(Request $request, int $id)
     {
-        return User::withDeleted()->findOrFail($id);
+        return User::withDeleted()->whereIn('role', User::ROLES)->findOrFail($id);
     }
 
     public function edit(Request $request, int $id): \Illuminate\View\View
@@ -166,18 +185,18 @@ class UserManagementController extends CrudController
     private function protectedAccountMessage(Request $request, User $target, string $verb): ?string
     {
         if ($target->is($request->user())) {
-            return "You cannot {$verb} your own account. Ask another IT Expert to do it.";
+            return "You cannot {$verb} your own account. Ask another MAO Head to do it.";
         }
 
-        return self::isLastActiveItExpert($target)
-            ? "You cannot {$verb} the last active IT Expert account. Create another IT Expert account first."
+        return self::isLastActiveMaoHead($target)
+            ? "You cannot {$verb} the last active MAO Head account. Create another MAO Head account first."
             : null;
     }
 
-    public static function isLastActiveItExpert(User $user): bool
+    public static function isLastActiveMaoHead(User $user): bool
     {
-        return $user->role === User::ROLE_IT_EXPERT && $user->status === User::STATUS_ACTIVE
-            && ! User::query()->where('role', User::ROLE_IT_EXPERT)->where('status', User::STATUS_ACTIVE)->whereKeyNot($user->getKey())->exists();
+        return $user->role === User::ROLE_MAO && $user->isMaoHead() && $user->status === User::STATUS_ACTIVE
+            && ! User::query()->where('role', User::ROLE_MAO)->where('is_mao_head', true)->where('status', User::STATUS_ACTIVE)->whereKeyNot($user->getKey())->exists();
     }
 
     /** Name A–Z by default, ignoring case; id breaks ties so paging never repeats or skips a user. */
@@ -193,7 +212,7 @@ class UserManagementController extends CrudController
 
     protected function baseQuery(Request $request): \Illuminate\Database\Eloquent\Builder
     {
-        $query = parent::baseQuery($request);
+        $query = parent::baseQuery($request)->whereIn('role', User::ROLES);
         // The Deleted filter is the one place deleted accounts are listed (they are hidden everywhere else).
         if ($request->query('status') === User::STATUS_DELETED) {
             $query->withoutGlobalScope(\App\Models\Scopes\HideDeletedUsers::class);

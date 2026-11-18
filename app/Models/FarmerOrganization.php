@@ -15,11 +15,20 @@ class FarmerOrganization extends Model
         'farm_type',
         'area_hectares',
         'farmer_count',
+        'directory_key',
+        'directory_status',
+        'chairman_name',
+        'directory_source',
+        'contact_verified_at',
+        'confirmed_at',
+        'confirmed_by',
     ];
 
     protected $casts = [
         'area_hectares' => 'decimal:2',
         'farmer_count' => 'integer',
+        'contact_verified_at' => 'datetime',
+        'confirmed_at' => 'datetime',
     ];
 
     /** Farmers whose PRIMARY organization this is. */
@@ -38,5 +47,20 @@ class FarmerOrganization extends Model
     public function members(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
         return $this->belongsToMany(FarmerProfile::class, 'farmer_organization_members')->withPivot('date_joined')->withTimestamps();
+    }
+
+    public function chairmanAssignments(): HasMany
+    {
+        return $this->hasMany(AssociationChairmanAssignment::class);
+    }
+
+    public function reportingPeriods(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(AssociationReportingPeriod::class, 'association_yield_reports', 'farmer_organization_id', 'reporting_period_id');
+    }
+
+    public function yieldReports(): HasMany
+    {
+        return $this->hasMany(AssociationYieldReport::class);
     }
 }

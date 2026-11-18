@@ -10,10 +10,10 @@ const RISK_COLORS = { Low: '#2e7d32', Moderate: '#f2b134', High: '#e05a2b', Seve
 const EXPECTED_BARANGAYS = 19;
 // The page asks Laravel for the prepared map again this often (one request; Laravel refreshes the provider data).
 const AUTO_REFRESH_MS = 5 * 60 * 1000;
-const DISPLAY_NAMES = { 'Barangay 1 (Pob.)': 'Barangay 1 / Bonbon (Poblacion)', 'Barangay 5 (Pob.)': 'Barangay 5 / Tabok City (Poblacion)' };
-const OFFICIAL_NAMES = ['Bagong Pook', 'Balibago', 'Barangay 1 (Pob.)', 'Barangay 2 (Pob.)', 'Barangay 3 (Pob.)', 'Barangay 4 (Pob.)', 'Barangay 5 (Pob.)', 'Binubusan', 'Bungahan', 'Cumba', 'Humayingan', 'Kapito', 'Lumaniag', 'Luyahan', 'Malaruhatan', 'Matabungkay', 'Prenza', 'Puting-Kahoy', 'San Diego'];
+const DISPLAY_NAMES = {};
+const OFFICIAL_NAMES = ['Balibago', 'Binubusan', 'Bungahan', 'Kapito', 'Luyahan', 'Malaruhatan', 'Matabungkay', 'Prenza', 'San Diego'];
 const nameKey = (name) => String(name || '').toLowerCase().replace(/[().,/-]/g, ' ').replace(/barangay|brgy|poblacion|\bpob\b/g, ' ').replace(/([a-z])(\d)/g, '$1 $2').replace(/\s+/g, ' ').trim();
-const nameAliases = { '1 bonbon': 'Barangay 1 (Pob.)', 'bonbon': 'Barangay 1 (Pob.)', '5 tabok city': 'Barangay 5 (Pob.)', 'tabok city': 'Barangay 5 (Pob.)', 'puting kahoy': 'Puting-Kahoy', '1 poblacion': 'Barangay 1 (Pob.)', '2 poblacion': 'Barangay 2 (Pob.)', '3 poblacion': 'Barangay 3 (Pob.)', '4 poblacion': 'Barangay 4 (Pob.)', '5 poblacion': 'Barangay 5 (Pob.)' };
+const nameAliases = {};
 export const canonicalName = (name) => {
     const raw = String(name || '').trim();
     const key = nameKey(raw);
@@ -848,6 +848,39 @@ export function initBarangayRiskMap() {
             });
         return riskRequest;
     };
+    const seenRealtimeEvents = new Set();
+    const onRealtimeChange = (event, payload = {}) => {
+        const normalized = String(event || '').replace(/^\./, '');
+        if (!['weather.changed', 'risk.changed'].includes(normalized)) return;
+        const eventId = String(payload.event_id || '');
+        if (eventId && seenRealtimeEvents.has(eventId)) return;
+        if (eventId) {
+            seenRealtimeEvents.add(eventId);
+            if (seenRealtimeEvents.size > 100) seenRealtimeEvents.delete(seenRealtimeEvents.values().next().value);
+        }
+        void updateRisk(false);
+    };
+    const bindRealtime = (channelName) => {
+        if (!window.Echo || !channelName) return;
+        const channel = window.Echo.private(channelName);
+        if (typeof channel.listenToAll === 'function') channel.listenToAll(onRealtimeChange);
+        else {
+            channel.listen('.weather.changed', (payload) => onRealtimeChange('weather.changed', payload));
+            channel.listen('.risk.changed', (payload) => onRealtimeChange('risk.changed', payload));
+        }
+    };
+    const realtimeRole = mapElement.dataset.realtimeRole;
+    bindRealtime(realtimeRole ? `dashboard.${realtimeRole}` : '');
+    const realtimeBarangay = canonicalName(mapElement.dataset.highlightBarangay);
+    // Same as LianBarangays::channelKey(): channel names cannot hold spaces ("San Diego" -> "San_Diego").
+    const channelKey = (name) => String(name).replace(/[^-a-zA-Z0-9_=@,.;]/g, '_');
+    bindRealtime(realtimeBarangay ? `barangay.${channelKey(realtimeBarangay)}` : '');
+    let realtimeWasConnected = window.iClimateRealtime?.state === 'connected';
+    window.addEventListener('iclimate:realtime-state', (event) => {
+        const connected = event.detail?.state === 'connected';
+        if (connected && !realtimeWasConnected) void updateRisk(false);
+        realtimeWasConnected = connected;
+    });
     refresh?.addEventListener('click', () => updateRisk(true));
     // The page's own Refresh Data button (MAO dashboard) refreshes the map, overview and counts together.
     document.addEventListener('iclimate:risk-map-refresh', () => updateRisk(true));

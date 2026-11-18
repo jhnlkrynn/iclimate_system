@@ -9,7 +9,7 @@ use Throwable;
 
 /**
  * Loads the NSIC-registered rice varieties ("Rice" sheet) into rice_varieties. Safe to run again: unchanged rows stay
- * as they are, and varieties IT Personnel added or corrected by hand are never overwritten.
+ * as they are, and varieties MAO Staff added or corrected by hand are never overwritten.
  */
 class ImportRiceVarieties extends Command
 {

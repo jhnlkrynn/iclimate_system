@@ -73,6 +73,6 @@ class MaoPageSmokeTest extends TestCase
         // Removed or moved pages (2026-10) open their replacement; Chatbot Knowledge is hidden and opens the dashboard.
         $this->actingAs($user)->get('/mao/operations')->assertRedirect('/mao/dashboard');
         $this->actingAs($user)->get('/management/advisories')->assertRedirect(route('planting-advisories.index', ['show' => 'all']));
-        $this->actingAs($user)->get('/ai-admin/topics')->assertRedirect(route('dashboard'));
+        $this->actingAs($user)->get('/ai-admin/topics')->assertNotFound();
     }
 }

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Farmer Survey & Model Feedback – Naicel (2026-10-09): the IT Expert's decision for the rice-yield model after reading
+ * Farmer Survey & Model Feedback – Naicel (2026-10-09): the server operator's decision for the rice-yield model after reading
  * the farmers' feedback. The system only recommends; this row is the approval.
  */
 class ModelFeedbackDecision extends Model

@@ -62,7 +62,12 @@
 
     $mobilePayload = [];
     if ($isFarmer) {
-        $mobilePayload = rescue(fn (): array => app(\App\Services\Analytics\FarmerDashboardService::class)->payload($user), [], false);
+        // The Farmer dashboard already prepared this payload; do not rebuild it just to populate the mobile shell.
+        // Other farmer pages keep the existing fallback because they do not pass the dashboard's `f` view data.
+        $mobilePayload = request()->attributes->get('farmer_dashboard_payload');
+        $mobilePayload = is_array($mobilePayload)
+            ? $mobilePayload
+            : rescue(fn (): array => app(\App\Services\Analytics\FarmerDashboardService::class)->payload($user), [], false);
     }
     $mobileCrop = collect(data_get($mobilePayload, 'kpis', []))->firstWhere('key', 'crop');
     $mobileFarmName = data_get($mobilePayload, 'farm.name') ?: ($navFarm?->farm_name ?? null);
@@ -77,8 +82,12 @@
         : null;
     $mobileProgress = $mobileCrop['progress'] ?? null;
     $mobileUnread = (int) ($navUnread ?? 0);
-    $mobileAdvisoryCount = $isFarmer ? rescue(fn (): int => \App\Models\PlantingAdvisory::query()->published()->count(), 0, false) : 0;
-    $mobilePendingCount = ($isMao || $isIt) ? rescue(fn (): int => \App\Models\User::query()->where('status', \App\Models\User::STATUS_PENDING)->count(), 0, false) : 0;
+    $mobileAdvisoryCount = $isFarmer
+        ? (is_array($mobilePayload) && array_key_exists('advisory_count', $mobilePayload)
+            ? (int) $mobilePayload['advisory_count']
+            : rescue(fn (): int => \App\Models\PlantingAdvisory::query()->published()->count(), 0, false))
+        : 0;
+    $mobilePendingCount = $isMao ? (int) ($navPendingCount ?? 0) : 0;
     $mobileBadge = function (string $key) use ($mobileUnread, $mobileAdvisoryCount, $mobilePendingCount): ?int {
         return match ($key) {
             'messages' => (int) ($mobileUnread ?? 0),
@@ -110,7 +119,7 @@
         <button class="mobile-tab mobile-more-trigger" type="button" data-mobile-more-open aria-expanded="false" aria-controls="mobileMoreSheet">
             <span class="mobile-tab-icon" aria-hidden="true">{!! $mobileIcon('system-logs') !!}</span>
             <span class="mobile-tab-label">{{ $isFarmer && ($navLocale ?? 'en') === 'fil' ? 'Higit pa' : 'More' }}</span>
-            @if ($mobileUnread > 0)<span class="mobile-tab-badge">{{ $mobileUnread > 99 ? '99+' : $mobileUnread }}</span>@endif
+            <span class="mobile-tab-badge" data-ic-notif-badge @if ($mobileUnread <= 0) hidden @endif>{{ $mobileUnread > 99 ? '99+' : $mobileUnread }}</span>
         </button>
     </div>
 </nav>

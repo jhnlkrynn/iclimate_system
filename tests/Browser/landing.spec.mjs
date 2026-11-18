@@ -11,7 +11,6 @@ const PNG_1PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0l
 const ACCOUNTS = {
     farmer: { email: 'farmer@browser.test', dashboard: '/farmer/dashboard' },
     mao: { email: 'mao@browser.test', dashboard: '/mao/dashboard' },
-    it: { email: 'it@browser.test', dashboard: '/admin/dashboard' },
 };
 
 const isMobile = (testInfo) => testInfo.project.name.startsWith('mobile');
@@ -255,7 +254,7 @@ test('N15 the header is 72px, aligned with the hero, and turns solid after 8px o
     const solid = await read();
     expect(solid.height).toBe(NAV_HEIGHT);
     expect(solid.background).toBe('rgb(255, 255, 255)');
-    expect(solid.border).toBe(SAGE[200]);
+    expect(solid.border).toBe('rgba(0, 0, 0, 0)');
     expect(solid.title).toBe(INK);
     await expect(nav.locator('.lp-logo-on-light')).toBeVisible();
     await expect(nav.locator('.lp-logo-on-dark')).toBeHidden();
@@ -682,30 +681,32 @@ test.skip('B1 About the MAO scrolls to #contact', async ({ page }) => {
     await expectScrolledTo(page, 'contact');
 });
 
-test('F1 feature, fact and step cards do not look clickable', async ({ page }) => {
+test('F1 feature cards expose their intended preview and navigation controls', async ({ page }) => {
     await openLanding(page);
     const cards = page.locator('#features li, #how article');
     expect(await cards.count()).toBeGreaterThanOrEqual(10);
-    for (const card of await cards.all()) {
-        expect(await card.evaluate((el) => getComputedStyle(el).cursor)).toBe('auto');
-        expect(await card.locator('a, button').count()).toBe(0);
+    for (const card of await page.locator('#features li').all()) {
+        expect(await card.locator('button[role="tab"]').count()).toBe(1);
+        expect(await card.locator('a.feature-open').count()).toBe(1);
+        expect(await card.locator('button[role="tab"]').evaluate((el) => getComputedStyle(el).cursor)).toBe('pointer');
     }
+    await expect(page.locator('#how article a, #how article button')).toHaveCount(0);
 });
 
 // ─── WHO USES ICLIMATE ───────────────────────────────────────────────────
 
-test('R1 all three role cards are visible together', async ({ page }) => {
+test('R1 both role cards are visible together', async ({ page }) => {
     await openLanding(page);
     await expect(page.locator('#roles [role="tablist"]')).toHaveCount(0);
-    await expect(page.locator('#roles article')).toHaveCount(3);
-    await expect(page.locator('#roles article h3')).toHaveText(['Farmer', 'MAO Staff', 'IT Personnel']);
+    await expect(page.locator('#roles article')).toHaveCount(2);
+    await expect(page.locator('#roles article h3')).toHaveText(['Farmer', 'MAO Staff']);
 });
 
 test('R2 role cards retain their descriptions and features without login actions', async ({ page }) => {
     await openLanding(page);
     await expect(page.locator('#roles [data-role-login]')).toHaveCount(0);
-    for (const key of ['farmers', 'mao', 'it']) {
-        const card = page.locator('#roles article').nth(['farmers', 'mao', 'it'].indexOf(key));
+    for (const key of ['farmers', 'mao']) {
+        const card = page.locator('#roles article').nth(['farmers', 'mao'].indexOf(key));
         await expect(card.locator('p')).toBeVisible();
         await expect(card.locator('li')).toHaveCount(4);
     }
@@ -1019,7 +1020,7 @@ test('S11 the landing page uses plain section headings and the new service-site 
     await expect(page.locator('#get-started')).toHaveCount(0);
     await expect(page.locator('#numbers .lp-band-photo, #get-started .lp-band-photo')).toHaveCount(0);
     await expect(page.locator('#features [data-feature]')).toHaveCount(6);
-    await expect(page.locator('#roles article')).toHaveCount(3);
+    await expect(page.locator('#roles article')).toHaveCount(2);
     await expect(page.locator('#questions')).toContainText('Common questions');
     await expect(page.locator('#contact iframe[data-office-map]')).toHaveCount(1);
     await expect(page.locator('#contactForm')).toBeVisible();
@@ -1046,7 +1047,8 @@ test('S11a About iClimate is centered with attributed quote and source grid', as
     await expect(about.locator('.about-sources')).toContainText('MAO production records');
     await expect(about.locator('.about-sources')).toContainText('Harvests and yields by barangay and season');
     await expect(about.locator('ul, li')).toHaveCount(0);
-    await expect(about.locator('[data-about-photo]')).toHaveCount(1);
+    await expect(about.locator('[data-about-photo]')).toHaveCount(0);
+    await expect(about).toHaveAttribute('style', /lian-rice-dawn-960/);
 });
 
 test('S11c Lian field photos use the requested responsive layouts and accessible sources', async ({ page }) => {
@@ -1054,15 +1056,11 @@ test('S11c Lian field photos use the requested responsive layouts and accessible
         await page.setViewportSize({ width, height: 768 });
         await openLanding(page);
         const photos = {
-            about: page.locator('#about [data-about-photo]'),
             features: page.locator('#features [data-features-photo]'),
             roles: page.locator('#roles [data-roles-photo]'),
-            contact: page.locator('#contact [data-contact-photo]'),
         };
-        await expect(photos.about.locator('img')).toHaveAttribute('alt', 'Ripening rice at dawn in Lian');
         await expect(photos.features.locator('img')).toHaveAttribute('alt', 'Green rice fields in Lian');
         await expect(photos.roles.locator('img')).toHaveAttribute('alt', 'Ripening rice stalks');
-        await expect(photos.contact.locator('img')).toHaveAttribute('alt', 'Rice fields stretching to the hills of Lian');
         for (const photo of Object.values(photos)) {
             await expect(photo.locator('source[type="image/webp"]')).toHaveCount(1);
             await expect(photo.locator('source[type="image/jpeg"]')).toHaveCount(1);
@@ -1073,13 +1071,11 @@ test('S11c Lian field photos use the requested responsive layouts and accessible
             listTop: photo.parentElement.querySelector('[data-feature-grid]').getBoundingClientRect().top,
             photoTop: photo.getBoundingClientRect().top,
         }));
-        expect(Math.abs(layout.photoRatio - (width >= 1024 ? 4 / 5 : 16 / 9))).toBeLessThan(0.03);
+        expect(Math.abs(layout.photoRatio - (width >= 1024 ? 1 : 16 / 9))).toBeLessThan(0.03);
         if (width < 1024) expect(layout.listTop).toBeGreaterThan(layout.photoTop);
         if (width >= 1024) expect(layout.listTop).toBeLessThan(layout.photoTop + 20);
-        await expect(photos.about).toHaveCSS('max-width', '960px');
         await expect(photos.roles).toHaveCSS('height', '120px');
-        const contactRatio = await photos.contact.evaluate((photo) => photo.getBoundingClientRect().width / photo.getBoundingClientRect().height);
-        expect(Math.abs(contactRatio - 21 / 9)).toBeLessThan(0.03);
+        await expect(page.locator('#contact')).toHaveAttribute('style', /lian-rice-horizon/);
     }
 });
 
@@ -1254,8 +1250,8 @@ test('G4 keyboard focus reaches the controls and is always visible', async ({ pa
         seen.add(focus.key);
     }
     // The role cards hold no controls (no tabs, no log-in buttons), so focus goes from the sign-in card to the FAQ.
-    for (const expected of ['/login', 'login-email', 'login-password', 'faq-q-0']) {
-        if (isMobile(testInfo) && expected === '/login') continue;
+    for (const expected of ['#login', 'login-email', 'login-password', 'faq-q-0']) {
+        if (isMobile(testInfo) && expected === '#login') continue;
         expect([...seen].some((key) => key === expected || key.endsWith(expected)), `${expected} is keyboard reachable`).toBe(true);
     }
 });
@@ -1475,6 +1471,7 @@ test('X2 the nav at 375 and 1280px: no sideways scroll, nothing cut off or under
                 }
                 for (const id of ['hero', 'about', 'features', 'how', 'roles', 'faq', 'contact']) {
                     const section = document.getElementById(id);
+                    if (!section) continue;
                     if (section.scrollHeight > section.clientHeight + 1) out.push(`#${id} content overflows`);
                     section.scrollIntoView({ behavior: 'instant' });
                     const navBottom = nav.getBoundingClientRect().bottom;

@@ -72,6 +72,66 @@ export function initNotificationsPopup() {
     const isAll = () => state.mode === 'all';
     const find = (id) => state.items.find((candidate) => String(candidate.id) === String(id));
     const typeBadge = (note) => (note.type ? `<span class="fad-badge ${TYPE_TONE[note.type] || 'is-muted'}">${escapeHtml(note.type)}</span>` : '');
+    const userId = Number(bells[0].dataset.notificationUserId || 0);
+    let fallbackTimer = null;
+    let realtimeStateWasConnected = window.iClimateRealtime?.state === 'connected';
+    const seenChanges = new Set();
+
+    const syncAuthoritative = async ({ refreshOpen = false } = {}) => {
+        const url = state.feedUrl || bells[0]?.dataset.feedUrl || '';
+        if (!url) return;
+        try {
+            const response = await fetch(url, { headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin', loader: false });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !data.ok) return;
+            setBadges(data.unread);
+            if (refreshOpen && state.feedUrl && modalEl()?.classList.contains('show')) await load();
+        } catch { /* polling/reconnect recovery is best effort; the next interval retries */ }
+    };
+
+    const handleRealtimeChange = (payload = {}) => {
+        const key = `${payload.action || 'sync'}:${payload.notification_id || 'all'}:${payload.notification?.updated_at || payload.unread || 0}`;
+        if (seenChanges.has(key)) return;
+        seenChanges.add(key);
+        if (seenChanges.size > 100) seenChanges.delete(seenChanges.values().next().value);
+        if (Number.isFinite(Number(payload.unread))) setBadges(Number(payload.unread));
+        if (state.feedUrl && modalEl()?.classList.contains('show')) void load();
+    };
+
+    const subscribeRealtime = () => {
+        if (!window.Echo || !userId) return;
+        window.Echo.private(`user.${userId}`).listen('.notification.changed', handleRealtimeChange);
+    };
+
+    const startFallback = () => {
+        if (fallbackTimer) return;
+        fallbackTimer = window.setInterval(() => {
+            if (!document.hidden && window.iClimateRealtime?.state !== 'connected') void syncAuthoritative({ refreshOpen: true });
+        }, 15000);
+    };
+
+    const stopFallback = () => {
+        if (!fallbackTimer) return;
+        window.clearInterval(fallbackTimer);
+        fallbackTimer = null;
+    };
+
+    window.addEventListener('iclimate:realtime-state', (event) => {
+        const next = event.detail?.state || 'disabled';
+        if (next === 'connected') {
+            stopFallback();
+            if (!realtimeStateWasConnected) void syncAuthoritative({ refreshOpen: true });
+        } else {
+            startFallback();
+        }
+        realtimeStateWasConnected = next === 'connected';
+    });
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) return;
+        void syncAuthoritative({ refreshOpen: true });
+    });
+    subscribeRealtime();
+    if (realtimeStateWasConnected) stopFallback(); else startFallback();
 
     // ---------------------------------------------------------------- list
     const tabsMarkup = () => `<div class="ic-notif-tabs" role="tablist" aria-label="Show notifications">
@@ -105,7 +165,7 @@ export function initNotificationsPopup() {
                 <span class="ic-notif-main">
                     <span class="ic-notif-title">${escapeHtml(note.title)}</span>
                     ${note.message ? `<span class="ic-notif-text">${escapeHtml(note.message)}</span>` : ''}
-                    <span class="ic-notif-meta">${typeBadge(note)}<time datetime="${escapeHtml(note.created_at || '')}">${escapeHtml(isAll() ? `${note.time || ''} · ${note.ago || ''}` : note.ago || '')}</time></span>
+                    <span class="ic-notif-meta">${typeBadge(note)}${isAll() ? `<time datetime="${escapeHtml(note.created_at || '')}">${escapeHtml(note.time || '')}</time> · ` : ''}<time datetime="${escapeHtml(note.created_at || '')}" data-relative-time>${escapeHtml(note.ago || '')}</time></span>
                 </span>
                 ${note.is_read ? '<span class="ic-notif-state">Read</span>' : '<span class="ic-notif-dot" aria-hidden="true"></span>'}
             </button>`;
@@ -222,7 +282,7 @@ export function initNotificationsPopup() {
                 <article class="ic-notif-detail">
                     <div class="ic-notif-detail-tags">${typeBadge(note)}</div>
                     <h3>${escapeHtml(note.title)}</h3>
-                    <p class="fad-m-meta"><time datetime="${escapeHtml(note.created_at || '')}">${escapeHtml(note.time || '')}</time> · ${escapeHtml(note.ago || '')}</p>
+                    <p class="fad-m-meta"><time datetime="${escapeHtml(note.created_at || '')}">${escapeHtml(note.time || '')}</time> · <time datetime="${escapeHtml(note.created_at || '')}" data-relative-time>${escapeHtml(note.ago || '')}</time></p>
                     <div class="fad-m-body ic-notif-message">${escapeHtml(note.message || '').replace(/\n/g, '<br>')}</div>
                     ${note.link_url ? `<p><a class="fad-btn is-primary" href="${escapeHtml(note.link_url)}" data-ic-notif-link>${escapeHtml(note.link_label || 'Open')}</a></p>` : ''}
                 </article>`,

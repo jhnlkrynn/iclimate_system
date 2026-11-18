@@ -158,7 +158,10 @@ def forecast_monthly_weather(payload: MonthlyWeatherRequest):
 
 @app.get("/metrics")
 def metrics(dataset_path: Optional[str] = None):
-    return evaluation_service.evaluate(dataset_path)
+    try:
+        return evaluation_service.evaluate(dataset_path)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @app.post("/analytics/{task_type}")

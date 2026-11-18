@@ -77,6 +77,13 @@ def evaluate(csv_path: str | None = None) -> dict:
     if not os.path.isabs(path):
         path = os.path.join(BASE_DIR, path)
 
+    # /metrics?dataset_path= must not read (or reveal the existence of) files outside the private ML data folder.
+    allowed = os.path.realpath(os.path.dirname(DEFAULT_CSV))
+    resolved = os.path.realpath(path)
+    if os.path.commonpath([allowed, resolved]) != allowed or not resolved.endswith(".csv"):
+        raise ValueError("dataset_path must be a .csv file inside storage/app/private/ml")
+    path = resolved
+
     if not os.path.exists(path):
         return _not_ready(
             0,

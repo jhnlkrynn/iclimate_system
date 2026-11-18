@@ -88,6 +88,10 @@
             <div id="barangayRiskMap" class="risk-map-canvas"
                 data-risk-map-url="{{ url('/api/lian/risk-map') }}"
                 data-boundary-url="{{ url('/api/boundaries/lian-barangays') }}"
+                @auth
+                    data-realtime-user-id="{{ auth()->id() }}"
+                    data-realtime-role="{{ match (auth()->user()->role) { \App\Models\User::ROLE_FARMER => 'farmer', \App\Models\User::ROLE_MAO => 'mao', default => '' } }}"
+                @endauth
                 @if($highlightBarangay) data-highlight-barangay="{{ $highlightBarangay }}" @endif
                 {{-- Barangay AI Insight: farmers start in their saved English/Filipino choice; staff start in English. --}}
                 @auth data-insight-url="{{ url('/heat-map/insight') }}" data-insight-language="{{ auth()->user()->role === \App\Models\User::ROLE_FARMER ? \App\Support\FarmerLanguage::resolve(request()) : 'en' }}" @endauth

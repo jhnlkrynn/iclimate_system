@@ -79,10 +79,10 @@ class Phase4AnalysisTest extends TestCase
 
     public function test_access_follows_the_manuscript_matrix(): void
     {
-        $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
+        $it = User::factory()->create(['role' => 'IT Expert']);
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER]);
 
-        $this->actingAs($it)->get(route('analysis.weather'))->assertStatus(403);
+        $this->actingAs($it)->get(route('analysis.weather'))->assertRedirect(route('login'));
         $this->actingAs($farmer)->get(route('analysis.impact'))->assertStatus(403);
         $this->actingAs($farmer)->post(route('analysis.impact.store'), ['title' => 'x'])->assertStatus(403);
     }

@@ -15,6 +15,11 @@ use Illuminate\Database\Eloquent\Model;
  */
 class MonthlyWeatherPrediction extends Model
 {
+    use \App\Models\Concerns\KeepsDatabaseClockColumns;
+
+    /** MariaDB refreshes this column itself on UPDATE (Manila clock); see KeepsDatabaseClockColumns. */
+    public const DATABASE_CLOCK_COLUMNS = ['generated_at'];
+
     public const STATUS_READY = 'ready';
 
     public const STATUS_UNREADY = 'unready';

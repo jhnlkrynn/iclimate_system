@@ -92,6 +92,22 @@ class LoginRequest extends FormRequest
             $authenticated = false;
         }
 
+        // A shared password (published default or copied hash) proves nothing about who is signing in: no session is
+        // kept. The account goes to recovery: an email link to a working address, or a code from MAO Staff.
+        if ($authenticated && \App\Services\Accounts\PasswordChange::lockdownFor($this)
+            && \App\Services\Accounts\PasswordChange::isShared($user = Auth::user(), (string) $this->input('password'))) {
+            \App\Services\Accounts\PasswordChange::flagIfDefault($user, (string) $this->input('password'));
+            $method = \App\Services\Accounts\AccountRecovery::method($user);
+            if ($method === \App\Services\Accounts\AccountRecovery::METHOD_EMAIL) {
+                \App\Services\Accounts\AccountRecovery::sendEmailLink($user);
+            }
+            Auth::guard('web')->logout();
+            RateLimiter::clear($this->throttleKey());
+            throw new \Illuminate\Http\Exceptions\HttpResponseException(
+                redirect()->route('account.recover')->with(['recovery' => $method, 'recovery_email' => $user->email])
+            );
+        }
+
         if (! $authenticated) {
             // A deleted account with its correct password: it is not signed in, but the person is told why (or, for
             // Deceased, only that the account is no longer active). A wrong password says nothing about the account.
@@ -114,11 +130,12 @@ class LoginRequest extends FormRequest
             ]);
         }
 
-        if (($status = Auth::user()?->status) !== User::STATUS_ACTIVE) {
+        if (! Auth::user()?->hasApplicationAccess()) {
+            $status = in_array(Auth::user()?->role, User::ROLES, true) ? Auth::user()->status : User::STATUS_INACTIVE;
             Auth::logout();
             RateLimiter::hit($this->throttleKey(), self::lockoutSeconds());
             $captcha->recordFailedAttempt($this, 'login');
-            $this->auditFailure(strtolower((string) $status).' account');
+            $this->auditFailure('inactive or unsupported role');
 
             throw ValidationException::withMessages([
                 'email' => User::signInRefusal($status),   // Manuscript – Naicel: Pending / Rejected say why

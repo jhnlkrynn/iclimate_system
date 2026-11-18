@@ -27,6 +27,7 @@ return [
     'harvested' => 'Harvested',
     'predicted' => 'Predicted',
     'actual' => 'Actual',
+    'historical' => 'Historical average',
     'advisory_title' => 'Advisory summary',
     'advisory_note' => 'Advisories for :barangay and for all of Lian in the last 90 days.',
     'advisory_note_lian' => 'Advisories for all of Lian in the last 90 days.',

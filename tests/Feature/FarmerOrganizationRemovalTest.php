@@ -26,47 +26,9 @@ class FarmerOrganizationRemovalTest extends TestCase
         Cache::forget('dashboard:farmer-organizations');
     }
 
-    public function test_organizations_link_is_removed_from_all_user_role_sidebars_and_dashboards(): void
-    {
-        $farmer = User::factory()->create(['role' => User::ROLE_FARMER]);
-        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
-        $itExpert = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
 
-        $this->actingAs($farmer)
-            ->get(route('farmer.dashboard'))
-            ->assertOk()
-            ->assertDontSee('Organizations')
-            ->assertDontSee('farmer-organizations');
 
-        $this->actingAs($mao)
-            ->get(route('mao.dashboard'))
-            ->assertOk()
-            ->assertDontSee('>Organizations<', false)
-            ->assertDontSee('View all organizations', false)
-            ->assertDontSee('farmer-organizations');
 
-        $this->actingAs($itExpert)
-            ->get(route('admin.dashboard'))
-            ->assertOk()
-            ->assertDontSee('>Organizations<', false)
-            ->assertDontSee('farmer-organizations');
-    }
-
-    public function test_visiting_old_farmer_organizations_route_redirects_each_role_to_its_dashboard(): void
-    {
-        $farmer = User::factory()->create(['role' => User::ROLE_FARMER]);
-        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
-        $itExpert = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
-
-        $this->actingAs($farmer)->get('/farmer-organizations')->assertRedirect(route('farmer.dashboard'));
-        $this->actingAs($farmer)->get('/farmer-organizations/1')->assertRedirect(route('farmer.dashboard'));
-
-        $this->actingAs($mao)->get('/farmer-organizations')->assertRedirect(route('mao.dashboard'));
-        $this->actingAs($mao)->get('/farmer-organizations/1')->assertRedirect(route('mao.dashboard'));
-
-        $this->actingAs($itExpert)->get('/farmer-organizations')->assertRedirect(route('admin.dashboard'));
-        $this->actingAs($itExpert)->get('/farmer-organizations/1')->assertRedirect(route('admin.dashboard'));
-    }
 
     public function test_unauthenticated_request_to_farmer_organizations_redirects_to_login(): void
     {

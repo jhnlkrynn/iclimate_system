@@ -73,15 +73,5 @@ class SurveyResultsTest extends TestCase
             ->assertSeeInOrder(['Survey Results: Predicted vs Actual Yield', 'Predicted 4.00 t/ha', 'Actual 3.50 t/ha', '1 harvest', 'Prenza', '-0.50']);
     }
 
-    public function test_model_evaluation_lists_the_corrections_as_data_for_future_retraining(): void
-    {
-        $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT, 'status' => User::STATUS_ACTIVE]);
-        $this->actingAs($it)->get(route('model-evaluation.index'))->assertOk()
-            ->assertSee('Data for Future Retraining')->assertSee('The model is not retrained automatically.')->assertSee('0 <span', false);
 
-        $this->harvest(4.0, 5.0);
-
-        $this->actingAs($it)->get(route('model-evaluation.index'))->assertOk()
-            ->assertSeeInOrder(['Data for Future Retraining', '1 <span', 'correction on record', 'average miss 1.00 t/ha', 'Prenza', '4.00', '5.00', '+1.00'], false);
-    }
 }

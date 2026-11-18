@@ -16,7 +16,7 @@ class Phase2RecordsTest extends TestCase
 
     private function mao(): User
     {
-        return User::factory()->create(['role' => User::ROLE_MAO]);
+        return User::factory()->create(['role' => User::ROLE_MAO, 'is_mao_head' => true]);
     }
 
     private function csv(string $content): UploadedFile
@@ -115,7 +115,7 @@ class Phase2RecordsTest extends TestCase
     {
         $record = ClimateRecord::query()->create(['record_date' => '2024-05-01', 'rainfall' => 100, 'season' => 'Wet', 'source' => 'Manual']);
 
-        foreach ([User::ROLE_FARMER, User::ROLE_IT_EXPERT] as $role) {
+        foreach ([User::ROLE_FARMER] as $role) {
             $user = User::factory()->create(['role' => $role]);
             $this->actingAs($user)->post(route('records.validate', ['type' => 'climate-records', 'id' => $record->id]))->assertStatus(403);
             $this->actingAs($user)->post(route('records.import.store', 'climate-records'), ['file' => $this->csv("record_date,source\n")])->assertStatus(403);

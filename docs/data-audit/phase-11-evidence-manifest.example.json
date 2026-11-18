@@ -1,0 +1,49 @@
+{
+  "package_id": "RESEARCH-PACKAGE-YYYY-MM-DD",
+  "provider_role": "original_model_developer",
+  "provider_name": "",
+  "approval_status": "pending",
+  "approval_reference": "",
+  "source_custodian": "",
+  "received_at": "YYYY-MM-DD",
+  "artifacts": [
+    {
+      "artifact_id": "deployed-training-dataset",
+      "role": "training_dataset",
+      "filename": "original_training_dataset.csv",
+      "format": "csv",
+      "sha256": "",
+      "source_owner": "",
+      "created_at": "",
+      "description": "Original rows used to train rice_yield_model_final.pkl"
+    },
+    {
+      "artifact_id": "training-code",
+      "role": "training_code",
+      "filename": "train_deployed_model.py",
+      "format": "py-or-notebook",
+      "sha256": "",
+      "source_owner": "",
+      "created_at": "",
+      "description": "Training and preprocessing implementation"
+    },
+    {
+      "artifact_id": "feature-dictionary",
+      "role": "feature_dictionary",
+      "filename": "feature_dictionary.csv",
+      "format": "csv-or-json",
+      "sha256": "",
+      "source_owner": "",
+      "created_at": "",
+      "description": "Units, transformations, windows, and spatial scale for all 12 features"
+    }
+  ],
+  "evaluation_protocol": {
+    "independent_unit": "",
+    "strategy": "chronological-or-season_grouped",
+    "minimum_independent_groups": null,
+    "baseline_definitions": [],
+    "approver": "",
+    "approval_date": ""
+  }
+}

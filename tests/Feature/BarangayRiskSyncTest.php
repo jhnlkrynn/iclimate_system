@@ -15,7 +15,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
+use App\Events\RiskChanged;
+use App\Events\WeatherChanged;
 use Tests\Concerns\FakesBarangayWeather;
 use Tests\Concerns\PreparesPredictions;
 use Tests\TestCase;
@@ -51,13 +54,13 @@ class BarangayRiskSyncTest extends TestCase
     public function test_the_weather_command_rates_all_19_barangays_from_that_weather(): void
     {
         $this->artisan('iclimate:refresh-barangay-weather', ['--force' => true])
-            ->expectsOutputToContain('Latest weather for 19 of 19 barangays')
+            ->expectsOutputToContain('Latest weather for '.count(LianBarangays::all()).' of '.count(LianBarangays::all()).' barangays')
             ->expectsOutputToContain('Risk rated from this weather')
             ->assertSuccessful();
 
         $map = Cache::get(BarangayRiskMapService::LATEST_KEY);
         $levels = collect($map['barangays'])->pluck('risk_level');
-        $this->assertCount(19, $levels);
+        $this->assertCount(count(LianBarangays::all()), $levels);
         $this->assertEmpty($levels->diff(['Low', 'Moderate', 'High', 'Severe']), 'Every barangay has a verified rating.');
         $this->assertSame(app(LianBarangayWeatherService::class)->summary()['last_success_at'], $map['weather_generation']);
 
@@ -74,12 +77,16 @@ class BarangayRiskSyncTest extends TestCase
 
     public function test_the_same_weather_is_rated_once_and_new_weather_is_rated_again(): void
     {
+        Event::fake([WeatherChanged::class, RiskChanged::class]);
         $risk = app(BarangayRiskMapService::class);
         app(LianBarangayWeatherService::class)->refreshAll();
         $first = $risk->refreshForCurrentWeather();
         $this->assertNotNull($first);
+        Event::assertDispatchedTimes(WeatherChanged::class, 1);
+        Event::assertDispatchedTimes(RiskChanged::class, 1);
 
         $this->assertNull($risk->refreshForCurrentWeather(), 'Already rated from these readings.');
+        Event::assertDispatchedTimes(RiskChanged::class, 1);
 
         $this->travel(11)->minutes();
         app(LianBarangayWeatherService::class)->refreshAll();
@@ -93,7 +100,7 @@ class BarangayRiskSyncTest extends TestCase
     {
         app(LianBarangayWeatherService::class)->refreshAll();
         app(BarangayRiskMapService::class)->refreshForCurrentWeather();
-        $before = HeatmapArea::query()->where('barangay', 'Cumba')->firstOrFail();
+        $before = HeatmapArea::query()->where('barangay', 'San Diego')->firstOrFail();
 
         $this->travel(11)->minutes();
         app(LianBarangayWeatherService::class)->refreshAll();
@@ -127,7 +134,7 @@ class BarangayRiskSyncTest extends TestCase
     {
         app(LianBarangayWeatherService::class)->refreshAll();
         app(BarangayRiskMapService::class)->refreshForCurrentWeather();
-        $verified = HeatmapArea::query()->where('barangay', 'Bagong Pook')->firstOrFail();
+        $verified = HeatmapArea::query()->where('barangay', 'Balibago')->firstOrFail();
 
         // What a cache built while nothing was rated looks like (e.g. right after a cache clear).
         Cache::forget(BarangayRiskMapService::CACHE_KEY);
@@ -140,7 +147,7 @@ class BarangayRiskSyncTest extends TestCase
             ])->all(),
         ]);
 
-        $entry = $this->apiEntry('Bagong Pook');
+        $entry = $this->apiEntry('Balibago');
         $this->assertSame($verified->risk_level, $entry['risk_level']);
         $this->assertSame($verified->risk_computed_at->toIso8601String(), $entry['risk_calculated_at']);
         $this->assertTrue($entry['status'] === 'stale' || $entry['status'] === 'ok');
@@ -181,7 +188,7 @@ class BarangayRiskSyncTest extends TestCase
         $byName = collect($map['barangays'])->keyBy('barangay');
 
         $this->assertSame('No Data', $byName['Luyahan']['risk_level']);
-        $this->assertCount(18, $byName->reject(fn (array $e) => $e['risk_level'] === 'No Data'));
+        $this->assertCount(count(LianBarangays::all()) - 1, $byName->reject(fn (array $e) => $e['risk_level'] === 'No Data'));
     }
 
     public function test_refresh_weather_and_risk_rates_the_new_weather_after_the_response(): void

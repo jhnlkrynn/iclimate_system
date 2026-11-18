@@ -12,7 +12,7 @@ class RoleMiddleware
     {
         $user = $request->user();
 
-        if (! $user) {
+        if (! $user || ! $user->hasApplicationAccess()) {
             abort(Response::HTTP_FORBIDDEN);
         }
 

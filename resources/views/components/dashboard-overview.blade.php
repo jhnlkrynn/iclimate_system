@@ -101,7 +101,7 @@
     @endif
 
     @if ($showFilter && $generatedLabel)
-        <p class="dash-updated">Figures last calculated {{ $generatedLabel }} ({{ $tz }}).
+        <p class="dash-updated">Figures last calculated {{ $generatedLabel }} ({{ $tz }}) · <x-live-time :at="$overview['generated_at']" />.
             @if (count($sources) > 0)<a href="#dashSources{{ $overview['role'] ?? '' }}">Where does this data come from?</a>@endif
         </p>
     @endif

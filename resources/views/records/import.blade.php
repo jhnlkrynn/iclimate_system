@@ -3,9 +3,9 @@
     {{-- Manuscript – Naicel (2026-10-08), Phase 2: RecordImportController. Upload a CSV; each row passes the Create form's
          checks; skipped rows are listed with the reason. --}}
     <div class="mfd itd itp" data-record-import-page="{{ $type }}">
-        <x-it.page-header kicker="Records" :title="'Import '.$template['title']" lede="Add many records at once from a CSV file, for example a PAGASA dataset or the MAO's seasonal production report.">
+        <x-shared.page-header kicker="Records" :title="'Import '.$template['title']" lede="Add many records at once from a CSV file, for example a PAGASA dataset or the MAO's seasonal production report.">
             <a class="btn btn-outline-secondary btn-sm" href="{{ route($type.'.index') }}">Back to {{ $template['title'] }}</a>
-        </x-it.page-header>
+        </x-shared.page-header>
 
         @if ($result = session('import_result'))
             <section class="itp-section" aria-labelledby="impResult" data-import-result>

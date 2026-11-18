@@ -87,6 +87,7 @@ class ClimateRecordController extends CrudController
 
         return view('farmer-records.climate-records', [
             'title' => $this->title,
+            'liveAreas' => $this->liveAreas(),
             'routeName' => $this->routeName,
             'search' => $search,
             'sort' => $sort,
@@ -112,7 +113,6 @@ class ClimateRecordController extends CrudController
     private function staffIndex(Request $request): View
     {
         [$rows] = app(ClimateRecordHistory::class)->records(plausibleOnly: false);
-        $isIt = $request->user()?->role === User::ROLE_IT_EXPERT;
         // Manuscript – Naicel (2026-10-08): which entered rows the MAO validated; the station dataset is a published source.
         $verified = rescue(fn () => ClimateRecord::query()->whereNotNull('verified_at')->pluck('verified_at', 'id'), collect(), false);
         // Panel revision 4.4 C: who validated each record, and when.
@@ -129,7 +129,7 @@ class ClimateRecordController extends CrudController
             'humidity' => self::plainNumber($row->humidity, '%'),
             // The station's wind figure has no confirmed unit: IT sees it marked as such, MAO is told why it is absent.
             'wind_speed' => $row->id === null && $row->wind_speed !== null
-                ? ($isIt ? self::plainNumber($row->wind_speed).' (unit not confirmed)' : 'Unit not confirmed')
+                ? 'Unit not confirmed'
                 : self::plainNumber($row->wind_speed),
             'season' => $row->season,
             'source' => $row->source,

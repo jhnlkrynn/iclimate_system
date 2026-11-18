@@ -8,6 +8,10 @@ python_scripts/.venv/
 /storage/models/SMOKETEST_*
 .DS_Store
 .env
+.env.*
+!.env.example
+*.env
+!deploy/hostinger/iclimate.env.example
 .env.backup
 .env.*backup*
 # Farmers' names and RSBSA numbers: copied onto the server by hand, never committed.

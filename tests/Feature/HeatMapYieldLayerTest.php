@@ -34,6 +34,9 @@ class HeatMapYieldLayerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // These tests check how a yield flows through the page/API; YieldModelGate (withholding estimates outside
+        // the model's training range) is tested on its own in YieldModelGateTest.
+        config(['prediction.rice_yield.gate' => 'off']);
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-10-18 09:00', 'Asia/Manila'));
         $orchestrator = Mockery::mock(PredictionOrchestrator::class);
         $orchestrator->shouldReceive('monthlyWeatherForecast')->andReturn(['predictions' => self::MONTHLY]);
@@ -46,13 +49,13 @@ class HeatMapYieldLayerTest extends TestCase
         parent::tearDown();
     }
 
-    /** 16 saved forecast days from today for every barangay: 1 mm a day (3 mm in Cumba), 24-32 °C. */
+    /** 16 saved forecast days from today for every supported rice-farm barangay: 1 mm a day, 24-32 °C. */
     private function seedForecasts(): void
     {
         $records = [];
         foreach (LianBarangays::all() as $name) {
             $records[$name] = ['barangay' => $name, 'fetched_at' => now()->toIso8601String(), 'daily' => collect(range(0, 15))->map(fn (int $i): array => [
-                'date' => CarbonImmutable::now('Asia/Manila')->addDays($i)->toDateString(), 'rainfall' => $name === 'Cumba' ? 3 : 1, 'temperature_min' => 24, 'temperature_max' => 32,
+                'date' => CarbonImmutable::now('Asia/Manila')->addDays($i)->toDateString(), 'rainfall' => 1, 'temperature_min' => 24, 'temperature_max' => 32,
             ])->all()];
         }
         Cache::forever(LianBarangayWeatherService::STORE_KEY, ['records' => $records, 'status' => []]);
@@ -117,8 +120,8 @@ class HeatMapYieldLayerTest extends TestCase
     public function test_each_period_takes_the_farms_average_first_and_its_own_run_only_without_farms(): void
     {
         $this->seedForecasts();
-        $this->farmWithEstimate('Humayingan', 2.0, 4.0);
-        $this->farmWithEstimate('HUMAYNGAN', 1.0, 3.1);   // a typo still counts for Humayingan
+        $this->farmWithEstimate('Malaruhatan', 2.0, 4.0);
+        $this->farmWithEstimate('MALARUHATAN', 1.0, 3.1);   // a case variant still counts for Malaruhatan
         $model = $this->fakeModel(3.9);
         $service = app(BarangayYieldForecastService::class);
 
@@ -126,31 +129,32 @@ class HeatMapYieldLayerTest extends TestCase
         $week = $service->preparePeriod('week');
         $service->preparePeriod('2weeks');
 
-        // Two farms (same weather, different sizes) and the 18 barangays without farms; one call per distinct input.
+        // Two farms (same weather, different sizes) and the 8 barangays without farms; one call per distinct input.
         $this->assertSame(2, $week['farm_runs']);
-        $this->assertSame(2 + 18, $week['model_calls']);
+        $this->assertSame(2 + 8, $week['model_calls']);
         foreach (['season', 'week', '2weeks'] as $period) {
-            $this->assertSame(19, YieldPrediction::query()->where('scope', YieldPrediction::SCOPE_BARANGAY)->where('period', $period)->count(), $period);
+            $this->assertSame(9, YieldPrediction::query()->where('scope', YieldPrediction::SCOPE_BARANGAY)->where('period', $period)->count(), $period);
         }
 
         $rows = $this->api('week');
-        // This week in Humayingan: 7 x 1 mm + 237.31 x 24/31 = 190.72 mm -> 4.40 - 0.19 = 4.21 for both farms.
+        $this->assertStringContainsString('Unvalidated iClimate yield estimate', $this->actingAs(User::factory()->create(['role' => User::ROLE_MAO]))->getJson('/api/heat-map?layer=yield&period=week')->json('source'));
+        // This week in Malaruhatan: 7 x 1 mm + 237.31 x 24/31 = 190.72 mm -> 4.40 - 0.19 = 4.21 for both farms.
         $this->assertEquals(['t_ha' => 4.21, 'class' => 'fair', 'basis' => 'farm_average', 'farms_used' => 2, 'season_t_ha' => 3.7, 'vs_season' => 0.51],
-            array_intersect_key($rows['Humayingan']['yield'], array_flip(['t_ha', 'class', 'basis', 'farms_used', 'season_t_ha', 'vs_season'])));
-        // Cumba has no farms: its own run, with its own (wetter) forecast: 21 mm + 183.71 = 204.71 -> 4.20.
-        $this->assertEquals(['t_ha' => 4.2, 'basis' => 'barangay_model', 'farms_used' => 0, 'season_t_ha' => 3.9], array_intersect_key($rows['Cumba']['yield'], array_flip(['t_ha', 'basis', 'farms_used', 'season_t_ha'])));
-        $this->assertSame('humayingan', $rows['Humayingan']['key']);
+            array_intersect_key($rows['Malaruhatan']['yield'], array_flip(['t_ha', 'class', 'basis', 'farms_used', 'season_t_ha', 'vs_season'])));
+        // Luyahan has no farms and receives its own barangay model run.
+        $this->assertEquals(['t_ha' => 4.21, 'basis' => 'barangay_model', 'farms_used' => 0, 'season_t_ha' => 3.9], array_intersect_key($rows['Luyahan']['yield'], array_flip(['t_ha', 'basis', 'farms_used', 'season_t_ha'])));
+        $this->assertSame('malaruhatan', $rows['Malaruhatan']['key']);
 
         // 2 weeks: 14 mm + 237.31 x 17/31 = 144.14 -> 4.26.
-        $this->assertSame(4.26, $this->api('2weeks')['Humayingan']['yield']['t_ha']);
+        $this->assertSame(4.26, $this->api('2weeks')['Malaruhatan']['yield']['t_ha']);
         // The farmer dashboard's season estimate is untouched.
-        $this->assertSame(3.7, $service->all()['Humayingan']['predicted_yield']);
+        $this->assertSame(3.7, $service->all()['Malaruhatan']['predicted_yield']);
     }
 
     public function test_saved_estimates_survive_a_cache_clear_and_a_page_never_runs_the_model(): void
     {
         $this->seedForecasts();
-        $this->farmWithEstimate('Humayingan', 3.0, 4.14);
+        $this->farmWithEstimate('Malaruhatan', 3.0, 4.14);
         $this->fakeModel();
         app(BarangayYieldForecastService::class)->prepare();
         app(BarangayYieldForecastService::class)->preparePeriod('week');
@@ -163,8 +167,8 @@ class HeatMapYieldLayerTest extends TestCase
         $this->app->instance(RiceYieldPredictionService::class, $model);
         app(HeatMapLayerService::class)->forgetCache();
 
-        $this->assertSame(4.21, $this->api('week')['Humayingan']['yield']['t_ha']);
-        $this->assertNull($this->api('2weeks')['Humayingan']['yield']['t_ha']);   // not prepared: no estimate, nothing run
+        $this->assertSame(4.21, $this->api('week')['Malaruhatan']['yield']['t_ha']);
+        $this->assertNull($this->api('2weeks')['Malaruhatan']['yield']['t_ha']);   // not prepared: no estimate, nothing run
         Http::assertNothingSent();
     }
 
@@ -172,7 +176,7 @@ class HeatMapYieldLayerTest extends TestCase
     {
         foreach (['week', '2weeks'] as $period) {
             $rows = $this->api($period);
-            $this->assertCount(19, $rows);
+            $this->assertCount(9, $rows);
             foreach ($rows as $row) {
                 $this->assertSame('unavailable', $row['level']);
                 $this->assertSame('No estimate yet', $row['label']);
@@ -181,13 +185,13 @@ class HeatMapYieldLayerTest extends TestCase
         }
     }
 
-    public function test_farm_barangay_names_are_normalized_and_unplaceable_farms_are_listed(): void
+    public function test_removed_poblacion_names_are_unplaceable_and_unmatched_farms_are_listed(): void
     {
         $poblacion = $this->farmWithEstimate('BARANGAY 1 POB', 1.0, 4.0);
         $blank = $this->farmWithEstimate('—', 1.0, 4.0);
 
-        $this->assertSame('Barangay 1 (Pob.)', YieldPrediction::query()->where('farm_id', $poblacion->id)->value('barangay'));
+        $this->assertNull(YieldPrediction::query()->where('farm_id', $poblacion->id)->value('barangay'));
         $this->assertNull(YieldPrediction::query()->where('farm_id', $blank->id)->value('barangay'));
-        $this->assertSame([$blank->id], app(BarangayYieldForecastService::class)->unmatchedFarms()->pluck('id')->all());
+        $this->assertSame([$poblacion->id, $blank->id], app(BarangayYieldForecastService::class)->unmatchedFarms()->pluck('id')->all());
     }
 }

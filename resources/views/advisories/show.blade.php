@@ -194,7 +194,7 @@
                 <div class="card-body">
                     <div class="details-list">
                         <dt>Applies to</dt><dd>{{ $advisory->targetLabel() }}</dd>
-                        @if(auth()->user()->role === \App\Models\User::ROLE_IT_EXPERT)<dt>Source</dt><dd>{{ $advisory->source ?: 'Open-Meteo + iClimate Rules' }}</dd>@else<dt>Source</dt><dd>{{ $advisory->source && stripos($advisory->source, 'pagasa') !== false ? 'PAGASA' : 'Live weather and iClimate guidance' }}</dd>@endif
+                        <dt>Source</dt><dd>{{ $advisory->source && stripos($advisory->source, 'pagasa') !== false ? 'PAGASA' : 'Live weather and iClimate guidance' }}</dd>
                         <dt>Period</dt><dd>{{ $advisory->horizonLabel() }} - {{ data_get($advisory->metadata, 'advisory_horizon_description', 'Forecast outlook') }}</dd>
                         <dt>Issued on</dt><dd>{{ $advisory->created_at?->timezone('Asia/Manila')?->shortDateTime('F d, Y') }} <span class="small text-muted">(Philippine time)</span></dd>
                         <dt>Valid</dt><dd>{{ $advisory->valid_from?->timezone('Asia/Manila')?->shortDateTime('M d, Y') }} to {{ $advisory->valid_until?->timezone('Asia/Manila')?->shortDateTime('M d, Y') }} <span class="small text-muted">(Philippine time)</span></dd>

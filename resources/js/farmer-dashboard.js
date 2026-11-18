@@ -1,15 +1,15 @@
 // Farmer Home (resources/views/dashboards/farmer.blade.php): the language selector, the Refresh button, a quiet refresh
-// every 5 minutes, and a few later looks at the yield card alone while its estimate is still being prepared. Everything the page
+// when the server says something changed (dashboard-realtime.js), and a few later looks at the yield card alone while its estimate is still being prepared. Everything the page
 // shows is saved data (FarmerDashboardService); nothing here asks a weather provider or runs a model, except Refresh,
 // which also asks the server for the latest weather. All wording comes from the page (data-text-* attributes).
 
 import { initFarmerMyFarm } from './farmer-my-farm';
 import { initFarmerHomeCharts } from './farmer-home-charts';
 import { initForecastSurvey } from './farmer-forecast-survey';
+import { initDashboardRealtime } from './dashboard-realtime';
 
-const REFRESH_EVERY_MS = 300000;
 // While the yield card is a placeholder: look again after these waits (about 4 minutes in all), then leave it to the
-// 5-minute refresh. The estimate is normally ready within seconds of the page being sent.
+// real-time refresh. The estimate is normally ready within seconds of the page being sent.
 const HARVEST_CHECKS_MS = [4000, 6000, 10000, 15000, 20000, 30000, 45000, 60000, 60000];
 
 export function initFarmerDashboard() {
@@ -73,6 +73,8 @@ export function initFarmerDashboard() {
         }
     }
 
+    initDashboardRealtime({ root, refresh });
+
     // English / Filipino: saved on the farmer's account, then the page opens again in that language (same numbers).
     // Without scripts the form posts and the server sends the page back.
     root.addEventListener('change', async (e) => {
@@ -101,8 +103,6 @@ export function initFarmerDashboard() {
     root.addEventListener('click', (e) => {
         if (e.target.closest('[data-mfd-refresh]')) refresh({ force: true });
     });
-    setInterval(() => { if (document.visibilityState === 'visible') refresh(); }, REFRESH_EVERY_MS);
-
     // The yield estimate is made in the background (PrepareFarmerYieldEstimate): while the card is a placeholder, ask for
     // that card alone, a little less often each time and only while the tab is visible, and stop once it is filled.
     const harvestPending = () => !!$('[data-mfd-load="harvest"]');

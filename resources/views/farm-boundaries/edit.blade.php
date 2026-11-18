@@ -26,7 +26,7 @@
     <div class="card no-lift">
         <div class="card-body p-3 p-md-4">
             <div class="alert alert-info mb-4">
-                Click around the edge of your field to mark it on the map. Drag any point to adjust it. Your exact farm location is private and visible only to you, MAO Personnel, and IT Expert users.
+                Click around the edge of your field to mark it on the map. Drag any point to adjust it. Your exact farm location is private and visible only to you, MAO Personnel.
             </div>
 
             <div class="soft-section p-3 mb-4">

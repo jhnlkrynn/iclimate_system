@@ -62,15 +62,19 @@ final class StaleCache
      *
      * @param  Closure(string): string  $keyFor
      */
-    public static function scoped(string $consumer, Closure $keyFor, int $seconds, Closure $build, ?string $latestKey = null, int $maxStale = self::MAX_STALE_SECONDS): mixed
+    /**
+     * $afterRebuild (optional) runs once a copy rebuilt after the response is stored: the page that was answered from
+     * the older copy is still open, and this is how it learns that a newer one exists (see PreparedDashboards::it).
+     */
+    public static function scoped(string $consumer, Closure $keyFor, int $seconds, Closure $build, ?string $latestKey = null, int $maxStale = self::MAX_STALE_SECONDS, ?Closure $afterRebuild = null): mixed
     {
         $snapshot = CacheScope::snapshot($consumer);
 
-        return self::resolve($keyFor(CacheScope::tokenAt($snapshot)), fn (): string => $keyFor(CacheScope::settledToken($snapshot)), $seconds, $build, $latestKey, $maxStale);
+        return self::resolve($keyFor(CacheScope::tokenAt($snapshot)), fn (): string => $keyFor(CacheScope::settledToken($snapshot)), $seconds, $build, $latestKey, $maxStale, $afterRebuild);
     }
 
     /** @param (Closure(): string)|null $storeKey  where a fresh build is stored (default: $key) */
-    private static function resolve(string $key, ?Closure $storeKey, int $seconds, Closure $build, ?string $latestKey, int $maxStale): mixed
+    private static function resolve(string $key, ?Closure $storeKey, int $seconds, Closure $build, ?string $latestKey, int $maxStale, ?Closure $afterRebuild = null): mixed
     {
         $fixedLatest = $latestKey;
         $latestKey ??= $key.':latest';
@@ -88,7 +92,7 @@ final class StaleCache
         $latest = Cache::get($latestKey);
         $usable = is_array($latest) && array_key_exists('value', $latest) && (int) ($latest['at'] ?? 0) >= now()->getTimestamp() - $maxStale;
         if ($usable && InteractiveRequest::isPageRequest() && self::$building === 0) {
-            self::refreshAfterResponse($key, $build, $store);
+            self::refreshAfterResponse($key, $build, $store, $afterRebuild);
 
             return $latest['value'];
         }
@@ -250,17 +254,20 @@ final class StaleCache
     }
 
     /** @param Closure(mixed): void $store */
-    private static function refreshAfterResponse(string $key, Closure $build, Closure $store): void
+    private static function refreshAfterResponse(string $key, Closure $build, Closure $store, ?Closure $afterRebuild = null): void
     {
         $lock = 'stale-cache:rebuilding:'.$key;
         if (! Cache::add($lock, true, now()->addSeconds(self::LOCK_SECONDS))) {
             return;                                                    // another request is already rebuilding it
         }
 
-        app()->terminating(function () use ($key, $build, $store, $lock): void {
+        app()->terminating(function () use ($key, $build, $store, $lock, $afterRebuild): void {
             try {
                 self::allowTime(self::COLD_BUILD_SECONDS);
                 $store($build());
+                if ($afterRebuild !== null) {
+                    $afterRebuild();
+                }
             } catch (Throwable $exception) {
                 // The page was already answered from the last good copy; keep it and say why it is not newer.
                 Log::warning('Dashboard data could not be rebuilt after the response; the last good copy stays.', [

@@ -12,7 +12,8 @@ use Throwable;
  * Manuscript – Naicel (2026-10-08), Phase 3: the Heat Map's extra layers next to This Week / 2 Weeks. Each layer has
  * the same shape as a HeatMapPanel range, so the page and resources/js/heat-map.js show it the same way:
  *  - flood / drought: the saved per-barangay forecast at each official Lian centroid, assessed separately for all 19;
- *  - yield: the shared trained rice-yield model run for each official Lian barangay (low colour = good yield).
+ *  - yield: the shared rice-yield model run for each official Lian barangay. Its accuracy is not verified; the layer
+ *    remains operationally available but must not be presented as a validated yield classification.
  * The weather service owns provider requests, retry/fallback behavior, and the last-valid cache. This service only
  * reads that Lian-only snapshot and derives the two layer assessments; yield results are cached by their source/model signature.
  */

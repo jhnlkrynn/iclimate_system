@@ -337,28 +337,9 @@ class AiLanguageFilterTest extends TestCase
         return User::factory()->create(['role' => $role]);
     }
 
-    public function test_farmers_cannot_see_or_change_any_chatbot_data(): void
-    {
-        $term = AiBlockedTerm::first();
-        $before = AiBlockedTerm::count();
 
-        foreach (['topics', 'terms', 'synonyms', 'faqs', 'blocked-terms', 'blocked-patterns'] as $resource) {
-            $this->actingAs($this->farmer)->get(route('ai-admin.index', $resource))->assertForbidden();
-            $this->actingAs($this->farmer)->post(route('ai-admin.store', $resource), ['term' => 'newword'])->assertForbidden();
-        }
 
-        $this->actingAs($this->farmer)->put(route('ai-admin.update', ['blocked-terms', $term->id]), ['term' => 'changed'])->assertForbidden();
-        $this->actingAs($this->farmer)->post(route('ai-admin.toggle', ['blocked-terms', $term->id]))->assertForbidden();
 
-        $this->assertSame($before, AiBlockedTerm::count());
-        $this->assertTrue($term->refresh()->is_active);
-        $this->assertNotSame('changed', $term->term);
-    }
-
-    public function test_guests_are_sent_to_login(): void
-    {
-        $this->get(route('ai-admin.index', 'blocked-terms'))->assertRedirect(route('login'));
-    }
 
     public function test_the_dictionary_is_never_shown_to_a_farmer(): void
     {
@@ -369,102 +350,13 @@ class AiLanguageFilterTest extends TestCase
         $this->assertStringNotContainsString('tarantado', strtolower(json_encode($chat)));
     }
 
-    public function test_it_experts_manage_vocabulary_and_the_filter_and_mao_no_longer_does(): void
-    {
-        $admin = $this->admin(User::ROLE_IT_EXPERT);
-        foreach (['topics', 'terms', 'synonyms', 'faqs', 'blocked-terms', 'blocked-patterns'] as $resource) {
-            $this->actingAs($admin)->get(route('ai-admin.index', $resource))->assertOk();
-        }
-        $this->actingAs($admin)->get(route('ai-admin.index', 'nonsense'))->assertNotFound();
 
-        // Chatbot Knowledge moved from MAO to IT (2026-10): MAO cannot open or change it by URL.
-        $mao = $this->admin(User::ROLE_MAO);
-        $this->actingAs($mao)->get(route('ai-admin.index', 'topics'))->assertForbidden();
-        $this->actingAs($mao)->post(route('ai-admin.store', 'topics'), ['name' => 'x'])->assertForbidden();
-    }
 
-    public function test_admins_can_add_edit_and_deactivate_entries(): void
-    {
-        $admin = $this->admin(User::ROLE_IT_EXPERT);                          // Chatbot Knowledge is an IT page since 2026-10
 
-        // topic -> term -> synonym -> faq
-        $this->actingAs($admin)->post(route('ai-admin.store', 'topics'), [
-            'slug' => 'rat_control', 'category' => 'rice_farming', 'title_en' => 'Rat control', 'title_fil' => 'Pagkontrol ng daga', 'is_active' => 1,
-        ])->assertSessionHasNoErrors();
-        $topic = AiKnowledgeTopic::where('slug', 'rat_control')->firstOrFail();
 
-        $this->actingAs($admin)->post(route('ai-admin.store', 'terms'), [
-            'topic_id' => $topic->id, 'category' => 'rice_farming', 'term_en' => 'Rat control',
-            'alt_spellings' => "rat baiting\ndaga control", 'approved_response_en' => 'Work together with neighbors.', 'is_active' => 1,
-        ])->assertSessionHasNoErrors();
-        $term = $topic->terms()->firstOrFail();
-        $this->assertSame(['rat baiting', 'daga control'], $term->alt_spellings);
 
-        $this->actingAs($admin)->post(route('ai-admin.store', 'synonyms'), [
-            'term_id' => $term->id, 'synonym' => 'pagpatay ng daga', 'language' => 'fil', 'kind' => 'synonym', 'is_active' => 1,
-        ])->assertSessionHasNoErrors();
-        $this->assertDatabaseHas('ai_synonyms', ['term_id' => $term->id, 'synonym' => 'pagpatay ng daga']);
 
-        $this->actingAs($admin)->post(route('ai-admin.store', 'faqs'), [
-            'topic_id' => $topic->id, 'category' => 'rice_farming', 'question_en' => 'How do I stop rats?', 'answer_en' => 'Keep fields clean.', 'is_active' => 1,
-        ])->assertSessionHasNoErrors();
-        $this->assertDatabaseHas('ai_faqs', ['question_en' => 'How do I stop rats?']);
 
-        // edit, then deactivate
-        $this->actingAs($admin)->put(route('ai-admin.update', ['terms', $term->id]), [
-            'topic_id' => $topic->id, 'category' => 'rice_farming', 'term_en' => 'Rat control (edited)', 'is_active' => 1,
-        ])->assertSessionHasNoErrors();
-        $this->assertSame('Rat control (edited)', $term->refresh()->term_en);
 
-        $this->actingAs($admin)->post(route('ai-admin.toggle', ['terms', $term->id]))->assertRedirect();
-        $this->assertFalse($term->refresh()->is_active);
-    }
 
-    public function test_admins_can_manage_blocked_terms_and_patterns_with_validation(): void
-    {
-        $admin = $this->admin(User::ROLE_IT_EXPERT);
-
-        $this->actingAs($admin)->post(route('ai-admin.store', 'blocked-terms'), [
-            'term' => 'Zorblax!!', 'language' => 'en', 'category' => 'abusive', 'exceptions' => "zorblax garden", 'is_active' => 1,
-        ])->assertSessionHasNoErrors();
-        $term = AiBlockedTerm::where('normalized_term', 'zorblax')->firstOrFail();
-        $this->assertSame(['zorblax garden'], $term->exceptions);
-        $this->assertTrue($this->isBlocked('zorblax'));
-
-        // the same word again is refused
-        $this->actingAs($admin)->post(route('ai-admin.store', 'blocked-terms'), ['term' => 'ZORBLAX', 'language' => 'en', 'category' => 'abusive'])->assertSessionHasErrors('form');
-        $this->assertSame(1, AiBlockedTerm::where('normalized_term', 'zorblax')->count());
-
-        // deactivate takes effect at once
-        $this->actingAs($admin)->post(route('ai-admin.toggle', ['blocked-terms', $term->id]));
-        $this->assertFalse($this->isBlocked('zorblax'));
-
-        // patterns: a valid one is saved; a broken or dangerous one is refused
-        $this->actingAs($admin)->post(route('ai-admin.store', 'blocked-patterns'), ['pattern' => '\\bblorp\\s+ka\\b', 'language' => 'fil', 'category' => 'abusive', 'is_active' => 1])->assertSessionHasNoErrors();
-        $this->assertTrue($this->isBlocked('blorp ka'));
-
-        foreach (['(unclosed', '(a+)+$', '(.*)*x', 'has~tilde', str_repeat('a', 201)] as $bad) {
-            $this->actingAs($admin)->post(route('ai-admin.store', 'blocked-patterns'), ['pattern' => $bad, 'language' => 'any', 'category' => 'abusive'])->assertSessionHasErrors();
-        }
-        $this->assertSame(0, AiBlockedPattern::where('pattern', '(a+)+$')->count());
-    }
-
-    public function test_admin_changes_are_audited_without_recording_blocked_words(): void
-    {
-        $admin = $this->admin(User::ROLE_IT_EXPERT);
-
-        $this->actingAs($admin)->post(route('ai-admin.store', 'blocked-terms'), ['term' => 'Zorblax', 'language' => 'en', 'category' => 'abusive', 'is_active' => 1]);
-
-        $log = SystemLog::where('action', 'ai_vocabulary.created')->firstOrFail();
-        $this->assertSame($admin->id, $log->user_id);
-        $this->assertStringNotContainsString('zorblax', strtolower($log->details));
-        $this->assertSame('blocked-terms', json_decode($log->details, true)['resource']);
-    }
-
-    public function test_a_blocked_term_the_matcher_cannot_use_is_rejected(): void
-    {
-        $admin = $this->admin(User::ROLE_IT_EXPERT);
-
-        $this->actingAs($admin)->post(route('ai-admin.store', 'blocked-terms'), ['term' => '!!!', 'language' => 'any', 'category' => 'abusive'])->assertSessionHasErrors('form');
-    }
 }

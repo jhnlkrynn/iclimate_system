@@ -137,14 +137,14 @@ class RejectionAndFarmRestoreTest extends TestCase
         $this->assertNull($farm->fresh()->archived_at);
 
         $farm->fresh()->forceFill(['archived_at' => now()->addMinute()])->save();
-        $this->actingAs(User::factory()->itExpert()->create())->post($route)->assertSessionHas('success');
+        $this->actingAs(User::factory()->maoPersonnel()->create())->post($route)->assertSessionHas('success');
         $this->assertNull($farm->fresh()->archived_at);
     }
 
     public function test_restoring_an_account_tells_it_how_many_farms_are_still_archived(): void
     {
-        $it = User::factory()->itExpert()->create(['email' => 'ivy.it@lian.gov.ph']);
-        User::factory()->itExpert()->create(['email' => 'second.it@lian.gov.ph']);
+        $it = User::factory()->maoHead()->create(['email' => 'ivy.it@lian.gov.ph']);
+        User::factory()->maoPersonnel()->create(['email' => 'second.it@lian.gov.ph']);
         $farmer = $this->farmer();
         Farm::query()->create(['user_id' => $farmer->id, 'farm_name' => 'North', 'barangay' => 'Prenza', 'is_primary' => true]);
         Farm::query()->create(['user_id' => $farmer->id, 'farm_name' => 'South', 'barangay' => 'Prenza']);

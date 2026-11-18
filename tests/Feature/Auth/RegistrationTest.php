@@ -28,6 +28,11 @@ class RegistrationTest extends TestCase
         $response->assertSee('At least 8 characters');
         $response->assertSee('Uppercase letter');
         $response->assertSee('Symbol');
+
+        $html = $response->getContent();
+        $this->assertLessThan(strpos($html, 'id="farmer_organization_id"'), strpos($html, 'id="barangay"'));
+        $this->assertStringContainsString('data-association-status="not_member"', $html);
+        $this->assertStringNotContainsString('isn\'t listed', $html);
     }
 
     public function test_registration_captcha_image_can_be_rendered(): void
@@ -64,7 +69,7 @@ class RegistrationTest extends TestCase
         ]);
     }
 
-    public function test_registration_assigns_barangay_from_selected_organization(): void
+    public function test_registration_saves_an_association_only_for_the_selected_barangay(): void
     {
         $this->seed(FarmerOrganizationSeeder::class);
         $organization = FarmerOrganization::query()
@@ -77,7 +82,7 @@ class RegistrationTest extends TestCase
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
             'farmer_organization_id' => $organization->id,
-            'barangay' => 'Balibago',
+            'barangay' => 'Binubusan',
             'captcha_answer' => '7',
         ]);
 
@@ -94,6 +99,26 @@ class RegistrationTest extends TestCase
             'barangay' => 'Binubusan',
             'farm_type' => 'Irrigated',
         ]);
+    }
+
+    public function test_registration_rejects_an_association_from_another_barangay(): void
+    {
+        $this->seed(FarmerOrganizationSeeder::class);
+        $organization = FarmerOrganization::query()->where('name', 'Balibago Farmers Association')->firstOrFail();
+
+        $response = $this->withSession($this->captchaSession('register', '7'))->post('/register', [
+            'name' => 'Wrong Barangay User',
+            'email' => 'wrong-barangay@example.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'barangay' => 'Binubusan',
+            'farmer_organization_id' => $organization->id,
+            'captcha_answer' => '7',
+        ]);
+
+        $this->assertGuest();
+        $response->assertSessionHasErrors('farmer_organization_id');
+        $this->assertDatabaseMissing('users', ['email' => 'wrong-barangay@example.com']);
     }
 
     public function test_registration_requires_manual_barangay_when_no_organization_is_selected(): void
@@ -223,22 +248,22 @@ class RegistrationTest extends TestCase
         $this->assertDatabaseHas('farms', ['user_id' => $user->id, 'barangay' => 'Balibago', 'is_primary' => true]);
     }
 
-    public function test_with_approval_switched_off_a_new_farmer_is_active_and_can_log_in_and_open_the_dashboard(): void
+    public function test_legacy_approval_setting_cannot_bypass_pending_registration(): void
     {
         config(['iclimate.farmer_approval' => false]);
 
         $this->withSession($this->captchaSession('register', '7'))->post('/register', $this->validSignUp())->assertRedirect('/');
 
         $user = User::query()->where('email', 'new-farmer@example.com')->sole();
-        $this->assertSame(User::STATUS_ACTIVE, $user->status);
-        $this->actingAs($user)->get(route($user->dashboardRoute()))->assertOk();
-        $this->actingAs($user)->get(route($user->dashboardRoute()))->assertOk();   // and again on refresh
+        $this->assertSame(User::STATUS_PENDING, $user->status);
+        $this->actingAs($user)->get(route($user->dashboardRoute()))->assertRedirect(route('login'));
+        $this->actingAs($user)->getJson(route($user->dashboardRoute()))->assertUnauthorized();
     }
 
     /** Only farmers sign up here: a role sent with the form is ignored, never saved. */
     public function test_a_sign_up_can_never_create_a_mao_or_it_account(): void
     {
-        foreach ([User::ROLE_MAO, User::ROLE_IT_EXPERT] as $index => $role) {
+        foreach ([User::ROLE_MAO, 'IT Expert'] as $index => $role) {
             $this->withSession($this->captchaSession('register', '7'))
                 ->post('/register', $this->validSignUp(['email' => "staff{$index}@example.com", 'role' => $role, 'status' => User::STATUS_ACTIVE]))
                 ->assertRedirect('/');
@@ -246,7 +271,7 @@ class RegistrationTest extends TestCase
             $this->assertSame(User::ROLE_FARMER, User::query()->where('email', "staff{$index}@example.com")->sole()->role);
         }
 
-        $this->assertSame(0, User::query()->whereIn('role', [User::ROLE_MAO, User::ROLE_IT_EXPERT])->count());
+        $this->assertSame(0, User::query()->whereIn('role', [User::ROLE_MAO, 'IT Expert'])->count());
     }
 
     public function test_a_wrong_form_gets_validation_messages_and_saves_nothing(): void

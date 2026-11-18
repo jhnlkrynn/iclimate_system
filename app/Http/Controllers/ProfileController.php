@@ -122,8 +122,12 @@ class ProfileController extends Controller
         $user = $request->user();
 
         // The system must always keep a working administrator.
-        if (UserManagementController::isLastActiveItExpert($user)) {
-            return back()->withErrors(['password' => 'This is the last active IT Expert account, so it cannot be deleted. Create another IT Expert account first.'], 'userDeletion');
+        if (UserManagementController::isLastActiveMaoHead($user)) {
+            return back()->withErrors(['password' => 'This is the last active MAO Head account, so it cannot be deleted. Create another MAO Head account first.'], 'userDeletion');
+        }
+
+        if (\App\Models\FarmerAccountReview::query()->where('user_id', $user->id)->orWhere('reviewer_id', $user->id)->exists()) {
+            return back()->withErrors(['password' => 'This account has registration review history. Contact the MAO Head to close it while preserving its records.'], 'userDeletion');
         }
 
         Auth::logout();

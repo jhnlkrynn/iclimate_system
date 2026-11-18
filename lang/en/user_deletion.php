@@ -75,7 +75,7 @@ return [
         'other' => 'Please specify',
         'other_hint' => 'At least :min characters. The person will see this.',
         'note' => 'Internal note (optional)',
-        'note_hint' => 'Only IT can see this.',
+        'note_hint' => 'Only the MAO Head can see this.',
         'preview' => 'What the person will see',
         'preview_none' => 'Nothing is shown or sent. If someone signs in, they only see: ":message"',
         'email_to' => 'Email will be sent to :email',

@@ -60,7 +60,7 @@ class PaletteTest extends TestCase
     public function test_the_landing_views_carry_no_hex_colours(): void
     {
         $files = [resource_path('views/welcome.blade.php'), resource_path('views/components/public-nav.blade.php'),
-            resource_path('views/components/landing-heading.blade.php'), ...File::glob(resource_path('views/landing/*.blade.php'))];
+            ...File::glob(resource_path('views/landing/*.blade.php'))];
         foreach ($files as $file) {
             $this->assertDoesNotMatchRegularExpression('/#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b(?!-)|rgba?\(\d/', File::get($file), basename($file));
         }

@@ -1,0 +1,24 @@
+import { chromium } from 'playwright';
+import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+const HERE = new URL('.', import.meta.url).pathname;
+const APP_DIR = process.env.RT_APP_DIR || new URL('../..', import.meta.url).pathname;
+const BASE = process.env.RT_BASE || 'http://127.0.0.1:8100';
+const creds = JSON.parse(readFileSync(process.env.RT_CREDS || `${HERE}creds.json`));
+const PASSWORD = process.env.RT_PASSWORD || 'RtAudit!2026';
+const php = (args, opts = {}) => execFileSync('php', args, { cwd: APP_DIR, encoding: 'utf8', ...opts });
+
+const b=await chromium.launch(); const c=await b.newContext(); const p=await c.newPage();
+await p.goto(BASE+'/#login'); await p.fill('#login-email',creds.mao); await p.fill('#login-password',PASSWORD);
+await Promise.all([p.waitForURL(u=>!u.hash.includes('login')&&u.pathname!=='/'), p.click('[data-login-form] button[type="submit"]')]);
+await p.goto(BASE+'/climate-records'); await p.waitForTimeout(2500);
+await p.evaluate(()=>{ const r=document.querySelector('[data-live-region]'); const i=document.createElement('input'); i.id='rtProbe'; r.prepend(i); i.focus(); });
+const tok='RTBUSY'+Date.now().toString(36).toUpperCase();
+php([`${HERE}trigger.php`,'climate',tok]);
+await p.waitForTimeout(3000);
+const during=await p.evaluate(t=>({shown:document.body.textContent.includes(t), probeStillThere:!!document.getElementById('rtProbe'), focused:document.activeElement?.id}),tok);
+await p.evaluate(()=>document.activeElement.blur());
+await p.waitForTimeout(6000);
+const after=await p.evaluate(t=>({shown:document.body.textContent.includes(t), probeStillThere:!!document.getElementById('rtProbe')}),tok);
+console.log(JSON.stringify({during,after}));
+await b.close();

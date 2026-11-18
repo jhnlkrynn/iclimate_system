@@ -258,7 +258,6 @@ class PredictionEngine
                     'predicted_yield' => round((float) $predicted, 2),
                     'unit' => data_get($yield, 'unit', 'tons/hectare'),
                     'uncertainty' => data_get($yield, 'uncertainty'),
-                    'confidence' => data_get($apiResult, 'confidence_score'),
                     'fallback' => false,
                     'source_type' => 'Trained Model API',
                     'source_name' => 'iClimate Rice Harvest Estimate',

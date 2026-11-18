@@ -37,13 +37,13 @@ class BackupVerificationService
         return max(1, (int) config('backup.verification_max_age_hours', config('backup.max_age_hours', 36)));
     }
 
-    /** Verifies the newest valid backup and records the outcome (pass or fail). */
-    public function verify(): BackupVerification
+    /** Verifies the newest valid backup and records the outcome (pass or fail) by default. */
+    public function verify(bool $record = true): BackupVerification
     {
         $backup = $this->backups->latestValidBackup();
 
         if ($backup === null) {
-            return $this->fail('no_valid_backup');
+            return $this->fail('no_valid_backup', [], $record);
         }
 
         $identity = [
@@ -54,56 +54,56 @@ class BackupVerificationService
         $sha256 = @hash_file('sha256', $backup['path']);
 
         if ($sha256 === false) {
-            return $this->fail('file_unreadable', $identity);
+            return $this->fail('file_unreadable', $identity, $record);
         }
 
         $identity['backup_sha256'] = $sha256;
 
         if ($this->backups->isSqlDump($backup['path'])) {
-            return $this->verifySqlDump($backup, $identity);
+            return $this->verifySqlDump($backup, $identity, $record);
         }
 
         $binary = (string) config('backup.pg_restore_binary', 'pg_restore');
 
         // A configured location (not a bare PATH name) must exist.
         if (preg_match('#[\\\\/]#', $binary) === 1 && ! is_file($binary)) {
-            return $this->fail('pg_restore_unavailable', $identity);
+            return $this->fail('pg_restore_unavailable', $identity, $record);
         }
 
         try {
             $result = Process::timeout(max(5, (int) config('backup.verify_timeout_seconds', 120)))
                 ->run([$binary, '--list', $backup['path']]);
         } catch (ProcessTimedOutException) {
-            return $this->fail('timeout', $identity);
+            return $this->fail('timeout', $identity, $record);
         } catch (Throwable) {
-            return $this->fail('pg_restore_unavailable', $identity);
+            return $this->fail('pg_restore_unavailable', $identity, $record);
         }
 
         if (! $result->successful()) {
             $missing = $result->exitCode() === 127
                 || preg_match('/not recognized|not found|no such file|cannot find/i', $result->errorOutput()) === 1;
 
-            return $this->fail($missing ? 'pg_restore_unavailable' : 'archive_unreadable', $identity);
+            return $this->fail($missing ? 'pg_restore_unavailable' : 'archive_unreadable', $identity, $record);
         }
 
         $entries = $this->countEntries($result->output());
 
         if ($entries === 0) {
-            return $this->fail('archive_empty', $identity);
+            return $this->fail('archive_empty', $identity, $record);
         }
 
-        $record = BackupVerification::create($identity + [
+        $recordObject = $this->result($identity + [
             'verified_at' => now(),
             'status' => BackupVerification::PASSED,
             'archive_entry_count' => $entries,
-        ]);
+        ], $record);
 
         Log::info('Backup verification passed.', [
             'backup' => $backup['name'],
             'entries' => $entries,
         ]);
 
-        return $record;
+        return $recordObject;
     }
 
     /**
@@ -112,15 +112,15 @@ class BackupVerificationService
      * @param  array{name: string, path: string, size: int, mtime: int}  $backup
      * @param  array<string, mixed>  $identity
      */
-    private function verifySqlDump(array $backup, array $identity): BackupVerification
+    private function verifySqlDump(array $backup, array $identity, bool $record): BackupVerification
     {
         if (! $this->backups->sqlDumpIsComplete($backup['path'])) {
-            return $this->fail('dump_incomplete', $identity);
+            return $this->fail('dump_incomplete', $identity, $record);
         }
 
         $handle = @fopen($backup['path'], 'rb');
         if ($handle === false) {
-            return $this->fail('file_unreadable', $identity);
+            return $this->fail('file_unreadable', $identity, $record);
         }
 
         $tables = 0;
@@ -132,18 +132,18 @@ class BackupVerificationService
         fclose($handle);
 
         if ($tables === 0) {
-            return $this->fail('archive_empty', $identity);
+            return $this->fail('archive_empty', $identity, $record);
         }
 
-        $record = BackupVerification::create($identity + [
+        $recordObject = $this->result($identity + [
             'verified_at' => now(),
             'status' => BackupVerification::PASSED,
             'archive_entry_count' => $tables,
-        ]);
+        ], $record);
 
         Log::info('Backup verification passed.', ['backup' => $backup['name'], 'entries' => $tables]);
 
-        return $record;
+        return $recordObject;
     }
 
     /**
@@ -156,19 +156,25 @@ class BackupVerificationService
     }
 
     /** @param array<string, mixed> $identity */
-    private function fail(string $reason, array $identity = []): BackupVerification
+    private function fail(string $reason, array $identity = [], bool $record = true): BackupVerification
     {
-        $record = BackupVerification::create($identity + [
+        $recordObject = $this->result($identity + [
             'verified_at' => now(),
             'status' => BackupVerification::FAILED,
             'failure_reason' => self::REASONS[$reason],
-        ]);
+        ], $record);
 
         Log::error('Backup verification failed.', array_filter([
             'reason' => $reason,
             'backup' => $identity['backup_filename'] ?? null,
         ]));
 
-        return $record;
+        return $recordObject;
+    }
+
+    /** @param array<string, mixed> $attributes */
+    private function result(array $attributes, bool $record): BackupVerification
+    {
+        return $record ? BackupVerification::create($attributes) : new BackupVerification($attributes);
     }
 }

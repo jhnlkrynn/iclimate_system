@@ -3,18 +3,19 @@
     {{-- Manuscript – Naicel (2026-10-08), Phase 3: BarangayProfileController. A tab of Records. The heat map's
          Flood-prone, Drought-prone and MAO classification layers read what is saved here. --}}
     <div class="mfd itd itp" data-barangays-page>
-        <x-it.page-header kicker="Records" title="Barangays" lede="Lian's 19 barangays: location, rice area and the MAO's risk classification. Flood- and drought-prone barangays show on the Heat Map." />
+        <x-shared.page-header kicker="Records" title="Barangays" lede="Lian's 19 barangays: location, rice area and the MAO's risk classification. Flood- and drought-prone barangays show on the Heat Map." />
 
         @include('partials.manuscript-tabs', ['group' => 'records', 'label' => 'Records'])
 
-        <div class="itp-grid mb-4" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
+        {{-- data-live-region: updates while open when this data changes (resources/js/live-page.js). --}}
+        <div class="itp-grid mb-4" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));" data-live-region="barangay-summary" data-live-areas="barangays,farmers">
             <div class="mfd-card"><span class="small text-muted">Flood-prone</span><div class="h4 mb-0">{{ $summary['flood'] }}</div></div>
             <div class="mfd-card"><span class="small text-muted">Drought-prone</span><div class="h4 mb-0">{{ $summary['drought'] }}</div></div>
             <div class="mfd-card"><span class="small text-muted">Classified High risk</span><div class="h4 mb-0">{{ $summary['high'] }}</div></div>
             <div class="mfd-card"><span class="small text-muted">Rice area (MAO)</span><div class="h4 mb-0">{{ $summary['area'] > 0 ? rtrim(rtrim(number_format($summary['area'], 2), '0'), '.').' ha' : '—' }}</div></div>
         </div>
 
-        <section class="itp-section" aria-labelledby="brgyTitle">
+        <section class="itp-section" aria-labelledby="brgyTitle" data-live-region="barangays" data-live-areas="barangays,farmers">
             <div class="itp-section-head">
                 <h2 id="brgyTitle">All barangays</h2>
                 <p>Open a barangay to edit it. "Registered" figures come from farmers' own farm details in iClimate.</p>

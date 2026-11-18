@@ -100,14 +100,14 @@ class FarmerDashboardPopupsTest extends TestCase
         $farmer = $this->farmer(2.0);
 
         $this->actingAs($farmer)->postJson(route('farmer.dashboard.profile'), $this->profileData([
-            'name' => 'Juan P. Dela Cruz', 'email' => '  Juan.New@Example.com ', 'barangay' => 'Lumaniag', 'farm_type' => 'Irrigated',
-        ]))->assertOk()->assertJson(['message' => 'Profile updated successfully.', 'values' => ['name' => 'Juan P. Dela Cruz', 'email' => 'juan.new@example.com', 'barangay' => 'Lumaniag', 'farm_type' => 'Irrigated']]);
+            'name' => 'Juan P. Dela Cruz', 'email' => '  Juan.New@Example.com ', 'barangay' => 'Luyahan', 'farm_type' => 'Irrigated',
+        ]))->assertOk()->assertJson(['message' => 'Profile updated successfully.', 'values' => ['name' => 'Juan P. Dela Cruz', 'email' => 'juan.new@example.com', 'barangay' => 'Luyahan', 'farm_type' => 'Irrigated']]);
 
         $farmer->refresh();
-        $this->assertSame(['Juan P. Dela Cruz', 'juan.new@example.com', '0917 123 4567', 'Purok 2', 'Lumaniag'], [$farmer->name, $farmer->email, $farmer->contact_number, $farmer->address, $farmer->barangay]);
+        $this->assertSame(['Juan P. Dela Cruz', 'juan.new@example.com', '0917 123 4567', 'Purok 2', 'Luyahan'], [$farmer->name, $farmer->email, $farmer->contact_number, $farmer->address, $farmer->barangay]);
         $this->assertSame(1, FarmerProfile::query()->where('user_id', $farmer->id)->count());      // no second profile
         $profile = $farmer->farmerProfile()->first();
-        $this->assertSame(['Juan P. Dela Cruz', '0917 123 4567', 'Purok 2', 'Lumaniag', 'Irrigated'], [$profile->full_name, $profile->contact_number, $profile->address, $profile->barangay, $profile->farm_type]);
+        $this->assertSame(['Juan P. Dela Cruz', '0917 123 4567', 'Purok 2', 'Luyahan', 'Irrigated'], [$profile->full_name, $profile->contact_number, $profile->address, $profile->barangay, $profile->farm_type]);
         $this->assertSame('2.00', $profile->farm_area);                                             // not this pop-up's to change
     }
 
@@ -181,7 +181,7 @@ class FarmerDashboardPopupsTest extends TestCase
         foreach ($requests as $route => $data) {
             $this->postJson(route($route), $data)->assertUnauthorized();
         }
-        foreach ([User::ROLE_MAO, User::ROLE_IT_EXPERT] as $role) {
+        foreach ([User::ROLE_MAO] as $role) {
             $staff = User::factory()->create(['role' => $role]);
             foreach ($requests as $route => $data) {
                 $this->actingAs($staff)->postJson(route($route), $data)->assertForbidden();

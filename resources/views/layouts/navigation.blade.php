@@ -1,7 +1,6 @@
 @php
     $user = auth()->user();
     $avatarUrl = $user->avatarUrl();
-    $isItNav = $user->role === \App\Models\User::ROLE_IT_EXPERT;
     $isFarmerNav = $user->role === \App\Models\User::ROLE_FARMER;
     // English / Filipino for the roles that have it (farmers and MAO); IT works in English.
     $navLangRoute = $isFarmerNav ? 'farmer.dashboard.language' : ($user->role === \App\Models\User::ROLE_MAO ? 'mao.dashboard.language' : null);
@@ -18,10 +17,10 @@
     $navFarmsOn = $isFarmerNav && \App\Support\ActiveFarm::available();
     $navFarms = $navFarmsOn ? \App\Support\ActiveFarm::farms($user) : collect();
     $navFarm = $navFarmsOn ? \App\Support\ActiveFarm::current($user) : null;
-    // The bell is the only entry point to notifications (the sidebar has no Notifications item); the count is cached briefly.
-    $navUnread = $showNavBell
-        ? \Illuminate\Support\Facades\Cache::remember('sidebar:unread-notifications:'.$user->id, now()->addSeconds(20), fn () => \App\Support\SampleData::without(\App\Models\Notification::query(), 'notifications')->where('user_id', $user->id)->where('is_read', false)->count())
-        : 0;
+    // The bell and the MAO/IT pending-account badge share one request-local count query.
+    $navCounts = $showNavBell ? \App\Support\NavigationCounts::for($user) : ['unread' => 0, 'pending' => 0];
+    $navUnread = $navCounts['unread'];
+    $navPendingCount = $navCounts['pending'];
     // Panel revision 4.4 C: the signed-in MAO user by name and position, with the barangays they cover.
     $isMaoNav = $user->isMao();
     $navMaoCoverage = $isMaoNav ? $user->coverageLabel() : null;
@@ -62,6 +61,10 @@
     @endif
 
     <div class="ic-topbar-right">
+        <div class="ic-live-clock" aria-label="Current time in the Philippines" title="Current time in Asia/Manila">
+            <span class="ic-live-clock-label">Current time</span>
+            <time data-live-clock aria-live="off">--:--:-- --</time>
+        </div>
         @if ($navFarmsOn)
             @if ($navFarms->isNotEmpty())
                 <form class="topbar-farm" method="POST" action="{{ route('farmer.farms.select') }}" data-farm-select>
@@ -83,6 +86,7 @@
             @if ($showNavBell)
                 <a class="ic-icon-btn position-relative" href="{{ route('notifications.index') }}" data-ic-notifications aria-haspopup="dialog"
                     data-feed-url="{{ route('notifications.feed') }}" data-index-url="{{ route('notifications.index') }}" data-mark-all-url="{{ route('notifications.mark-all-read') }}"
+                    data-notification-user-id="{{ $user->id }}"
                     data-fast-nav-bound="true" data-no-loader aria-label="Notifications{{ $navUnread > 0 ? ', '.$navUnread.' unread' : '' }}">
                     <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M5 7.2C5 4.6 6.8 3 9 3s4 1.6 4 4.2c0 3.6 1.3 4.6 1.3 4.6H3.7S5 10.8 5 7.2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.5 14.5a1.6 1.6 0 0 0 3 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
                     <span class="sidebar-badge topbar-bell-badge" data-ic-notif-badge @if ($navUnread <= 0) hidden @endif>{{ $navUnread > 99 ? '99+' : $navUnread }}</span>
@@ -126,16 +130,6 @@
                         <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="6" r="2.8" stroke="currentColor" stroke-width="1.4"/><path d="M3 15c.7-3.4 2.8-5.2 6-5.2s5.3 1.8 6 5.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
                         Profile, photo and password
                     </a>
-                    @if ($isItNav)
-                        <a @class(['dropdown-item', 'active' => request()->routeIs('admin.settings.index')]) href="{{ route('admin.settings.index') }}">
-                            <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="2.4" stroke="currentColor" stroke-width="1.4"/><path d="M9 1.8v2M9 14.2v2M1.8 9h2M14.2 9h2M3.9 3.9l1.4 1.4M12.7 12.7l1.4 1.4M3.9 14.1l1.4-1.4M12.7 5.3l1.4-1.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-                            System settings
-                        </a>
-                        <a @class(['dropdown-item', 'active' => request()->routeIs('admin.settings.security')]) href="{{ route('admin.settings.security') }}">
-                            <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M9 1.8l5.6 2v4.1c0 3.7-2.4 6.3-5.6 7.3-3.2-1-5.6-3.6-5.6-7.3V3.8L9 1.8Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
-                            Security
-                        </a>
-                    @endif
                     {{-- Farmers log out from the bottom of the menu drawer (layouts/sidebar.blade.php). --}}
                     @unless ($isFarmerNav)
                         <div class="dropdown-divider"></div>

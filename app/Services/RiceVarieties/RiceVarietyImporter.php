@@ -17,7 +17,7 @@ use RuntimeException;
  * ("PhilRice Midsayap (WSB) - R …", "WSB - I; YSB - MR") sit under Whiteheads / Deadhearts (columns 30-31) as well as
  * under Stem Borer (27). A cell merged across columns (one yield for DS and WS) counts for each column it covers.
  *
- * Re-running is safe: rows are matched by import_key and only changed values are written; a variety IT Personnel
+ * Re-running is safe: rows are matched by import_key and only changed values are written; a variety MAO Staff
  * added or corrected by hand (source = manual) is never overwritten.
  */
 final class RiceVarietyImporter

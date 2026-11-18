@@ -470,17 +470,7 @@ class PredictionService
         }
 
         if ($intent === IntentDetectionService::IT_SYSTEM_STATUS) {
-            if ($user->role !== User::ROLE_IT_EXPERT) {
-                return [
-                    'answer' => $this->roleAssistant->roleRestrictedMessage($language, User::ROLE_IT_EXPERT, $user->role),
-                    'source_name' => 'Climora AI',
-                    'confidence' => 85,
-                ];
-            }
-
-            if ($answer = $this->roleAssistant->itAnswer($question, $intent, $language)) {
-                return $answer;
-            }
+            return ['answer' => str_contains($language, 'Tagalog') ? 'Ang system maintenance ay pinamamahalaan sa server.' : 'System maintenance is managed through protected server tools.', 'source_name' => 'Climora AI', 'confidence' => 85];
         }
 
         if ($intent === IntentDetectionService::ANNOUNCEMENT || str_contains($text, 'announcement')) {

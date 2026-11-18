@@ -95,7 +95,7 @@ return [
     'map' => [
         'title' => 'Map :name',
         'intro' => 'Tap around the edge of this farm to mark it on the map. Drag a point to move it.',
-        'private' => 'Your farm location is private: only you, MAO personnel and IT can see it.',
+        'private' => 'Your farm location is private: only you and MAO Staff can see it.',
         'points' => 'Points marked',
         'area' => 'Area from your map',
         'perimeter' => 'Distance around the farm',
@@ -137,8 +137,11 @@ return [
         ],
         'pick' => 'Which association?',
         'pick_choose' => 'Choose association',
+        'dropdown_choose' => 'Choose an association or membership status',
+        'dropdown_choose_short' => 'Choose association',
+        'dropdown_not_member' => 'Not a member',
         'other_name' => 'Name of your association',
-        'other_hint' => 'The MAO will check it and add it.',
+        'other_hint' => 'Optional. The MAO can check it and add it.',
         // The farmer dashboard's card for a farm without an answer.
         'prompt' => [
             'title' => 'Is :name part of a farmers\' association?',

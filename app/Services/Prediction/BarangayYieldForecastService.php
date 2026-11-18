@@ -313,7 +313,7 @@ final class BarangayYieldForecastService
             'target_month' => $result['target_month'] ?? null,
             'model_version' => $result['model_version'] ?? null,
             'model_input' => is_array($result['model_input'] ?? null) ? $result['model_input'] : null,
-            'generated_at' => CarbonImmutable::now('Asia/Manila'),
+            'generated_at' => CarbonImmutable::now(),   // an instant; stored as UTC (YieldPrediction::UTC_INSTANT_COLUMNS)
         ], $period);
     }
 

@@ -65,7 +65,7 @@ class LogoutPlacementTest extends TestCase
 
     public function test_mao_and_it_log_out_from_the_account_menu_not_the_drawer(): void
     {
-        foreach ([User::factory()->maoPersonnel(), User::factory()->itExpert()] as $factory) {
+        foreach ([User::factory()->maoPersonnel(), User::factory()->maoPersonnel()] as $factory) {
             $html = $this->page($factory->create(['status' => User::STATUS_ACTIVE]));
 
             $menu = $this->accountMenu($html);

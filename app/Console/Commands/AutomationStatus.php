@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\ExternalWeatherData;
+use App\Models\AnalyticsRun;
 use App\Models\PlantingAdvisory;
 use App\Models\SystemLog;
 use App\Services\TyphoonSafetyService;
@@ -33,13 +34,20 @@ class AutomationStatus extends Command
         $latestAutomationDetails = $latestAutomation
             ? json_decode((string) $latestAutomation->details, true)
             : null;
+        $latestScheduledAnalytics = AnalyticsRun::query()
+            ->whereNull('requested_by')
+            ->latest('created_at')
+            ->first();
 
         $this->table(['Check', 'Status'], [
             ['Last automation run', $latestAutomation
-                ? $latestAutomation->created_at?->format('M d, Y h:i A').' ('.(data_get($latestAutomationDetails, 'ok') ? 'ok' : 'needs review').')'
+                ? $latestAutomation->created_at?->copy()->timezone('Asia/Manila')->format('M d, Y h:i A').' PHT'.' ('.(data_get($latestAutomationDetails, 'context.ok', data_get($latestAutomationDetails, 'ok')) ? 'ok' : 'needs review').')'
                 : 'No full automation run logged yet'],
+            ['Latest scheduled analytics', $latestScheduledAnalytics
+                ? $latestScheduledAnalytics->type.' · '.$latestScheduledAnalytics->status.' · '.$latestScheduledAnalytics->created_at?->copy()->timezone('Asia/Manila')->format('M d, Y h:i A').' PHT'
+                : 'No scheduled analytics run yet'],
             ['Latest weather fetch', $latestWeather
-                ? $latestWeather->fetched_at?->format('M d, Y h:i A').' ('.$latestWeather->freshnessLabel().')'
+                ? $latestWeather->fetched_at?->copy()->timezone('Asia/Manila')->format('M d, Y h:i A').' PHT'.' ('.$latestWeather->freshnessLabel().')'
                 : 'No Open-Meteo weather data yet'],
             ['Active published advisories', (string) PlantingAdvisory::query()->active()->count()],
             ['Pending review advisories', (string) PlantingAdvisory::query()->pendingReview()->count()],

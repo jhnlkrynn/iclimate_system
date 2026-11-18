@@ -73,6 +73,9 @@ class AnalyticsRun extends Model
                 'completed_at' => now(),
             ]);
         $this->refresh();
+        if ($expired > 0) {
+            \App\Events\PredictionChanged::forAnalyticsRun($this);
+        }
 
         return $expired > 0;
     }

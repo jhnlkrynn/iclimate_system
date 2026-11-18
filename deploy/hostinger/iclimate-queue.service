@@ -1,0 +1,27 @@
+[Unit]
+Description=iClimate Laravel queue worker
+After=network-online.target mariadb.service iclimate-python.service
+Wants=network-online.target mariadb.service iclimate-python.service
+# After 10 crashes within 5 minutes systemd stops restarting (no tight loop); iclimate:health then reports the stalled queue. Reset: systemctl reset-failed iclimate-queue.
+StartLimitIntervalSec=300
+StartLimitBurst=10
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/iclimate_system
+EnvironmentFile=/etc/iclimate/iclimate.env
+ExecStart=/usr/bin/php artisan queue:work database --queue=analytics,default,broadcasts --sleep=3 --tries=2 --timeout=300 --max-time=3600
+Restart=always
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=330
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=full
+ReadWritePaths=/var/www/iclimate_system/storage /var/www/iclimate_system/bootstrap/cache
+
+[Install]
+WantedBy=multi-user.target
+

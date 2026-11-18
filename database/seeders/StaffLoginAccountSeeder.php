@@ -25,12 +25,6 @@ class StaffLoginAccountSeeder extends Seeder
         }
 
         $accounts = [
-            'it@gmail.com' => [
-                'name' => 'IT Personnel',
-                'role' => User::ROLE_IT_EXPERT,
-                'contact_number' => '09170000013',
-                'address' => 'Lian, Batangas',
-            ],
             'mao@gmail.com' => [
                 'name' => 'MAO Personnel',
                 'role' => User::ROLE_MAO,
@@ -44,7 +38,7 @@ class StaffLoginAccountSeeder extends Seeder
 
             $user->fill([
                 ...$details,
-                'barangay' => 'Poblacion',
+                'barangay' => null,
                 'status' => User::STATUS_ACTIVE,
                 'password' => Hash::make($password),
             ]);

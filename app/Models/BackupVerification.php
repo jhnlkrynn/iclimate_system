@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class BackupVerification extends Model
 {
+    use \App\Models\Concerns\KeepsDatabaseClockColumns;
+
+    /** MariaDB refreshes this column itself on UPDATE (Manila clock); see KeepsDatabaseClockColumns. */
+    public const DATABASE_CLOCK_COLUMNS = ['verified_at'];
+
     public const PASSED = 'passed';
 
     public const FAILED = 'failed';

@@ -12,57 +12,99 @@ class LianBarangays
      * (verified to fall inside that polygon — see
      * tests/Unit/LianBarangaysCoordinatesTest.php), NOT hand-guessed.
      *
-     * History: the coordinates here before the 2026-09 audit fix were
-     * hand-entered and wrong for 17 of 19 barangays — most landed inside a
-     * *different* barangay's polygon (e.g. the old "Balibago" point was
-     * actually inside Puting-Kahoy), and 5 landed outside every barangay
-     * boundary in the file. That silently corrupted the live-weather input
-     * to the risk score for those barangays. These values are recomputed
-     * directly from the shipped GeoJSON polygons, not re-guessed.
+     * These values are recomputed directly from the shipped GeoJSON polygons,
+     * not re-guessed. The supported geography is limited to barangays present
+     * in the verified rice-production source.
      */
     private const COORDINATES = [
-        'Bagong Pook' => [14.0320331, 120.6807593],
         'Balibago' => [13.9413816, 120.6489014],
-        'Barangay 1 (Pob.)' => [14.0354539, 120.6510264],
-        'Barangay 2 (Pob.)' => [14.0381382, 120.6513488],
-        'Barangay 3 (Pob.)' => [14.0405819, 120.6507332],
-        'Barangay 4 (Pob.)' => [14.0379401, 120.6536591],
-        'Barangay 5 (Pob.)' => [14.0413525, 120.6528515],
         'Binubusan' => [13.9694821, 120.6384280],
         'Bungahan' => [14.0470903, 120.6379867],
-        'Cumba' => [13.9718581, 120.6609465],
-        'Humayingan' => [13.9967494, 120.6724865],
         'Kapito' => [14.0162390, 120.6689030],
-        'Lumaniag' => [13.9946196, 120.6343614],
         'Luyahan' => [13.9641912, 120.6176801],
         'Malaruhatan' => [14.0383984, 120.6654801],
         'Matabungkay' => [13.9467451, 120.6249676],
         'Prenza' => [14.0128685, 120.6398701],
-        'Puting-Kahoy' => [13.9894782, 120.6534129],
         'San Diego' => [14.0336258, 120.6335108],
     ];
+
+    /**
+     * Lian barangays outside the verified rice-production source. They are not
+     * supported for weather, maps or ratings, but a question that names one
+     * must still be recognised as being about that place, so Climora answers
+     * "no rating" for it instead of silently answering for the asker's own
+     * barangay (or for Lian as a whole).
+     */
+    private const UNSUPPORTED_LIAN_BARANGAYS = [
+        'Bagong Pook',
+        'Barangay 1 (Pob.)',
+        'Barangay 2 (Pob.)',
+        'Barangay 3 (Pob.)',
+        'Barangay 4 (Pob.)',
+        'Barangay 5 (Pob.)',
+        'Cumba',
+        'Humayingan',
+        'Lumaniag',
+        'Puting-Kahoy',
+    ];
+
+    /**
+     * The Lian barangay a free-text question names, supported or not, or null
+     * when none is named. Supported names win; longer names are tried first so
+     * a short name never shadows a longer one that contains it.
+     */
+    public static function namedIn(string $text): ?string
+    {
+        $haystack = ' '.self::normalize($text).' ';
+        if (trim($haystack) === '') {
+            return null;
+        }
+
+        foreach ([self::all(), self::UNSUPPORTED_LIAN_BARANGAYS] as $names) {
+            usort($names, fn (string $a, string $b): int => strlen($b) <=> strlen($a));
+            foreach ($names as $name) {
+                $needle = self::normalize($name);
+                // Numbered Poblacion barangays normalize to a bare digit; only
+                // "barangay 1", "brgy 1", "poblacion 1" or "1 poblacion" name
+                // one, never a stray number such as "1 hectare".
+                $matches = ctype_digit($needle)
+                    ? preg_match('/\b(?:barangay|brgy\.?|poblacion|pob\.?)\s*'.$needle.'\b|\b'.$needle.'\s*\(?(?:poblacion|pob)\b/i', $text) === 1
+                    : str_contains($haystack, ' '.$needle.' ');
+                if ($matches) {
+                    return $name;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The text with every Lian barangay name removed. Place names are not
+     * language evidence: "Bagong Pook" must not make an English question look
+     * Tagalog (" po"), nor "Lumaniag" (" ani").
+     */
+    public static function withoutNames(string $text): string
+    {
+        foreach ([...self::all(), ...self::UNSUPPORTED_LIAN_BARANGAYS] as $name) {
+            $pattern = '/\b'.str_replace(['\-', ' '], '[\s-]+',preg_quote($name, '/')).'/iu';
+            $text = preg_replace($pattern, ' ', $text) ?? $text;
+        }
+
+        return $text;
+    }
 
     public static function all(): array
     {
         return [
-            'Bagong Pook',
             'Balibago',
-            'Barangay 1 (Pob.)',
-            'Barangay 2 (Pob.)',
-            'Barangay 3 (Pob.)',
-            'Barangay 4 (Pob.)',
-            'Barangay 5 (Pob.)',
             'Binubusan',
             'Bungahan',
-            'Cumba',
-            'Humayingan',
             'Kapito',
-            'Lumaniag',
             'Luyahan',
             'Malaruhatan',
             'Matabungkay',
             'Prenza',
-            'Puting-Kahoy',
             'San Diego',
         ];
     }
@@ -78,9 +120,7 @@ class LianBarangays
 
     /**
      * Labels used by account-management forms. The stored values remain the
-     * canonical names used throughout the application, while the five
-     * poblacion barangays are presented in the shorter official form used by
-     * the user-facing account form.
+     * canonical names used throughout the application.
      *
      * @return array<string, string> canonical value => display label
      */
@@ -94,8 +134,7 @@ class LianBarangays
     }
 
     /**
-     * Values accepted at the account-management boundary, including the
-     * shorter labels so direct requests are normalized just like form input.
+     * Values accepted at the account-management boundary.
      */
     public static function userManagementInputValues(): array
     {
@@ -108,6 +147,16 @@ class LianBarangays
     public static function coordinates(): array
     {
         return self::COORDINATES;
+    }
+
+    /**
+     * The barangay part of a realtime channel name ("barangay.San_Diego"). Pusher/Reverb channel names allow only
+     * letters, digits and -_=@,.; so a space ("San Diego") is sent as "_". canonicalName() reads it back, so the
+     * channel authorization in routes/channels.php is unchanged. Keep in step with channelKey() in barangay-risk-map.js.
+     */
+    public static function channelKey(string $barangay): string
+    {
+        return (string) preg_replace('/[^-a-zA-Z0-9_=@,.;]/', '_', self::canonicalName($barangay) ?? $barangay);
     }
 
     public static function coordinateFor(string $barangay): ?array
@@ -131,19 +180,10 @@ class LianBarangays
             }
         }
 
-        // Keep local Poblacion aliases at the system boundary while all map
-        // and risk logic uses one stable canonical name.
+        // Keep all map and risk logic on one stable canonical name.
         return match ($needle) {
-            '1 bonbon', 'bonbon', '1 bonbon poblacion' => 'Barangay 1 (Pob.)',
-            '5 tabok city', 'tabok city', '5 tabok city poblacion' => 'Barangay 5 (Pob.)',
             // Boundary files and local government exports use these shorter
             // spellings; keep the stored/application name canonical.
-            'puting kahoy' => 'Puting-Kahoy',
-            '1 poblacion', 'poblacion 1' => 'Barangay 1 (Pob.)',
-            '2 poblacion', 'poblacion 2' => 'Barangay 2 (Pob.)',
-            '3 poblacion', 'poblacion 3' => 'Barangay 3 (Pob.)',
-            '4 poblacion', 'poblacion 4' => 'Barangay 4 (Pob.)',
-            '5 poblacion', 'poblacion 5' => 'Barangay 5 (Pob.)',
             default => self::closestName($needle),
         };
     }

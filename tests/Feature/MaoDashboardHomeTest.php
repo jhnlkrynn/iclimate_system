@@ -134,7 +134,7 @@ class MaoDashboardHomeTest extends TestCase
         foreach (['data-mao-yield', 'data-mao-climate', 'data-mao-planted'] as $card) {
             $this->assertSame(1, substr_count($html, $card), $card);
         }
-        $this->assertStringNotContainsString('data-mao-impact', $html);
+        $this->assertSame(1, substr_count($html, 'data-mao-impact'));
         $this->assertSame(1, substr_count($html, '<canvas id="riceYieldTrendChart"'));
 
         // What the old dashboard carried is not here any more: weather cards, the forecast row, the full map and its
@@ -147,7 +147,7 @@ class MaoDashboardHomeTest extends TestCase
     public function test_only_mao_personnel_open_the_dashboard(): void
     {
         $this->get(route('mao.dashboard'))->assertRedirect(route('login'));
-        foreach ([User::ROLE_IT_EXPERT, User::ROLE_FARMER] as $role) {
+        foreach ([User::ROLE_FARMER] as $role) {
             $user = User::factory()->create(['role' => $role]);
             foreach (['mao.dashboard', 'mao.dashboard.live', 'mao.operations'] as $route) {
                 $this->actingAs($user)->get(route($route))->assertForbidden();
@@ -161,7 +161,7 @@ class MaoDashboardHomeTest extends TestCase
         $html = $this->html();
 
         Http::assertNothingSent();
-        $this->assertStringContainsString('0 Farmer profiles on file', $this->tile($html, 'farmers'));   // a real count of zero
+        $this->assertStringContainsString('Total farmers 0', $this->tile($html, 'farmers'));   // a real count of zero
         // MAO/IT – Naicel (2026-10-07): a figure that cannot be worked out is not shown at all (no "Walang datos pa" card);
         // what the MAO can add is asked for in the bell instead (MaoMissingDataNotificationTest).
         foreach (['area', 'yield', 'risk', 'plans', 'harvests', 'production'] as $key) {
@@ -169,7 +169,7 @@ class MaoDashboardHomeTest extends TestCase
         }
         // No saved forecast: no map card; no yield records: no yield or weather-impact chart; no planting dates: no
         // planted-area chart. None of them leaves an empty card behind.
-        foreach (['data-heat-map-preview', 'id="mhdMapTitle"', 'data-mao-yield', 'data-mao-impact', 'data-mao-planted', 'data-mao-survey'] as $gone) {
+        foreach (['data-heat-map-preview', 'id="mhdMapTitle"', 'data-mao-yield', 'data-mao-planted', 'data-mao-survey'] as $gone) {
             $this->assertStringNotContainsString($gone, $html, $gone);
         }
         $this->assertStringNotContainsString('Walang datos pa', $html);
@@ -181,12 +181,12 @@ class MaoDashboardHomeTest extends TestCase
     public function test_registered_farmers_counts_farmer_profiles_and_opens_farmer_profiles(): void
     {
         $this->farmer();
-        $this->farmer('Cumba');
+        $this->farmer('Balibago');
         User::factory()->farmer()->create();                                   // an account without a farm profile is not a registered farmer
 
         $html = $this->html();
 
-        $this->assertStringStartsWith('Registered farmers 2', $this->tile($html, 'farmers'));
+        $this->assertStringStartsWith('Total farmers 3', $this->tile($html, 'farmers'));
         $this->assertStringContainsString('<a class="mhd-tile" href="'.route('farmer-profiles.index').'" data-kpi="farmers">', $html);
     }
 
@@ -214,7 +214,7 @@ class MaoDashboardHomeTest extends TestCase
             ['year' => 2025, 'month' => 12, 'yield' => 3.8, 'split' => null], ['year' => 2026, 'month' => 2, 'yield' => 4.2, 'split' => null],
             ['year' => 2026, 'month' => 7, 'yield' => 9.9, 'split' => null],    // the current season is never "last season"
         ]);
-        foreach ([[$this->farmer(), 4.2], [$this->farmer('Cumba'), 4.6]] as [$farmer, $yield]) {
+        foreach ([[$this->farmer(), 4.2], [$this->farmer('Balibago'), 4.6]] as [$farmer, $yield]) {
             Cache::put(FarmerDashboardService::predictionCacheKey($farmer->id), ['success' => true, 'yield_tons_per_hectare' => $yield, 'target_month' => '2026-10', 'ran_at' => now()->toIso8601String()], now()->addHours(6));
         }
 
@@ -233,20 +233,20 @@ class MaoDashboardHomeTest extends TestCase
         $html = $this->html();
 
         $tile = $this->tile($html, 'risk');
-        $this->assertStringStartsWith('High-risk barangays 2 of 19', $tile);
+        $this->assertStringStartsWith('High-risk barangays 2 of '.count(\App\Support\LianBarangays::all()), $tile);
         $this->assertStringContainsString('Matabungkay, San Diego', $tile);
         $this->assertStringContainsString('<a class="mhd-tile" href="'.route('heat-map.index').'" data-kpi="risk">', $html);
 
         // The same ratings colour the preview, and the Heat Map page opens with the same count.
         $this->assertSame(1, preg_match('#<script type="application/json" data-heat-map-preview-levels>(.*?)</script>#s', $html, $m));
         $levels = json_decode($m[1], true)['levels'];
-        $this->assertCount(19, $levels);
+        $this->assertCount(count(\App\Support\LianBarangays::all()), $levels);
         $this->assertSame(['Matabungkay', 'San Diego'], array_keys(array_filter($levels, fn ($l) => $l === 'high')));
         $this->actingAs($this->mao())->get(route('heat-map.index'))->assertSee('2 barangays are at high risk');
 
         // A calm week is a real zero, not "no data".
         $this->storeForecasts();
-        $this->assertStringStartsWith('High-risk barangays 0 of 19 None this week', $this->tile($this->html(), 'risk'));
+        $this->assertStringStartsWith('High-risk barangays 0 of '.count(\App\Support\LianBarangays::all()).' None this week', $this->tile($this->html(), 'risk'));
     }
 
     // ------------------------------------------------------------ Kailangan ng Aksyon
@@ -261,7 +261,7 @@ class MaoDashboardHomeTest extends TestCase
         $advisory('published');
         $this->mock(TyphoonSafetyService::class, fn ($mock) => $mock->shouldReceive('activeEvent')->andReturn(['key' => 'typhoon-test', 'title' => 'Typhoon Test', 'severity' => 'Signal No. 2']));
         TyphoonSafetyResponse::query()->create(['user_id' => $this->farmer()->id, 'event_key' => 'typhoon-test', 'event_title' => 'Typhoon Test', 'status' => TyphoonSafetyResponse::STATUS_NEEDS_HELP, 'note' => 'Roof damaged', 'responded_at' => now()]);
-        TyphoonSafetyResponse::query()->create(['user_id' => $this->farmer('Cumba')->id, 'event_key' => 'typhoon-test', 'event_title' => 'Typhoon Test', 'status' => TyphoonSafetyResponse::STATUS_SAFE, 'responded_at' => now()]);
+        TyphoonSafetyResponse::query()->create(['user_id' => $this->farmer('Balibago')->id, 'event_key' => 'typhoon-test', 'event_title' => 'Typhoon Test', 'status' => TyphoonSafetyResponse::STATUS_SAFE, 'responded_at' => now()]);
         TyphoonSafetyResponse::query()->create(['user_id' => $this->farmer('Kapito')->id, 'event_key' => 'an-older-typhoon', 'event_title' => 'Older', 'status' => TyphoonSafetyResponse::STATUS_NEEDS_HELP, 'responded_at' => now()]);
 
         $html = $this->html($mao);
@@ -343,8 +343,8 @@ class MaoDashboardHomeTest extends TestCase
         // The menu is in the page twice (side bar and phone drawer): the same ten labels each time.
         preg_match_all('#<span class="sidebar-label">([^<]+)</span>#', $html, $labels);
         $labels = array_map('html_entity_decode', $labels[1]);
-        $this->assertSame(['Dashboard', 'Heat Map', 'Advisories', 'MAO Planner', 'Records', 'Farmers', 'Predictions', 'Reports', 'Announcements', 'Messages'], array_values(array_unique($labels)));
-        $this->assertSame(0, count($labels) % 10);
+        $this->assertSame(['MAO Staff Dashboard', 'Heat Map', 'Advisories', 'MAO Planner', 'Records', 'Farmers', 'Account Requests', 'Rice Varieties', 'Predictions', 'Reports', 'Announcements', 'Messages', 'MAO Office', 'Association reports'], array_values(array_unique($labels)));
+        $this->assertSame(0, count($labels) % 14);
         $this->assertStringNotContainsString('Field Reports', $html);
         $this->assertStringNotContainsString('field-reports.index', $html);
         $nav = [implode(' | ', $labels)];
@@ -369,21 +369,5 @@ class MaoDashboardHomeTest extends TestCase
         $this->actingAs($mao)->get(route('farmer-profiles.index'))->assertDontSee('data-records-tabs', false);
     }
 
-    public function test_chatbot_knowledge_belongs_to_it_and_the_feed_is_named_announcements_for_staff(): void
-    {
-        $mao = $this->mao();
-        $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
 
-        // Chatbot Knowledge is hidden from the interface (2026-10): its pages open the dashboard and no menu lists it.
-        $this->actingAs($mao)->get(route('ai-admin.index', 'topics'))->assertRedirect(route('dashboard'));
-        $this->actingAs($it)->get(route('admin.dashboard'))->assertOk()->assertDontSee('Chatbot knowledge');
-        // Shown again (CHATBOT_KNOWLEDGE_UI=true), it belongs to IT only.
-        config(['iclimate.chatbot_knowledge_ui' => true]);
-        $this->actingAs($mao)->get(route('ai-admin.home'))->assertForbidden();
-        $this->actingAs($mao)->get(route('ai-admin.index', 'topics'))->assertForbidden();
-        $this->actingAs($it)->get(route('ai-admin.index', 'topics'))->assertOk();
-
-        $this->actingAs($mao)->get(route('community-feed.index'))->assertOk()->assertSee('<h1>Announcements</h1>', false);
-        $this->actingAs($it)->get(route('community-feed.index'))->assertRedirect(route('admin.dashboard'));   // not an IT page (2026-10)
-    }
 }

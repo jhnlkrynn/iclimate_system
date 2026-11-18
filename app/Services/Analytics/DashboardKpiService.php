@@ -434,9 +434,9 @@ class DashboardKpiService
      | IT expert — platform health
      * ------------------------------------------------------------------ */
 
-    public function itExpert(): array
+    public function internalStatus(): array
     {
-        return \App\Support\StaleCache::scoped('it-dashboard', fn (string $token): string => 'dashboard:kpi:it:'.$token, self::CACHE_SECONDS, function (): array {
+        return \App\Support\StaleCache::scoped('internal-status', fn (string $token): string => 'diagnostics:kpi:'.$token, self::CACHE_SECONDS, function (): array {
             $totalBarangays = count(LianBarangays::coordinates());
             $kpis = [];
 
@@ -481,7 +481,7 @@ class DashboardKpiService
                 'trend' => null,
                 'status' => $successRate === null ? null : ($successRate < 70 ? 'critical' : ($successRate < 95 ? 'warning' : 'good')),
                 'status_label' => $successRate === null ? null : ($successRate < 70 ? 'Failing' : ($successRate < 95 ? 'Degraded' : 'Healthy')),
-                'href' => route('system-health.index'),
+                'href' => null,
             ];
 
             $current = $this->data->currentRiskRatings()
@@ -511,7 +511,7 @@ class DashboardKpiService
                 'trend' => $this->periodTrend($logs7, $logsPrior7, 'vs prior 7 days', null),
                 'status' => null,
                 'status_label' => null,
-                'href' => route('system-logs.index'),
+                'href' => null,
             ];
 
             $reports30 = Report::query()->realGenerated()->where('created_at', '>=', now()->subDays(30))->count();

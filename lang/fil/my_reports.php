@@ -27,6 +27,7 @@ return [
     'harvested' => 'Inani',
     'predicted' => 'Taya',
     'actual' => 'Totoo',
+    'historical' => 'Karaniwang ani noon',
     'advisory_title' => 'Buod ng mga abiso',
     'advisory_note' => 'Mga abiso para sa :barangay at sa buong Lian sa nakaraang 90 araw.',
     'advisory_note_lian' => 'Mga abiso para sa buong Lian sa nakaraang 90 araw.',

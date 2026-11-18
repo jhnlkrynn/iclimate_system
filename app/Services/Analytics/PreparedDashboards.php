@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * The expensive shared dashboard payloads (MAO dashboard, MAO Operations, IT overview), prepared ahead of the people
+ * The expensive shared dashboard payloads (MAO dashboard, MAO Operations), prepared ahead of the people
  * who open them. One place decides each payload's key, lifetime and stale window, used by the pages, their timed
  * refresh, the Refresh buttons and the warm-up command alike.
  *
@@ -33,13 +33,6 @@ final class PreparedDashboards
 
     public const MAO_MAX_STALE_SECONDS = 600;
 
-    /** IT overview (its sections show when they were built, so a copy may be shown for up to an hour). */
-    public const IT_SECONDS = 60;
-
-    public const IT_MAX_STALE_SECONDS = 3600;
-
-    public const IT_LATEST_KEY = 'dashboard:it:overview:4:latest';
-
     /** MAO Operations, the whole assembled page (about 100 queries to build); a data change shows on the next visit, as above. */
     public const OPERATIONS_SECONDS = 300;
 
@@ -54,7 +47,6 @@ final class PreparedDashboards
 
     public function __construct(
         private readonly MaoDashboardService $mao,
-        private readonly ItDashboardService $it,
     ) {}
 
     // ------------------------------------------------------------------ MAO dashboard
@@ -75,26 +67,6 @@ final class PreparedDashboards
     public static function maoKey(string $token): string
     {
         return 'dashboard:mao:overview:'.$token;
-    }
-
-    // ------------------------------------------------------------------ IT overview
-
-    public function it(): array
-    {
-        return StaleCache::scoped('it-dashboard', self::itKey(...), self::IT_SECONDS, fn (): array => $this->it->payload(),
-            self::IT_LATEST_KEY, self::IT_MAX_STALE_SECONDS);
-    }
-
-    /** The IT Refresh button: every section rebuilt from the database. */
-    public function refreshIt(): array
-    {
-        return StaleCache::refreshScoped('it-dashboard', self::itKey(...), self::IT_SECONDS,
-            fn (): array => $this->it->payload(fresh: true), self::IT_LATEST_KEY);
-    }
-
-    public static function itKey(string $token): string
-    {
-        return 'dashboard:it:overview:4:'.$token;
     }
 
     // ------------------------------------------------------------------ MAO Operations
@@ -124,7 +96,7 @@ final class PreparedDashboards
     // ------------------------------------------------------------------ warm-up
 
     /**
-     * Rebuilds whatever is due: the MAO dashboard, the IT overview and MAO Operations as it first opens (no filters).
+     * Rebuilds whatever is due: the MAO dashboard and MAO Operations as it first opens (no filters).
      * Filtered MAO Operations views are prepared when someone opens them.
      *
      * @return array<string, string> payload => what happened ("12.3 s", "current", "busy" or "failed: ...")
@@ -135,11 +107,6 @@ final class PreparedDashboards
 
         return [
             'MAO dashboard' => $this->warmOne('mao-dashboard', self::maoKey(...), self::MAO_SECONDS, fn (): array => $this->mao->payload()),
-            'IT overview' => $this->warmOne('it-dashboard', self::itKey(...), self::IT_SECONDS, function (): array {
-                $payload = $this->it->payload();
-                $this->it->activity(30);                         // the Overview's 30-day chart comes with the page
-                return $payload;
-            }, self::IT_LATEST_KEY),
             'MAO Operations' => $this->warmOne('mao-operations', fn (string $token): string => self::operationsKey($token), self::OPERATIONS_SECONDS,
                 fn (): array => app(DashboardController::class)->maoOperationsData($plain)),
         ];

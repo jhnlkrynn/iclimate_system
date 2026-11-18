@@ -164,7 +164,7 @@ class MaoHomeService
 
         return [
             'total' => (int) $counts->sum(),
-            'active' => (int) ($counts[User::STATUS_ACTIVE] ?? 0),
+            'active' => (int) ($counts[User::STATUS_ACTIVE] ?? 0) + (int) ($counts[User::STATUS_APPROVED] ?? 0),
             'pending' => (int) ($counts[User::STATUS_PENDING] ?? 0),
             'with_profile' => (int) $this->farmerAccounts()->whereHas('farmerProfile')->count(),
             'filtered' => $this->scope !== null,
@@ -260,28 +260,32 @@ class MaoHomeService
      * total tons over total hectares (so a small plot does not count as much as a large one) and how many barangays
      * reported. Null without records.
      *
-     * @return array{year: int, production: float, area: float, yield: ?float, barangays: int}|null
+     * @return array{year: int, production: float, area: float, yield: ?float, barangays: int, provenance: ?string}|null
      */
     private function latestProduction(): ?array
     {
-        $kpis = app(DashboardKpiService::class);
-        $latest = $this->scope === null
-            ? $kpis->yieldByYear()->first()
+        // Demo records are not production, and a figure is only as good as the records behind it (RecordProvenance).
+        $classes = rescue(fn (): array => \App\Support\RecordProvenance::riceClasses(), [], false);
+        $class = fn ($row): string => $classes[$row->id] ?? \App\Support\RecordProvenance::UNVERIFIED;
+        $rows = app(\App\Support\DashboardData::class)->riceRows()->whereNotNull('year')
+            ->filter(fn ($row): bool => $class($row) !== \App\Support\RecordProvenance::DEMO)
             // Panel revision 4.4 B: the MAO user's barangays added together.
-            : collect($this->scope)->flatMap(fn (string $b) => $kpis->yieldByYear($b))->groupBy('year')->sortKeysDesc()
-                ->map(fn ($rows, $year): array => ['year' => (int) $year, 'production' => (float) $rows->sum('production'), 'area' => (float) $rows->sum('area'),
-                    'yield' => $rows->sum('area') > 0 ? $rows->sum('production') / $rows->sum('area') : null, 'barangays' => $rows->flatMap(fn ($r) => $r['barangays'])->unique()->values()])
-                ->first();
-        if (! is_array($latest) || (float) $latest['production'] <= 0) {
+            ->when($this->scope !== null, fn ($rows) => $rows->whereIn('barangay', $this->scope));
+        $latest = $rows->where('year', $rows->max('year'));
+        $production = (float) $latest->sum('total_production');
+        if ($latest->isEmpty() || $production <= 0) {
             return null;
         }
+        $area = (float) $latest->sum('area_hectares');
 
         return [
-            'year' => (int) $latest['year'],
-            'production' => round((float) $latest['production'], 1),
-            'area' => round((float) $latest['area'], 1),
-            'yield' => $latest['yield'] !== null ? round((float) $latest['yield'], 2) : null,
-            'barangays' => $latest['barangays']->count(),
+            'year' => (int) $latest->first()->year,
+            'production' => round($production, 1),
+            'area' => round($area, 1),
+            'yield' => $area > 0 ? round($production / $area, 2) : null,
+            'barangays' => $latest->pluck('barangay')->filter()->unique()->count(),
+            // verified / unverified / derived: decides how the tile words the figure.
+            'provenance' => \App\Support\RecordProvenance::combined($latest->map($class)),
         ];
     }
 

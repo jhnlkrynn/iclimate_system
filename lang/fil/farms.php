@@ -95,7 +95,7 @@ return [
     'map' => [
         'title' => 'I-mapa ang :name',
         'intro' => 'Pindutin ang paligid ng bukid para markahan ito sa mapa. Hilahin ang isang tuldok para ilipat ito.',
-        'private' => 'Pribado ang lokasyon ng inyong bukid: kayo, ang MAO at ang IT lang ang makakakita nito.',
+        'private' => 'Pribado ang lokasyon ng inyong bukid: kayo at ang MAO lang ang makakakita nito.',
         'points' => 'Mga tuldok na nalagay',
         'area' => 'Laki mula sa mapa',
         'perimeter' => 'Haba ng paligid ng bukid',
@@ -137,8 +137,11 @@ return [
         ],
         'pick' => 'Aling samahan?',
         'pick_choose' => 'Pumili ng samahan',
+        'dropdown_choose' => 'Pumili ng samahan o katayuan ng pagiging kasapi',
+        'dropdown_choose_short' => 'Pumili ng samahan',
+        'dropdown_not_member' => 'Hindi kasapi',
         'other_name' => 'Pangalan ng inyong samahan',
-        'other_hint' => 'Titingnan at idadagdag ito ng MAO.',
+        'other_hint' => 'Hindi kailangan. Maaaring tingnan at idagdag ito ng MAO.',
         // The farmer dashboard's card for a farm without an answer.
         'prompt' => [
             'title' => 'Kasapi ba ang :name sa isang samahan ng magsasaka?',

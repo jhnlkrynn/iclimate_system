@@ -19,7 +19,7 @@ class Phase7ReportsTest extends TestCase
 
     private function mao(): User
     {
-        return User::factory()->create(['role' => User::ROLE_MAO]);
+        return User::factory()->create(['role' => User::ROLE_MAO, 'is_mao_head' => true]);
     }
 
     public function test_seasonal_production_report_is_built_at_once_as_a_versioned_draft(): void
@@ -50,7 +50,9 @@ class Phase7ReportsTest extends TestCase
         $mao = $this->mao();
         YieldPredictionRequest::query()->create(['user_id' => $mao->id, 'scope' => 'municipal', 'season' => 'Wet', 'farm_type' => 'Irrigated', 'area_hectares' => 100, 'target_month' => '2026-09-01', 'status' => 'done', 'predicted_yield' => 4.2, 'total_tons' => 420, 'historical_average' => 4.0, 'impact_level' => 'Normal']);
 
-        foreach (['yield_prediction' => 1, 'climate_trend' => null, 'barangay_risk' => 19] as $type => $rows) {
+        // The application’s current verified geography source (LianBarangays plus
+        // the GeoJSON boundary) contains nine supported barangays.
+        foreach (['yield_prediction' => 1, 'climate_trend' => null, 'barangay_risk' => 9] as $type => $rows) {
             $this->actingAs($mao)->post(route('reports.generate'), ['report_type' => $type])->assertRedirect();
             $report = Report::query()->latest('id')->first();
             $this->assertSame($type, $report->typeKey());
@@ -95,8 +97,8 @@ class Phase7ReportsTest extends TestCase
 
         $this->actingAs($farmer)->get(route('reports.export.pdf', ['report' => $report->id]))->assertStatus(403);
         // IT is sent back to the IT dashboard from agricultural pages (RedirectItFromFieldPages) or refused: never allowed.
-        $it = $this->actingAs(User::factory()->create(['role' => User::ROLE_IT_EXPERT]))->post(route('reports.publish', $report), ['publish' => 1]);
-        $this->assertContains($it->status(), [303, 403]);
+        $it = $this->actingAs(User::factory()->create(['role' => 'IT Expert']))->post(route('reports.publish', $report), ['publish' => 1]);
+        $it->assertRedirect(route('login'));
         $this->assertSame(Report::STATUS_DRAFT, $report->fresh()->status);
     }
 

@@ -12,10 +12,12 @@ use App\Services\SystemAuditLogger;
 use App\Support\ActiveFarm;
 use App\Support\FarmerLanguage;
 use App\Support\LianBarangays;
+use App\Support\RecordProvenance;
 use App\Support\RiceSeason;
 use App\Support\SchemaCache;
 use App\Support\YieldCorrections;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
@@ -32,6 +34,27 @@ use Illuminate\View\View;
 class YieldPredictionController extends Controller
 {
     public const MAX_PENDING = 3;
+
+    public function status(Request $request, int $prediction): JsonResponse
+    {
+        $record = YieldPredictionRequest::query()->findOrFail($prediction);
+        $user = $request->user();
+        $allowed = (int) $record->user_id === (int) $user->getKey()
+            || ($user->role === User::ROLE_MAO && in_array($record->scope, [YieldPredictionRequest::SCOPE_BARANGAY, YieldPredictionRequest::SCOPE_MUNICIPAL], true));
+
+        abort_unless($allowed, 403);
+
+        return response()->json([
+            'id' => $record->getKey(),
+            'status' => match ($record->status) {
+                YieldPredictionRequest::QUEUED => 'requested',
+                YieldPredictionRequest::DONE => 'completed',
+                default => $record->status,
+            },
+            'error' => $record->status === YieldPredictionRequest::FAILED ? $record->error : null,
+            'updated_at' => $record->updated_at?->toISOString(),
+        ]);
+    }
 
     public function farmer(Request $request): View
     {
@@ -148,21 +171,35 @@ class YieldPredictionController extends Controller
      * The yield the MAO recorded (Rice Production) for the season a forecast was for, when it has been recorded: the
      * barangay's records, or the average of all barangays for a municipal forecast.
      *
+     * Each value carries where it comes from (RecordProvenance). Only validated, separately measured records are an
+     * actual yield; unvalidated records and season totals split across barangays are shown under their own label, and
+     * demo records are never used.
+     *
      * @param  Collection<int, YieldPredictionRequest>  $requests
-     * @return array<int, float>
+     * @return array<int, array{value: float, provenance: string}>
      */
     private function actualsFor(Collection $requests): array
     {
+        $done = $requests->where('status', YieldPredictionRequest::DONE);
+        if ($done->isEmpty()) {
+            return [];
+        }
+        $classes = rescue(fn (): array => RecordProvenance::riceClasses(), [], false);
         $out = [];
-        foreach ($requests->where('status', YieldPredictionRequest::DONE) as $r) {
+        foreach ($done as $r) {
             $year = $r->target_month->year - ($r->season === RiceSeason::DRY ? 1 : 0);   // a Dry season is named by the year it starts
-            $actual = rescue(fn () => RiceProduction::query()
+            $rows = rescue(fn () => RiceProduction::query()
                 ->where('season', $r->season)->where('irrigation_type', $r->farm_type)
                 ->where(fn ($q) => $q->where('year', $year)->orWhere('year', $r->target_month->year))
                 ->when($r->barangay, fn ($q) => $q->where('barangay', $r->barangay))
-                ->whereNotNull('yield_per_hectare')->avg('yield_per_hectare'), null, false);
-            if ($actual !== null) {
-                $out[$r->getKey()] = round((float) $actual, 2);
+                ->whereNotNull('yield_per_hectare')->get(['id', 'yield_per_hectare']), collect(), false)
+                ->groupBy(fn (RiceProduction $row): string => $classes[$row->id] ?? RecordProvenance::UNVERIFIED);
+            // The best evidence on record for this forecast, never an average across kinds of record.
+            foreach ([RecordProvenance::VERIFIED, RecordProvenance::UNVERIFIED, RecordProvenance::DERIVED] as $class) {
+                if ($rows->has($class)) {
+                    $out[$r->getKey()] = ['value' => round((float) $rows[$class]->avg('yield_per_hectare'), 2), 'provenance' => $class];
+                    break;
+                }
             }
         }
 

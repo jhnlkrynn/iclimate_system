@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Notification as UserNotification;
 use App\Models\User;
+use App\Events\NotificationChanged;
 use App\Services\SystemAuditLogger;
 use App\Support\SampleData;
 use App\Support\SchemaCache;
@@ -12,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class NotificationController extends CrudController
@@ -53,7 +55,7 @@ class NotificationController extends CrudController
     public function __construct()
     {
         $this->fields = [
-            ['name' => 'recipient_scope', 'label' => 'Send To', 'type' => 'select', 'options' => ['all' => 'All Users', 'farmers' => 'Farmers', 'mao' => 'MAO Personnel', 'it_experts' => 'IT Experts', 'specific' => 'Specific User']],
+            ['name' => 'recipient_scope', 'label' => 'Send To', 'type' => 'select', 'options' => ['all' => 'All Users', 'farmers' => 'Farmers', 'mao' => 'MAO Personnel', 'specific' => 'Specific User']],
             ['name' => 'user_id', 'label' => 'Specific User', 'type' => 'select', 'options' => $this->userOptions()],
             ['name' => 'title', 'label' => 'Title'],
             ['name' => 'message', 'label' => 'Message', 'type' => 'textarea'],
@@ -80,19 +82,20 @@ class NotificationController extends CrudController
 
         $timestamp = now();
         $category = $this->categoryColumns($data);
-        $recipients->pluck('id')->chunk(500)->each(function ($userIds) use ($data, $timestamp, $category): void {
-            UserNotification::query()->insert($userIds->map(fn (int $userId): array => [
-                'user_id' => $userId,
-                'title' => $data['title'],
-                'message' => $data['message'],
-                'type' => $data['type'],
-                'is_read' => false,
-                'created_at' => $timestamp,
-                'updated_at' => $timestamp,
-            ] + $category)->all());
+        DB::transaction(function () use ($recipients, $data, $timestamp, $category): void {
+            $recipients->each(function (User $recipient) use ($data, $timestamp, $category): void {
+                UserNotification::query()->create([
+                    'user_id' => $recipient->id,
+                    'title' => $data['title'],
+                    'message' => $data['message'],
+                    'type' => $data['type'],
+                    'is_read' => false,
+                    'created_at' => $timestamp,
+                    'updated_at' => $timestamp,
+                ] + $category);
+            });
         });
-        // A bulk insert skips model events: retire what reads notifications (the staff counts) the same way a save would.
-        // Each recipient's own pages pick the new notice up within their short cache time, as before.
+        // Model events broadcast each committed notification; preserve the existing cache invalidation for server-rendered counts.
         \App\Support\CacheScope::changed(UserNotification::class);
         SystemAuditLogger::record('Sent Notification', $request, [
             'title' => $data['title'],
@@ -117,6 +120,7 @@ class NotificationController extends CrudController
         $this->authorizeManage($request);
         $record = $this->findRecord($request, $id);
         $data = $this->validated($request, $id);
+        $previousRecipientId = (int) $record->user_id;
         $record->update([
             'user_id' => $data['user_id'] ?? $record->user_id,
             'title' => $data['title'],
@@ -124,6 +128,9 @@ class NotificationController extends CrudController
             'type' => $data['type'],
             'is_read' => $request->boolean('is_read'),
         ] + $this->categoryColumns($data));
+        if ($previousRecipientId !== (int) $record->user_id) {
+            NotificationChanged::dispatch($previousRecipientId, 'sync');
+        }
         SystemAuditLogger::forModel('updated', $record, $request, [
             'recipient_id' => $record->user_id,
             'type' => $record->type,
@@ -239,7 +246,7 @@ class NotificationController extends CrudController
                 'is_read' => (bool) $note->is_read,
                 'created_at' => $note->created_at?->toIso8601String(),
                 'time' => $note->created_at?->copy()->timezone($tz)->format('M j, Y · g:i A'),
-                'ago' => $note->created_at?->diffForHumans(),
+                'ago' => \App\Support\RelativeTime::format($note->created_at),
                 'mark_read_url' => route('notifications.mark-read', $note),
                 'link_url' => $note->type === 'Advisory' ? route('planting-advisories.index') : null,
                 'link_label' => $note->type === 'Advisory' ? $advisoriesLabel : null,
@@ -279,6 +286,10 @@ class NotificationController extends CrudController
         ]);
         $this->forgetUnreadCaches($request->user());
 
+        if ($updated > 0) {
+            NotificationChanged::dispatch((int) $request->user()->id, 'sync');
+        }
+
         if ($request->expectsJson()) {
             return response()->json(['ok' => true, 'updated' => $updated, 'unread' => $this->unreadCount($request)]);
         }
@@ -302,7 +313,7 @@ class NotificationController extends CrudController
     {
         if ($id) {
             return [
-                'user_id' => ['required', 'exists:users,id'],
+                'user_id' => ['required', Rule::exists('users', 'id')->whereIn('role', array_merge(User::storedRoleValues(User::ROLE_FARMER), User::storedRoleValues(User::ROLE_MAO)))],
                 'title' => ['required', 'string', 'max:255'],
                 'message' => ['required', 'string'],
                 'type' => ['required', Rule::in(['Announcement', 'Advisory', 'Warning'])],
@@ -312,8 +323,8 @@ class NotificationController extends CrudController
         }
 
         return [
-            'recipient_scope' => ['required', Rule::in(['all', 'farmers', 'mao', 'it_experts', 'specific'])],
-            'user_id' => ['required_if:recipient_scope,specific', 'nullable', 'exists:users,id'],
+            'recipient_scope' => ['required', Rule::in(['all', 'farmers', 'mao', 'specific'])],
+            'user_id' => ['required_if:recipient_scope,specific', 'nullable', Rule::exists('users', 'id')->whereIn('role', array_merge(User::storedRoleValues(User::ROLE_FARMER), User::storedRoleValues(User::ROLE_MAO)))],
             'title' => ['required', 'string', 'max:255'],
             'message' => ['required', 'string'],
             'type' => ['required', Rule::in(['Announcement', 'Advisory', 'Warning'])],
@@ -324,11 +335,10 @@ class NotificationController extends CrudController
     private function recipients(array $data)
     {
         return match ($data['recipient_scope']) {
-            'all' => User::query()->where('status', User::STATUS_ACTIVE)->get(['id']),
+            'all' => User::query()->whereIn('role', User::ROLES)->where('status', User::STATUS_ACTIVE)->get(['id']),
             'farmers' => User::query()->where('role', User::ROLE_FARMER)->where('status', User::STATUS_ACTIVE)->get(['id']),
             'mao' => User::query()->where('role', User::ROLE_MAO)->where('status', User::STATUS_ACTIVE)->get(['id']),
-            'it_experts' => User::query()->where('role', User::ROLE_IT_EXPERT)->where('status', User::STATUS_ACTIVE)->get(['id']),
-            'specific' => User::query()->whereKey($data['user_id'])->get(['id']),
+            'specific' => User::query()->whereIn('role', User::ROLES)->where('status', User::STATUS_ACTIVE)->whereKey($data['user_id'])->get(['id']),
         };
     }
 }

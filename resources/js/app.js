@@ -10,6 +10,7 @@ import { initTheme, registerChartTheme } from './theme';
 import './app-magic';
 import './mobile-navigation';
 import { watchPanelRevisions } from './panel-revisions';   // thesis panel revisions (docs/panel-revisions.md)
+import { initLiveClock } from './live-clock';
 
 const wrapChartLabel = (label, maxLineLength = 14, maxLines = 3) => {
     const normalized = String(label ?? '').trim();
@@ -175,6 +176,7 @@ Alpine.start();
  * and no prevention of server-side validation/submission.
  */
 function initApp() {
+    initLiveClock();
     initTheme();
     bindNavbarState();
     bindMobileNavigation();
@@ -202,12 +204,32 @@ function initApp() {
     if (document.querySelector('[data-ic-notifications]')) {
         import('./notifications-popup').then(({ initNotificationsPopup }) => initNotificationsPopup());
     }
+    if (document.querySelector('[data-analytics-run], [data-prediction-status-url]')) {
+        import('./prediction-realtime').then(({ initPredictionRealtime }) => initPredictionRealtime());
+    }
+    const dashboardRoot = document.querySelector('[data-dashboard-realtime]');
+    if (dashboardRoot?.__icDashboardRefresh) {
+        import('./dashboard-realtime').then(({ initDashboardRealtime }) => initDashboardRealtime({ root: dashboardRoot, refresh: dashboardRoot.__icDashboardRefresh }));
+    }
+    // List pages whose records others change (data-live-region): refreshed in place, see live-page.js.
+    if (document.querySelector('[data-live-region]')) {
+        import('./live-page').then(({ initLivePage }) => initLivePage());
+    }
+    if (document.querySelector('[data-my-farm]')) {
+        import('./farm-realtime').then(({ initFarmRealtime }) => initFarmRealtime());
+    }
     // Rice Varieties: the Variety Details pop-up and the planting form's variety picker.
     if (document.querySelector('[data-rv-dialog], [data-rv-planting]')) {
         import('./rice-varieties').then(({ initVarietyDetails, initVarietyPicker, initFilterPopover, initRowMenus }) => {
             initVarietyDetails(); initVarietyPicker(); initFilterPopover(); initRowMenus();
         });
     }
+    // A live region that was refreshed in place gets the same finishing touches as on page load.
+    window.iClimateEnhance = (element) => {
+        initUiEnhancements(element);
+        bindResponsiveTables();
+        bindDeleteConfirmations();
+    };
     watchPanelRevisions();
     bindSidebarDrawer();
     bindResponsiveTables();

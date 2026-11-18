@@ -80,10 +80,15 @@ export async function initFarmerHomeCharts(root) {
     // last harvest as two or three bars in t/ha. One colour per figure, the same in both themes.
     const compareCanvas = root.querySelector('#fhCompareChart');
     if (compare && compareCanvas) {
-        const colors = { estimate: brand, usual: '#6b7f8c', last: warm };
+        const colors = { estimate: brand, usual: '#6b7f8c', last: warm, predicted: brand, actual: '#2d8a58', historical: '#d9a441' };
         new Chart(compareCanvas, {
             type: 'bar',
-            data: { labels: compare.labels, datasets: [{ data: compare.values, backgroundColor: compare.keys.map((k) => colors[k] || brand), borderRadius: 999, borderSkipped: false, maxBarThickness: 30 }] },
+            data: { labels: compare.labels, datasets: [{ data: compare.values, backgroundColor: compare.keys.map((k, i) => {
+                if (k === 'historical') return '#d9a441';
+                const deviation = compare.deviations?.[i];
+                if (deviation == null) return colors[k] || brand;
+                return deviation > 10 ? '#2d8a58' : (deviation < -10 ? '#c94b4b' : '#d9a441');
+            }), borderRadius: 999, borderSkipped: false, maxBarThickness: 30 }] },
             options: {
                 ...common,
                 indexAxis: 'y',

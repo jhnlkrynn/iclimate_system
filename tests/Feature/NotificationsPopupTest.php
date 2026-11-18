@@ -22,7 +22,7 @@ class NotificationsPopupTest extends TestCase
 
     private function mao(): User
     {
-        return User::factory()->create(['role' => User::ROLE_MAO]);
+        return User::factory()->create(['role' => User::ROLE_MAO, 'is_mao_head' => true]);
     }
 
     private function note(User $user, string $title, array $extra = []): Notification
@@ -148,5 +148,18 @@ class NotificationsPopupTest extends TestCase
         foreach (['data-ic-notif-search', 'data-ic-notif-page', 'data-ic-notif-read', 'data-ic-notif-edit', 'data-ic-notif-delete', 'data-ic-notif-new', "['read', 'Read']"] as $hook) {
             $this->assertStringContainsString($hook, $js, $hook);
         }
+    }
+
+    public function test_notification_bell_has_realtime_and_fallback_hooks(): void
+    {
+        $js = file_get_contents(resource_path('js/notifications-popup.js'));
+
+        $this->assertIsString($js);
+        $this->assertStringContainsString('window.Echo.private(`user.${userId}`)', $js);
+        $this->assertStringContainsString(".listen('.notification.changed'", $js);
+        $this->assertStringContainsString("window.addEventListener('iclimate:realtime-state'", $js);
+        $this->assertStringContainsString('setInterval(() =>', $js);
+        $this->assertStringContainsString('syncAuthoritative({ refreshOpen: true })', $js);
+        $this->assertStringContainsString('seenChanges', $js);
     }
 }

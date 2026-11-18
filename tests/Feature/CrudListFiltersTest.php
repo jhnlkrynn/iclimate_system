@@ -19,15 +19,15 @@ class CrudListFiltersTest extends TestCase
     public function test_list_filters_submit_and_match_the_stored_value(): void
     {
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
-        FarmerProfile::factory()->create(['full_name' => 'Ana Pob Two', 'barangay' => 'Barangay 2 (Pob.)']);
+        FarmerProfile::factory()->create(['full_name' => 'Ana Balibago', 'barangay' => 'Balibago']);
         FarmerProfile::factory()->create(['full_name' => 'Ben Prenza', 'barangay' => 'Prenza']);
 
         $this->actingAs($mao)->get(route('farmer-profiles.index'))
-            ->assertSee('<option value="Barangay 2 (Pob.)"', false)
+            ->assertSee('<option value="Balibago"', false)
             ->assertDontSee('<option value="0"', false);
 
-        $this->actingAs($mao)->get(route('farmer-profiles.index', ['barangay' => 'Barangay 2 (Pob.)']))
-            ->assertOk()->assertSee('Ana Pob Two')->assertDontSee('Ben Prenza');
+        $this->actingAs($mao)->get(route('farmer-profiles.index', ['barangay' => 'Balibago']))
+            ->assertOk()->assertSee('Ana Balibago')->assertDontSee('Ben Prenza');
     }
 
     public function test_status_filters_on_staff_lists_work(): void
@@ -44,7 +44,7 @@ class CrudListFiltersTest extends TestCase
 
     public function test_a_filter_keyed_by_its_stored_value_keeps_those_keys(): void
     {
-        $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
+        $it = User::factory()->create(['role' => User::ROLE_MAO, 'is_mao_head' => true]);
 
         // notifications.is_read is stored as 0 / 1, so its options stay keyed 0 => Unread, 1 => Read.
         $this->actingAs($it)->get(route('notifications.index'))->assertOk()

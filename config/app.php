@@ -113,6 +113,12 @@ return [
 
     'key' => env('APP_KEY'),
 
+    /*
+    | Outside production the database must be on this machine (App\Support\DatabaseEnvironmentGuard). Set true only
+    | for an approved, deliberate session against a remote database.
+    */
+    'allow_remote_database' => (bool) env('ICLIMATE_ALLOW_REMOTE_DATABASE', false),
+
     'previous_keys' => [
         ...array_filter(
             explode(',', (string) env('APP_PREVIOUS_KEYS', ''))

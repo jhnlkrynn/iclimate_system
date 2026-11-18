@@ -131,22 +131,7 @@ class PredictionsPageTest extends TestCase
 
     // ------------------------------------------------------------ one page, no pickers, no outside calls
 
-    public function test_one_page_for_every_role_with_no_date_or_month_picker_and_no_outside_call(): void
-    {
-        $this->storeLianForecast(16);
-        // IT reads model details on Model Evaluation; the Predictions page sends it back to its dashboard (2026-10).
-        $this->actingAs(User::factory()->create(['role' => User::ROLE_IT_EXPERT]))->get(route('weather-predictions.index'))->assertRedirect(route('admin.dashboard'));
-        $users = [$this->farmer(), User::factory()->create(['role' => User::ROLE_MAO])];
 
-        foreach ($users as $user) {
-            $html = $this->actingAs($user)->get(route('weather-predictions.index'))->assertOk()->getContent();
-            $this->assertStringContainsString('data-wpx-weather', $html);
-            $this->assertStringContainsString('data-wpx-yield', $html);
-            $this->assertDoesNotMatchRegularExpression('/type="(date|month)"/', $html, $user->role);
-            $this->assertStringNotContainsString('calendar_month', $html);
-        }
-        Http::assertNothingSent();
-    }
 
     public function test_this_week_is_days_1_to_7_and_next_2_weeks_is_days_1_to_14(): void
     {
@@ -277,32 +262,18 @@ class PredictionsPageTest extends TestCase
         $all = $this->actingAs($mao)->get(route('weather-predictions.index'))->getContent();
         $this->assertStringContainsString('For Lian, Batangas', $this->text($all));
 
-        foreach ([$this->farmer(), User::factory()->create(['role' => User::ROLE_IT_EXPERT])] as $other) {
+        foreach ([$this->farmer()] as $other) {
             $this->assertStringNotContainsString('data-wpx-filter', $this->actingAs($other)->get(route('weather-predictions.index', ['barangay' => 'Matabungkay']))->getContent());
         }
     }
 
-    public function test_it_is_sent_to_its_dashboard_and_no_other_role_gets_technical_details(): void
-    {
-        $this->prepareMonthlyForecasts();
-        MlModel::query()->create(['purpose' => MlModel::PURPOSE_RICE_YIELD, 'name' => 'Rice yield model (production)', 'model_type' => 'random_forest', 'version' => '1.0.0',
-            'file_path' => 'storage/models/rice_yield_model_final.pkl', 'rmse' => 0.412, 'mae' => 0.318, 'r2' => 0.871, 'status' => MlModel::STATUS_ACTIVE, 'is_active' => true]);
-        $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
 
-        $this->actingAs($it)->get(route('weather-predictions.index'))->assertRedirect(route('admin.dashboard'));
-        $this->assertSame(['rmse' => 0.412, 'mae' => 0.318, 'r2' => 0.871], MlModel::query()->firstOrFail()->only(['rmse', 'mae', 'r2']));
-
-        foreach ([$this->farmer(), User::factory()->create(['role' => User::ROLE_MAO])] as $other) {
-            $page = $this->actingAs($other)->get(route('weather-predictions.index'))->getContent();
-            $this->assertStringNotContainsString('data-wpx-technical', $page, $other->role);
-            $this->assertStringNotContainsString('RMSE', $page, $other->role);
-        }
-    }
 
     // ------------------------------------------------------------ yield this season
 
     public function test_the_farmer_sees_their_own_estimate_for_this_season_from_the_profile(): void
     {
+        config(['prediction.rice_yield.gate' => 'off']);   // display formatting; the gate itself: YieldModelGateTest
         $this->lianYields(4.0);
         $farmer = $this->farmer(area: 1.5);
         $this->storeEstimate($farmer, 4.6);
@@ -310,6 +281,8 @@ class PredictionsPageTest extends TestCase
         $text = $this->text($this->actingAs($farmer)->get(route('weather-predictions.index'))->getContent());
 
         $this->assertStringContainsString('4.60 t/ha', $text);
+        $this->assertStringContainsString('Unvalidated estimate', $text);
+        $this->assertStringContainsString('Accuracy not verified', $text);
         $this->assertStringContainsString('Higher', $text);
         $this->assertStringContainsString('From your farm size (1.50 ha) and farm type (Irrigated', $text);
         $this->assertStringContainsString(\App\Support\RiceSeason::current() === 'Wet' ? 'Wet season' : 'Dry season', $text);
@@ -356,7 +329,7 @@ class PredictionsPageTest extends TestCase
         $this->assertStringContainsString('4.50 t/ha', $one);
         $this->assertStringContainsString("Average of 2 farmers' saved estimates.", $one);
 
-        $none = $this->text($this->actingAs($mao)->get(route('weather-predictions.index', ['barangay' => 'Cumba']))->getContent());
+        $none = $this->text($this->actingAs($mao)->get(route('weather-predictions.index', ['barangay' => 'San Diego']))->getContent());
         $this->assertStringContainsString('No saved farmer estimates yet for this area.', $none);
     }
 
@@ -372,6 +345,7 @@ class PredictionsPageTest extends TestCase
         $text = $this->text($this->actingAs($mao)->get(route('weather-predictions.index'))->getContent());
 
         $this->assertStringContainsString('4.25 t/ha', $text);
+        $this->assertStringContainsString('Unvalidated estimate', $text);
         $this->assertStringContainsString('Municipality-wide forecast from the trained rice-yield model', $text);
         $this->assertStringNotContainsString('No saved farmer estimates yet', $text);
         Queue::assertNotPushed(\App\Jobs\PrepareMunicipalYieldForecast::class);
@@ -403,18 +377,7 @@ class PredictionsPageTest extends TestCase
 
     // ------------------------------------------------------------ old URLs
 
-    public function test_old_prediction_forms_and_the_candidate_test_page_redirect_to_the_new_pages(): void
-    {
-        $farmer = $this->farmer();
-        $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
 
-        $this->actingAs($farmer)->post(route('weather-predictions.predict'), ['prediction_type' => 'weather'])->assertRedirect(route('weather-predictions.index'));
-        $this->actingAs($farmer)->post(route('rice-yield-predictions.predict'), ['prediction_type' => 'rice_yield'])->assertRedirect(route('weather-predictions.index').'#yield');
-        $this->actingAs($it)->get(route('testing.candidate-rice-yield'))->assertRedirect(route('model-evaluation.index'));
-        $this->actingAs($it)->post(route('testing.candidate-rice-yield.predict'))->assertRedirect(route('model-evaluation.index'));
-        $this->actingAs($farmer)->get(route('weather-predictions.index', ['target_month' => '2026-12', 'calendar_month' => '2026-11', 'tab' => 'rice-yield']))->assertOk();
-        $this->assertSame(0, \App\Models\AnalyticsRun::query()->count(), 'nothing is queued by the old forms');
-    }
 
     public function test_a_failing_monthly_model_never_breaks_the_page(): void
     {

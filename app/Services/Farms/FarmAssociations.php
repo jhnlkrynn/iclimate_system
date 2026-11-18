@@ -29,13 +29,21 @@ final class FarmAssociations
     }
 
     /**
+     * The registered association records shared by Registration and Add / Edit Farm.
+     */
+    public static function organizations(): Collection
+    {
+        return FarmerOrganization::query()->orderBy('name')->get(['id', 'name', 'barangay', 'farm_type']);
+    }
+
+    /**
      * Every association, for the Add / Edit Farm picker (filtered in the page as the barangay changes).
      *
      * @return Collection<int, array{id: int, name: string, barangay: ?string, farm_type: ?string}>
      */
     public static function all(): Collection
     {
-        return FarmerOrganization::query()->orderBy('name')->get(['id', 'name', 'barangay', 'farm_type'])
+        return self::organizations()
             ->map(fn (FarmerOrganization $o): array => [
                 'id' => (int) $o->id,
                 'name' => (string) $o->name,
@@ -61,6 +69,16 @@ final class FarmAssociations
         $typed = $here->filter(fn (array $o): bool => $o['farm_type'] === null || $o['farm_type'] === $farmType)->values();
 
         return $farmType !== null && $typed->isNotEmpty() ? $typed : $here;
+    }
+
+    /** All registered associations in a barangay, regardless of farm type, for the dependent farmer pickers. */
+    public static function registeredForBarangay(?string $barangay, ?Collection $all = null): Collection
+    {
+        $canonical = LianBarangays::canonicalName($barangay);
+
+        return $canonical === null
+            ? collect()
+            : ($all ?? self::all())->where('barangay', $canonical)->values();
     }
 
     /**
@@ -112,7 +130,7 @@ final class FarmAssociations
         $answer = [
             'association_status' => $status,
             'farmer_organization_id' => $status === Farm::ASSOCIATION_MEMBER ? (int) $data['farmer_organization_id'] : null,
-            'association_other_name' => $status === Farm::ASSOCIATION_PENDING ? trim((string) $data['association_other_name']) : null,
+            'association_other_name' => $status === Farm::ASSOCIATION_PENDING ? trim((string) ($data['association_other_name'] ?? '')) : null,
         ];
         $same = $farm->association_status === $answer['association_status']
             && (int) $farm->farmer_organization_id === (int) $answer['farmer_organization_id']

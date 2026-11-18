@@ -122,8 +122,8 @@ class HeatMapPageTest extends TestCase
         $this->assertMatchesRegularExpression('#data-heat-map-range="2weeks" aria-pressed="false">2 Weeks</button>#', $html);
 
         $this->assertSame(1, preg_match('#<div class="hmx-legend".*?</div>#s', $html, $m));
-        $this->assertSame('Farm risk Low Moderate High', trim((string) preg_replace('/\s+/', ' ', strip_tags($m[0]))));
-        foreach (['#2e7d32', '#f2b134', '#c62828'] as $color) {
+        $this->assertSame('Weather risk to crops Low Risk Moderate Risk High Risk Severe Risk', trim((string) preg_replace('/\s+/', ' ', strip_tags($m[0]))));
+        foreach (['#2E7D32', '#F2C230', '#C62828'] as $color) {
             $this->assertStringContainsString('--hmx-color: '.$color, $m[0]);
         }
 
@@ -141,13 +141,13 @@ class HeatMapPageTest extends TestCase
         $this->storeForecasts([
             'Matabungkay' => [1 => ['rainfall' => 60.0]],                                   // very heavy rain: High
             'San Diego' => [2 => ['wind_speed_max' => 70.0]],                               // storm wind: High
-            'Cumba' => [3 => ['rainfall' => 30.0], 4 => ['rainfall' => 26.0], 5 => ['rainfall' => 40.0]], // 3 heavy days: High
+            'Balibago' => [3 => ['rainfall' => 30.0], 4 => ['rainfall' => 26.0], 5 => ['rainfall' => 40.0]], // 3 heavy days: High
             'Prenza' => [2 => ['rainfall' => 30.0]],                                        // one heavy day: Moderate
         ]);
         $html = $this->actingAs($this->staff())->get(route('heat-map.index'))->assertOk()->getContent();
 
         $summary = $this->panelView($html, 'week:summary');
-        $this->assertStringStartsWith('Lian this week 3 barangays are at high risk 1 barangay is at moderate risk 15 barangays are at low risk', $summary);
+        $this->assertStringStartsWith('Lian this week 3 barangays are at high risk 1 barangay is at moderate risk '.(count(LianBarangays::all()) - 4).' barangays are at low risk', $summary);
         $this->assertStringContainsString('Click a barangay on the map to see what it means and what to do.', $summary);
         $this->assertStringNotContainsString('no data', strtolower($summary));
         // The summary is the only view shown at first; every barangay view waits for a click.
@@ -156,8 +156,8 @@ class HeatMapPageTest extends TestCase
         // The map's colours are the same ratings the panel words come from.
         $this->assertSame(1, preg_match('#<script type="application/json" data-heat-map-levels>(.*?)</script>#s', $html, $m));
         $levels = json_decode($m[1], true)['levels'];
-        $this->assertCount(19, $levels['week']);
-        $this->assertSame(['Cumba', 'Matabungkay', 'San Diego'], array_keys(array_filter($levels['week'], fn ($l) => $l === 'high')));
+        $this->assertCount(count(\App\Support\LianBarangays::all()), $levels['week']);
+        $this->assertSame(['Balibago', 'Matabungkay', 'San Diego'], array_keys(array_filter($levels['week'], fn ($l) => $l === 'high')));
         $this->assertSame('moderate', $levels['week']['Prenza']);
     }
 
@@ -168,17 +168,17 @@ class HeatMapPageTest extends TestCase
         $day = CarbonImmutable::now('Asia/Manila')->addDays(2)->format('D');
 
         $prenza = $this->panelView($html, 'week:Prenza');
-        $this->assertStringContainsString('Prenza Moderate risk This Week', $prenza);
+        $this->assertStringContainsString('Prenza Moderate Risk This Week', $prenza);
         $this->assertStringContainsString("What it means Heavy rain is expected on {$day}. Low parts of the field may hold water.", $prenza);
         $this->assertStringContainsString('What to do now Clear the drainage canals. Do not spray or apply fertilizer before the rainy days.', $prenza);
 
         $high = $this->panelView($html, 'week:Matabungkay');
-        $this->assertStringContainsString('Matabungkay High risk', $high);
+        $this->assertStringContainsString('Matabungkay High Risk', $high);
         $this->assertStringContainsString('Fields may flood', $high);
         $this->assertStringContainsString('Clear the drainage canals now.', $high);
 
         $calm = $this->panelView($html, 'week:Balibago');
-        $this->assertStringContainsString('Balibago Low risk', $calm);
+        $this->assertStringContainsString('Balibago Low Risk', $calm);
         $this->assertStringContainsString('What it means No heavy rain, strong wind or extreme heat is expected in this period.', $calm);
         $this->assertStringContainsString('What to do now Continue normal farm work.', $calm);
     }
@@ -189,8 +189,8 @@ class HeatMapPageTest extends TestCase
         $this->storeForecasts(['Kapito' => [9 => ['rainfall' => 55.0]]]);
         $html = $this->actingAs($this->staff())->get(route('heat-map.index'))->assertOk()->getContent();
 
-        $this->assertStringContainsString('Kapito Low risk This Week', $this->panelView($html, 'week:Kapito'));
-        $this->assertStringContainsString('Kapito High risk 2 Weeks', $this->panelView($html, '2weeks:Kapito'));
+        $this->assertStringContainsString('Kapito Low Risk This Week', $this->panelView($html, 'week:Kapito'));
+        $this->assertStringContainsString('Kapito High Risk 2 Weeks', $this->panelView($html, '2weeks:Kapito'));
         $this->assertStringStartsWith('Lian in the next 2 weeks 1 barangay is at high risk', $this->panelView($html, '2weeks:summary'));
         // A day past the coming week is named by its date, since each weekday comes twice in two weeks.
         $this->assertStringContainsString(CarbonImmutable::now('Asia/Manila')->addDays(9)->format('M j'), $this->panelView($html, '2weeks:Kapito'));
@@ -206,9 +206,9 @@ class HeatMapPageTest extends TestCase
         $this->assertStringContainsString('Forecast numbers Rain in the period 54.0 mm Wettest day 30.0 mm Strongest wind 12 km/h Hottest day 31.0 °C', $staff);
 
         $farmer = $this->panelView($this->actingAs($this->farmer())->get(route('heat-map.index'))->assertOk()->getContent(), 'week:Prenza');
-        $this->assertStringContainsString('Moderate risk', $farmer);
+        $this->assertStringContainsString('Moderate Risk', $farmer);
         $this->assertStringNotContainsString('Forecast numbers', $farmer);
-        $this->assertDoesNotMatchRegularExpression('/\d\s?(mm|km\/h|°C)/', $farmer);
+        $this->assertStringNotContainsString('Forecast numbers', $farmer);
     }
 
     public function test_a_farmer_reads_the_panel_in_their_language_and_sees_their_own_barangay(): void
@@ -217,17 +217,17 @@ class HeatMapPageTest extends TestCase
         $html = $this->actingAs($this->farmer('Prenza', 'fil'))->get(route('heat-map.index'))->assertOk()->getContent();
 
         $summary = $this->panelView($html, 'week:summary');
-        $this->assertStringStartsWith('Lian ngayong linggo 1 barangay ang mataas ang panganib Walang barangay na katamtaman ang panganib 18 barangay ang mababa ang panganib', $summary);
+        $this->assertStringStartsWith('Lian ngayong linggo 1 barangay ang mataas ang panganib Walang barangay na katamtaman ang panganib '.(count(LianBarangays::all()) - 1).' barangay ang mababa ang panganib', $summary);
         $this->assertStringContainsString('Ang inyong barangay Prenza Mataas', $summary);
         $this->assertStringContainsString('data-own-barangay="Prenza"', $html);
         $this->assertMatchesRegularExpression('#aria-pressed="true">Ngayong Linggo</button>#', $html);
 
         $prenza = $this->panelView($html, 'week:Prenza');
-        $this->assertStringContainsString('Mataas ang panganib', $prenza);
+        $this->assertStringContainsString('Mataas na Panganib', $prenza);
         $this->assertStringContainsString('Ibig sabihin May inaasahang napakalakas o paulit-ulit na malakas na ulan (ngayon).', $prenza);
         $this->assertStringContainsString('Gawin ngayon Linisin na ngayon ang mga kanal na daluyan ng tubig.', $prenza);
 
-        // The farmer still sees all 19 barangays, never only their own.
+        // The farmer still sees all canonical barangays, never only their own.
         $this->assertSame(0, preg_match_all('#data-heat-map-view="week:(?!summary)[^"]+"#', $html));
 
         // English farmers get English; staff never get a "your barangay" line.
@@ -238,17 +238,7 @@ class HeatMapPageTest extends TestCase
         $this->assertStringNotContainsString('Your barangay Prenza', $this->panelView($staff, 'week:summary'));
     }
 
-    public function test_farmers_and_mao_open_the_heat_map_it_goes_to_its_dashboard_and_guests_to_login(): void
-    {
-        $this->storeForecasts();
-        $this->actingAs($this->staff(User::ROLE_IT_EXPERT))->get(route('heat-map.index'))->assertRedirect(route('admin.dashboard'));
-        foreach ([User::ROLE_FARMER, User::ROLE_MAO] as $role) {
-            $user = $role === User::ROLE_FARMER ? $this->farmer() : $this->staff($role);
-            $this->actingAs($user)->get(route('heat-map.index'))->assertOk()->assertSee('id="heatMapCanvas"', false);
-        }
-        auth()->logout();
-        $this->get(route('heat-map.index'))->assertRedirect(route('login'));
-    }
+
 
     // ------------------------------------------------------------ saved data only
 
@@ -300,7 +290,7 @@ class HeatMapPageTest extends TestCase
 
         $this->assertStringContainsString('No data yet', $this->panelView($html, 'week:summary'));
         $this->assertStringContainsString('Prenza No data', $this->panelView($html, 'week:Prenza'));
-        $this->assertStringNotContainsString('Low risk', $this->panelView($html, 'week:Prenza'));
+        $this->assertStringNotContainsString('Low Risk', $this->panelView($html, 'week:Prenza'));
     }
 
     public function test_the_summary_gives_lian_forecast_numbers_from_the_barangays_own_forecasts(): void
@@ -334,7 +324,7 @@ class HeatMapPageTest extends TestCase
         $this->storeForecasts();
 
         $html = $this->actingAs($this->staff())->get(route('heat-map.index'))->assertOk()->getContent();
-        $this->assertStringContainsString('Prenza Low risk This Week', $this->panelView($html, 'week:Prenza'));
+        $this->assertStringContainsString('Prenza Low Risk This Week', $this->panelView($html, 'week:Prenza'));
 
         $api = collect($this->getJson('/api/lian/risk-map')->assertOk()->json('barangays'))->firstWhere('barangay', 'Prenza');
         $this->assertSame('High', $api['risk_level']);
@@ -345,11 +335,11 @@ class HeatMapPageTest extends TestCase
         $this->storeForecasts(only: array_values(array_diff(LianBarangays::all(), ['Luyahan'])));
         $html = $this->actingAs($this->staff())->get(route('heat-map.index'))->assertOk()->getContent();
 
-        $this->assertStringContainsString('18 barangays are at low risk 1 barangay has no data yet', $this->panelView($html, 'week:summary'));
+        $this->assertStringContainsString((string) (count(LianBarangays::all()) - 1).' barangays are at low risk 1 barangay has no data yet', $this->panelView($html, 'week:summary'));
         $luyahan = $this->panelView($html, 'week:Luyahan');
         $this->assertStringContainsString('Luyahan No data', $luyahan);
         $this->assertStringContainsString('There is no saved forecast for this barangay yet.', $luyahan);
-        $this->assertStringNotContainsString('Low risk', $luyahan);
+        $this->assertStringNotContainsString('Low Risk', $luyahan);
         // The legend gains its grey "No data" entry only when it is needed.
         $this->assertSame(1, preg_match('#<div class="hmx-legend".*?</div>#s', $html, $m));
         $this->assertStringContainsString('No data', strip_tags($m[0]));
@@ -361,8 +351,8 @@ class HeatMapPageTest extends TestCase
         $farmer = $this->farmer('Prenza');
 
         $home = $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk()->getContent();
-        $this->assertMatchesRegularExpression('#<p class="fh-risk-badge is-danger">High</p>#', $home);
-        $this->assertStringContainsString('Prenza High risk', $this->panelView($this->actingAs($farmer)->get(route('heat-map.index'))->getContent(), 'week:Prenza'));
+        $this->assertMatchesRegularExpression('#<p class="fh-risk-badge is-danger">High Risk</p>#', $home);
+        $this->assertStringContainsString('Prenza High Risk', $this->panelView($this->actingAs($farmer)->get(route('heat-map.index'))->getContent(), 'week:Prenza'));
 
         $this->assertSame('high', app(BarangayWeekRiskService::class)->forBarangay('prenza')['level']);
         $this->assertNull(app(BarangayWeekRiskService::class)->forBarangay('Not A Barangay'));

@@ -32,8 +32,8 @@ class AccountDeletionTest extends TestCase
     {
         parent::setUp();
         Mail::fake();
-        $this->it = User::factory()->itExpert()->create(['name' => 'Ivy IT', 'email' => 'ivy.it@lian.gov.ph']);
-        User::factory()->itExpert()->create(['name' => 'Second IT', 'email' => 'second.it@lian.gov.ph']);   // so Ivy is not the last IT
+        $this->it = User::factory()->maoHead()->create(['name' => 'Ivy IT', 'email' => 'ivy.it@lian.gov.ph']);
+        User::factory()->maoHead()->create(['name' => 'Second IT', 'email' => 'second.it@lian.gov.ph']);   // so Ivy is not the last IT
     }
 
     private function farmer(array $attributes = []): User
@@ -113,15 +113,15 @@ class AccountDeletionTest extends TestCase
             $this->deleteAccount($farmer, 'moved_out', [], $user)->assertForbidden();
         }
 
-        $this->deleteAccount($this->it)->assertSessionHas('error', 'You cannot delete your own account. Ask another IT Personnel to do it.');
+        $this->deleteAccount($this->it)->assertSessionHas('error', 'You cannot delete your own account. Ask another MAO Head to do it.');
         $this->assertSame(User::STATUS_ACTIVE, $this->fresh($this->it)->status);
 
         // The last active IT account: only that account itself could try (an inactive IT is signed out first), and the
         // rule still holds on its own.
         User::query()->where('email', 'second.it@lian.gov.ph')->sole()->forceFill(['status' => User::STATUS_INACTIVE])->save();
         $this->assertNull(AccountDeletion::refusal($farmer, $this->it));
-        $this->assertSame('You cannot delete the last active IT Personnel account. Create another IT Personnel account first.',
-            AccountDeletion::refusal($this->it, User::factory()->itExpert()->make(['id' => 999999])));
+        $this->assertSame('You cannot delete the last active MAO Head account. Create another MAO Head account first.',
+            AccountDeletion::refusal($this->it, User::factory()->maoHead()->make(['id' => 999999])));
     }
 
     public function test_the_users_list_has_the_delete_dialog_with_the_recipient_line_and_an_mao_head_warning(): void
@@ -132,7 +132,7 @@ class AccountDeletionTest extends TestCase
 
         $html = $this->actingAs($this->it)->get(route('users.index'))->assertOk()->getContent();
         $this->assertStringContainsString('data-user-delete-dialog', $html);
-        $this->assertStringContainsString('Only IT can see this', $html);
+        $this->assertStringContainsString('Only the MAO Head can see this', $html);
         $this->assertStringContainsString('&quot;recipient&quot;:&quot;juan.delacruz@gmail.com&quot;', $html);
         $this->assertStringContainsString('&quot;recipient&quot;:null', $html);   // the @iclimate.test account
         $this->assertStringContainsString('&quot;maoHead&quot;:true', $html);

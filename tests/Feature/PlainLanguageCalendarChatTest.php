@@ -39,6 +39,6 @@ class PlainLanguageCalendarChatTest extends TestCase
     public function test_candidate_page_is_it_expert_only(): void
     {
         $farmer = User::factory()->farmer()->create();
-        $this->actingAs($farmer)->get('/testing/candidate-rice-yield')->assertForbidden();
+        $this->actingAs($farmer)->get('/testing/candidate-rice-yield')->assertNotFound();
     }
 }

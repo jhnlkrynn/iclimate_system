@@ -24,6 +24,9 @@ class PredictionParityTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // These tests check how a yield flows through the page/API; YieldModelGate (withholding estimates outside
+        // the model's training range) is tested on its own in YieldModelGateTest.
+        config(['prediction.rice_yield.gate' => 'off']);
 
         Config::set('services.groq.enabled', false);
         Config::set('services.farming_ai.url', 'http://farming-ai.test');
@@ -92,6 +95,7 @@ class PredictionParityTest extends TestCase
             $this->assertSame($systemResult['season'], $chatYield['season'], 'Season mismatch for '.json_encode($case));
             $this->assertSame($systemResult['model_version'], $chatYield['model_version'], 'Model version mismatch for '.json_encode($case));
             $this->assertEquals($systemResult['features'], $chatYield['features'], 'Ordered feature mismatch for '.json_encode($case));
+            $this->assertArrayNotHasKey('confidence', $systemResult, 'Heuristic weather confidence must not be stored as rice-yield confidence.');
         }
     }
 

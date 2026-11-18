@@ -29,15 +29,15 @@ class RegisteredUserController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', new \App\Rules\RegistrationEmailAvailable],   // a closed account's email says so
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'farmer_organization_id' => ['nullable', 'integer', 'exists:farmer_organizations,id'],
+            'password' => ['required', 'confirmed', Rules\Password::defaults(), new \App\Rules\NotKnownDefaultPassword],
+            'farmer_organization_id' => ['nullable', 'integer', Rule::exists('farmer_organizations', 'id')->where(fn ($query) => $query->where('barangay', $request->input('barangay')))],
             // Panel revision 1.1: any other organizations the farmer belongs to (the primary one is stripped below).
             'other_organizations' => ['nullable', 'array', 'max:20'],
             'other_organizations.*' => ['integer', 'distinct', 'exists:farmer_organizations,id'],
-            'barangay' => ['required_without:farmer_organization_id', 'nullable', 'string', Rule::in($this->manualBarangays())],
+            'barangay' => ['required', 'string', Rule::in($this->manualBarangays())],
             'captcha_answer' => ['required', 'string', 'max:20'],
         ], [
-            'barangay.required_without' => 'Please choose your farm location when no farmer organization is selected.',
+            'barangay.required' => 'Please choose your farm location before selecting an association.',
             'captcha_answer.required' => 'Please answer the security check before creating an account.',
             'captcha_answer.max' => 'The security check answer is too long.',
             'other_organizations.max' => 'Please choose 20 other organizations or fewer.',
@@ -56,7 +56,7 @@ class RegisteredUserController extends Controller
             ? FarmerOrganization::query()->findOrFail($validated['farmer_organization_id'])
             : null;
 
-        $barangay = $organization?->barangay ?? $validated['barangay'];
+        $barangay = $validated['barangay'];
         $farmType = $organization?->farm_type ?? FarmerProfile::FARM_TYPE_IRRIGATED;
 
         $user = DB::transaction(function () use ($validated, $organization, $barangay, $farmType): User {
@@ -67,7 +67,7 @@ class RegisteredUserController extends Controller
                 'password' => Hash::make($validated['password']),
                 'barangay' => $barangay,
                 // Manuscript – Naicel: Pending until the MAO approves the sign-up (config iclimate.farmer_approval).
-                'status' => \App\Support\SystemSettings::farmerApproval() ? User::STATUS_PENDING : User::STATUS_ACTIVE,
+                'status' => User::STATUS_PENDING,
             ]);
 
             $profile = FarmerProfile::create([

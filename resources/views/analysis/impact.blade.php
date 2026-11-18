@@ -8,7 +8,7 @@
         $strongest = $result['strongest'] ?? null;
     @endphp
     <div class="mfd itd itp">
-        <x-it.page-header kicker="Weather and Rice Yield" title="Weather Impact Analysis" lede="Which weather (rainfall, temperature, humidity or wind) moved most with Lian's rice yield, by season and years." />
+        <x-shared.page-header kicker="Weather and Rice Yield" title="Weather Impact Analysis" lede="Which weather (rainfall, temperature, humidity or wind) moved most with Lian's rice yield, by season and years." />
         <div class="fad wpx" data-impact-analysis>
             @include('partials.manuscript-tabs', ['group' => 'analysis', 'label' => 'Predictions and analysis'])
 
@@ -39,7 +39,7 @@
                 </form>
             @endif
 
-            <section class="fad-card mb-3" aria-labelledby="iaResultTitle" data-impact-result>
+            <section class="fad-card mb-3" aria-labelledby="iaResultTitle" data-impact-result data-live-region="impact-result" data-live-areas="climate,rice,weather">
                 <h2 class="h5 fw-bold" id="iaResultTitle">Result</h2>
                 @if (! $strongest)
                     <p class="mb-0">Not enough months with both a yield record and weather readings ({{ $result['pairs'] }} found; at least {{ \App\Services\Climate\WeatherAnalysisService::MIN_PAIRS }} are needed). Choose more years or both seasons.</p>
@@ -85,7 +85,7 @@
                 </details>
             @endif
 
-            <section class="fad-card" aria-labelledby="iaHistoryTitle" data-impact-history>
+            <section class="fad-card" aria-labelledby="iaHistoryTitle" data-impact-history data-live-region="impact-history" data-live-areas="weather-analysis">
                 <h2 class="h5 fw-bold" id="iaHistoryTitle">Analysis history</h2>
                 @if ($history->isEmpty())
                     <p class="mb-0">No saved analysis yet.</p>

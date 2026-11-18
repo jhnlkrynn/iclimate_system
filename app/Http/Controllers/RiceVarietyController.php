@@ -26,7 +26,7 @@ use Illuminate\View\View;
  * Rice Varieties. One page for three roles:
  *  - Farmer: "My Planted Variety" (expected harvest of the current plan) and the catalog.
  *  - MAO: the catalog and "Planted in my barangays" (read-only).
- *  - IT Personnel: the catalog as a data table with Add / Edit and an Active switch (no deleting: plans point here).
+ *  - MAO Staff: the catalog as a data table with Add / Edit and an Active switch (no deleting: plans point here).
  * The Variety Details pop-up reads show() as JSON, so the catalog page stays light.
  */
 class RiceVarietyController extends Controller
@@ -42,11 +42,11 @@ class RiceVarietyController extends Controller
         // "No variety matches" is only for a search or filter; with none, an empty list means nothing is loaded yet.
         $filtering = array_diff_key($filters, ['sort' => true]) !== [];
 
-        if ($user->role === User::ROLE_IT_EXPERT) {
+        if ($user->isMao() && $request->boolean('manage')) {
             // Newest first: the list is grouped by year ("2026 · 8 varieties", counted over every page).
             $byYear = $ready && ($filters['sort'] ?? 'newest') === 'newest';
 
-            return view('rice-varieties.it-index', [
+            return view('rice-varieties.staff-index', [
                 'filters' => $filters,
                 'varieties' => $ready ? RiceVariety::query()->catalog($filters)->paginate(25)->withQueryString() : null,
                 'yearCounts' => $byYear ? RiceVariety::query()->catalog($filters)->reorder()->toBase()
@@ -119,7 +119,7 @@ class RiceVarietyController extends Controller
         ]);
     }
 
-    // ------------------------------------------------------------------ IT Personnel
+    // ------------------------------------------------------------------ MAO Staff
 
     public function create(): View
     {

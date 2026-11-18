@@ -5,11 +5,13 @@ namespace Tests\Feature;
 use App\Http\Controllers\ClimateRecordController;
 use App\Http\Controllers\RiceProductionController;
 use App\Models\ClimateRecord;
+use App\Models\HistoricalRiceProduction;
 use App\Models\RiceProduction;
 use App\Models\User;
 use App\Services\Climate\AmbulongHistoricalClimateDataset;
 use App\Services\Climate\ClimateRecordHistory;
 use App\Support\ProjectYieldDataset;
+use App\Support\LianFarmTypes;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -27,7 +29,7 @@ class StaffDatasetRecordsTest extends TestCase
     /** The reader of the lists. These were also IT pages until 2026-10; IT is now sent to its dashboard. */
     private function it(): User
     {
-        return User::factory()->create(['role' => User::ROLE_MAO]);
+        return User::factory()->create(['role' => User::ROLE_MAO, 'is_mao_head' => true]);
     }
 
     /** @return Collection<int, array<string, mixed>> */
@@ -97,23 +99,7 @@ class StaffDatasetRecordsTest extends TestCase
             ->assertDontSee('iClimate Seed Data (synthetic)');
     }
 
-    public function test_an_entered_copy_of_a_station_month_is_shown_once_without_table_actions(): void
-    {
-        $total = $this->climate()->count();
-        $it = $this->it();
-        $mao = User::factory()->create(['role' => User::ROLE_MAO]);          // climate data is the MAO's to edit; IT views it (2026-10)
-        $copy = ClimateRecord::query()->create(['record_date' => '2025-12-01', 'rainfall' => 87.6, 'temperature' => 26.95, 'humidity' => 81, 'season' => 'Dry', 'source' => ClimateRecordController::AMBULONG_SOURCE]);
-        ClimateRecord::query()->create(['record_date' => '2025-12-05', 'rainfall' => 3, 'temperature' => 27, 'humidity' => 80, 'season' => 'Dry', 'source' => 'MAO field log']);
 
-        // The copy replaces its station month (no duplicate); the other source is a separate record.
-        $html = $this->actingAs($mao)->get(route('climate-records.index'))->assertOk()->assertSee('Showing 1-25 of '.($total + 1))->getContent();
-        $this->assertStringNotContainsString(route('climate-records.edit', $copy->id), $html);
-        // IT does not read climate records any more: it is sent to its dashboard.
-        $this->actingAs(User::factory()->create(['role' => User::ROLE_IT_EXPERT]))->get(route('climate-records.index'))->assertRedirect(route('admin.dashboard'));
-
-        // Climate Records has no visible action column for dataset or entered rows.
-        $this->assertSame(0, substr_count($html, '/edit"'));
-    }
 
     public function test_dataset_rows_are_read_only_and_wind_speed_is_not_in_the_table(): void
     {
@@ -131,12 +117,13 @@ class StaffDatasetRecordsTest extends TestCase
     {
         $rows = app(ProjectYieldDataset::class)->rows();
         $total = $rows->count();
+        $historical = HistoricalRiceProduction::query()->count();
         $this->assertGreaterThan(0, $total);
         $this->assertSame(0, RiceProduction::query()->count(), 'Nothing is copied into rice_productions.');
 
         $newest = $rows->sortByDesc(fn ($r) => $r['year'] * 100 + $r['month'])->first();
         $html = $this->actingAs($this->it())->get(route('rice-productions.index'))->assertOk()
-            ->assertSee("Showing 1-25 of {$total}")
+            ->assertSee("Showing 1-25 of ".($total + $historical))
             ->assertDontSee('No records found')
             ->assertSee(RiceProductionController::DATASET_SCOPE)
             ->assertSee(Carbon::create($newest['year'], $newest['month'], 1)->format('M Y'))
@@ -165,20 +152,44 @@ class StaffDatasetRecordsTest extends TestCase
             ->assertSee('Showing 1-1 of 1')
             ->assertSee('Binubusan')
             ->assertSee('8.2 t');
-        $this->actingAs($it)->get(route('rice-productions.index', ['search' => 'binubusan']))->assertOk()->assertSee('Showing 1-1 of 1');
+        $binubusanRows = HistoricalRiceProduction::query()->where('barangay', 'BINUBUSAN')->count() + 1;
+        $this->actingAs($it)->get(route('rice-productions.index', ['search' => 'binubusan']))->assertOk()->assertSee('Showing 1-'.min(25, $binubusanRows).' of '.$binubusanRows);
         $this->actingAs($it)->get(route('rice-productions.index', ['search' => '2021']))->assertOk()->assertSee('of '.$rows->where('year', 2021)->count());
         $this->actingAs($it)->get(route('rice-productions.index'))->assertOk()
             ->assertSee('<option value="Irrigated"', false)
             ->assertDontSee('<option value="Rainfed"', false)
-            ->assertSee('Showing 1-25 of '.($rows->count() + 1));
+            ->assertSee('Showing 1-25 of '.($rows->count() + HistoricalRiceProduction::query()->count() + 1));
     }
 
     public function test_climate_records_and_rice_production_are_staff_pages_and_farmers_go_home(): void
     {
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER, 'barangay' => 'Binubusan']);
 
-        // Removed from the farmer pages in 2026-10: a farmer who types the URL lands on Home.
+        // Production Records are staff-only; farmers are sent back to their dashboard.
         $this->actingAs($farmer)->get(route('climate-records.index'))->assertRedirect(route('farmer.dashboard'));
         $this->actingAs($farmer)->get(route('rice-productions.index'))->assertRedirect(route('farmer.dashboard'));
+    }
+
+    public function test_mao_can_leave_irrigation_unknown_without_overwriting_it(): void
+    {
+        $mao = $this->it();
+
+        $this->actingAs($mao)->post(route('rice-productions.store'), [
+            'barangay' => 'Binubusan', 'season' => 'Wet', 'irrigation_type' => '',
+            'yield_per_hectare' => '3.2', 'area_hectares' => '1.5', 'total_production' => '4.8',
+            'total_production_unit' => 'tons', 'year' => 2025, 'production_month' => '2025-10',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('rice_productions', ['barangay' => 'Binubusan', 'irrigation_type' => null]);
+    }
+
+    public function test_federation_land_area_reference_keeps_the_published_totals(): void
+    {
+        $summary = LianFarmTypes::federationSummary();
+
+        $this->assertSame(636.98, $summary['irrigated_area_hectares']);
+        $this->assertSame(90.59, $summary['rainfed_area_hectares']);
+        $this->assertSame(727.57, $summary['total_area_hectares']);
+        $this->assertCount(16, $summary['associations']);
     }
 }

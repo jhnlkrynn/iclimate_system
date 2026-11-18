@@ -46,7 +46,7 @@
             @elseif ($prediction)
                 <input type="hidden" name="subject" value="prediction">
                 <input type="hidden" name="yield_prediction_request_id" value="{{ $prediction->id }}">
-                <p class="fsv-about" data-survey-about="prediction">{{ $S('about_prediction', ['season' => $seasonWord($prediction->season), 'yield' => number_format((float) $prediction->predicted_yield, 2)]) }}</p>
+                <p class="fsv-about" data-survey-about="prediction">{{ $S('about_prediction', ['season' => $seasonWord($prediction->season), 'yield' => number_format((float) $prediction->predicted_yield, 2)]) }} <span class="small text-muted">Unvalidated estimate; accuracy not verified.</span></p>
             @else
                 <div class="mb-4">
                     <label class="form-label fw-bold" for="fsvSubject">{{ $S('about') }}</label>

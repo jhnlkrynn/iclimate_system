@@ -94,7 +94,7 @@ class HeatMapDataFlowTest extends TestCase
 
     private function mao(): User
     {
-        return User::factory()->create(['role' => User::ROLE_MAO]);
+        return User::factory()->create(['role' => User::ROLE_MAO, 'is_mao_head' => true]);
     }
 
     /** @return array<string, array<string, string>> the map colours embedded in the page, by range */
@@ -128,11 +128,11 @@ class HeatMapDataFlowTest extends TestCase
 
         // The scheduled refresh made ONE batched request for all 19 barangays.
         $this->assertCount(1, Http::recorded());
-        $this->assertCount(19, $this->requestedPoints(Http::recorded()[0][0]));
+        $this->assertCount(count(LianBarangays::all()), $this->requestedPoints(Http::recorded()[0][0]));
 
         // The same refresh rated the current risk and saved it in one pass: 19 rows, one calculation time.
-        $areas = HeatmapArea::query()->get();
-        $this->assertCount(19, $areas);
+        $areas = HeatmapArea::query()->whereIn('barangay', LianBarangays::all())->get();
+        $this->assertCount(count(LianBarangays::all()), $areas);
         $this->assertEqualsCanonicalizing(LianBarangays::all(), $areas->pluck('barangay')->all());
         $this->assertSame([now()->toIso8601String()], $areas->map(fn (HeatmapArea $a) => $a->risk_computed_at->toIso8601String())->unique()->values()->all());
         $this->assertEmpty($areas->reject(fn (HeatmapArea $a) => in_array($a->risk_level, ['Low', 'Moderate', 'High', 'Severe'], true)));
@@ -140,15 +140,15 @@ class HeatMapDataFlowTest extends TestCase
         // Next view: every polygon still has its colour from the saved forecast, and no provider request is made.
         $second = $this->actingAs($user)->get(route('heat-map.index'))->assertOk()->getContent();
         $levels = $this->levels($second);
-        $this->assertCount(19, $levels['week']);
-        $this->assertCount(19, $levels['2weeks']);
+        $this->assertCount(count(LianBarangays::all()), $levels['week']);
+        $this->assertCount(count(LianBarangays::all()), $levels['2weeks']);
         $this->assertNotContains('nodata', $levels['week']);
         $this->assertSame('high', $levels['week']['Matabungkay']);
         $this->assertSame('moderate', $levels['week']['Prenza']);
         $this->assertSame('low', $levels['week']['Kapito']);
         $this->assertSame('high', $levels['2weeks']['Kapito']);
         $this->assertStringNotContainsString('data-heat-map-updating', $second);
-        $this->assertStringStartsWith('Lian this week 1 barangay is at high risk 1 barangay is at moderate risk 17 barangays are at low risk', $this->summary($second));
+        $this->assertStringStartsWith('Lian this week 1 barangay is at high risk 1 barangay is at moderate risk 7 barangays are at low risk', $this->summary($second));
         $this->assertStringContainsString('Updated: 9:00 AM', $this->summary($second));
         $this->assertCount(1, Http::recorded());
     }
@@ -162,7 +162,7 @@ class HeatMapDataFlowTest extends TestCase
         }
 
         // The scheduled refresh attempted the batch and its concurrent fallback once; page views made no provider calls.
-        $this->assertCount(1 + 19, Http::recorded());
+        $this->assertCount(1 + count(LianBarangays::all()), Http::recorded());
         // Nothing to rate from: still No data, never Low, and no HeatmapArea row invented.
         $this->assertSame(['nodata'], array_values(array_unique($this->levels($this->actingAs($this->mao())->get(route('heat-map.index'))->getContent())['week'])));
         $this->assertSame(0, HeatmapArea::query()->computed()->count());
@@ -173,7 +173,7 @@ class HeatMapDataFlowTest extends TestCase
     public function test_a_failed_refresh_keeps_the_last_forecast_and_current_risk_with_their_own_times(): void
     {
         $this->artisan('iclimate:refresh-barangay-weather', ['--force' => true])->assertSuccessful();
-        $ratedAt = HeatmapArea::query()->value('risk_computed_at')->toIso8601String();
+        $ratedAt = HeatmapArea::query()->whereIn('barangay', LianBarangays::all())->value('risk_computed_at')->toIso8601String();
 
         // A day and a half later the provider is down and nothing was refreshed meanwhile.
         $this->travel(30)->hours();
@@ -191,7 +191,7 @@ class HeatMapDataFlowTest extends TestCase
 
         // The current risk keeps its last verified ratings and their own calculation time, never No Data.
         $api = $this->getJson('/api/lian/risk-map')->assertOk();
-        $this->assertCount(19, $api->json('barangays'));
+        $this->assertCount(count(LianBarangays::all()), $api->json('barangays'));
         foreach ($api->json('barangays') as $entry) {
             $this->assertContains($entry['risk_level'], ['Low', 'Moderate', 'High', 'Severe'], $entry['barangay']);
             $this->assertSame($ratedAt, $entry['risk_calculated_at'], $entry['barangay']);
@@ -207,7 +207,7 @@ class HeatMapDataFlowTest extends TestCase
         $response = $this->getJson('/api/lian/risk-map')->assertOk()->assertJsonPath('status', 'ok');
         $barangays = collect($response->json('barangays'));
 
-        $this->assertCount(19, $barangays);
+        $this->assertCount(count(LianBarangays::all()), $barangays);
         $this->assertEqualsCanonicalizing(LianBarangays::all(), $barangays->pluck('barangay')->all());
         foreach ($barangays as $entry) {
             $this->assertContains($entry['risk_level'], ['Low', 'Moderate', 'High', 'Severe'], $entry['barangay']);
@@ -218,7 +218,7 @@ class HeatMapDataFlowTest extends TestCase
             $this->assertSame('Open-Meteo', $entry['weather']['provider']);
             $this->assertSame(now()->toIso8601String(), $entry['weather']['fetched_at']);
         }
-        $this->assertSame(19, $response->json('weather_summary.current'));
+        $this->assertSame(count(LianBarangays::all()), $response->json('weather_summary.current'));
         $this->assertSame('Open-Meteo', $response->json('weather_summary.provider'));
     }
 
@@ -230,7 +230,7 @@ class HeatMapDataFlowTest extends TestCase
 
         $this->actingAs($mao)->getJson('/api/lian/risk-map')
             ->assertOk()
-            ->assertJsonCount(19, 'barangays');
+            ->assertJsonCount(count(LianBarangays::all()), 'barangays');
         $this->assertSame('All barangays (Lian)', $mao->coverageLabel());
     }
 
@@ -243,17 +243,17 @@ class HeatMapDataFlowTest extends TestCase
 
         // :05 / :35, a few minutes after the weather command: re-rated from the same shared weather.
         $this->travel(4)->minutes();
-        $this->artisan('iclimate:refresh-barangay-risk')->expectsOutputToContain('19 barangay(s)')->assertSuccessful();
-        $this->assertSame(now()->toIso8601String(), HeatmapArea::query()->first()->risk_computed_at->toIso8601String());
+        $this->artisan('iclimate:refresh-barangay-risk')->expectsOutputToContain(count(LianBarangays::all()).' barangay(s)')->assertSuccessful();
+        $this->assertSame(now()->toIso8601String(), HeatmapArea::query()->whereIn('barangay', LianBarangays::all())->first()->risk_computed_at->toIso8601String());
 
         $this->travel(1)->minutes();
         app()->call([new RefreshBarangayRiskMap, 'handle']);
-        $this->assertSame(now()->toIso8601String(), HeatmapArea::query()->first()->risk_computed_at->toIso8601String());
+        $this->assertSame(now()->toIso8601String(), HeatmapArea::query()->whereIn('barangay', LianBarangays::all())->first()->risk_computed_at->toIso8601String());
 
         $this->assertCount(1, Http::recorded(), 'Re-rating must reuse the shared weather, not ask Open-Meteo again.');
     }
 
-    public function test_rating_retires_risk_caches_only(): void
+    public function test_rating_retires_risk_and_weather_caches(): void
     {
         $risk = CacheScope::token('dashboard:high-risk-areas');
         $advisories = CacheScope::token('advisories-summary');
@@ -261,7 +261,8 @@ class HeatMapDataFlowTest extends TestCase
         $this->artisan('iclimate:refresh-barangay-weather', ['--force' => true])->assertSuccessful();
 
         $this->assertNotSame($risk, CacheScope::token('dashboard:high-risk-areas'));
-        $this->assertSame($advisories, CacheScope::token('advisories-summary'));
+        // The advisories summary includes the weather-source status, so a changed weather snapshot retires it too.
+        $this->assertNotSame($advisories, CacheScope::token('advisories-summary'));
     }
 
     public function test_mao_and_farmer_see_the_same_ratings_and_time_for_the_same_barangay(): void

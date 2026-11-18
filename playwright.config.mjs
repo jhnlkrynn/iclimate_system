@@ -1,4 +1,6 @@
 import { defineConfig } from '@playwright/test';
+const port = Number(process.env.PLAYWRIGHT_PORT || 8123);
+const baseURL = 'http://127.0.0.1:' + port;
 
 // Browser tests for the public landing page. `npm run test:browser` starts the site on a throwaway SQLite
 // database (tests/Browser/serve.sh); run `npm run build` first so the page has its assets.
@@ -11,7 +13,7 @@ export default defineConfig({
     timeout: 30_000,
     reporter: 'list',
     use: {
-        baseURL: 'http://127.0.0.1:8123',
+        baseURL,
         trace: 'retain-on-failure',
         // The scroll animations are switched off for the suite so timing never makes a test flaky; the reveal tests in
         // tests/Browser/landing.spec.mjs turn them back on where they check the motion itself.
@@ -22,9 +24,9 @@ export default defineConfig({
         { name: 'mobile-375', use: { browserName: 'chromium', viewport: { width: 375, height: 740 }, isMobile: true, hasTouch: true } },
     ],
     webServer: {
-        command: 'sh tests/Browser/serve.sh',
-        url: 'http://127.0.0.1:8123/login',
+        command: 'PLAYWRIGHT_PORT=' + port + ' sh tests/Browser/serve.sh',
+        url: baseURL + '/login',
         timeout: 180_000,
-        reuseExistingServer: true,
+        reuseExistingServer: false,
     },
 });

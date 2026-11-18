@@ -49,7 +49,8 @@
             </form>
         @endunless
 
-        <div class="fcal-layout">
+        {{-- data-live-region: plans, advisories and MAO events appear without reloading (resources/js/live-page.js). --}}
+        <div class="fcal-layout" data-live-region="calendar" data-live-areas="planting,advisories,community-posts">
             {{-- Month --}}
             <section class="fcal-month" aria-labelledby="fcalMonthTitle">
                 <div class="fcal-toolbar">
@@ -176,7 +177,7 @@
                                 <div><dt>Status</dt><dd>{{ $schedule->monitoringStatusLabel() }}</dd></div>
                             </dl>
                             @if($schedule->predicted_yield !== null)
-                                <p class="fcal-record-estimate is-good">Estimated harvest: <strong>{{ number_format((float) $schedule->predicted_yield, 2) }} tons/hectare</strong></p>
+                                <p class="fcal-record-estimate is-good">Estimated harvest: <strong>{{ number_format((float) $schedule->predicted_yield, 2) }} tons/hectare</strong> @include('components.unvalidated-estimate', ['compact' => true])</p>
                             @else
                                 <p class="fcal-record-estimate">Estimate not available yet.@if($schedule->prediction_unavailable_reason) <span>{{ $schedule->prediction_unavailable_reason }}</span>@endif</p>
                             @endif

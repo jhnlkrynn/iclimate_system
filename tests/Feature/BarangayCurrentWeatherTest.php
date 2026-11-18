@@ -79,24 +79,24 @@ class BarangayCurrentWeatherTest extends TestCase
     public function test_expired_weather_is_served_immediately_and_the_page_never_refreshes_it(): void
     {
         app(LianBarangayWeatherService::class)->refreshAll();
-        [$lat] = LianBarangays::coordinateFor('Bagong Pook');
+        [$lat] = LianBarangays::coordinateFor('Balibago');
         $this->travel(11)->minutes();
         $this->shift = 1.0;
 
         $response = $this->getJson('/api/lian/risk-map')->assertOk();
 
         // The response carries the last valid reading (11 min old: "recent", never shown as delayed) at once…
-        $entry = collect($response->json('barangays'))->firstWhere('barangay', 'Bagong Pook');
+        $entry = collect($response->json('barangays'))->firstWhere('barangay', 'Balibago');
         $this->assertSame('recent', $entry['weather']['status']);
         $this->assertSame($this->temperatureFor($lat) - 1.0, $entry['weather']['temperature_c']);
         $this->assertFalse($response->json('weather_refresh_scheduled'));
 
         // …and the request does not fetch: the stored reading stays until iclimate:refresh-barangay-weather runs.
-        $record = app(LianBarangayWeatherService::class)->getCurrentWeather('Bagong Pook');
+        $record = app(LianBarangayWeatherService::class)->getCurrentWeather('Balibago');
         $this->assertSame($this->temperatureFor($lat) - 1.0, $record['temperature_c']);
 
         $this->artisan('iclimate:refresh-barangay-weather');
-        $record = app(LianBarangayWeatherService::class)->getCurrentWeather('Bagong Pook');
+        $record = app(LianBarangayWeatherService::class)->getCurrentWeather('Balibago');
         $this->assertSame('fresh', $record['status']);
         $this->assertSame($this->temperatureFor($lat), $record['temperature_c']);
     }
@@ -105,12 +105,12 @@ class BarangayCurrentWeatherTest extends TestCase
     {
         $service = app(LianBarangayWeatherService::class);
         $service->refreshAll();
-        $first = $service->getCurrentWeather('Cumba');
+        $first = $service->getCurrentWeather('San Diego');
 
         $this->travel(12)->minutes();
         $this->shift = 2.5;
         $this->getJson('/api/lian/risk-map?refresh=1')->assertOk()->assertJsonPath('weather_refreshed', true);
-        $second = $service->getCurrentWeather('Cumba');
+        $second = $service->getCurrentWeather('San Diego');
 
         $this->assertSame($first['temperature_c'] + 2.5, $second['temperature_c']);
         $this->assertTrue(Carbon::parse($second['fetched_at'])->gt(Carbon::parse($first['fetched_at'])));
@@ -154,7 +154,7 @@ class BarangayCurrentWeatherTest extends TestCase
         $this->assertArrayNotHasKey('condition', $entry['weather']);
     }
 
-    public function test_one_failed_barangay_does_not_affect_the_other_eighteen(): void
+    public function test_one_failed_barangay_does_not_affect_the_other_eight(): void
     {
         $this->failing = ['San Diego'];
 
@@ -162,8 +162,8 @@ class BarangayCurrentWeatherTest extends TestCase
         $summary = app(LianBarangayWeatherService::class)->summary($records);
 
         $this->assertSame('unavailable', $records['San Diego']['status']);
-        $this->assertCount(18, collect($records)->where('status', 'fresh'));
-        $this->assertSame(18, $summary['current']);
+        $this->assertCount(count(LianBarangays::all()) - 1, collect($records)->where('status', 'fresh'));
+        $this->assertSame(count(LianBarangays::all()) - 1, $summary['current']);
         $this->assertSame(['San Diego'], $summary['unavailable_barangays']);
         $this->assertSame('concurrent', $summary['last_refresh_method']);
 
@@ -176,18 +176,18 @@ class BarangayCurrentWeatherTest extends TestCase
 
         $this->assertSame('stale', $records['San Diego']['status']);
         $this->assertNotNull($records['San Diego']['temperature_c']);
-        $this->assertCount(18, collect($records)->where('status', 'fresh'));
+        $this->assertCount(count(LianBarangays::all()) - 1, collect($records)->where('status', 'fresh'));
     }
 
-    public function test_all_nineteen_succeed_in_one_batched_request_and_current_conditions_says_19_of_19(): void
+    public function test_all_supported_barangays_succeed_in_one_batched_request(): void
     {
         $this->getJson('/api/lian/risk-map?refresh=1')->assertOk();
 
         $this->assertCount(1, Http::recorded(), 'All 19 barangays must be fetched in one request, not 19 sequential ones.');
         $summary = $this->getJson('/api/lian/risk-map')->assertOk()->json('weather_summary');
 
-        $this->assertSame(19, $summary['total']);
-        $this->assertSame(19, $summary['current']);
+        $this->assertSame(count(LianBarangays::all()), $summary['total']);
+        $this->assertSame(count(LianBarangays::all()), $summary['current']);
         $this->assertSame(0, $summary['delayed']);
         $this->assertSame('Open-Meteo', $summary['provider']);
         $this->assertSame('batch', $summary['last_refresh_method']);
@@ -199,9 +199,9 @@ class BarangayCurrentWeatherTest extends TestCase
         $records = app(LianBarangayWeatherService::class)->refreshAll();
         $points = $this->requestedPoints(Http::recorded()[0][0]);
 
-        $this->assertCount(19, $records);
+        $this->assertCount(count(LianBarangays::all()), $records);
         $this->assertSame(LianBarangays::all(), array_keys($records));
-        $this->assertCount(19, collect($points)->map(fn (array $point) => implode(',', $point))->unique());
+        $this->assertCount(count(LianBarangays::all()), collect($points)->map(fn (array $point) => implode(',', $point))->unique());
 
         foreach ($records as $barangay => $record) {
             $this->assertSame(LianBarangays::coordinateFor($barangay), [$record['latitude'], $record['longitude']]);
@@ -279,7 +279,7 @@ class BarangayCurrentWeatherTest extends TestCase
     public function test_warm_up_command_fills_all_19_and_scheduled_run_skips_when_current(): void
     {
         $this->artisan('iclimate:refresh-barangay-weather', ['--force' => true])
-            ->expectsOutputToContain('Latest weather for 19 of 19 barangays')
+            ->expectsOutputToContain('Latest weather for '.count(LianBarangays::all()).' of '.count(LianBarangays::all()).' barangays')
             ->assertSuccessful();
 
         $this->artisan('iclimate:refresh-barangay-weather')

@@ -326,11 +326,12 @@ class RunPythonAnalytics implements ShouldQueue
     public function failed(
         ?Throwable $exception
     ): void {
-        AnalyticsRun::query()
-            ->whereKey(
-                $this->analyticsRunId
-            )
-            ->update([
+        $run = AnalyticsRun::query()->find($this->analyticsRunId);
+        if ($run === null) {
+            return;
+        }
+
+        $run->forceFill([
                 'status' =>
                     AnalyticsRun::STATUS_FAILED,
 
@@ -345,6 +346,6 @@ class RunPythonAnalytics implements ShouldQueue
 
                 'completed_at' =>
                     now(),
-            ]);
+            ])->save();
     }
 }

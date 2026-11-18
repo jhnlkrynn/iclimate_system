@@ -63,6 +63,21 @@ class FarmerDashboardWeatherService
 
     public function __construct(private readonly WeatherIconMapper $icons) {}
 
+    /** When the provider was last read successfully (the stored reading's own time), or null when there is none. */
+    public function lastFetchedAt(): ?\Carbon\CarbonImmutable
+    {
+        $stored = Cache::get($this->cacheKey().'.last_successful');
+        $at = is_array($stored) ? self::fetchTimeOf($stored) : null;
+
+        return $at ? rescue(fn () => \Carbon\CarbonImmutable::parse($at), null, false) : null;
+    }
+
+    /** The same time the farmer's weather card shows (FarmerDashboardService::weather). */
+    private static function fetchTimeOf(array $weather): mixed
+    {
+        return data_get($weather, 'timestamps.server_fetched_at') ?? data_get($weather, 'timestamps.provider_updated_at') ?? ($weather['fetched_at'] ?? null);
+    }
+
     /** Per-provider limit (seconds) for the current call; null means the normal, patient settings. */
     private ?float $budget = null;
 
@@ -128,6 +143,8 @@ class FarmerDashboardWeatherService
             Cache::put($cacheKey, $weather, $ttl);
             Cache::forever($lastSuccessfulKey, $weather);
             $this->storeSnapshot($weather['raw_response'] ?? [], $weather);
+            // Open pages move their "Updated" time now, also when the values are the same as before.
+            \App\Events\WeatherFetched::announce('current', self::fetchTimeOf($weather));
 
             return $weather;
         } catch (Throwable $exception) {

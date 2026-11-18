@@ -2,7 +2,6 @@
     $user = auth()->user();
     $isFarmer = $user->role === \App\Models\User::ROLE_FARMER;
     $isMao = $user->role === \App\Models\User::ROLE_MAO;
-    $isIt = $user->role === \App\Models\User::ROLE_IT_EXPERT;
     $dashboardRoute = $user->dashboardRoute();
 
     $sidebarIcon = function (string $key): string {
@@ -20,9 +19,7 @@
             'farmer-profiles' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="6" r="2.8" stroke="currentColor" stroke-width="1.4"/><path d="M3 15c.7-3.4 2.8-5.2 6-5.2s5.3 1.8 6 5.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
             'reports' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="3.5" y="2.5" width="11" height="13" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M6.5 6.5h5M6.5 9.5h5M6.5 12.5h3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
             'user-management' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="7" cy="6.5" r="2.3" stroke="currentColor" stroke-width="1.4"/><path d="M2.3 15c.6-3 2.3-4.6 4.7-4.6s4.1 1.6 4.7 4.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M12 4.5a2.2 2.2 0 0 1 0 4.3M14.2 10.6c1.5.5 2.4 1.9 2.8 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
-            'system-health' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M2 9h3l1.6-4 3 8 1.9-4H16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-            'system-logs' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="4" y="2.5" width="10" height="13" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M7 2.5v-.2a1.2 1.2 0 0 1 1.2-1h1.6a1.2 1.2 0 0 1 1.2 1v.2" stroke="currentColor" stroke-width="1.3"/><path d="M6.5 8h5M6.5 11h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
-            // Rice Varieties: a seedling with a grain head.
+                    // Rice Varieties: a seedling with a grain head.
             'seedling' => '<svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M9 16V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M9 9c0-3 2.2-5.2 5.5-5.2C14.5 7 12.3 9 9 9Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 11c0-2.6-1.9-4.6-4.8-4.6C4.2 9.2 6.1 11 9 11Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M5.5 16h7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>',
             'ai' => '<svg width="16" height="16" viewBox="0 0 20 20" fill="none"><rect x="4" y="7" width="12" height="9" rx="3" stroke="currentColor" stroke-width="1.5"/><circle cx="7.8" cy="11.5" r="1" fill="currentColor"/><circle cx="12.2" cy="11.5" r="1" fill="currentColor"/><path d="M10 7V4M7.5 4.5l1-1.2M12.5 4.5l-1-1.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>',
             default => '',
@@ -33,7 +30,7 @@
     // opened from a button on another page) is listed under the item it is opened from, so one item is always
     // highlighted and people can see where they are.
     $routeDefs = [
-        'dashboard' => [$dashboardRoute, [$dashboardRoute, 'farmer.dashboard.*', 'farmer.survey.*', 'farmer.boundary.*', 'mao.dashboard.*', 'mao.operations', 'admin.dashboard.*']],
+        'dashboard' => [$dashboardRoute, [$dashboardRoute, 'farmer.dashboard.*', 'farmer.survey.*', 'farmer.boundary.*', 'mao.dashboard.*', 'mao.operations']],
         'field-reports' => ['field-reports.index', ['field-reports.*']],
         // MAO's "Records": Climate Records and Rice Production are two tabs of one item.
         'records' => ['climate-records.index', ['climate-records.*', 'rice-productions.*']],
@@ -50,16 +47,13 @@
         'farmer-profiles' => ['farmer-profiles.index', ['farmer-profiles.*']],
         'reports' => ['reports.index', ['reports.*']],
         'user-management' => ['users.index', ['users.*']],
-        'system-logs' => ['system-logs.index', ['system-logs.*']],
-        'system-health' => ['system-health.index', ['system-health.*', 'model-registry.*', 'model-evaluation.*', 'testing.*']],
-        'ai-admin' => ['ai-admin.home', ['ai-admin.*']],
         // Manuscript – Naicel (2026-10-08): pages of the manuscript modules (routes/manuscript.php) open as tabs of an
         // existing item, so the menu stays short.
+        'account-requests' => ['mao.farmer-approvals.index', ['mao.farmer-approvals.*']],
         'farmer-profiles-and-approvals' => ['farmer-profiles.index', ['farmer-profiles.*', 'mao.farmer-approvals.*', 'mao.farm-associations.*']],
         'records-and-barangays' => ['climate-records.index', ['climate-records.*', 'rice-productions.*', 'records.*', 'mao.barangays.*']],
         // Panel revision 4.4: MAO Office = Activity Log and MAO Personnel.
         'mao-office' => ['mao.activity-log.index', ['mao.activity-log.*', 'mao.personnel.*']],
-        'it-settings' => ['admin.settings.index', ['admin.settings.*', 'admin.permissions.*', 'admin.backups.*', 'admin.maintenance.*', 'admin.models.*', 'admin.feedback.*']],
         // End Manuscript – Naicel
         // Farmers: My Farm also covers their planting schedules and the Calendar it links to.
         'my-farm' => ['farmer.my-farm', ['farmer.my-farm', 'farmer.planting-schedules.*', 'calendar.*']],
@@ -90,6 +84,9 @@
             $navLink($nav('varieties'), 'rice-varieties', 'seedling'),
             $navLink($nav('messages'), 'messages', 'messages'),
         ];
+        if (\Illuminate\Support\Facades\Cache::remember('navigation:association-chairman:'.$user->id, 30, fn () => $user->isAssociationChairman())) {
+            $primaryGroup[] = [$nav('association_reports'), 'association-chairman.dashboard', ['association-chairman.*'], 'reports', null, null, null];
+        }
         $moreGroup = [];
         $publishingGroup = [];
     } elseif ($isMao) {
@@ -106,7 +103,8 @@
             // "MAO Planner", or "Planner ng MAO" when the MAO's saved language is Filipino.
             $navLink(__('mao.planner.title', [], $maoLocale), 'mao-planner', 'calendar'),
             $navLink($maoNav('records'), 'records-and-barangays', 'climate-records'),   // Manuscript – Naicel: + Import, Barangays
-            $navLink($maoNav('farmers'), 'farmer-profiles-and-approvals', 'farmer-profiles'),   // Manuscript – Naicel: + Farmer Approvals tab
+            $navLink($maoNav('farmers'), 'farmer-profiles-and-approvals', 'farmer-profiles'),
+            $navLink($maoNav('account_requests'), 'account-requests', 'user-management'),   // Manuscript – Naicel: + Farmer Approvals tab
             $navLink($maoNav('varieties'), 'rice-varieties', 'seedling'),
             // MAO/IT – Naicel (2026-10-07): Field Reports is hidden unless FIELD_REPORTS_UI=true (config/iclimate.php).
             ...(\App\Http\Middleware\FieldReportsUi::enabled() ? [$navLink($maoNav('field_reports'), 'field-reports', 'reports')] : []),
@@ -116,25 +114,14 @@
             $navLink($maoNav('messages'), 'messages', 'messages'),
             $navLink($maoNav('mao_office'), 'mao-office', 'system-logs'),   // panel revision 4.4
         ];
+        $primaryGroup[] = [$maoNav('association_reports'), 'mao.association-reports.index', ['mao.association-reports.*'], 'reports', null, null, null];
+        if ($user->isMaoHead()) {
+            $primaryGroup[] = $navLink($maoNav('account_management'), 'user-management', 'user-management');
+        }
         $moreGroup = [];
         $publishingGroup = [];
     } else {
-        // IT Personnel: keep the main list focused on users, reports, messages, and settings.
-        // Technical pages remain available under More tools.
-        $primaryGroup = [
-            $navLink('IT Personnel Dashboard', 'dashboard', 'dashboard'),
-            $navLink('User management', 'user-management', 'user-management'),
-            $navLink('Reports', 'reports', 'reports'),
-            $navLink('Rice Varieties', 'rice-varieties', 'seedling'),
-            // Manuscript – Naicel (2026-10-08): System Settings, Security, Roles & Permissions, Backups, Maintenance, ML Models.
-            $navLink('Settings', 'it-settings', 'system-health'),
-            $navLink('Messages', 'messages', 'messages'),
-        ];
-        $moreGroup = [
-            $navLink('System health details', 'system-health', 'system-health'),
-            $navLink('Activity logs', 'system-logs', 'system-logs'),
-        ];
-        $publishingGroup = [];
+        $primaryGroup = $moreGroup = $publishingGroup = [];
     }
 
     $sidebarSections = array_values(array_filter([

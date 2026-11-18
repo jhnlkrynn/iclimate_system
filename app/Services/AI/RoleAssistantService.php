@@ -26,10 +26,6 @@ class RoleAssistantService
                 'en' => 'weather, yield, planting and irrigation guidance, barangay information, advisories, reports, and announcements',
                 'tl' => 'panahon, ani, gabay sa pagtatanim at irigasyon, impormasyon ng barangay, advisory, reports, at announcements',
             ],
-            User::ROLE_IT_EXPERT => [
-                'en' => 'weather, yield, planting and irrigation guidance, and system status information',
-                'tl' => 'panahon, ani, gabay sa pagtatanim at irigasyon, at system status',
-            ],
             default => [
                 'en' => 'weather, yield, planting, irrigation, advisories, and your own profile',
                 'tl' => 'panahon, ani, pagtatanim, irigasyon, advisory, at sariling profile',
@@ -87,43 +83,6 @@ class RoleAssistantService
         return null;
     }
 
-    public function itAnswer(string $question, string $intent, string $language): ?array
-    {
-        $text = str($question)->lower()->toString();
-        $tagalog = str_contains($language, 'Tagalog');
-
-        if (str_contains($text, 'user') || str_contains($text, 'ilang user')) {
-            return $this->userCounts($tagalog);
-        }
-
-        if (str_contains($text, 'database') || str_contains($text, 'db status')) {
-            return $this->databaseStatus($tagalog);
-        }
-
-        if (str_contains($text, 'api') || str_contains($text, 'farming ai') || str_contains($text, 'model')) {
-            return $this->apiStatus($tagalog);
-        }
-
-        if (str_contains($text, 'backup')) {
-            return [
-                'answer' => $tagalog
-                    ? 'Wala pang automated backup system ang iClimate sa ngayon. Mag-manual backup ng database (hal. mysqldump) at ng storage/app directory nang regular hanggang magkaroon ng automated solution.'
-                    : 'iClimate does not currently have an automated backup system configured. Back up the database (e.g. via mysqldump) and the storage/app directory manually on a regular schedule until an automated solution is set up.',
-                'source_name' => 'iClimate System Status',
-                'confidence' => 90,
-            ];
-        }
-
-        if (str_contains($text, 'error') || str_contains($text, 'log')) {
-            return $this->errorLogSummary($tagalog);
-        }
-
-        if (str_contains($text, 'maintenance') || str_contains($text, 'server status') || str_contains($text, 'system status')) {
-            return $this->maintenanceStatus($tagalog);
-        }
-
-        return null;
-    }
 
     public function barangayAnswer(User $user, string $question, string $language): ?array
     {
@@ -145,8 +104,8 @@ class RoleAssistantService
         if (! $barangay) {
             return [
                 'answer' => $tagalog
-                    ? 'Sabihin kung aling barangay sa Lian, Batangas ang gusto mong malaman (hal. Matabungkay, Lumaniag, Bagong Pook).'
-                    : 'Let me know which barangay in Lian, Batangas you would like information about (e.g. Matabungkay, Lumaniag, Bagong Pook).',
+                    ? 'Sabihin kung aling barangay sa Lian, Batangas ang gusto mong malaman (hal. Matabungkay, Binubusan, San Diego).'
+                    : 'Let me know which barangay in Lian, Batangas you would like information about (e.g. Matabungkay, Binubusan, San Diego).',
                 'source_name' => 'Climora AI',
                 'confidence' => 70,
             ];
@@ -182,43 +141,35 @@ class RoleAssistantService
         } catch (Throwable) {
             $liveDetail = null;
         }
-        $liveReportsNoData = $liveDetail !== null && ($liveDetail['risk_level'] ?? null) === 'No Data';
+        $riskStatus = ClimateRiskReplies::status($heatmap, $liveDetail);
 
         // The main concern is only named when the rating has one.
         $riskType = $heatmap?->risk_type ? " ({$heatmap->risk_type})" : '';
-        if ($heatmap && ! $liveReportsNoData && $heatmap->isCurrentlyComputed()) {
+        if ($riskStatus === ClimateRiskReplies::CURRENT) {
             $lines[] = $tagalog
                 ? "Climate risk: {$heatmap->risk_level}{$riskType}."
                 : "Climate risk: {$heatmap->risk_level}{$riskType}.";
-        } elseif ($heatmap && ! $liveReportsNoData) {
+        } elseif ($riskStatus === ClimateRiskReplies::STALE) {
             $date = $heatmap->risk_computed_at?->toFormattedDateString() ?? 'an earlier date';
             $lines[] = $tagalog
                 ? "Noong {$date}, ang climate risk ay {$heatmap->risk_level}{$riskType} — maaaring hindi na ito kasalukuyang kondisyon."
                 : "As of {$date}, climate risk was marked {$heatmap->risk_level}{$riskType}; this may not reflect current conditions.";
         } else {
-            $lines[] = $tagalog
-                ? 'Wala pang available na farm-risk rating para sa barangay na ito. Bantayan muna ang latest weather at advisories.'
-                : 'No calculated farm-risk rating is available for this barangay yet. Check the latest weather and advisories.';
+            $lines[] = ClimateRiskReplies::noData($language);
         }
 
         return [
             'answer' => implode(' ', $lines),
             'source_name' => 'iClimate Barangay Records',
-            'confidence' => $production->isNotEmpty() || ($heatmap && ! $liveReportsNoData) ? 88 : 70,
+            'confidence' => $production->isNotEmpty() || $riskStatus !== ClimateRiskReplies::NO_DATA ? 88 : 70,
         ];
     }
 
     private function barangayNamedIn(string $question): ?string
     {
-        $text = str($question)->lower()->toString();
-
-        foreach (LianBarangays::all() as $barangay) {
-            if (str_contains($text, strtolower($barangay))) {
-                return $barangay;
-            }
-        }
-
-        return null;
+        // Any Lian barangay, supported or not: a question about Bagong Pook must
+        // be answered for Bagong Pook, never for the asker's own barangay.
+        return LianBarangays::namedIn($question);
     }
 
     private function barangayRanking(bool $tagalog, bool $ascending): array
@@ -293,190 +244,5 @@ class RoleAssistantService
             'source_name' => 'iClimate Production Records',
             'confidence' => 88,
         ];
-    }
-
-    private function userCounts(bool $tagalog): array
-    {
-        $total = User::count();
-        $active = User::query()->where('status', User::STATUS_ACTIVE)->count();
-        $inactive = User::query()->where('status', User::STATUS_INACTIVE)->count();
-        $farmers = User::query()->where('role', User::ROLE_FARMER)->count();
-        $mao = User::query()->where('role', User::ROLE_MAO)->count();
-        $it = User::query()->where('role', User::ROLE_IT_EXPERT)->count();
-
-        return [
-            'answer' => $tagalog
-                ? "May {$total} kabuuang user account ({$active} active, {$inactive} inactive): {$farmers} Farmer, {$mao} MAO Personnel, {$it} IT Expert."
-                : "There are {$total} total user accounts ({$active} active, {$inactive} inactive): {$farmers} Farmer, {$mao} MAO Personnel, {$it} IT Expert.",
-            'source_name' => 'iClimate User Records',
-            'confidence' => 94,
-        ];
-    }
-
-    private function databaseStatus(bool $tagalog): array
-    {
-        $start = microtime(true);
-
-        try {
-            DB::connection()->getPdo();
-            $ms = round((microtime(true) - $start) * 1000, 1);
-
-            return [
-                'answer' => $tagalog
-                    ? "Konektado ang database, tumutugon sa {$ms} ms."
-                    : "The database is connected and responding in {$ms} ms.",
-                'source_name' => 'iClimate System Status',
-                'confidence' => 95,
-            ];
-        } catch (Throwable $exception) {
-            return [
-                'answer' => $tagalog
-                    ? 'Hindi maka-konekta sa database ngayon: '.$exception->getMessage()
-                    : 'Could not connect to the database right now: '.$exception->getMessage(),
-                'source_name' => 'iClimate System Status',
-                'confidence' => 95,
-            ];
-        }
-    }
-
-    private function apiStatus(bool $tagalog): array
-    {
-        $url = rtrim((string) config('services.farming_ai.url'), '/').'/health';
-
-        try {
-            $response = Http::timeout(3)->get($url);
-
-            if ($response->successful()) {
-                $models = implode(', ', (array) $response->json('models_loaded', []));
-
-                return [
-                    'answer' => $tagalog
-                        ? "Online ang Farming AI API. Naka-load na models: {$models}."
-                        : "The Farming AI API is online. Loaded models: {$models}.",
-                    'source_name' => 'iClimate System Status',
-                    'confidence' => 93,
-                ];
-            }
-
-            return [
-                'answer' => $tagalog
-                    ? "Tumugon ang Farming AI API pero may error (HTTP {$response->status()})."
-                    : "The Farming AI API responded but with an error (HTTP {$response->status()}).",
-                'source_name' => 'iClimate System Status',
-                'confidence' => 85,
-            ];
-        } catch (Throwable) {
-            return [
-                'answer' => $tagalog
-                    ? 'Hindi ma-reach ang Farming AI API ngayon. Fallback rule-based predictions ang ginagamit habang offline ito.'
-                    : 'The Farming AI API could not be reached right now. Fallback rule-based predictions are used while it is offline.',
-                'source_name' => 'iClimate System Status',
-                'confidence' => 88,
-            ];
-        }
-    }
-
-    private function errorLogSummary(bool $tagalog): array
-    {
-        $path = collect(\Illuminate\Support\Facades\File::glob(storage_path('logs/laravel*.log')) ?: [])
-            ->sortByDesc(fn (string $file): int => (int) @filemtime($file))->first() ?? storage_path('logs/laravel.log');
-        $lines = $this->tailLogLines($path);
-
-        if (empty($lines)) {
-            return [
-                'answer' => $tagalog
-                    ? 'Walang nahanap na log file o walang laman ito.'
-                    : 'No log file was found or it is currently empty.',
-                'source_name' => 'iClimate System Status',
-                'confidence' => 80,
-            ];
-        }
-
-        $counts = [];
-
-        foreach ($lines as $line) {
-            if (preg_match('/\[(\d{4}-\d{2}-\d{2})[^\]]*\]\s+\S+\.(ERROR|WARNING|CRITICAL|EMERGENCY|ALERT)/', $line, $match)) {
-                $key = $match[1].' '.$match[2];
-                $counts[$key] = ($counts[$key] ?? 0) + 1;
-            }
-        }
-
-        if (empty($counts)) {
-            return [
-                'answer' => $tagalog
-                    ? 'Walang error, warning, o critical entries sa pinakabagong bahagi ng system log.'
-                    : 'No error, warning, or critical entries were found in the most recent portion of the system log.',
-                'source_name' => 'iClimate System Status',
-                'confidence' => 85,
-            ];
-        }
-
-        $summary = collect($counts)
-            ->map(fn (int $count, string $key): string => "{$key}: {$count}")
-            ->take(8)
-            ->implode(', ');
-
-        return [
-            'answer' => $tagalog
-                ? "Buod ng error log (pinakabagong bahagi lamang, hindi kumpletong kasaysayan): {$summary}."
-                : "Error log summary (most recent portion only, not the full history): {$summary}.",
-            'source_name' => 'iClimate System Status',
-            'confidence' => 85,
-        ];
-    }
-
-    private function maintenanceStatus(bool $tagalog): array
-    {
-        $down = app()->isDownForMaintenance();
-        $logCount = SystemLog::count();
-
-        return [
-            'answer' => $tagalog
-                ? ($down
-                    ? "Nasa maintenance mode ang system ngayon. May {$logCount} naitalang system log entries."
-                    : "Hindi nasa maintenance mode ang system -- normal ang operasyon. May {$logCount} naitalang system log entries.")
-                : ($down
-                    ? "The system is currently in maintenance mode. There are {$logCount} recorded system log entries."
-                    : "The system is not in maintenance mode -- it is operating normally. There are {$logCount} recorded system log entries."),
-            'source_name' => 'iClimate System Status',
-            'confidence' => 92,
-        ];
-    }
-
-    /**
-     * Read only the last chunk of a log file rather than the whole file, so this stays
-     * cheap even as the log grows well beyond its current size.
-     *
-     * @return array<int, string>
-     */
-    private function tailLogLines(string $path, int $maxBytes = 200_000): array
-    {
-        if (! is_file($path)) {
-            return [];
-        }
-
-        $size = filesize($path);
-
-        if ($size === false || $size === 0) {
-            return [];
-        }
-
-        $handle = fopen($path, 'r');
-
-        if ($handle === false) {
-            return [];
-        }
-
-        fseek($handle, max(0, $size - $maxBytes));
-        $chunk = fread($handle, $maxBytes) ?: '';
-        fclose($handle);
-
-        $lines = explode("\n", $chunk);
-
-        if ($size > $maxBytes) {
-            array_shift($lines);
-        }
-
-        return $lines;
     }
 }

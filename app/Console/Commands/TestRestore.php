@@ -15,7 +15,7 @@ class TestRestore extends Command
 {
     protected $signature = 'iclimate:test-restore';
 
-    protected $description = 'Restore the latest backup into a temporary local PostgreSQL Docker container and check the tables. Never touches Supabase; the container is always removed.';
+    protected $description = 'Restore the latest PostgreSQL (pg_dump) backup into a temporary Docker container and check the tables. MariaDB backups: use deploy/hostinger/restore-isolated-mariadb.sh.';
 
     public function handle(BackupRestoreTestService $restoreTest): int
     {

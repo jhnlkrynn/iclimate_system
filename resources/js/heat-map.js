@@ -5,6 +5,7 @@
 // swaps in the panel, legend and colours once a forecast is there.
 
 import { canonicalName, displayName } from './barangay-risk-map';
+import { initLiveRefresh } from './live-page';
 
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 
@@ -262,6 +263,25 @@ export function initHeatMap() {
     // New weather is on its way: read this page again after 5, 15 and 30 seconds (the shared refresh runs once on the
     // server however often it is read), and stop as soon as no barangay is missing its forecast. Keep the request and
     // timer cancellable so leaving the page or hiding the tab does not leave work running in the background.
+    // A fresh server render of this page: take its ratings, summaries, legend and own-barangay card. The map (position,
+    // zoom, polygons), the chosen period / layer and the selected barangay stay as they are; only colours and text
+    // change. Each summary view is replaced on its own so the open barangay detail (in the same panel) is kept.
+    const applyFresh = (fresh, next) => {
+        data = next;
+        detailCache.clear();
+        fresh.querySelectorAll('[data-heat-map-view]').forEach((source) => {
+            const target = root.querySelector(`[data-heat-map-view="${CSS.escape(source.dataset.heatMapView)}"]`);
+            if (target) target.innerHTML = source.innerHTML;
+        });
+        ['[data-heat-map-legend="risk"]', '[data-heat-map-mine]'].forEach((selector) => {   // Manuscript – Naicel: the risk legend (layer legends come first now)
+            const target = root.querySelector(selector);
+            const source = fresh.querySelector(selector);
+            if (target && source) target.innerHTML = source.innerHTML;
+        });
+        views = [...root.querySelectorAll('[data-heat-map-view]')];
+        if (selected && data.levels?.[range]?.[selected] === undefined) selected = null;
+        show();
+    };
     const hasRating = (levels) => Object.values(levels || {}).some((range) => Object.values(range || {}).some((level) => level !== 'nodata'));
     const missing = (levels) => Object.values(levels || {}).some((range) => Object.values(range || {}).includes('nodata'));
     let refreshTimer = null;
@@ -293,16 +313,7 @@ export function initHeatMap() {
                     const fresh = new DOMParser().parseFromString(html, 'text/html').querySelector('[data-heat-map]');
                     const next = fresh ? readLevels(fresh) : null;
                     if (!next || !hasRating(next.levels)) return update(remaining);
-                    data = next;
-                    detailCache.clear();
-                    ['[data-heat-map-panel]', '[data-heat-map-legend="risk"]', '[data-heat-map-mine]'].forEach((selector) => {   // Manuscript – Naicel: the risk legend (layer legends come first now)
-                        const target = root.querySelector(selector);
-                        const source = fresh.querySelector(selector);
-                        if (target && source) target.innerHTML = source.innerHTML;
-                    });
-                    views = [...root.querySelectorAll('[data-heat-map-view]')];
-                    if (selected && data.levels?.[range]?.[selected] === undefined) selected = null;
-                    show();
+                    applyFresh(fresh, next);
                     if (missing(next.levels) && fresh.hasAttribute('data-heat-map-updating')) update(remaining);
                     return undefined;
                 })
@@ -323,6 +334,36 @@ export function initHeatMap() {
     });
     window.addEventListener('pagehide', cancelRefresh, { once: true });
     if (root.hasAttribute('data-heat-map-updating')) update([5000, 10000, 15000]);
+
+    // Live (2026-11-11): new ratings, weather, a barangay profile (flood), a planting plan (drought) or yield estimates
+    // reach the open map without a reload — the Reverb signal at once, a quiet check every minute while it is down,
+    // and a catch-up on reconnect or when the tab is shown again (live-page.js). The page is read again under the
+    // viewer's own permissions; the shown layer's API answer and an open barangay detail are read again too.
+    let liveController = null;
+    const liveRefresh = async () => {
+        liveController?.abort();
+        const controller = new AbortController();
+        liveController = controller;
+        try {
+            const response = await fetch(window.location.href, {
+                headers: { Accept: 'text/html', 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin', signal: controller.signal, loader: false,
+            });
+            if (!response.ok || response.redirected) return;
+            const fresh = new DOMParser().parseFromString(await response.text(), 'text/html').querySelector('[data-heat-map]');
+            const next = fresh ? readLevels(fresh) : null;
+            if (controller.signal.aborted || !next?.levels) return;
+            applyFresh(fresh, next);
+            void fetchLayer(range, period);
+            if (selected) void loadDetail(selected);
+            root.dataset.liveUpdatedAt = String(Date.now());
+        } catch (error) {
+            if (error?.name !== 'AbortError') console.warn('iClimate could not update the open Heat Map.', error);
+        } finally {
+            if (liveController === controller) liveController = null;
+        }
+    };
+    window.addEventListener('pagehide', () => liveController?.abort(), { once: true });
+    initLiveRefresh({ root, refresh: liveRefresh, areas: ['risk', 'weather', 'barangays', 'planting', 'yield'] });
 
     if (!canvas || !window.L) return;
     void fetchLayer(range, period);

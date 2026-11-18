@@ -64,7 +64,8 @@ final class CacheScope
         FeedMedia::class => ['community-posts'],
         FeedComment::class => ['community-activity'],
         FeedReaction::class => ['community-activity'],
-        Notification::class => ['notifications', 'notification-rows' => ['created_at'], 'sample-text' => ['title', 'message', 'created_at']],
+        // 'notification-reads': who got / read an alert (MAO Send Alert history), joined when the read flag flips too.
+        Notification::class => ['notifications', 'notification-rows' => ['created_at'], 'sample-text' => ['title', 'message', 'created_at'], 'notification-reads' => ['is_read', 'read_at']],
         Report::class => ['reports'],
         FieldReport::class => ['field-reports'],
         HeatmapArea::class => ['risk'],
@@ -74,13 +75,29 @@ final class CacheScope
         MlModel::class => ['ml-models'],
         AnalyticsRun::class => ['analytics'],
         TyphoonSafetyResponse::class => ['typhoon'],
+        // Added 2026-11-11 so the remaining list and admin pages update while open (docs/realtime-status.md).
+        \App\Models\BarangayProfile::class => ['barangays'],
+        \App\Models\MaoActivity::class => ['planner'],
+        \App\Models\MaoActivityLog::class => ['mao-activity'],
+        \App\Models\RiceVariety::class => ['varieties'],
+        \App\Models\HistoricalRiceProduction::class => ['historical-rice'],
+        \App\Models\MaintenanceRecord::class => ['maintenance'],
+        \App\Models\WeatherImpactAnalysis::class => ['weather-analysis'],
+        \App\Models\ModelFeedbackDecision::class => ['model-feedback'],
+        \App\Models\YieldPredictionFeedback::class => ['model-feedback'],
+        \App\Models\FarmerSurveyResponse::class => ['model-feedback'],
+        \App\Models\MunicipalYieldPrediction::class => ['yield'],
+        \App\Models\SystemLog::class => ['system-logs'],
+        \App\Models\YieldPredictionRequest::class => ['yield-requests'],
     ];
 
     /**
      * Areas that are not table rows: the PAGASA / local weather check status shown on the Advisories page
-     * (bumped by those refreshes themselves).
+     * (bumped by those refreshes themselves); 'yield' for the stored yield estimates, which are written in bulk
+     * (iclimate:warm-farmer-yields signals once per run, not once per farm); 'system-health' when the prepared
+     * System Health result changes (SystemHealthController::warm).
      */
-    public const OTHER_AREAS = ['advisory-sources'];
+    public const OTHER_AREAS = ['advisory-sources', 'yield', 'system-health'];
 
     /**
      * Columns whose change is bookkeeping, not information a page shows: "fetched again" with the same values.
@@ -94,7 +111,7 @@ final class CacheScope
     /** Rows owned by one person (user_id): that person's private caches are retired too. */
     public const OWNED_BY_USER = [
         Notification::class, AdvisoryFeedback::class, FarmerProfile::class, FarmBoundary::class, \App\Models\Farm::class,
-        FarmerPlantingSchedule::class, TyphoonSafetyResponse::class,
+        FarmerPlantingSchedule::class, TyphoonSafetyResponse::class, \App\Models\YieldPredictionRequest::class,
     ];
 
     /**
@@ -118,7 +135,7 @@ final class CacheScope
         'mao-operations' => ['users', 'farmers', 'planting', 'climate', 'rice', 'advisories', 'advisory-feedback', 'field-reports',
             'reports', 'risk', 'weather', 'predictions', 'typhoon', 'weather-feedback', 'community-posts', 'notification-rows'],
         // IT dashboard payload, insights, overview, KPIs: a whole-system view.
-        'it-dashboard' => ['users', 'farmers', 'planting', 'climate', 'rice', 'advisories', 'community-posts', 'notifications',
+        'internal-status' => ['users', 'farmers', 'planting', 'climate', 'rice', 'advisories', 'community-posts', 'notifications',
             'reports', 'field-reports', 'risk', 'weather', 'predictions', 'ml-models', 'analytics'],
         // Includes the read-only Announcements (community posts) shown to farmers.
         'advisories-index' => ['users', 'advisories', 'advisory-sources', 'advisory-feedback', 'weather', 'risk', 'analytics', 'typhoon', 'community-posts'],
@@ -126,6 +143,7 @@ final class CacheScope
         'calendar' => ['users', 'farmers', 'planting', 'advisories', 'community-posts'],
         'community-feed' => ['users', 'community-posts', 'community-activity'],
         'system-health' => ['weather', 'predictions', 'ml-models', 'analytics'],
+        'heat-map-layers' => ['risk', 'weather', 'barangays', 'planting', 'yield'],
         'crud-user-options' => ['users'],
         'farmer-organization-options' => ['farmers'],
         'ml-active-model' => ['ml-models'],
@@ -199,10 +217,18 @@ final class CacheScope
         return $areas;
     }
 
-    /** @return list<string> the areas a consumer reads (all of them for a name that is not mapped) */
+    /**
+     * Areas only the list and admin pages read (added 2026-11-11). A consumer that is not mapped (e.g. 'mao-home')
+     * was written before they existed and reads none of them, so it does not depend on them: otherwise every audit-log
+     * or planner line would retire the prepared MAO dashboard.
+     */
+    private const LIST_ONLY_AREAS = ['planner', 'mao-activity', 'system-logs', 'system-health', 'maintenance', 'varieties',
+        'weather-analysis', 'notification-reads'];
+
+    /** @return list<string> the areas a consumer reads (all but the list-only ones for a name that is not mapped) */
     public static function areasFor(string $consumer): array
     {
-        return self::CONSUMERS[$consumer] ?? self::areas();
+        return self::CONSUMERS[$consumer] ?? array_values(array_diff(self::areas(), self::LIST_ONLY_AREAS));
     }
 
     /** The cache-key part that changes whenever data the consumer reads changes. */
@@ -254,7 +280,24 @@ final class CacheScope
     /** Retire every cache that reads these areas. */
     public static function bump(string ...$areas): void
     {
-        foreach (array_unique($areas) as $area) {
+        self::bumpCaches($areas);
+    }
+
+    /**
+     * Data that is not a model event changed (a bulk run, a prepared result): retire its caches and tell the open
+     * pages that show it, once, after the surrounding transaction commits.
+     */
+    public static function signal(string ...$areas): void
+    {
+        self::bumpCaches($areas);
+        \App\Events\DashboardChanged::dispatchFor($areas);
+    }
+
+    /** @param list<string> $areas */
+    private static function bumpCaches(array $areas): void
+    {
+        $areas = array_values(array_unique($areas));
+        foreach ($areas as $area) {
             $key = self::versionKey($area);
             Cache::add($key, 1);
             Cache::increment($key);
@@ -270,6 +313,7 @@ final class CacheScope
         if (array_intersect(self::DASHBOARD_DATA_AREAS, $areas) !== []) {
             app(DashboardData::class)->forget();
         }
+
     }
 
     /** Retire everything (a deliberate full reset, e.g. after removing sample data). */
@@ -288,11 +332,15 @@ final class CacheScope
      */
     public static function changed(string $model, iterable $ownerIds = [], ?array $changedColumns = null): void
     {
-        self::bump(...(isset(self::MODEL_AREAS[$model]) ? self::modelAreas($model, $changedColumns) : self::areas()));
+        $areas = isset(self::MODEL_AREAS[$model]) ? self::modelAreas($model, $changedColumns) : self::areas();
+        self::bumpCaches($areas);
 
+        $ownerIds = array_values(array_unique(array_map('intval', is_array($ownerIds) ? $ownerIds : iterator_to_array($ownerIds))));
         foreach ($ownerIds as $userId) {
             PageCache::flushUser((int) $userId);
         }
+
+        \App\Events\DashboardChanged::dispatchFor($areas, $ownerIds);
     }
 
     /** True when a saved row really changed something a page shows (not only bookkeeping such as a fetch time). */

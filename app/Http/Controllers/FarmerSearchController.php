@@ -54,7 +54,7 @@ class FarmerSearchController extends Controller
                     $p->organization_names,
                     $p->rsbsa_no ? 'RSBSA '.$p->rsbsa_no : 'ID '.$p->id,
                 ])),
-                'badge' => $p->user?->status && $p->user->status !== \App\Models\User::STATUS_ACTIVE ? $p->user->status : null,
+                'badge' => $p->user?->status && ! $p->user->hasApplicationAccess() ? $p->user->status : null,
                 'url' => route('farmer-profiles.show', $p->id),
                 'modal' => true,
             ])->values();

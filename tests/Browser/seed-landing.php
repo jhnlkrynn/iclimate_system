@@ -19,7 +19,7 @@ if (config('database.default') !== 'sqlite') {
 $accounts = [
     'farmer@browser.test' => User::ROLE_FARMER,
     'mao@browser.test' => User::ROLE_MAO,
-    'it@browser.test' => User::ROLE_IT_EXPERT,
+    'reviewer@browser.test' => User::ROLE_MAO,
 ];
 
 foreach ($accounts as $email => $role) {
@@ -29,6 +29,7 @@ foreach ($accounts as $email => $role) {
         'email_verified_at' => now(),
         'password' => Hash::make('password'),
         'role' => $role,
+        'is_mao_head' => $email === 'mao@browser.test',
         'contact_number' => '09170000000',
         'barangay' => 'Prenza',
         'status' => User::STATUS_ACTIVE,
