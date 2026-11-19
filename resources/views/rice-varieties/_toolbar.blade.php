@@ -4,7 +4,7 @@
      $filters: the current filters; $total: how many varieties match. --}}
 @php
     $url = function (array $change) use ($filters): string {
-        $query = array_merge($filters, $change);
+        $query = array_merge($filters, request()->boolean('manage') ? ['manage' => 1] : [], $change);
         unset($query['page']);
 
         return route('rice-varieties.index', array_filter($query, fn ($v) => $v !== null && $v !== ''));
@@ -31,6 +31,7 @@
 @endphp
 <div class="rv-toolbar" data-rv-toolbar>
     <form method="GET" action="{{ route('rice-varieties.index') }}" class="rv-toolbar-search" role="search">
+        @if (request()->boolean('manage'))<input type="hidden" name="manage" value="1">@endif
         @foreach (array_diff_key($filters, array_flip(['q', 'sort', 'page'])) as $key => $value)
             <input type="hidden" name="{{ $key }}" value="{{ $value }}">
         @endforeach
@@ -79,7 +80,7 @@
                 <li><a class="rv-active-chip" href="{{ $url([$chip['key'] => null]) }}" aria-label="{{ __('rice_varieties.catalog.remove', ['label' => $chip['label']]) }}" data-rv-active-chip="{{ $chip['key'] }}">{{ $chip['label'] }}<span aria-hidden="true">×</span></a></li>
             @endforeach
         </ul>
-        <a class="rv-clear-all" href="{{ route('rice-varieties.index', array_filter(['sort' => $filters['sort'] ?? null])) }}" data-rv-clear-all>{{ __('rice_varieties.catalog.clear_all') }}</a>
+        <a class="rv-clear-all" href="{{ route('rice-varieties.index', array_filter(['sort' => $filters['sort'] ?? null, 'manage' => request()->boolean('manage') ? 1 : null])) }}" data-rv-clear-all>{{ __('rice_varieties.catalog.clear_all') }}</a>
     @endif
     <span class="rv-count" data-rv-count>{{ trans_choice('rice_varieties.catalog.results', $total, ['count' => number_format($total)]) }}</span>
 </div>

@@ -74,7 +74,7 @@ class LianGeography
         return ['inside' => true, 'partly' => false, 'barangay' => $best > 0 ? array_search($best, $votes, true) : null];
     }
 
-    /** "Barangay San Diego", but "Barangay 1 (Pob.)" stays as it is. */
+    /** "Barangay San Diego"; supported barangay names otherwise stay canonical. */
     public static function barangayLabel(string $name): string
     {
         return str_starts_with($name, 'Barangay') ? $name : 'Barangay '.$name;

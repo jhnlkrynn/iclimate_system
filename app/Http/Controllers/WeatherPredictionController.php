@@ -69,7 +69,7 @@ class WeatherPredictionController extends Controller
                 'area' => (float) ($profile->farm_area ?? 0) > 0 ? (float) $profile->farm_area : null,
                 'type' => $profile->farm_type ? __('farmer.my_farm.water.'.strtolower((string) $profile->farm_type)) : null,
             ] : null,
-            'technical' => $role === User::ROLE_IT_EXPERT ? $this->technicalDetails($municipalYield) : null,
+            'technical' => null,
             // Farmer – Naicel (2026-10): yesterday's forecast to ask the farmer about, once; null when answered or not saved.
             'forecastSurvey' => $role === User::ROLE_FARMER ? rescue(fn () => app(\App\Services\Weather\WeatherFeedbackService::class)->pendingDailyPrompt($user), null, false) : null,
         ]);
@@ -134,7 +134,7 @@ class WeatherPredictionController extends Controller
 
     public function municipalityYieldStatus(Request $request, MunicipalYieldForecastService $municipalYield): JsonResponse
     {
-        abort_unless(in_array($request->user()->role, [User::ROLE_MAO, User::ROLE_IT_EXPERT], true), 403);
+        abort_unless(in_array($request->user()->role, [User::ROLE_MAO], true), 403);
 
         return response()->json($municipalYield->status(CarbonImmutable::now('Asia/Manila')));
     }

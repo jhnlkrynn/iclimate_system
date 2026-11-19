@@ -72,7 +72,7 @@ class DashboardOverviewTest extends TestCase
 
         $this->assertCount(5, $service->farmer($farmer, null, null, null, null)['kpis']);
         $this->assertCount(5, $service->mao(null)['kpis']);
-        $this->assertCount(5, $service->it()['kpis']);
+        $this->assertCount(5, $service->internalStatus()['kpis']);
     }
 
     /** A KPI/chart is either absent (swapped for one that has data) or says plainly that it has none. */
@@ -108,15 +108,15 @@ class DashboardOverviewTest extends TestCase
         $this->assertEmptyOrReplaced($overview, 'kpis', 'key', 'current-weather', $none);
         $this->assertEmptyOrReplaced($overview, 'kpis', 'key', 'planting-advisory', $none);
 
-        $it = $service->it();
+        $it = $service->internalStatus();
         $this->assertEmptyOrReplaced($it, 'kpis', 'key', 'rice-records', $none);
     }
 
     public function test_a_kpi_without_data_is_replaced_by_another_one_that_has_data(): void
     {
-        User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
+        User::factory()->create(['role' => User::ROLE_MAO]);
         $service = app(DashboardOverviewService::class);
-        $it = $service->it();
+        $it = $service->internalStatus();
 
         // Users always exist in this test, so the IT dashboard can always offer a figure.
         foreach ($it['kpis'] as $kpi) {
@@ -278,7 +278,7 @@ class DashboardOverviewTest extends TestCase
             'cache_key' => 'k', 'input' => [],
         ]);
 
-        $overview = app(DashboardOverviewService::class)->it();
+        $overview = app(DashboardOverviewService::class)->internalStatus();
 
         $this->assertSame('3', $this->kpi($overview, 'users')['value']);
         $this->assertSame('1', $this->kpi($overview, 'rice-records')['value']);
@@ -292,7 +292,7 @@ class DashboardOverviewTest extends TestCase
         $service = app(DashboardOverviewService::class);
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER]);
 
-        foreach ([$service->farmer($farmer, null, null, null, null), $service->mao(null), $service->it()] as $overview) {
+        foreach ([$service->farmer($farmer, null, null, null, null), $service->mao(null), $service->internalStatus()] as $overview) {
             foreach ($overview['charts'] as $chart) {
                 $this->assertNotEmpty($chart['basis'], "Chart [{$chart['id']}] has no data-kind label");
             }
@@ -326,7 +326,7 @@ class DashboardOverviewTest extends TestCase
         $this->assertStringContainsString('rainfall 210.5', $this->source($farmerOverview, 'Predicted rice yield')['note']);
         $this->assertSame('Calculated', $this->source($farmerOverview, 'Planting advisory & irrigation')['kind']);
 
-        $it = $service->it();
+        $it = $service->internalStatus();
         $this->assertSame('Count', $this->source($it, 'Users')['kind']);
         $this->assertSame('Calculated', $this->source($it, 'System & data status')['kind']);
     }
@@ -356,7 +356,7 @@ class DashboardOverviewTest extends TestCase
 
         $this->assertSame('50.0', $this->kpi($mao, 'production')['value'], 'the 999-ton sample row must not be counted');
         $this->assertSame(['Binubusan'], $this->chart($mao, 'production-by-barangay')['labels']);
-        $this->assertSame('1', $this->kpi(app(DashboardOverviewService::class)->it(), 'rice-records')['value']);
+        $this->assertSame('1', $this->kpi(app(DashboardOverviewService::class)->internalStatus(), 'rice-records')['value']);
 
         $warning = $this->source($mao, 'Rice production records')['warning'];
         $this->assertStringContainsString('1 of 2', $warning);
@@ -377,7 +377,7 @@ class DashboardOverviewTest extends TestCase
         $detector = app(SampleDataDetector::class);
         $this->assertCount(1, $detector->implausibleClimateIds());
 
-        $it = app(DashboardOverviewService::class)->it();
+        $it = app(DashboardOverviewService::class)->internalStatus();
         $weather = $this->kpi($it, 'weather-records');
         $this->assertStringContainsString('1 verified database records', $weather['note']);
         $this->assertStringContainsString('1 excluded', $weather['note']);
@@ -399,38 +399,5 @@ class DashboardOverviewTest extends TestCase
 
     /* ------------------------------------------------------------ pages */
 
-    public function test_dashboards_render_charts_sources_and_year_filter_only_for_the_right_roles(): void
-    {
-        $this->rice('Binubusan', 2023, 10, 40);
-        $this->rice('Binubusan', 2024, 10, 50);
 
-        // MAO Dashboard (2026-10): four tiles and one chart; no shared overview strip and no year filter.
-        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
-        $this->actingAs($mao)->get(route('mao.dashboard'))
-            ->assertOk()
-            ->assertSee('data-mao-kpis', false)
-            ->assertSee('Rice Yield by Year')
-            ->assertDontSee('data-dashboard-overview="mao"', false)
-            ->assertDontSee('id="dashYear"', false)
-            ->assertDontSee('Figures last calculated');
-
-        $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
-        $this->actingAs($it)->get(route('admin.dashboard'))
-            ->assertOk()
-            ->assertSee('data-it-dashboard', false)
-            ->assertSee('System Health')
-            ->assertSee('Users by Role')
-            ->assertDontSee('id="dashYear"', false);
-
-        $farmer = User::factory()->create(['role' => User::ROLE_FARMER, 'barangay' => 'Binubusan']);
-        $this->actingAs($farmer)->get(route('farmer.dashboard'))
-            ->assertOk()
-            ->assertSee('data-farmer-dashboard', false)
-            ->assertSee('Weather today')
-            ->assertDontSee('My Farm Today')
-            ->assertDontSee("Today's Highlights")
-            ->assertDontSee('Data sources &amp; last updated', false)     // replaced by a small information link
-            ->assertDontSee('Users by Role')
-            ->assertDontSee('Production by Barangay');
-    }
 }

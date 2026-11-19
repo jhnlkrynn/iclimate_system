@@ -220,3 +220,15 @@ Schedule::command('iclimate:publish-scheduled-alerts')
     ->everyMinute()
     ->withoutOverlapping(5)
     ->appendOutputTo($automationLog('iclimate:publish-scheduled-alerts'));
+
+Schedule::command('associations:send-reminders')
+    ->dailyAt('08:00')
+    ->withoutOverlapping(5)
+    ->appendOutputTo($automationLog('associations:send-reminders'));
+
+// Audit 2026-11-18: one health check every 5 minutes; every FAIL (database down, ML or Reverb unreachable,
+// stalled queue, stopped scheduler, low disk) lands in the application log with what to do.
+Schedule::command('iclimate:health --log')
+    ->everyFiveMinutes()
+    ->withoutOverlapping(5)
+    ->appendOutputTo($automationLog('iclimate:health'));

@@ -94,8 +94,8 @@ class MaoMissingDataNotifier
 
         $kept = [];
         $wrote = false;
-        // Saved without model events (as the farmer reminders): the bell reads these rows live.
-        Notification::withoutEvents(function () use ($existing, $missing, $locale, $user, &$kept, &$wrote): void {
+        // The notification model broadcasts each committed create/update/delete; CacheScope still handles server-side caches.
+        (function () use ($existing, $missing, $locale, $user, &$kept, &$wrote): void {
             foreach ($existing as $note) {
                 $item = substr((string) $note->category, strlen(self::CATEGORY_PREFIX));
                 if (! in_array($item, $missing, true) || isset($kept[$item])) {
@@ -123,7 +123,7 @@ class MaoMissingDataNotifier
                 ]);
                 $wrote = true;
             }
-        });
+        })();
 
         if ($wrote) {
             \App\Support\CacheScope::changed(Notification::class);

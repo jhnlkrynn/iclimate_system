@@ -30,7 +30,7 @@ class GovernmentStripRemovedTest extends TestCase
 
     public function test_each_role_dashboard_has_no_government_strip(): void
     {
-        foreach ([User::ROLE_FARMER => 'farmer.dashboard', User::ROLE_MAO => 'mao.dashboard', User::ROLE_IT_EXPERT => 'admin.dashboard'] as $role => $dashboard) {
+        foreach ([User::ROLE_FARMER => 'farmer.dashboard', User::ROLE_MAO => 'mao.dashboard'] as $role => $dashboard) {
             $user = User::factory()->create(['role' => $role]);
             $html = $this->actingAs($user)->get(route($dashboard))->assertOk()->getContent();
 

@@ -80,7 +80,7 @@ class PredictionOrchestrator
      * Guaranteed: returns a fresh persisted forecast for $month, computing
      * and persisting it inline if (and only if) nothing fresh already
      * exists. Pass $forceRefresh=true to always recompute (used by the
-     * refresh command / candidate reports / IT Expert force-refresh).
+     * refresh command / candidate reports / server operator force-refresh).
      */
     public function monthlyWeatherForecast(CarbonImmutable $month, bool $forceRefresh = false): array
     {
@@ -210,6 +210,13 @@ class PredictionOrchestrator
 
         $lockKey = $this->dispatchLockKey($month);
         if (Cache::has($lockKey)) {
+            return false;
+        }
+
+        // The same month is still waiting in the queue (the worker is behind or stopped, and the six-hour unique lock
+        // has run out): one job is enough. (2026-11-11: 11 forecast jobs had been waiting since the day before.)
+        $connection = (string) config('services.farming_ai.queue_connection', 'database');
+        if (\App\Support\QueueWorkerHeartbeat::alreadyWaiting(GenerateMonthlyWeatherForecast::class, $month->format('Y-m-d'), $connection)) {
             return false;
         }
 

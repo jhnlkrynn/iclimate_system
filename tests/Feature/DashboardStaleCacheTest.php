@@ -126,26 +126,7 @@ class DashboardStaleCacheTest extends TestCase
         }
     }
 
-    public function test_the_it_dashboard_answers_from_its_last_copy_once_its_cache_lapsed(): void
-    {
-        $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
-        $queries = 0;
-        $answered = null;
-        \Illuminate\Support\Facades\DB::listen(function () use (&$queries) { $queries++; });
 
-        $this->actingAs($it)->get(route('admin.dashboard'))->assertOk();
-        $coldBuild = $queries;
-        $this->travel(5)->minutes();                                   // the 60 s page cache has lapsed
-
-        $queries = 0;
-        // Registered before the request, so it runs before StaleCache's after-response rebuild: the boundary.
-        $this->app->terminating(function () use (&$queries, &$answered) { $answered ??= $queries; });
-        $this->actingAs($it)->get(route('admin.dashboard'))->assertOk()->assertSee('System');
-
-        $this->assertGreaterThan(30, $coldBuild, 'the cold build is the expensive one');
-        $this->assertLessThan(10, $answered, 'answered from the last copy, not rebuilt while the page waits');
-        $this->assertGreaterThan(30, $queries, 'the overview was rebuilt after the response');
-    }
 
     public function test_after_a_data_change_a_versioned_value_is_rebuilt_not_shown_stale(): void
     {

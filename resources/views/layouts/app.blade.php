@@ -313,13 +313,13 @@
         {{-- Panel revision 4.5 / 4.3: the government theme and the phone rules, after every other style so they win. --}}
         @vite(['resources/css/gov-theme.css', 'resources/css/accessibility.css'])
         {{-- Farmer, MAO and IT accounts: the plain light green look of the landing page, loaded last. --}}
-        @php($accountLook = in_array(auth()->user()?->role, [\App\Models\User::ROLE_FARMER, \App\Models\User::ROLE_MAO, \App\Models\User::ROLE_IT_EXPERT], true))
+        @php($accountLook = in_array(auth()->user()?->role, [\App\Models\User::ROLE_FARMER, \App\Models\User::ROLE_MAO], true))
         @if ($accountLook)
             @vite('resources/css/pages/account-light.css')
         @endif
         @include('partials.global-loader')
     </head>
-    <body data-user-role="{{ auth()->user()?->role }}" @class(['is-farmer-dashboard' => request()->routeIs('farmer.dashboard'), 'is-it-dashboard' => request()->routeIs('admin.dashboard'), 'is-mao-dashboard' => request()->routeIs('mao.dashboard')])>
+    <body data-user-id="{{ auth()->id() }}" data-user-role="{{ auth()->user()?->role }}" data-server-now="{{ now('Asia/Manila')->format('Y-m-d\\TH:i:s.vP') }}" @class(['is-farmer-dashboard' => request()->routeIs('farmer.dashboard'), 'is-mao-dashboard' => request()->routeIs('mao.dashboard')])>
         {{-- The landing page's rice field photo behind the account pages (account-light.css); versioned by file time so a
              replaced photo shows at once. --}}
         @if ($accountLook)

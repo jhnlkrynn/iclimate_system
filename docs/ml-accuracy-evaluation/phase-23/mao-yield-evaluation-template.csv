@@ -1,0 +1,1 @@
+observation_id,farm_group_id,barangay_code,observation_date,planting_date,harvest_date,season,crop,area_ha,actual_production_t,actual_yield_t_ha,rainfall_mm,temp_avg_c,temp_range_c,previous_rainfall_mm,previous_temp_c,rainfall_6m_mm,temp_3m_c,temp_6m_c,seasonal_rainfall_mm,seasonal_temp_c,source_record_ref,provenance_status,approval_ref,notes

@@ -19,7 +19,7 @@ class DeploymentReadinessTest extends TestCase
 
     private function user(string $role, array $attributes = []): User
     {
-        return User::factory()->create(['role' => $role] + $attributes);
+        return User::factory()->create(['role' => $role, 'is_mao_head' => $role === User::ROLE_MAO] + $attributes);
     }
 
     private function accountFields(User $user, array $changes = []): array
@@ -31,25 +31,25 @@ class DeploymentReadinessTest extends TestCase
 
     public function test_it_cannot_delete_deactivate_or_demote_their_own_account(): void
     {
-        $it = $this->user(User::ROLE_IT_EXPERT);
-        $this->user(User::ROLE_IT_EXPERT);
+        $it = $this->user(User::ROLE_MAO);
+        $this->user(User::ROLE_MAO);
 
         $this->actingAs($it)->delete(route('users.destroy', $it))->assertRedirect(route('users.index'))->assertSessionHas('error');
         $this->actingAs($it)->put(route('users.update', $it), $this->accountFields($it, ['status' => User::STATUS_INACTIVE]))->assertSessionHasErrors('status');
-        $this->actingAs($it)->put(route('users.update', $it), $this->accountFields($it, ['role' => User::ROLE_MAO]))->assertSessionHasErrors('status');
+        $this->actingAs($it)->put(route('users.update', $it), $this->accountFields($it, ['role' => User::ROLE_FARMER]))->assertSessionHasErrors('status');
 
         $it->refresh();
-        $this->assertSame([User::ROLE_IT_EXPERT, User::STATUS_ACTIVE], [$it->role, $it->status]);
+        $this->assertSame([User::ROLE_MAO, User::STATUS_ACTIVE], [$it->role, $it->status]);
 
         // Ordinary edits of one's own account still work.
-        $this->actingAs($it)->put(route('users.update', $it), $this->accountFields($it, ['name' => 'Renamed Admin']))->assertSessionHasNoErrors();
+        $this->actingAs($it)->put(route('users.update', $it), $this->accountFields($it, ['name' => 'Renamed Admin', 'is_mao_head' => true]))->assertSessionHasNoErrors();
         $this->assertSame('Renamed Admin', $it->fresh()->name);
     }
 
     public function test_the_last_active_it_expert_is_always_kept_but_another_one_can_be_removed(): void
     {
-        $it = $this->user(User::ROLE_IT_EXPERT);
-        $second = $this->user(User::ROLE_IT_EXPERT);
+        $it = $this->user(User::ROLE_MAO);
+        $second = $this->user(User::ROLE_MAO);
 
         // IT deletes with a reason; the account is closed, not erased (App\Services\Accounts\AccountDeletion).
         $this->actingAs($it)->delete(route('users.destroy', $second), ['reason' => 'moved_out', 'confirm_name' => $second->name])->assertSessionHasNoErrors();
@@ -68,7 +68,7 @@ class DeploymentReadinessTest extends TestCase
 
     public function test_one_password_rule_applies_wherever_a_password_is_chosen(): void
     {
-        $it = $this->user(User::ROLE_IT_EXPERT);
+        $it = $this->user(User::ROLE_MAO);
         $new = ['name' => 'New Staff', 'email' => 'new.staff@example.com', 'role' => User::ROLE_MAO, 'status' => User::STATUS_ACTIVE];
 
         $this->actingAs($it)->post(route('users.store'), $new + ['password' => 'password1'])->assertSessionHasErrors('password');
@@ -186,9 +186,9 @@ class DeploymentReadinessTest extends TestCase
     public function test_small_display_rules(): void
     {
         // The IT role is stored as "IT Expert" and shown as "IT Personnel" everywhere.
-        $this->assertSame('IT Personnel', User::labelForRole(User::ROLE_IT_EXPERT));
-        $this->assertSame('IT Personnel', $this->user(User::ROLE_IT_EXPERT)->roleLabel());
-        $this->assertSame(User::ROLE_MAO, User::labelForRole(User::ROLE_MAO));
+        $this->assertSame('Closed legacy role', User::labelForRole('IT Expert'));
+        $this->assertSame('MAO Staff', $this->user(User::ROLE_MAO)->roleLabel());
+        $this->assertSame('MAO Staff', User::labelForRole(User::ROLE_MAO));
 
         // A small file is not shown as "0.00 MB".
         $this->assertSame('3.1 KB', \App\Services\SystemHealthService::fileSize(3171));
@@ -197,9 +197,9 @@ class DeploymentReadinessTest extends TestCase
 
         // Staff lists: the role reads "IT Personnel". (The "Showing 1-10 of N" header and the wording of an empty value,
         // "Not set" / "Not available", are main's and are covered by StaffDatasetRecordsTest.)
-        $it = $this->user(User::ROLE_IT_EXPERT, ['barangay' => null]);
+        $it = $this->user(User::ROLE_MAO, ['barangay' => null]);
         $html = $this->actingAs($it)->get(route('users.index'))->assertOk()->getContent();
-        $this->assertStringContainsString('IT Personnel', $html);
+        $this->assertStringContainsString('MAO Staff', $html);
         $this->assertStringContainsString('Not set', $html);
     }
 

@@ -21,7 +21,17 @@ use Symfony\Component\HttpFoundation\Response;
 class ReportExtrasController extends Controller
 {
     /** A PDF lays out at most this many rows; Excel holds them all. */
-    public const PDF_ROW_LIMIT = 1500;
+    /**
+     * Cells a PDF may hold. DomPDF needs ~0.18 MB per 6-column row on top of ~60 MB, so 1,500 rows of report 11 (871
+     * rows) exhausted the 128 MB PHP-FPM limit and answered 500 (verification 2026-11-18). 1,500 cells = 250 rows of 6
+     * columns (~110 MB peak); wider tables get fewer rows. The PDF says so and points to Excel for every row.
+     */
+    public const PDF_CELL_LIMIT = 1500;
+
+    public static function pdfRowLimit(int $columns): int
+    {
+        return max(50, intdiv(self::PDF_CELL_LIMIT, max(6, $columns)));
+    }
 
     public function xlsx(Request $request): BinaryFileResponse
     {
@@ -43,6 +53,7 @@ class ReportExtrasController extends Controller
         $report = $this->report($request);
         [$columns, $rows] = $this->table($report);
         $total = count($rows);
+        $limit = self::pdfRowLimit(count($columns));
         SystemAuditLogger::record('Exported Report PDF', $request, ['report_id' => $report->id]);
 
         return Pdf::loadView('reports.pdf', [
@@ -55,9 +66,9 @@ class ReportExtrasController extends Controller
             'filters' => $report->savedFilters(),
             'summary' => collect($report->summary())->filter(fn ($i) => isset($i['label']) || isset($i['note']))->values()->all(),
             'columns' => $columns,
-            'rows' => array_slice($rows, 0, self::PDF_ROW_LIMIT),
+            'rows' => array_slice($rows, 0, $limit),
             'total' => $total,
-            'truncated' => $total > self::PDF_ROW_LIMIT,
+            'truncated' => $total > $limit,
         ])->setPaper('a4', count($columns) > 6 ? 'landscape' : 'portrait')->download(Str::slug($report->title).'.pdf');
     }
 

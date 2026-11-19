@@ -19,6 +19,7 @@
     @endif
 
     <h3>{{ $R('requests_title') }}</h3>
+    @unless ($showStoredEstimates ?? false)<p data-ml-status="withheld">{{ __('farmer.home.harvest.unvalidated') }}</p>@endunless
     @if ($requests->isEmpty())
         <p>{{ $R('none_requests') }}</p>
     @else
@@ -26,7 +27,7 @@
             <thead><tr><th>{{ $R('season') }}</th><th>Barangay</th><th>{{ $R('per_ha') }}</th><th>{{ $R('total') }}</th><th>{{ $R('outlook') }}</th></tr></thead>
             <tbody>
                 @foreach ($requests as $r)
-                    <tr><td>{{ __('yield_request.'.strtolower($r->season)) }}</td><td>{{ $r->barangay }}</td><td>{{ $R('t_ha', ['value' => $num($r->predicted_yield)]) }}</td><td>{{ $r->total_tons !== null ? $R('tons', ['value' => $num($r->total_tons)]) : '—' }}</td><td>{{ $levels[$r->impact_level] ?? '—' }}</td></tr>
+                    <tr><td>{{ __('yield_request.'.strtolower($r->season)) }}</td><td>{{ $r->barangay }}</td><td>@if ($showStoredEstimates ?? false){{ $R('t_ha', ['value' => $num($r->predicted_yield)]) }} @include('components.unvalidated-estimate', ['compact' => true])@else — @endif</td><td>{{ ($showStoredEstimates ?? false) && $r->total_tons !== null ? $R('tons', ['value' => $num($r->total_tons)]) : '—' }}</td><td>{{ ($showStoredEstimates ?? false) ? ($levels[$r->impact_level] ?? '—') : '—' }}</td></tr>
                 @endforeach
             </tbody>
         </table>
@@ -37,8 +38,8 @@
         <p>{{ $R('none_harvests') }}</p>
     @else
         <table class="mr-table">
-            <thead><tr><th>{{ $R('harvested') }}</th><th>{{ $R('season') }}</th><th>{{ $R('predicted') }}</th><th>{{ $R('actual') }}</th></tr></thead>
-            <tbody>@foreach ($harvests as $h)<tr><td>{{ $h->harvested_on?->format('M j, Y') ?? '—' }}</td><td>{{ $h->season }}</td><td>{{ $R('t_ha', ['value' => $num($h->predicted_yield)]) }}</td><td>{{ $R('t_ha', ['value' => $num($h->actual_yield)]) }}</td></tr>@endforeach</tbody>
+            <thead><tr><th>{{ $R('harvested') }}</th><th>{{ $R('season') }}</th><th>{{ $R('predicted') }}</th><th>{{ $R('actual') }}</th><th>{{ $R('historical') }}</th><th>{{ $R('total') }}</th></tr></thead>
+            <tbody>@foreach ($harvests as $h)<tr><td>{{ $h->harvested_on?->format('M j, Y') ?? '—' }}</td><td>{{ $h->season }}</td><td>@if ($showStoredEstimates ?? false){{ $R('t_ha', ['value' => $num($h->predicted_yield)]) }} @include('components.unvalidated-estimate', ['compact' => true])@else — @endif</td><td>{{ $R('t_ha', ['value' => $num($h->actual_yield)]) }}</td><td>{{ $h->historical_yield !== null ? $R('t_ha', ['value' => $num($h->historical_yield)]) : '—' }}</td><td>{{ $h->actual_total_tons !== null ? $R('tons', ['value' => $num($h->actual_total_tons)]) : '—' }}</td></tr>@endforeach</tbody>
         </table>
     @endif
 </section>

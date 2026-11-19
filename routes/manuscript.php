@@ -11,14 +11,10 @@
 */
 
 use App\Http\Controllers\AdvisoryAlertController;
-use App\Http\Controllers\BackupController;
 use App\Http\Controllers\BarangayProfileController;
-use App\Http\Controllers\MaintenanceRecordController;
-use App\Http\Controllers\ModelManagementController;
 use App\Http\Controllers\FarmerApprovalController;
 use App\Http\Controllers\FarmerReportController;
 use App\Http\Controllers\ReportExtrasController;
-use App\Http\Controllers\SystemSettingsController;
 use App\Http\Controllers\RecordImportController;
 use App\Http\Controllers\RecordValidationController;
 use App\Http\Controllers\UserPasswordResetController;
@@ -27,11 +23,39 @@ use App\Http\Controllers\YieldPredictionController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
+Route::middleware(\App\Http\Middleware\RequireSchema::class.':association_chairman_assignments,association_chairman_invitations')->group(function () {
+    Route::get('association-chairman/invitations/{token}', [\App\Http\Controllers\AssociationInvitationController::class, 'show'])->name('association-chairman.invitation.show');
+    Route::post('association-chairman/invitations/{token}', [\App\Http\Controllers\AssociationInvitationController::class, 'accept'])->middleware('throttle:10,1,association-invitation')->name('association-chairman.invitation.accept');
+});
+
 Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('association-reports/{report}/document/{submission?}', \App\Http\Controllers\AssociationReportDocumentController::class)
+        ->whereNumber(['report', 'submission'])->middleware(\App\Http\Middleware\RequireSchema::class.':association_yield_report_submissions')
+        ->name('association-reports.document');
+
+    Route::middleware(['role:'.User::ROLE_FARMER, \App\Http\Middleware\RequireSchema::class.':association_chairman_assignments,association_reporting_periods,association_yield_reports,association_yield_report_submissions'])->prefix('association-chairman')->name('association-chairman.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\AssociationChairmanController::class, 'dashboard'])->name('dashboard');
+        Route::get('reports/{report}', [\App\Http\Controllers\AssociationChairmanController::class, 'show'])->whereNumber('report')->name('reports.show');
+        Route::get('reports/{period}/create', [\App\Http\Controllers\AssociationChairmanController::class, 'create'])->whereNumber('period')->name('reports.create');
+        Route::post('reports/{period}', [\App\Http\Controllers\AssociationChairmanController::class, 'store'])->whereNumber('period')->middleware('throttle:20,1,association-report')->name('reports.store');
+    });
+
+    Route::middleware(['role:'.User::ROLE_MAO, \App\Http\Middleware\RequireSchema::class.':association_chairman_assignments,association_chairman_invitations,association_reporting_periods,association_yield_reports,association_yield_report_reviews,association_reminder_deliveries,association_yield_report_submissions'])->prefix('mao/association-reports')->name('mao.association-reports.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\MaoAssociationReportController::class, 'index'])->name('index');
+        Route::post('periods', [\App\Http\Controllers\MaoAssociationReportController::class, 'storePeriod'])->middleware('throttle:20,1,association-period')->name('periods.store');
+        Route::post('associations/{association}/assign', [\App\Http\Controllers\MaoAssociationReportController::class, 'assign'])->whereNumber('association')->middleware('throttle:20,1,association-assign')->name('associations.assign');
+        Route::post('associations/{association}/invite', [\App\Http\Controllers\MaoAssociationReportController::class, 'invite'])->whereNumber('association')->middleware('throttle:10,1,association-invite')->name('associations.invite');
+        Route::get('reports/{report}', [\App\Http\Controllers\MaoAssociationReportController::class, 'show'])->whereNumber('report')->name('reports.show');
+        Route::post('reports/{report}/review', [\App\Http\Controllers\MaoAssociationReportController::class, 'review'])->whereNumber('report')->name('reports.review');
+        Route::post('reports/{report}/remind', [\App\Http\Controllers\MaoAssociationReportController::class, 'remind'])->whereNumber('report')->name('reports.remind');
+    });
 
     // Phase 1: Farmer Approvals (MAO) and IT password reset.
     Route::middleware('role:'.User::ROLE_MAO)->prefix('mao/farmer-approvals')->name('mao.farmer-approvals.')->group(function () {
         Route::get('/', [FarmerApprovalController::class, 'index'])->name('index');
+        Route::get('{user}', [FarmerApprovalController::class, 'show'])->whereNumber('user')->name('show');
+        Route::post('{user}/reconsider', [FarmerApprovalController::class, 'reconsider'])->whereNumber('user')->middleware('throttle:30,1,farmer-reconsider')->name('reconsider');
+        Route::post('{user}/recovery-code', [FarmerApprovalController::class, 'recoveryCode'])->whereNumber('user')->middleware('throttle:10,1,farmer-recovery-code')->name('recovery-code');
         Route::post('{user}/approve', [FarmerApprovalController::class, 'approve'])->whereNumber('user')->middleware('throttle:60,1,post-farmer-approve')->name('approve');
         Route::post('{user}/reject', [FarmerApprovalController::class, 'reject'])->whereNumber('user')->middleware('throttle:60,1,post-farmer-reject')->name('reject');
     });
@@ -49,7 +73,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('users/{user}/reset-password', UserPasswordResetController::class)
         ->whereNumber('user')
-        ->middleware(['role:'.User::ROLE_IT_EXPERT, 'throttle:20,1,post-user-reset-password'])
+        ->middleware(['role:'.User::ROLE_MAO, 'throttle:20,1,post-user-reset-password'])
         ->name('users.reset-password');
 
     // Phase 2: climate and production records — CSV import and validation (MAO).
@@ -84,6 +108,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('yield', [YieldPredictionController::class, 'farmer'])->name('yield');
             Route::post('yield', [YieldPredictionController::class, 'farmerStore'])->middleware('throttle:10,1,post-analysis-yield')->name('yield.store');
         });
+        Route::get('yield/{prediction}/status', [YieldPredictionController::class, 'status'])
+            ->whereNumber('prediction')->name('yield.status');
         Route::middleware('role:'.User::ROLE_MAO)->group(function () {
             Route::get('forecast', [YieldPredictionController::class, 'mao'])->name('forecast');
             Route::post('forecast', [YieldPredictionController::class, 'maoStore'])->middleware('throttle:20,1,post-analysis-forecast')->name('forecast.store');
@@ -101,46 +127,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('pdf', [FarmerReportController::class, 'pdf'])->middleware('throttle:10,1,get-farmer-reports-pdf')->name('pdf');
     });
 
-    // Phase 8: System Settings, Security, Roles & Permissions (IT).
-    Route::middleware('role:'.User::ROLE_IT_EXPERT)->prefix('admin')->name('admin.')->group(function () {
-        Route::get('settings', [SystemSettingsController::class, 'general'])->name('settings.index');
-        Route::post('settings', [SystemSettingsController::class, 'saveGeneral'])->middleware('throttle:20,1,post-admin-settings')->name('settings.save');
-        Route::get('settings/security', [SystemSettingsController::class, 'security'])->name('settings.security');
-        Route::post('settings/security', [SystemSettingsController::class, 'saveSecurity'])->middleware('throttle:20,1,post-admin-security')->name('settings.security.save');
-        Route::get('permissions', [SystemSettingsController::class, 'permissions'])->name('permissions.index');
-        Route::post('permissions', [SystemSettingsController::class, 'savePermissions'])->middleware('throttle:20,1,post-admin-permissions')->name('permissions.save');
-
-        // System Logs as CSV, with the page's filters.
-        Route::get('system-logs/export', [\App\Http\Controllers\SystemLogController::class, 'export'])->middleware('throttle:10,1,get-system-logs-export')->name('system-logs.export');
-
-        // Backups, Maintenance Records, ML Models.
-        Route::get('backups', [BackupController::class, 'index'])->name('backups.index');
-        Route::post('backups', [BackupController::class, 'store'])->middleware('throttle:5,10,post-admin-backups')->name('backups.store');
-        Route::get('backups/{file}/download', [BackupController::class, 'download'])->where('file', '[A-Za-z0-9_\-.]+')->middleware('throttle:10,1,get-admin-backup-download')->name('backups.download');
-        Route::post('backups/{file}/restore', [BackupController::class, 'restore'])->where('file', '[A-Za-z0-9_\-.]+')->middleware('throttle:3,10,post-admin-backup-restore')->name('backups.restore');
-        Route::get('maintenance', [MaintenanceRecordController::class, 'index'])->name('maintenance.index');
-        Route::post('maintenance', [MaintenanceRecordController::class, 'store'])->middleware('throttle:30,1,post-admin-maintenance')->name('maintenance.store');
-        Route::put('maintenance/{record}', [MaintenanceRecordController::class, 'update'])->whereNumber('record')->name('maintenance.update');
-        Route::delete('maintenance/{record}', [MaintenanceRecordController::class, 'destroy'])->whereNumber('record')->name('maintenance.destroy');
-        Route::get('models', [ModelManagementController::class, 'index'])->name('models.index');
-        Route::post('models/compare', [ModelManagementController::class, 'compare'])->middleware('throttle:5,10,post-admin-models-compare')->name('models.compare');
-        Route::post('models/retrain', [ModelManagementController::class, 'retrain'])->middleware('throttle:5,10,post-admin-models-retrain')->name('models.retrain');
-        Route::post('models/dataset', [ModelManagementController::class, 'uploadDataset'])->middleware('throttle:10,10,post-admin-models-dataset')->name('models.dataset');
-        Route::post('models/upload', [ModelManagementController::class, 'uploadModel'])->middleware('throttle:10,10,post-admin-models-upload')->name('models.upload');
-    });
-
     // Farmer Survey & Model Feedback – Naicel (2026-10-09): the farmer's survey, and Settings → Model Feedback (IT).
     Route::middleware(['role:'.User::ROLE_FARMER, 'farmer.language'])->prefix('farmer/survey')->name('farmer.survey.')->group(function () {
         Route::get('/', [\App\Http\Controllers\FarmerSurveyController::class, 'show'])->name('show');
         Route::post('/', [\App\Http\Controllers\FarmerSurveyController::class, 'store'])->middleware('throttle:20,1,post-farmer-survey')->name('store');
     });
-    Route::middleware('role:'.User::ROLE_IT_EXPERT)->prefix('admin/feedback')->name('admin.feedback.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\ModelFeedbackController::class, 'index'])->name('index');
-        Route::get('insights', [\App\Http\Controllers\ModelFeedbackController::class, 'insights'])->middleware('throttle:60,1,get-admin-feedback-insights')->name('insights');
-        Route::put('responses/{response}', [\App\Http\Controllers\ModelFeedbackController::class, 'update'])->whereNumber('response')->middleware('throttle:120,1,put-admin-feedback')->name('update');
-        Route::post('decision', [\App\Http\Controllers\ModelFeedbackController::class, 'decide'])->middleware('throttle:10,1,post-admin-feedback-decision')->name('decide');
-    });
-
     // Phase 6: Send Alert (MAO, opened from Advisories).
     Route::middleware('role:'.User::ROLE_MAO)->prefix('mao/alerts')->name('mao.alerts.')->group(function () {
         Route::get('/', [AdvisoryAlertController::class, 'index'])->name('index');

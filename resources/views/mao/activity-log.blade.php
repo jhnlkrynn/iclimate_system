@@ -5,7 +5,7 @@
         $actionTone = ['created' => 'is-green', 'edited' => 'is-blue', 'verified' => 'is-green', 'approved' => 'is-green', 'rejected' => 'is-red', 'deleted' => 'is-red', 'other' => 'is-gray'];
     @endphp
     <div class="mfd itd itp" data-mao-activity-log>
-        <x-it.page-header kicker="Municipal Agriculture Office" title="MAO Activity Log"
+        <x-shared.page-header kicker="Municipal Agriculture Office" title="MAO Activity Log"
             :lede="$isHead ? 'Everything MAO personnel created, edited, verified, approved or deleted.' : 'Everything you created, edited, verified, approved or deleted. The Municipal Agriculturist sees every MAO user\'s log.'" />
 
         @include('partials.manuscript-tabs', ['group' => 'mao-office', 'label' => 'MAO Office'])
@@ -54,6 +54,8 @@
             </div>
         </form>
 
+        {{-- data-live-region: updates while open when this data changes (resources/js/live-page.js). --}}
+        <div data-live-region="activity-log" data-live-areas="mao-activity">
         <section class="mfd-card p-0" aria-label="Activity">
             @if ($entries->isEmpty())
                 <p class="p-4 mb-0 text-muted">No MAO activity matches these filters yet.</p>
@@ -80,5 +82,6 @@
             @endif
         </section>
         <div class="mt-3">{{ $entries->links() }}</div>
+        </div>
     </div>
 </x-app-layout>

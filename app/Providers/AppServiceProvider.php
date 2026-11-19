@@ -32,6 +32,13 @@ class AppServiceProvider extends ServiceProvider
 
         // A missing Vite build logs a warning instead of breaking every page with a 500.
         $this->app->singleton(\Illuminate\Foundation\Vite::class, \App\Support\SafeVite::class);
+
+        // A stopped Reverb must not turn a saved notification or message into a 500: failed realtime updates are
+        // logged and retried from the queue. Registered as an extender so it applies when the deferred broadcasting
+        // provider first builds the manager (before any channel is registered on it).
+        $this->app->extend(\Illuminate\Broadcasting\BroadcastManager::class, fn ($manager, $app) => $manager instanceof \App\Broadcasting\ResilientBroadcastManager
+            ? $manager
+            : new \App\Broadcasting\ResilientBroadcastManager($app));
     }
 
     /**
@@ -39,6 +46,23 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Local and production databases stay apart; Supabase is never a runtime database. Checked from
+        // configuration only (no connection is opened). iclimate:environment-check reports instead of stopping.
+        if (! $this->app->runningUnitTests() && ! in_array('iclimate:environment-check', (array) ($_SERVER['argv'] ?? []), true)) {
+            $guard = \App\Support\DatabaseEnvironmentGuard::inspect(config()->all(), (string) $this->app->environment());
+            if ($guard['violations'] !== []) {
+                throw new \RuntimeException('Unsafe database configuration: '.implode(' ', $guard['violations']));
+            }
+            foreach ($guard['warnings'] as $warning) {
+                \Illuminate\Support\Facades\Log::warning($warning);
+            }
+        }
+
+        // A running queue worker leaves a heartbeat (each loop, written every 20 s) so scheduled producers can tell a
+        // stopped worker apart from a busy one (QueueWorkerHeartbeat).
+        \Illuminate\Support\Facades\Queue::looping(static fn () => \App\Support\QueueWorkerHeartbeat::beat());
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Queue\Events\JobProcessed::class, static fn () => \App\Support\QueueWorkerHeartbeat::beat());
+
         // A queued account email that has now really gone out: its Last email line says Sent (AccountEmails).
         \Illuminate\Support\Facades\Event::listen(\Illuminate\Mail\Events\MessageSent::class, static function (\Illuminate\Mail\Events\MessageSent $event): void {
             $id = $event->data['accountEmailId'] ?? null;
@@ -168,6 +192,50 @@ class AppServiceProvider extends ServiceProvider
         // A real data change retires only the caches that read that data (the map is in CacheScope); rows that belong
         // to one person also retire that person's private pages.
         \App\Support\CacheScope::listen();
+
+        // Prediction pages receive only a status/reference signal. Their existing authorized
+        // endpoints remain the source of truth and their polling fallback is retained.
+        \App\Models\AnalyticsRun::saved(static function (\App\Models\AnalyticsRun $run): void {
+            if ($run->wasRecentlyCreated || $run->wasChanged('status')) {
+                \App\Events\PredictionChanged::forAnalyticsRun($run);
+            }
+        });
+        \App\Models\YieldPredictionRequest::saved(static function (\App\Models\YieldPredictionRequest $request): void {
+            if ($request->wasRecentlyCreated || $request->wasChanged('status')) {
+                \App\Events\PredictionChanged::forYieldRequest($request);
+            }
+        });
+
+        // Farm pages listen to a private owner/farm signal. CacheScope continues to emit the broader dashboard
+        // invalidation for MAO/IT aggregates; this event carries only an opaque farm id and action metadata.
+        \App\Models\Farm::saved(static function (\App\Models\Farm $farm): void {
+            if (! \App\Support\CacheScope::isMeaningfulChange($farm)) {
+                return;
+            }
+
+            $action = $farm->wasRecentlyCreated
+                ? 'created'
+                : ($farm->wasChanged('archived_at')
+                    ? ($farm->archived_at === null ? 'restored' : 'deleted')
+                    : 'updated');
+
+            \App\Events\FarmChanged::dispatch(
+                (int) $farm->getKey(),
+                (int) $farm->user_id,
+                $action,
+                (string) \Illuminate\Support\Str::uuid(),
+                now()->toIso8601String(),
+            );
+        });
+        \App\Models\Farm::deleted(static function (\App\Models\Farm $farm): void {
+            \App\Events\FarmChanged::dispatch(
+                (int) $farm->getKey(),
+                (int) $farm->user_id,
+                'deleted',
+                (string) \Illuminate\Support\Str::uuid(),
+                now()->toIso8601String(),
+            );
+        });
 
         // A farm's expected yield depends on its size, type and location and on its planting plans, so a change to any of
         // them makes THAT farm's estimate due: the new one is started now (after the response), and the last estimate

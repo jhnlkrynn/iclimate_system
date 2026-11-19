@@ -36,6 +36,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // 1.4 Live farmer search (name, farmer ID, barangay, organization) for MAO and IT.
     Route::get('farmers/search', FarmerSearchController::class)
-        ->middleware(['role:'.User::ROLE_MAO.','.User::ROLE_IT_EXPERT, 'throttle:120,1,get-farmer-search'])
+        ->middleware(['role:'.User::ROLE_MAO, 'throttle:120,1,get-farmer-search'])
         ->name('farmers.search');
 });

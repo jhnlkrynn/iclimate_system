@@ -11,7 +11,7 @@
 
     @unless ($isFarmer)
     <div class="mfd itd itp">
-        <x-it.page-header :kicker="$L('kicker')" :title="$L('title')" :lede="$L('intro')" />
+        <x-shared.page-header :kicker="$L('kicker')" :title="$L('title')" :lede="$L('intro')" />
     @endunless
     <div class="fad wpx" data-weather-analysis>
         @include('partials.manuscript-tabs', ['group' => 'analysis', 'label' => 'Predictions and analysis'])
@@ -54,6 +54,8 @@
             <p class="small text-muted mt-2 mb-0" data-months-shown>{{ trans_choice('weather_analysis.months_shown', $count, ['count' => $count]) }}</p>
         </form>
 
+        {{-- data-live-region: new weather or climate records redraw the figures and charts while open (live-page.js). --}}
+        <div data-live-region="weather-analysis" data-live-areas="weather,climate,rice">
         @if ($count === 0)
             <div class="fad-card"><p class="mb-0">{{ $L('no_data') }}</p></div>
         @else
@@ -126,34 +128,42 @@
             <p class="small text-muted mt-3" data-analysis-source>{{ $L('source', ['source' => $source]) }}</p>
             <script type="application/json" data-weather-analysis-chart>@json($chart)</script>
         @endif
+        </div>
     </div>
     @unless ($isFarmer)
     </div>
     @endunless
 
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            try { await window.iClimateVisualsReady; } catch (e) { return; }
-            if (!window.Chart) return;
+        // Drawn at load and again after the figures update while open (iclimate:live-region-updated).
+        const drawWeatherAnalysisCharts = (charts) => {
+            charts.splice(0).forEach((chart) => chart.destroy());
             const data = JSON.parse(document.querySelector('[data-weather-analysis-chart]')?.textContent || '{}');
             document.querySelectorAll('[data-weather-analysis] canvas[data-series]').forEach((canvas) => {
                 const color = canvas.dataset.color;
-                new window.Chart(canvas, {
+                charts.push(new window.Chart(canvas, {
                     type: canvas.dataset.type,
                     data: { labels: data.labels || [], datasets: [{ label: canvas.getAttribute('aria-label'), data: data[canvas.dataset.series] || [], backgroundColor: color + '99', borderColor: color, borderWidth: 2, pointRadius: 2, spanGaps: true, tension: .25 }] },
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { maxTicksLimit: 12, autoSkip: true } } } },
-                });
+                }));
             });
             const pairs = document.querySelector('[data-yield-pairs]');
             const scatter = document.getElementById('waYieldScatterChart');
             if (pairs && scatter) {
                 const points = JSON.parse(pairs.textContent || '[]');
-                new window.Chart(scatter, {
+                charts.push(new window.Chart(scatter, {
                     type: 'line',
                     data: { datasets: [{ label: 'Month', data: points, showLine: false, pointRadius: 4, borderColor: '{{ config('palette.sage.700') }}', backgroundColor: 'rgba({{ config('palette.rgb.700') }}, .6)' }] },
                     options: { responsive: true, maintainAspectRatio: false, parsing: { xAxisKey: 'x', yAxisKey: 'y' }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw.label}: ${ctx.raw.x} mm, ${ctx.raw.y} t/ha` } } }, scales: { x: { type: 'linear', title: { display: true, text: 'Rainfall (mm)' } }, y: { title: { display: true, text: 'Yield (t/ha)' } } } },
-                });
+                }));
             }
+        };
+        document.addEventListener('DOMContentLoaded', async () => {
+            try { await window.iClimateVisualsReady; } catch (e) { return; }
+            if (!window.Chart) return;
+            const charts = [];
+            drawWeatherAnalysisCharts(charts);
+            document.querySelector('[data-weather-analysis]')?.addEventListener('iclimate:live-region-updated', () => drawWeatherAnalysisCharts(charts));
         });
     </script>
 </x-app-layout>

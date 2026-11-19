@@ -166,7 +166,8 @@
         </div>
     </details>
 
-    <div class="card no-lift">
+    {{-- data-live-region: rows others add or change appear without reloading (resources/js/live-page.js). --}}
+    <div class="card no-lift" @if (! empty($liveAreas)) data-live-region="records" data-live-areas="{{ $liveAreas }}" @endif>
         <div class="card-header border-0 d-flex flex-column flex-md-row justify-content-between gap-2 py-3">
             <div class="fw-semibold">Records</div>
             <div class="small text-muted">Showing {{ $records->firstItem() ?? 0 }}-{{ $records->lastItem() ?? 0 }} of {{ $records->total() }}</div>

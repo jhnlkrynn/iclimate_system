@@ -3,8 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\RiceProduction;
-use App\Support\LianBarangays;
+use App\Models\HistoricalRiceProduction;
 use App\Support\ProjectYieldDataset;
+use App\Support\LianFarmTypes;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -74,7 +75,7 @@ class RiceProductionController extends CrudController
         $rows = $records->map(fn (object $r): object => (object) [
             'id' => $r->id,
             'is_source_dataset' => $r->is_source_dataset,
-            'source_note' => 'iClimate yield dataset · read-only',
+            'source_note' => $r->source_note ?? 'iClimate yield dataset · read-only',
             'barangay' => $r->barangay,
             'production_month' => $r->production_month?->format('M Y'),
             'season' => $r->season,
@@ -127,6 +128,7 @@ class RiceProductionController extends CrudController
         $values = fn (string $field) => $filtered->pluck($field)->filter(fn ($v) => $v !== null);
 
         return view('farmer-records.rice-productions', [
+            'liveAreas' => $this->liveAreas(),
             'title' => $this->title,
             'routeName' => $this->routeName,
             'search' => $search,
@@ -148,6 +150,7 @@ class RiceProductionController extends CrudController
             'farmerBarangay' => $barangay,
             'ownBarangayCount' => $barangay ? $filtered->where('is_source_dataset', false)->where('barangay', $barangay)->count() : 0,
             'datasetSource' => self::DATASET_SOURCE,
+            'federationSummary' => \App\Support\LianFarmTypes::federationSummary(),
         ]);
     }
 
@@ -174,7 +177,36 @@ class RiceProductionController extends CrudController
      */
     private function records(): Collection
     {
-        return $this->datasetRows()->concat($this->enteredRows())->values();
+        return $this->datasetRows()->concat($this->historicalRows())->concat($this->enteredRows())->values();
+    }
+
+    /** The imported seasonal barangay benchmarks, read-only here; Admin/MAO maintain them in their own module. */
+    private function historicalRows(): Collection
+    {
+        try {
+            return HistoricalRiceProduction::query()->get()->map(fn (HistoricalRiceProduction $record): object => (object) [
+                'id' => null,
+                'is_source_dataset' => true,
+                'source_note' => 'RICE-PRODUCTION (LIAN).xlsx · seasonal barangay benchmark · read-only',
+                'barangay' => $record->barangay,
+                'production_month' => null,
+                'season' => $record->season,
+                'irrigation_type' => null,
+                'yield_per_hectare' => $record->average_yield_t_per_hectare !== null ? (float) $record->average_yield_t_per_hectare : null,
+                'area_hectares' => $record->area_planted_hectares !== null ? (float) $record->area_planted_hectares : null,
+                'total_production' => $record->total_production_tons !== null ? (float) $record->total_production_tons : null,
+                'area_harvested_hectares' => null,
+                'verified' => true,
+                'year' => $record->season_year,
+                'bar_label' => $record->season_label.' · '.$record->barangay,
+                'search_text' => mb_strtolower(implode(' ', [$record->barangay, $record->season_label, $record->season_year, 'seasonal barangay benchmark'])),
+                'sort_key' => $record->season_year.'|'.($record->season === 'WS' ? '1' : '2').'|1|'.$record->barangay,
+            ]);
+        } catch (QueryException $exception) {
+            Log::warning('Rice production records: historical benchmarks could not be read.', ['message' => $exception->getMessage()]);
+
+            return collect();
+        }
     }
 
     /**
@@ -222,7 +254,7 @@ class RiceProductionController extends CrudController
     {
         try {
             // Manuscript – Naicel: + area_harvested_hectares, verified_at
-            $records = RiceProduction::query()->with('verifier:id,name')->get(['id', 'barangay', 'season', 'irrigation_type', 'yield_per_hectare', 'area_hectares', 'area_harvested_hectares', 'verified_at', 'verified_by', 'total_production', 'year', 'production_month', 'remarks']);
+            $records = RiceProduction::query()->with('verifier:id,name')->whereIn('barangay', LianFarmTypes::riceBarangays())->get(['id', 'barangay', 'season', 'irrigation_type', 'yield_per_hectare', 'area_hectares', 'area_harvested_hectares', 'verified_at', 'verified_by', 'total_production', 'year', 'production_month', 'remarks']);
         } catch (QueryException $exception) {
             Log::warning('Rice production records: rice_productions could not be read.', ['message' => $exception->getMessage()]);
 
@@ -256,9 +288,9 @@ class RiceProductionController extends CrudController
     public function __construct()
     {
         $this->fields = [
-            ['name' => 'barangay', 'label' => 'Barangay', 'type' => 'select', 'options' => LianBarangays::options(false)],
+            ['name' => 'barangay', 'label' => 'Barangay', 'type' => 'select', 'options' => array_combine(\App\Support\LianFarmTypes::riceBarangays(), \App\Support\LianFarmTypes::riceBarangays())],
             ['name' => 'season', 'label' => 'Season', 'type' => 'select', 'options' => ['Wet' => 'Wet', 'Dry' => 'Dry']],
-            ['name' => 'irrigation_type', 'label' => 'Irrigation Type', 'type' => 'select', 'options' => ['Rainfed' => 'Rainfed', 'Irrigated' => 'Irrigated']],
+            ['name' => 'irrigation_type', 'label' => 'Irrigation Type', 'type' => 'select', 'options' => ['Irrigated' => 'Irrigated', 'Rainfed' => 'Rainfed / Non-irrigated', 'Not Available' => 'Not Available']],
             // Panel revision 1.2: yield is t/ha. Leave it blank and it is worked out as total harvest (tons) ÷ area harvested.
             ['name' => 'yield_per_hectare', 'label' => 'Yield (t/ha) – leave blank to compute from total harvest ÷ area harvested', 'type' => 'number', 'step' => '0.01'],
             ['name' => 'area_hectares', 'label' => 'Area Planted (ha)', 'type' => 'number', 'step' => '0.01'],
@@ -305,9 +337,9 @@ class RiceProductionController extends CrudController
     protected function rules(Request $request, ?int $id = null): array
     {
         return [
-            'barangay' => ['required', Rule::in(LianBarangays::all())],
+            'barangay' => ['required', Rule::in(\App\Support\LianFarmTypes::riceBarangays())],
             'season' => ['required', Rule::in(['Wet', 'Dry'])],
-            'irrigation_type' => ['required', Rule::in(['Rainfed', 'Irrigated'])],
+            'irrigation_type' => ['nullable', Rule::in(['Rainfed', 'Irrigated', 'Not Available'])],
             'yield_per_hectare' => ['nullable', 'numeric', 'min:0'],
             'area_hectares' => ['nullable', 'numeric', 'min:0'],
             'area_harvested_hectares' => ['nullable', 'numeric', 'min:0'],   // Manuscript – Naicel

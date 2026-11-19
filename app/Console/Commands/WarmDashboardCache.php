@@ -2,13 +2,12 @@
 
 namespace App\Console\Commands;
 
-use App\Http\Controllers\SystemHealthController;
+use App\Services\Maintenance\SystemHealthCache;
 use Illuminate\Console\Command;
 use Throwable;
 
 /**
- * Rebuilds the pages that are the same for everyone (MAO dashboard, IT Expert
- * dashboard, System Health) before anyone asks, so opening one reads a
+ * Rebuilds the pages that are the same for everyone (MAO dashboard and internal system health) before anyone asks, so opening one reads a
  * prepared copy. Without this, the first visitor after any data change waits
  * for the whole page to be built (dozens of database round trips).
  *
@@ -19,15 +18,15 @@ class WarmDashboardCache extends Command
 {
     protected $signature = 'iclimate:warm-dashboard-cache';
 
-    protected $description = 'Prepare the shared MAO / IT dashboards and System Health so opening them is instant.';
+    protected $description = 'Prepare the shared MAO dashboards and internal system health so opening them is instant.';
 
     public function handle(): int
     {
         $failed = 0;
 
         foreach ([
-            // The MAO / IT / MAO Operations payloads are prepared by iclimate:warm-dashboards (every minute, when due).
-            'system health' => fn () => app()->call([app(SystemHealthController::class), 'warm']),
+            // The MAO / MAO Operations payloads are prepared by iclimate:warm-dashboards (every minute, when due).
+            'system health' => fn () => app()->call([app(SystemHealthCache::class), 'warm']),
         ] as $label => $warm) {
             $started = microtime(true);
 

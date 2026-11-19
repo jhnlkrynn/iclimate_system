@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\AIChatController;
-use App\Http\Controllers\AiAdminController;
 use App\Http\Controllers\AnalyticsRunController;
 use App\Http\Controllers\Auth\CaptchaImageController;
 use App\Http\Controllers\CalendarController;
@@ -13,16 +12,12 @@ use App\Http\Controllers\FarmerPlantingScheduleController;
 use App\Http\Controllers\FarmerProfileController;
 use App\Http\Controllers\FieldReportController;
 use App\Http\Controllers\MessagingController;
-use App\Http\Controllers\ModelEvaluationController;
-use App\Http\Controllers\ModelRegistryController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PlantingAdvisoryController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RiceProductionController;
 use App\Http\Controllers\RiceYieldPredictionController;
-use App\Http\Controllers\SystemHealthController;
-use App\Http\Controllers\SystemLogController;
 use App\Http\Controllers\TyphoonSafetyController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\WeatherPredictionController;
@@ -247,6 +242,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ])
         ->name('api.weather.live');
 
+    // The Heat Map page loads its layers from here with the browser's session cookie, so this must be a web (session)
+    // route: in routes/api.php no session is started and every browser request was answered 401.
+    Route::get('/api/heat-map', \App\Http\Controllers\Api\HeatMapController::class)
+        ->middleware('throttle:60,1,get-heat-map')
+        ->name('api.heat-map');
+
 
     /*
     |--------------------------------------------------------------------------
@@ -285,66 +286,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | IT Expert / Admin
-    |--------------------------------------------------------------------------
-    */
-
-    Route::get(
-        '/admin/dashboard',
-        [DashboardController::class, 'admin']
-    )
-        ->middleware(
-            'role:'.User::ROLE_IT_EXPERT
-        )
-        ->name('admin.dashboard');
-
-    Route::middleware('role:'.User::ROLE_IT_EXPERT)->group(function () {
-        Route::get('/admin/dashboard/live', [DashboardController::class, 'adminLive'])->name('admin.dashboard.live');
-        Route::get('/admin/dashboard/activity', [DashboardController::class, 'adminActivity'])->name('admin.dashboard.activity');
-        Route::get('/admin/dashboard/recent', [DashboardController::class, 'adminRecent'])->name('admin.dashboard.recent');
-        Route::post('/admin/dashboard/retry-failed', [DashboardController::class, 'adminRetryFailed'])->name('admin.dashboard.retry-failed');
-    });
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Candidate Rice Yield Model Test Page
-    |--------------------------------------------------------------------------
-    |
-    | Candidate Random Forest model testing page.
-    | Uses Ambulong meteorological data as the consistent weather reference.
-    | Does not replace the current production rice yield model.
-    |
-    */
-
-    // The candidate model test page was removed (2026-10); both of its URLs open Model Evaluation.
-    Route::get(
-        '/testing/candidate-rice-yield',
-        fn () => redirect()->route('model-evaluation.index')
-    )
-        ->middleware(
-            'role:'.User::ROLE_IT_EXPERT
-        )
-        ->name(
-            'testing.candidate-rice-yield'
-        );
-
-
-    Route::post(
-        '/testing/candidate-rice-yield/predict',
-        fn () => redirect()->route('model-evaluation.index', [], 303)
-    )
-        ->middleware([
-            'role:'.User::ROLE_IT_EXPERT,
-            'throttle:10,1,post-testing-candidate-rice-yield-predict',
-        ])
-        ->name(
-            'testing.candidate-rice-yield.predict'
-        );
-
-
-    /*
-    |--------------------------------------------------------------------------
     | Shared Authenticated Features
     |--------------------------------------------------------------------------
     */
@@ -352,8 +293,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(
         'role:'.
         User::ROLE_FARMER.','.
-        User::ROLE_MAO.','.
-        User::ROLE_IT_EXPERT
+        User::ROLE_MAO
     )->group(function () {
 
         Route::resource(
@@ -377,6 +317,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             RiceProductionController::class
         )->middleware('farmer.redirect:farmer.dashboard');
 
+        Route::resource(
+            'historical-rice-productions',
+            \App\Http\Controllers\HistoricalRiceProductionController::class
+        )->middleware(['farmer.redirect:farmer.dashboard', 'role:'.User::ROLE_MAO]);
+
 
         /*
         |--------------------------------------------------------------------------
@@ -392,8 +337,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         )
             ->middleware(
                 'role:'.
-                User::ROLE_MAO.','.
-                User::ROLE_IT_EXPERT
+                User::ROLE_MAO
             )
             ->name(
                 'management.advisories.index'
@@ -406,8 +350,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         )
             ->middleware(
                 'role:'.
-                User::ROLE_MAO.','.
-                User::ROLE_IT_EXPERT
+                User::ROLE_MAO
             )
             ->name(
                 'management.advisories.refresh-weather'
@@ -420,8 +363,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         )
             ->middleware(
                 'role:'.
-                User::ROLE_MAO.','.
-                User::ROLE_IT_EXPERT
+                User::ROLE_MAO
             )
             ->name(
                 'management.advisories.regenerate'
@@ -444,8 +386,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         )
             ->middleware(
                 'role:'.
-                User::ROLE_MAO.','.
-                User::ROLE_IT_EXPERT
+                User::ROLE_MAO
             )
             ->name(
                 'management.advisories.approve'
@@ -458,8 +399,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         )
             ->middleware(
                 'role:'.
-                User::ROLE_MAO.','.
-                User::ROLE_IT_EXPERT
+                User::ROLE_MAO
             )
             ->name(
                 'management.advisories.reject'
@@ -472,8 +412,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         )
             ->middleware(
                 'role:'.
-                User::ROLE_MAO.','.
-                User::ROLE_IT_EXPERT
+                User::ROLE_MAO
             )
             ->name(
                 'management.advisories.publish'
@@ -486,8 +425,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         )
             ->middleware(
                 'role:'.
-                User::ROLE_MAO.','.
-                User::ROLE_IT_EXPERT
+                User::ROLE_MAO
             )
             ->name(
                 'management.advisories.archive'
@@ -500,8 +438,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         )
             ->middleware(
                 'role:'.
-                User::ROLE_MAO.','.
-                User::ROLE_IT_EXPERT
+                User::ROLE_MAO
             )
             ->name(
                 'advisory-feedback.respond'
@@ -756,7 +693,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource(
             'field-reports',
             FieldReportController::class
-        )->middleware([\App\Http\Middleware\FieldReportsUi::class, 'role:'.User::ROLE_MAO.','.User::ROLE_IT_EXPERT]);   // MAO/IT – Naicel: hidden unless FIELD_REPORTS_UI=true
+        )->middleware([\App\Http\Middleware\FieldReportsUi::class, 'role:'.User::ROLE_MAO]);   // MAO/IT – Naicel: hidden unless FIELD_REPORTS_UI=true
 
 
         /*
@@ -842,46 +779,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'weather-predictions/municipality-yield-status',
             [WeatherPredictionController::class, 'municipalityYieldStatus']
         )->middleware('farmer.language')->name('weather-predictions.municipality-yield-status');
-
-
-        Route::get(
-            'model-evaluation',
-            [ModelEvaluationController::class, 'index']
-        )
-            ->middleware(
-                'role:'.User::ROLE_IT_EXPERT
-            )
-            ->name(
-                'model-evaluation.index'
-            );
-
-        Route::get('/system-health', [SystemHealthController::class, 'index'])
-            ->middleware('role:'.User::ROLE_IT_EXPERT)
-            ->name('system-health.index');
-
-        // Chatbot Knowledge (vocabulary and language filter). Hidden from the interface unless
-        // CHATBOT_KNOWLEDGE_UI=true: while hidden, these pages send every role to their dashboard (the first
-        // middleware). When shown, they are IT only. The chatbot uses the knowledge either way.
-        Route::prefix('ai-admin')
-            ->middleware([\App\Http\Middleware\ChatbotKnowledgeUi::class, 'role:'.User::ROLE_IT_EXPERT])
-            ->name('ai-admin.')
-            ->group(function () {
-                Route::get('/', fn () => redirect()->route('ai-admin.index', ['resource' => 'topics']))->name('home');
-                Route::get('{resource}', [AiAdminController::class, 'index'])->name('index');
-                Route::post('{resource}', [AiAdminController::class, 'store'])->middleware('throttle:60,1,post-resource')->name('store');
-                Route::put('{resource}/{id}', [AiAdminController::class, 'update'])->whereNumber('id')->middleware('throttle:60,1,put-resource-id')->name('update');
-                Route::post('{resource}/{id}/toggle', [AiAdminController::class, 'toggle'])->whereNumber('id')->middleware('throttle:60,1,post-resource-id-toggle')->name('toggle');
-            });
-
-        Route::prefix('system-health/model-registry')
-            ->middleware('role:'.User::ROLE_IT_EXPERT)
-            ->name('model-registry.')
-            ->group(function () {
-                Route::get('/', [ModelRegistryController::class, 'index'])->name('index');
-                Route::post('{model}/validate', [ModelRegistryController::class, 'validateModel'])->middleware('throttle:20,1,post-model-validate')->name('validate');
-                Route::post('{model}/activate', [ModelRegistryController::class, 'activate'])->middleware('throttle:20,1,post-model-activate')->name('activate');
-                Route::post('{model}/fail', [ModelRegistryController::class, 'fail'])->middleware('throttle:20,1,post-model-fail')->name('fail');
-            });
 
 
         // The Predictions page has no forms since 2026-10 (it shows saved forecasts and estimates); old form posts open it.
@@ -1067,32 +964,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         'users',
         UserManagementController::class
     )->middleware(
-        'role:'.User::ROLE_IT_EXPERT
+        'role:'.User::ROLE_MAO
     );
     // Restore a deleted account (Users list, Deleted filter) within config user_deletion.restore_days.
     Route::post('users/{user}/restore', [UserManagementController::class, 'restore'])
         ->whereNumber('user')
-        ->middleware(['role:'.User::ROLE_IT_EXPERT, 'throttle:30,1,post-user-restore'])
+        ->middleware(['role:'.User::ROLE_MAO, 'throttle:30,1,post-user-restore'])
         ->name('users.restore');
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | System Logs
-    |--------------------------------------------------------------------------
-    */
-
-    Route::resource(
-        'system-logs',
-        SystemLogController::class
-    )
-        ->only([
-            'index',
-            'show',
-        ])
-        ->middleware(
-            'role:'.User::ROLE_IT_EXPERT
-        );
 });
 
 
@@ -1110,17 +990,17 @@ Route::middleware(['auth', 'verified', 'role:'.User::ROLE_MAO])->prefix('mao/pla
 // App\Policies\RiceVarietyPolicy.
 Route::middleware(['auth', 'verified', 'farmer.language'])->prefix('rice-varieties')->name('rice-varieties.')->group(function () {
     $controller = \App\Http\Controllers\RiceVarietyController::class;
-    $staffAndFarmers = 'role:'.User::ROLE_FARMER.','.User::ROLE_MAO.','.User::ROLE_IT_EXPERT;
+    $staffAndFarmers = 'role:'.User::ROLE_FARMER.','.User::ROLE_MAO;
 
     Route::get('/', [$controller, 'index'])->middleware($staffAndFarmers)->name('index');
     Route::get('/estimate', [$controller, 'estimate'])->middleware(['role:'.User::ROLE_FARMER, 'throttle:60,1,get-rice-variety-estimate'])->name('estimate');
-    Route::middleware('role:'.User::ROLE_IT_EXPERT)->group(function () use ($controller) {
+    Route::middleware('role:'.User::ROLE_MAO)->group(function () use ($controller) {
         Route::get('/create', [$controller, 'create'])->name('create');
         Route::post('/', [$controller, 'store'])->name('store');
         Route::get('/{riceVariety}/edit', [$controller, 'edit'])->whereNumber('riceVariety')->name('edit');
         Route::put('/{riceVariety}', [$controller, 'update'])->whereNumber('riceVariety')->name('update');
-        Route::patch('/{riceVariety}/toggle', [$controller, 'toggle'])->whereNumber('riceVariety')->name('toggle');
         Route::post('/import', [$controller, 'import'])->middleware('throttle:5,1,post-rice-varieties-import')->name('import');
+        Route::patch('/{riceVariety}/toggle', [$controller, 'toggle'])->whereNumber('riceVariety')->name('toggle');
     });
     Route::get('/{riceVariety}', [$controller, 'show'])->whereNumber('riceVariety')->middleware([$staffAndFarmers, 'throttle:120,1,get-rice-variety'])->name('show');
 });

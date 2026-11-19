@@ -6,14 +6,14 @@ use App\Models\RiceVariety;
 use App\Models\User;
 
 /**
- * Rice Varieties: farmers, MAO personnel and IT Personnel read the catalog; only IT Personnel add, edit and switch a
+ * Rice Varieties: farmers, MAO personnel and MAO Staff read the catalog; only MAO Staff add, edit and switch a
  * variety on or off (no deleting: planting plans point to these rows).
  */
 class RiceVarietyPolicy
 {
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, [User::ROLE_FARMER, User::ROLE_MAO, User::ROLE_IT_EXPERT], true);
+        return in_array($user->role, [User::ROLE_FARMER, User::ROLE_MAO], true);
     }
 
     public function view(User $user, RiceVariety $variety): bool
@@ -28,23 +28,23 @@ class RiceVarietyPolicy
 
     public function create(User $user): bool
     {
-        return $user->role === User::ROLE_IT_EXPERT;
+        return $user->isMao();
     }
 
     public function update(User $user, RiceVariety $variety): bool
     {
-        return $user->role === User::ROLE_IT_EXPERT;
+        return $user->isMao();
     }
 
     public function toggle(User $user, RiceVariety $variety): bool
     {
-        return $user->role === User::ROLE_IT_EXPERT;
+        return $user->isMao();
     }
 
     /** "Run import": loading the NSIC list from the server's spreadsheet. */
     public function import(User $user): bool
     {
-        return $user->role === User::ROLE_IT_EXPERT;
+        return $user->isMao();
     }
 
     /** An inactive variety stays readable to the farmers whose plans use it. */

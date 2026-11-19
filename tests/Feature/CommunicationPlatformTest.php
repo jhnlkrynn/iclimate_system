@@ -24,7 +24,7 @@ class CommunicationPlatformTest extends TestCase
             'farm_type' => 'Irrigated',
         ]);
         User::factory()->maoPersonnel()->create(['name' => 'Municipal Agriculturist']);
-        User::factory()->itExpert()->create(['name' => 'IT Support']);
+        User::factory()->maoPersonnel()->create(['name' => 'IT Support']);
         $kapito = User::factory()->farmer()->create(['name' => 'Kapito Farmer', 'barangay' => null]);
         $kapito->farmerProfile()->create([
             'full_name' => $kapito->name,
@@ -316,7 +316,7 @@ class CommunicationPlatformTest extends TestCase
         $this->assertTrue($emptyIds->contains($otherMao->id));
         $this->assertTrue($emptyIds->contains($anotherFarmer->id));
         $this->assertFalse($emptyIds->contains($inactiveMao->id));
-        $this->assertSame('MAO Personnel', $empty->json('recipients.0.role'));
+        $this->assertSame(User::ROLE_MAO, $empty->json('recipients.0.role'));
 
         $this->actingAs($farmer)->getJson(route('messages.search', ['q' => 'SANT']))
             ->assertOk()

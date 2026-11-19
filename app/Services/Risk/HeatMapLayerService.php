@@ -30,7 +30,9 @@ final class HeatMapLayerService
         $period = $period === '2weeks' ? '2weeks' : 'week';
         $scope = MaoScope::barangays($user);
         $scopeKey = $scope === null ? 'all' : sha1(implode('|', $scope));
-        $key = self::CACHE_PREFIX.Cache::get(self::VERSION_KEY, 1).':'.$layer.':'.$period.':'.$scopeKey;
+        // The data token too: a changed rating, barangay profile (flood), planting plan (drought) or yield estimate is
+        // shown at once, not after the 10-minute reuse (2026-11-11: the open Heat Map now re-reads on those changes).
+        $key = self::CACHE_PREFIX.Cache::get(self::VERSION_KEY, 1).':'.\App\Support\CacheScope::token('heat-map-layers').':'.$layer.':'.$period.':'.$scopeKey;
 
         return Cache::remember($key, now()->addMinutes(10), fn (): array => $this->build($layer, $period, $scope));
     }
@@ -53,7 +55,7 @@ final class HeatMapLayerService
             }
         } elseif ($layer === 'yield') {
             [$rows, $data['updated_at']] = $this->yieldRows($names, $period);
-            $source = 'Based on trained model · '.($period === '2weeks' ? "next 2 weeks' forecast" : "this week's forecast");
+            $source = 'Unvalidated iClimate yield estimate · '.($period === '2weeks' ? "next 2 weeks' forecast" : "this week's forecast");
         } else {
             $data = $this->layers->layers('en', $period)[$layer] ?? ['barangays' => [], 'updated_at' => null, 'source' => $source, 'labels' => []];
             $profiles = $layer === 'flood' && Schema::hasTable('barangay_profiles')
@@ -118,8 +120,8 @@ final class HeatMapLayerService
             $level = ['good' => 'low', 'fair' => 'moderate', 'low' => 'high', 'none' => 'unavailable'][$class];
             $basis = $p['basis'] ?? null;
             $reason = match ($basis) {
-                'barangay_model' => 'Trained rice-yield model run for this barangay.',
-                'farm_average' => 'Average of '.($p['farms_used'] ?? 0).' farm estimates from the trained model, weighted by farm size.',
+                'barangay_model' => 'Unvalidated rice-yield model estimate run for this barangay.',
+                'farm_average' => 'Unvalidated average of '.($p['farms_used'] ?? 0).' farm estimates, weighted by farm size.',
                 default => 'No estimate yet.',
             };
             $row = $this->row($name, $level, $value, [$reason], $reason);
@@ -145,7 +147,7 @@ final class HeatMapLayerService
         return [$rows, $newest];
     }
 
-    /** A stable id for a barangay: "Humayingan" -> humayingan, "Barangay 1 (Pob.)" -> barangay_1_pob, "Puting-Kahoy" -> puting_kahoy. */
+    /** A stable id for a supported rice-farm barangay. */
     public static function key(string $name): string
     {
         return trim((string) preg_replace('/[^a-z0-9]+/', '_', strtolower(LianBarangays::canonicalName($name) ?? $name)), '_');

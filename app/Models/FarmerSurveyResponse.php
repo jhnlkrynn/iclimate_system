@@ -29,7 +29,7 @@ class FarmerSurveyResponse extends Model
 
     public const CATEGORY_ADVISORIES = 'advisories';
 
-    /** Category => the name the IT Expert reads. */
+    /** Category => the name the server operator reads. */
     public const CATEGORIES = [
         self::CATEGORY_MODEL => 'ML model',
         self::CATEGORY_WEATHER => 'Weather data',
@@ -37,7 +37,7 @@ class FarmerSurveyResponse extends Model
         self::CATEGORY_ADVISORIES => 'Advisories',
     ];
 
-    /** The category a new answer starts in; the IT Expert can move it. */
+    /** The category a new answer starts in; the server operator can move it. */
     public const SUBJECT_CATEGORY = [
         self::SUBJECT_PREDICTION => self::CATEGORY_PREDICTIONS,
         self::SUBJECT_WEATHER => self::CATEGORY_WEATHER,

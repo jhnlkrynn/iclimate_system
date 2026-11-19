@@ -48,7 +48,7 @@ class PreparedDashboardsTest extends TestCase
         $this->artisan('iclimate:warm-dashboards')->assertExitCode(0);
         $results = app(PreparedDashboards::class)->warm();
 
-        $this->assertSame(['MAO dashboard' => 'current', 'IT overview' => 'current', 'MAO Operations' => 'current'], $results,
+        $this->assertSame(['MAO dashboard' => 'current', 'MAO Operations' => 'current'], $results,
             'nothing changed and nothing is about to expire: nothing is rebuilt');
 
         ClimateRecord::factory()->create();                     // data both MAO payloads read
@@ -57,18 +57,7 @@ class PreparedDashboardsTest extends TestCase
         $this->assertStringEndsWith(' s', $after['MAO Operations']);
     }
 
-    public function test_the_it_timed_refresh_reads_the_prepared_overview_and_only_refresh_rebuilds(): void
-    {
-        $it = User::factory()->itExpert()->create();
-        $this->actingAs($it)->get(route('admin.dashboard'))->assertOk();
 
-        $timer = $this->queries(fn () => $this->actingAs($it)->getJson(route('admin.dashboard.live'))->assertOk()->assertJsonStructure(['slots', 'refreshed_at']));
-        $this->travel(2)->seconds();
-        $refresh = $this->queries(fn () => $this->actingAs($it)->getJson(route('admin.dashboard.live', ['refresh' => 1]))->assertOk());
-
-        $this->assertLessThanOrEqual(2, $timer, 'the 5-minute timer no longer rebuilds every system metric');
-        $this->assertGreaterThan(10, $refresh);
-    }
 
     public function test_the_farmer_timed_refresh_and_yield_check_read_the_prepared_home(): void
     {

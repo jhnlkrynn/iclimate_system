@@ -1,0 +1,16 @@
+{
+  "version": "2026.11.18-rc2",
+  "source_fingerprint": "04c7db9fedf0db9c077521adfebae8621291b1ddcf5e0e371a72a966dcb2d29d",
+  "archive_sha256": "c26275e0d6cbde76d5c3582afd9d637f23f992408dddd815ffd5aca2e24527ad",
+  "files": 1504,
+  "base_commit": "d43cd1aa1b3915b2b2e2928e21b207b3346f1170",
+  "proposed_tag": "v2026.11.18-rc2",
+  "approved_commit": null,
+  "exclusions": [
+    "storage/models/experiments/",
+    "storage/datasets/external/",
+    "docs/deployment/releases/",
+    "storage/app/releases/",
+    "docs/deployment/ICLIMATE_RC2_FINAL_READINESS.md"
+  ]
+}

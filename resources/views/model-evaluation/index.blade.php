@@ -1,13 +1,21 @@
 @php
-    $rows = collect($evaluation['rows'] ?? []);
-    $best = $evaluation['best_algorithm'] ?? 'Not yet available';
+    // Metrics are a result only when the evidence checks pass (App\Support\EvaluationEvidence). Otherwise the page says
+    // "Insufficient verified data" and a computed run is kept below as an unverified historical record.
+    $evidence = $evidence ?? \App\Support\EvaluationEvidence::assess((array) $evaluation);
+    $verified = (bool) $evidence['verified'];
+    $historicalRows = collect($evaluation['rows'] ?? []);
+    $best = $verified ? ($evaluation['best_algorithm'] ?? 'Not available') : 'Not available';
+    // The ML service sends algorithm, rmse, mae and r2 only; the table below also reads a status and details.
+    $rows = $verified
+        ? $historicalRows->map(fn (array $row): array => $row + ['status' => ($row['algorithm'] ?? null) === $best ? 'Selected Model' : 'Compared', 'details' => []])
+        : collect();
     $source = $evaluation['source'] ?? [];
 @endphp
 
 <x-app-layout>
     @if (($analyticsRun ?? null) && in_array($analyticsRun->status, ['pending', 'processing'], true))
-        <div class="alert alert-info border" data-analytics-run="{{ route('analytics-runs.show', $analyticsRun) }}">
-            <strong>Python is processing the dataset and model metrics.</strong> This page will update automatically.
+        <div class="alert alert-info border" data-analytics-run="{{ route('analytics-runs.show', $analyticsRun) }}" data-prediction-realtime data-prediction-labels='{"requested":"Dataset requested","processing":"Dataset processing","completed":"Dataset completed","failed":"Dataset failed"}'>
+            <strong data-prediction-status-text>Python is processing the dataset and model metrics.</strong> <span data-prediction-status-detail>This page will update automatically.</span>
         </div>
     @elseif (($analyticsRun ?? null)?->status === 'failed')
         <div class="alert alert-danger border"><strong>Dataset processing failed.</strong> {{ $analyticsRun->error }}</div>
@@ -229,32 +237,40 @@
                 <div class="me-eyebrow mb-2">Model Evaluation Report</div>
                 <h1 class="h2 fw-bold mb-2">Rice Yield Algorithm Comparison</h1>
         <p class="mb-0 me-lede" style="max-width: 820px;">
-                    Metrics on this page are computed live by the iClimate ML service each time it runs a fresh cross-validation over the current exported training data — not a one-off notebook run.
+                    @if ($verified)
+                        Metrics on this page are computed by the iClimate ML service from validated rice and climate records, testing each season separately.
+                    @else
+                        Model accuracy is shown here only when enough verified records exist to test it fairly. Until then this page lists the records on file and what is missing.
+                    @endif
                 </p>
             </div>
             <span class="badge text-bg-light border px-3 py-2">Selected: {{ $best }}</span>
         </div>
     </section>
 
-    @unless($evaluation['ready'] ?? false)
-        <div class="alert alert-warning">
-            <strong>Evaluation needs more data.</strong>
-            {{ $evaluation['message'] ?? 'Add climate and rice production records to compute model metrics.' }}
+    @unless ($verified)
+        <div class="alert alert-warning" role="status" data-insufficient-evidence>
+            <strong>{{ $evidence['headline'] }}.</strong> Model accuracy cannot be evaluated yet.
+            <ul class="mb-0 mt-2">
+                @foreach ($evidence['reasons'] as $reason)
+                    <li>{{ $reason }}</li>
+                @endforeach
+            </ul>
         </div>
     @endunless
 
     <div class="row g-3 mb-4">
         <div class="col-md-4">
             <div class="me-stat">
-                <div class="me-label">Matched Samples</div>
-                <div class="me-value">{{ $evaluation['sample_count'] ?? 0 }}</div>
-                <div class="small text-muted mt-2">Local app records currently available for verification.</div>
+                <div class="me-label">Verified Observations</div>
+                <div class="me-value" data-verified-observations>{{ $evidence['rice']['verified'] }}</div>
+                <div class="small text-muted mt-2">Validated, separately measured rice records. At least {{ $evidence['minimum'] }} are needed.</div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="me-stat">
                 <div class="me-label">Metric Source</div>
-                <div class="me-value" style="font-size: 1.15rem;">{{ ($source['computed_live'] ?? false) ? 'Live Evaluation' : 'Unavailable' }}</div>
+                <div class="me-value" style="font-size: 1.15rem;">{{ $verified && ($source['computed_live'] ?? false) ? 'Live Evaluation' : 'Unavailable' }}</div>
                 <div class="small text-muted mt-2">{{ $source['name'] ?? 'iClimate ML service' }}</div>
             </div>
         </div>
@@ -267,6 +283,24 @@
         </div>
     </div>
 
+    <div class="me-panel mb-4" data-record-provenance>
+        <div class="me-panel-header">
+            <h2 class="h5 fw-bold mb-1">Rice Records by Source</h2>
+            <div class="small text-muted">Only verified observations count as evidence of model accuracy. {{ $evidence['rice']['seasons'] }} {{ $evidence['rice']['seasons'] === 1 ? 'season is' : 'seasons are' }} covered by the records that are not demo data.</div>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0 me-table">
+                <thead><tr><th>Source</th><th class="text-end">Records</th><th>Meaning</th></tr></thead>
+                <tbody>
+                    @foreach (\App\Support\RecordProvenance::LABELS as $class => $label)
+                        <tr data-provenance="{{ $class }}"><td class="fw-bold">{{ $label }}</td><td class="text-end">{{ $evidence['rice'][$class] }}</td><td class="small text-muted">{{ \App\Support\RecordProvenance::NOTES[$class] }}</td></tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @if ($verified)
     <div class="me-panel mb-4">
         <div class="me-panel-header">
             <h2 class="h5 fw-bold mb-1">Algorithm Metrics</h2>
@@ -395,6 +429,38 @@
     </div>
     </details>
 
+    @elseif ($evidence['historical'])
+    {{-- A run that did compute figures stays readable as a record of what was run, never as a result. --}}
+    <details class="ic-collapse" data-historical-evaluation>
+        <summary><span class="ic-collapse-title">Earlier evaluation run (unverified)</span></summary>
+        <div class="me-panel mb-4">
+            <div class="me-panel-header">
+                <h2 class="h5 fw-bold mb-1">Earlier evaluation run (unverified)</h2>
+                <div class="small text-muted">
+                    Historical record{{ ($analyticsRun ?? null)?->completed_at ? ' of '.$analyticsRun->completed_at->timezone('Asia/Manila')->format('M j, Y') : '' }},
+                    {{ (int) ($evaluation['sample_count'] ?? 0) }} rows used. These figures are not a measure of model accuracy.
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0 me-table">
+                    <thead><tr><th>Algorithm</th><th class="text-end">RMSE</th><th class="text-end">MAE</th><th class="text-end">R²</th><th>Status</th></tr></thead>
+                    <tbody>
+                        @foreach ($historicalRows as $row)
+                            <tr>
+                                <td>{{ $row['algorithm'] ?? '' }}</td>
+                                @foreach (['rmse', 'mae', 'r2'] as $metric)
+                                    <td class="text-end">{{ is_numeric($row[$metric] ?? null) ? number_format((float) $row[$metric], 4) : 'N/A' }}</td>
+                                @endforeach
+                                <td><span class="me-compared">Unverified</span></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </details>
+    @endif
+
     <details class="ic-collapse">
         <summary><span class="ic-collapse-title">Methodology &amp; Sources</span></summary>
     <div class="row g-4">
@@ -402,11 +468,11 @@
             <div class="me-panel h-100">
                 <div class="me-panel-header">
                     <h2 class="h5 fw-bold mb-1">Evaluation Method</h2>
-                    <div class="small text-muted">Defense-ready summary for the manuscript objective.</div>
+                    <div class="small text-muted">{{ $verified ? 'How the metrics above were computed.' : 'How an evaluation is run. No validated result is available yet.' }}</div>
                 </div>
                 <div class="me-panel-body">
                     <p class="mb-2">
-                        The displayed metrics come from a live cross-validated comparison of Multiple Linear Regression, Random Forest, and Gradient Boosting on the current exported training data, using MAE, RMSE, and R². The algorithm with the strongest live result is highlighted as the selected model above — it is only guaranteed to match the deployed <code>rice_yield_model_final.pkl</code> once that model has been retrained on the same data this evaluation used.
+                        This page shows a candidate-schema comparison of Multiple Linear Regression, Random Forest, and Gradient Boosting on the current exported training data, using MAE, RMSE, and R². The strongest candidate result is highlighted for comparison only; it does not establish the accuracy of the separately deployed <code>rice_yield_model_final.pkl</code>.
                     </p>
                     <p class="mb-0 text-muted">
                         Lower RMSE and MAE indicate smaller prediction error. Higher R² indicates better explanation of yield variation. The deployed system uses the saved trained model artifact for rice yield prediction.
@@ -488,6 +554,9 @@
         <div class="card-body">
             <h2 class="h5 fw-bold mb-1" id="meRetrainTitle">Data for Future Retraining</h2>
             <p class="text-muted mb-3">Harvests where a farmer recorded the actual yield, beside the yield the model predicted. This data is only listed here. The model is not retrained automatically.</p>
+            @if ($evidence['harvests']['demo'] > 0)
+                <p class="small text-muted mb-3" data-demo-harvests-excluded>Demo records are not counted here ({{ number_format($evidence['harvests']['demo']) }} left out). The figures below are farmer-reported and not validated by MAO.</p>
+            @endif
             <p class="h4 fw-bold mb-3" data-retraining-count>{{ $retraining['count'] }} <span class="fs-6 fw-normal text-muted">{{ $retraining['count'] === 1 ? 'correction on record' : 'corrections on record' }}@if ($retraining['count'] > 0) · average miss {{ number_format($retraining['error'], 2) }} t/ha @endif</span></p>
             @if ($retraining['count'] === 0)
                 <x-no-data note="No farmer has recorded a harvest with a predicted yield yet." />
@@ -676,7 +745,8 @@
                     try {
                         const response = await fetch(banner.dataset.analyticsRun, { headers: { Accept: 'application/json' }, loader: false });
                         const run = await response.json();
-                        if (run.status === 'completed' || run.status === 'failed') window.location.reload();
+                        window.iClimatePredictionApply?.(banner, run);
+                        banner.dispatchEvent(new CustomEvent('iclimate:prediction-poll', { detail: { element: banner, run } }));
                     } catch (_) {}
                 }, 2500);
             })();

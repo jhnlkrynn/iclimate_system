@@ -71,7 +71,7 @@ class MaoDashboardFiguresTest extends TestCase
 
     public function test_farmers_with_a_planting_plan_counts_each_farmer_once_for_this_season_only(): void
     {
-        [$a, $b, $c] = [$this->farmer('Prenza'), $this->farmer('Cumba'), $this->farmer('Kapito')];
+        [$a, $b, $c] = [$this->farmer('Prenza'), $this->farmer('Balibago'), $this->farmer('Kapito')];
         $this->farmer('Kapito');                                               // a fourth registered farmer, no plan
         $this->plan($a, '2026-06-10', '2026-09-28', 1.5);
         $this->plan($a, '2026-07-01', '2026-10-20', 0.5);                      // the same farmer's second plan: still one farmer
@@ -105,14 +105,14 @@ class MaoDashboardFiguresTest extends TestCase
             'yield_per_hectare' => round($tons / $area, 2), 'area_hectares' => $area, 'total_production' => $tons, 'year' => $year, 'production_month' => $year.'-09-01', 'remarks' => 'Barangay harvest report']);
         $record(2025, 'Prenza', 50, 150);                                      // an older year is not added in
         $record(2026, 'Prenza', 10, 42);
-        $record(2026, 'Cumba', 30, 108);
+        $record(2026, 'Balibago', 30, 108);
 
         $html = $this->html($this->mao());
         $tile = $this->tile($html, 'production');
 
         // 42 + 108 = 150 tons over 10 + 30 = 40 ha = 3.75 t/ha (not the plain average of 4.20 and 3.60).
         $this->assertStringStartsWith('Rice production (2026) 150.0 tons', $tile);
-        $this->assertStringContainsString('40.0 ha · 3.75 t/ha · 2 of 19 barangays reported', $tile);
+        $this->assertStringContainsString('40.0 ha · 3.75 t/ha · 2 of '.count(\App\Support\LianBarangays::all()).' barangays reported', $tile);
         $this->assertStringContainsString('<a class="mhd-tile" href="'.route('rice-productions.index').'" data-kpi="production">', $html);
     }
 
@@ -134,17 +134,17 @@ class MaoDashboardFiguresTest extends TestCase
 
     public function test_the_registered_farmers_chart_has_one_bar_per_barangay_most_first(): void
     {
-        foreach (['Prenza', 'Cumba', 'Prenza', 'Kapito', 'Prenza', 'Cumba'] as $barangay) {
+        foreach (['Prenza', 'Balibago', 'Prenza', 'Kapito', 'Prenza', 'Balibago'] as $barangay) {
             $this->farmer($barangay);
         }
         $html = $this->html($this->mao());
 
         $this->assertSame(1, preg_match('#<canvas id="maoFarmersChart" data-chart="([^"]+)"#', $html, $m));
         $chart = json_decode(html_entity_decode($m[1]), true);
-        $this->assertSame(['Prenza', 'Cumba', 'Kapito'], $chart['labels']);
+        $this->assertSame(['Prenza', 'Balibago', 'Kapito'], $chart['labels']);
         $this->assertSame([3, 2, 1], $chart['values']);
         $this->assertStringContainsString('6 registered farmers with a barangay on file.', $html);
-        $this->assertStringStartsWith('Registered farmers 6', $this->tile($html, 'farmers'));   // the same count as the first tile
+        $this->assertStringStartsWith('Total farmers 6', $this->tile($html, 'farmers'));   // the same count as the first tile
     }
 
     // ------------------------------------------------------------ English by default, Filipino when picked
@@ -203,7 +203,6 @@ class MaoDashboardFiguresTest extends TestCase
         // An unknown language is refused; farmers and IT cannot use the MAO selector.
         $this->actingAs($mao)->post(route('mao.dashboard.language'), ['language' => 'xx'])->assertSessionHasErrors('language');
         $this->actingAs(User::factory()->farmer()->create())->post(route('mao.dashboard.language'), ['language' => 'fil'])->assertForbidden();
-        $this->actingAs(User::factory()->create(['role' => User::ROLE_IT_EXPERT]))->post(route('mao.dashboard.language'), ['language' => 'fil'])->assertForbidden();
     }
 
     public function test_pages_shared_with_farmers_stay_in_english_for_a_mao_who_reads_filipino(): void

@@ -71,7 +71,7 @@ class DatabaseBackupService
         $secrets = array_filter([$connection['host'], $connection['username'], $connection['password'], $connection['database']]);
 
         try {
-            $result = Process::env($this->environment($connection))
+            $result = $this->withPrivateFiles(fn () => Process::env($this->environment($connection))
                 ->timeout(max(30, (int) config('backup.timeout_seconds', 900)))
                 ->run([
                     (string) config('backup.pg_dump_binary', 'pg_dump'),
@@ -80,7 +80,7 @@ class DatabaseBackupService
                     '--no-privileges',
                     '--schema='.$connection['schema'],
                     '--file='.$partial,
-                ]);
+                ]));
         } catch (Throwable $exception) {
             $this->discard($partial);
             $this->logFailure('process_error', null, $exception::class);
@@ -114,6 +114,7 @@ class DatabaseBackupService
 
             throw new BackupFailedException('The backup was created but could not be saved in the backup folder.');
         }
+        $this->restrictPermissions($final);
 
         return ['file' => $name, 'bytes' => $bytes];
     }
@@ -133,20 +134,27 @@ class DatabaseBackupService
         $secrets = array_filter([$connection['host'], $connection['username'], $connection['password'], $connection['database']]);
 
         try {
-            $result = Process::env(array_filter(['MYSQL_PWD' => $connection['password']], fn (string $value): bool => $value !== ''))
+            $dumpOptions = [
+                '--host='.$connection['host'],
+                '--port='.$connection['port'],
+                '--user='.$connection['username'],
+                '--single-transaction',
+                '--triggers',
+                '--no-tablespaces',
+                '--default-character-set=utf8mb4',
+                '--result-file='.$partial,
+            ];
+            if (config('backup.mysql_include_routines', true)) {
+                $dumpOptions[] = '--routines';
+            }
+            if (config('backup.mysql_include_events', true)) {
+                $dumpOptions[] = '--events';
+            }
+            $dumpOptions[] = $connection['database'];
+
+            $result = $this->withPrivateFiles(fn () => Process::env(array_filter(['MYSQL_PWD' => $connection['password']], fn (string $value): bool => $value !== ''))
                 ->timeout(max(30, (int) config('backup.timeout_seconds', 900)))
-                ->run([
-                    (string) config('backup.mysqldump_binary', 'mysqldump'),
-                    '--host='.$connection['host'],
-                    '--port='.$connection['port'],
-                    '--user='.$connection['username'],
-                    '--single-transaction',
-                    '--routines',
-                    '--no-tablespaces',
-                    '--default-character-set=utf8mb4',
-                    '--result-file='.$partial,
-                    $connection['database'],
-                ]);
+                ->run(array_merge([(string) config('backup.mysqldump_binary', 'mysqldump')], $dumpOptions)));
         } catch (Throwable $exception) {
             $this->discard($partial);
             $this->logFailure('process_error', null, $exception::class);
@@ -159,9 +167,11 @@ class DatabaseBackupService
             $exitCode = $result->exitCode();
             $this->logFailure('mysqldump_failed', $exitCode, $this->redact($result->errorOutput(), $secrets));
 
-            throw new BackupFailedException($this->looksLikeMissingBinary($exitCode, $result->errorOutput())
+            $error = $result->errorOutput();
+            throw new BackupFailedException($this->looksLikeMissingBinary($exitCode, $error)
                 ? 'mysqldump was not found. Install the MySQL client tools or set MYSQLDUMP_BINARY in .env.'
-                : 'mysqldump failed (exit code '.$exitCode.'). The database was not backed up. See the application log for safe details.');
+                : $this->mariaDbCompatibilityFailure($error)
+                    ?? 'mysqldump failed (exit code '.$exitCode.'). The database was not backed up. See the application log for safe details.');
         }
 
         try {
@@ -182,8 +192,37 @@ class DatabaseBackupService
 
             throw new BackupFailedException('The backup was created but could not be saved in the backup folder.');
         }
+        $this->restrictPermissions($final);
 
         return ['file' => $name, 'bytes' => $bytes];
+    }
+
+    /**
+     * Runs the dump tool with umask 077 so the partial file it creates is never readable by other local users
+     * (a backup holds every farmer's personal data and the password hashes).
+     *
+     * @template T
+     *
+     * @param  callable(): T  $run
+     * @return T
+     */
+    private function withPrivateFiles(callable $run): mixed
+    {
+        $previous = umask(0077);
+
+        try {
+            return $run();
+        } finally {
+            umask($previous);
+        }
+    }
+
+    /** Owner read/write only (0600), whatever umask the scheduler or web server runs with. */
+    private function restrictPermissions(string $path): void
+    {
+        if (DIRECTORY_SEPARATOR === '/') {
+            @chmod($path, 0600);
+        }
     }
 
     /** Whether the file is a mysqldump SQL file (as opposed to a pg_dump archive). */
@@ -438,8 +477,13 @@ class DatabaseBackupService
             throw new BackupFailedException('The backup folder is not configured.');
         }
 
-        if (! is_dir($directory) && ! @mkdir($directory, 0755, true) && ! is_dir($directory)) {
+        if (! is_dir($directory) && ! @mkdir($directory, 0700, true) && ! is_dir($directory)) {
             throw new BackupFailedException('The backup folder could not be created.');
+        }
+
+        // Only the account that runs the backups may list or read them.
+        if (DIRECTORY_SEPARATOR === '/' && function_exists('posix_geteuid') && @fileowner($directory) === posix_geteuid()) {
+            @chmod($directory, 0700);
         }
 
         if (! is_writable($directory)) {
@@ -517,6 +561,18 @@ class DatabaseBackupService
     {
         return $exitCode === 127
             || preg_match('/not recognized|not found|no such file|cannot find/i', $stderr) === 1;
+    }
+
+    private function mariaDbCompatibilityFailure(string $stderr): ?string
+    {
+        if (str_contains($stderr, 'Column count of mysql.proc is wrong')) {
+            return 'MariaDB system metadata is out of date (mysql.proc). Run the official mysql_upgrade for this XAMPP MariaDB installation, then retry; no backup was accepted.';
+        }
+        if (str_contains($stderr, 'event scheduler is disabled')) {
+            return 'MariaDB event scheduling is disabled. Enable it through the approved XAMPP server configuration, then retry; no backup was accepted.';
+        }
+
+        return null;
     }
 
     /** @param array<int, string> $secrets */

@@ -28,7 +28,7 @@ class ClimateReportSeparationTest extends TestCase
 
     private function mao(): User
     {
-        return User::factory()->create(['role' => User::ROLE_MAO]);
+        return User::factory()->create(['role' => User::ROLE_MAO, 'is_mao_head' => true]);
     }
 
     /** @return Collection<int, array<string, mixed>> the station months of a year, from the shared loader */

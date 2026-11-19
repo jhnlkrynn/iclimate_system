@@ -15,7 +15,7 @@ class FarmerProfileModifyTest extends TestCase
 
     public function test_modify_form_loads_existing_profile_without_address_field(): void
     {
-        $it = User::factory()->itExpert()->create();
+        $it = User::factory()->maoPersonnel()->create();
         $farmer = User::factory()->farmer()->create();
         FarmerProfile::factory()->create([
             'user_id' => $farmer->id,
@@ -38,7 +38,7 @@ class FarmerProfileModifyTest extends TestCase
 
     public function test_update_persists_changes_preserves_address_and_leaves_farm_records_untouched(): void
     {
-        $it = User::factory()->itExpert()->create();
+        $it = User::factory()->maoPersonnel()->create();
         $farmer = User::factory()->farmer()->create();
         $profile = FarmerProfile::factory()->create([
             'user_id' => $farmer->id,
@@ -84,7 +84,7 @@ class FarmerProfileModifyTest extends TestCase
 
     public function test_store_for_existing_user_updates_the_same_profile_and_address_is_not_required(): void
     {
-        $it = User::factory()->itExpert()->create();
+        $it = User::factory()->maoPersonnel()->create();
         $farmer = User::factory()->farmer()->create();
         $profile = FarmerProfile::factory()->create([
             'user_id' => $farmer->id,

@@ -326,7 +326,7 @@ class AiResponseSpeedTest extends TestCase
 
         $queries = 0;
         DB::listen(function ($query) use (&$queries): void {
-            if (str_contains($query->sql, 'from "knowledge_base"') && str_contains($query->sql, 'like')) {
+            if (str_contains(strtolower($query->sql), 'knowledge_base') && str_contains(strtolower($query->sql), 'like')) {
                 $queries++;
             }
         });
@@ -353,7 +353,7 @@ class AiResponseSpeedTest extends TestCase
 
         $selects = [];
         DB::listen(function ($query) use (&$selects): void {
-            if (str_contains($query->sql, 'from "a_i_chats"')) {
+            if (str_contains(strtolower($query->sql), 'a_i_chats')) {
                 $selects[] = $query->sql;
             }
         });

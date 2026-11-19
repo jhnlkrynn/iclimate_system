@@ -15,15 +15,15 @@ class DatabaseSeederTest extends TestCase
     public function test_database_seeder_is_idempotent_and_does_not_create_demo_production_data(): void
     {
         $this->seed();
-        $firstHeatmapCount = HeatmapArea::query()->count();
+        $firstHeatmapCount = HeatmapArea::query()->whereIn('barangay', LianBarangays::all())->count();
 
         $this->assertSame(count(LianBarangays::all()), $firstHeatmapCount);
         $this->assertSame(0, RiceProduction::query()->count());
 
         $this->seed();
 
-        $this->assertSame($firstHeatmapCount, HeatmapArea::query()->count());
-        $this->assertSame($firstHeatmapCount, HeatmapArea::query()->distinct('barangay')->count('barangay'));
+        $this->assertSame($firstHeatmapCount, HeatmapArea::query()->whereIn('barangay', LianBarangays::all())->count());
+        $this->assertSame($firstHeatmapCount, HeatmapArea::query()->whereIn('barangay', LianBarangays::all())->distinct('barangay')->count('barangay'));
         $this->assertSame(0, RiceProduction::query()->count());
     }
 }

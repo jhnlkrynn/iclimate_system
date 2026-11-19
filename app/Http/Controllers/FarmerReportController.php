@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Farm;
 use App\Models\FarmerPlantingSchedule;
+use App\Models\HistoricalRiceProduction;
 use App\Models\Notification;
 use App\Models\PlantingAdvisory;
 use App\Models\User;
@@ -13,6 +14,7 @@ use App\Support\ActiveFarm;
 use App\Support\BusinessClock;
 use App\Support\FarmerLanguage;
 use App\Support\SchemaCache;
+use App\Support\RiceSeason;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -45,12 +47,17 @@ class FarmerReportController extends Controller
     private function data(User $user): array
     {
         $farms = rescue(fn () => ActiveFarm::available() ? Farm::query()->ownedBy($user)->active()->orderByDesc('is_primary')->get() : collect(), collect(), false);
-        $estimates = $farms->map(fn (Farm $farm) => [
-            'farm' => $farm->farm_name,
-            'barangay' => $farm->barangay,
-            'yield' => data_get(FarmerDashboardService::storedEstimate($user->id, $farm->getKey()), 'yield_tons_per_hectare')
-                ?? data_get(FarmerDashboardService::storedEstimate($user->id, $farm->getKey()), 'predicted_yield'),
-        ]);
+        $estimates = $farms->map(function (Farm $farm) use ($user): array {
+            $stored = FarmerDashboardService::storedEstimate($user->id, $farm->getKey());
+            // The same gate as the Farmer dashboard card: no unverified model number on the page or in the PDF.
+            $shown = $stored !== null && \App\Services\Prediction\YieldModelGate::shows(is_array($stored['model_input'] ?? null) ? $stored['model_input'] : null);
+
+            return [
+                'farm' => $farm->farm_name,
+                'barangay' => $farm->barangay,
+                'yield' => $shown ? (data_get($stored, 'yield_tons_per_hectare') ?? data_get($stored, 'predicted_yield')) : null,
+            ];
+        });
         $barangay = $user->registeredBarangay();
         $since = now()->subDays(90);
 
@@ -60,12 +67,26 @@ class FarmerReportController extends Controller
             'office' => ReportExtrasController::office(),
             'printedAt' => now(BusinessClock::timezone()),
             'estimates' => $estimates,
+            'showStoredEstimates' => \App\Services\Prediction\YieldModelGate::showsStoredEstimate(),
             'requests' => SchemaCache::hasTable('yield_prediction_requests')
                 ? YieldPredictionRequest::query()->where('user_id', $user->id)->where('status', YieldPredictionRequest::DONE)->latest()->limit(20)->get()
                 : collect(),
-            'harvests' => FarmerPlantingSchedule::query()->where('user_id', $user->id)
+            'harvests' => FarmerPlantingSchedule::query()->with('farm')->where('user_id', $user->id)
                 ->where('actual_yield', '>', 0)->where('predicted_yield', '>', 0)->latest('harvested_on')->limit(20)
-                ->get(['harvested_on', 'season', 'predicted_yield', 'actual_yield']),
+                ->get(['id', 'farm_id', 'barangay', 'planting_date', 'farm_area_hectares', 'harvested_on', 'season', 'predicted_yield', 'actual_yield'])
+                ->map(function (FarmerPlantingSchedule $harvest): FarmerPlantingSchedule {
+                    $window = $harvest->planting_date ? RiceSeason::window($harvest->planting_date) : null;
+                    $barangay = $harvest->farm?->barangay ?: $harvest->barangay;
+                    $harvest->historical_yield = $window && $barangay
+                        ? HistoricalRiceProduction::query()->whereRaw('upper(barangay) = ?', [mb_strtoupper(trim($barangay))])
+                            ->where('season', $window['season'] === RiceSeason::WET ? 'WS' : 'DS')->where('season_year', $window['start']->year)
+                            ->value('average_yield_t_per_hectare')
+                        : null;
+                    $area = $harvest->farm?->knownHectares() ?? (is_numeric($harvest->farm_area_hectares) ? (float) $harvest->farm_area_hectares : null);
+                    $harvest->actual_total_tons = $area !== null ? round((float) $harvest->actual_yield * $area, 2) : null;
+
+                    return $harvest;
+                }),
             'advisories' => PlantingAdvisory::query()->published()->forBarangay($barangay)
                 ->where('published_at', '>=', $since)->latest('published_at')->limit(30)
                 ->get(['id', 'title', 'severity', 'target_barangay', 'published_at', 'recommended_action']),

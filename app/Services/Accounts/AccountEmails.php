@@ -37,7 +37,7 @@ final class AccountEmails
             'reason' => is_string($label) && $label !== 'user_rejection.reasons.'.$reason ? $label : $reason,
             'note' => $note,
             'date' => self::day(now(), $user),
-            'url' => url('/').'#register',
+            'url' => route('registration.resubmit'),
         ]);
     }
 

@@ -114,6 +114,9 @@ class MaoYieldAnalytics
             'overall' => self::accuracy($rows),
             'test' => self::accuracy($rows->where('split', 'TEST')),
             'train' => self::accuracy($rows->where('split', 'TRAIN')),
+            // The same measure for a plain guess (the average recorded yield of the training months) on the held-out
+            // months: the figure the model has to beat before its error says anything about skill.
+            'baseline' => self::baseline($rows),
             'barangays' => $this->barangayDrilldown($barangays),
         ];
     }
@@ -177,6 +180,25 @@ class MaoYieldAnalytics
     }
 
     /**
+     * The held-out months scored as if every one had been predicted at the training months' average recorded yield.
+     * Null without both kinds of month.
+     *
+     * @param  Collection<int, array{predicted: float, actual: float, split: ?string}>  $rows
+     * @return array<string, float|int>|null
+     */
+    private static function baseline(Collection $rows): ?array
+    {
+        $train = $rows->where('split', 'TRAIN')->filter(fn (array $r): bool => $r['actual'] > 0);
+        $test = $rows->where('split', 'TEST');
+        if ($train->isEmpty() || $test->isEmpty()) {
+            return null;
+        }
+        $guess = (float) $train->avg('actual');
+
+        return self::accuracy($test->map(fn (array $r): array => ['predicted' => $guess, 'actual' => $r['actual']]));
+    }
+
+    /**
      * Predicted (the estimate saved for the planting) against the yield the farmer harvested, per barangay.
      *
      * @param  array<int, string>|null  $barangays
@@ -188,7 +210,8 @@ class MaoYieldAnalytics
             return [];
         }
 
-        return FarmerPlantingSchedule::query()
+        // The demo seeders' harvests are not farmers' harvests (RecordProvenance).
+        return \App\Support\RecordProvenance::withoutDemoHarvests(FarmerPlantingSchedule::query())
             ->where('actual_yield', '>', 0)->where('predicted_yield', '>', 0)
             ->when($barangays !== null, fn ($q) => $q->whereIn('barangay', $barangays))
             ->get(['barangay', 'predicted_yield', 'actual_yield'])

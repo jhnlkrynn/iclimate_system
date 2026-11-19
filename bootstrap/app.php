@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         web: __DIR__.'/../routes/web.php',
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
+        channels: __DIR__.'/../routes/channels.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -30,7 +31,6 @@ return Application::configure(basePath: dirname(__DIR__))
             // No page request trains or rebuilds a model; it reads what the scheduled jobs prepared.
             ReadPreparedPredictionsOnly::class,
             // MAO/IT – Kaye: the agricultural pages are not IT pages; an IT account that opens one goes to the IT dashboard.
-            \App\Http\Middleware\RedirectItFromFieldPages::class,
             // Manuscript – Naicel (2026-10-08): Maintenance mode and Roles & Permissions (System Settings; no query).
             \App\Http\Middleware\SystemMaintenanceMode::class,
             \App\Http\Middleware\CheckModuleAccess::class,
@@ -39,6 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->api(append: [
+            EnsureAccountIsActive::class,
             ReadPreparedPredictionsOnly::class,
         ]);
 
@@ -53,6 +54,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->shouldRenderJsonWhen(fn (Request $request, Throwable $exception): bool => $request->is('api/*') || $request->expectsJson());
         // Every reported error says where it happened and for which role (a fatal timeout otherwise logs only the
         // user id). No input, headers, cookies or tokens: only the request line and the route.
         $exceptions->context(function (): array {
@@ -102,7 +104,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     'message' => $exception->getMessage(),
                 ]);
 
-                if ($request->expectsJson()) {
+                if ($request->is('api/*') || $request->expectsJson()) {
                     return response()->json([
                         'message' => 'The data service is temporarily unavailable. Please try again shortly.',
                     ], 503);
@@ -127,7 +129,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 'message' => $exception->getMessage(),
             ]);
 
-            if ($request->expectsJson()) {
+            if ($request->is('api/*') || $request->expectsJson()) {
                 return response()->json([
                     'message' => 'The request could not be processed because of an unsupported HTTP version.',
                 ], 400);

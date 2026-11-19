@@ -3,7 +3,12 @@
 // The pop-up body is the link's own page rendered without the layout (?modal=1), fetched once per page load.
 // The list, its filters and the scroll position are never touched, so closing returns the farmer to the same place.
 
-const FOCUSABLE = 'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+import { initLiveRefresh } from './live-page';
+
+// The data the Advisories page shows (CacheScope areas): its list, chips, announcements and the weather check.
+const LIVE_AREAS = ['advisories', 'advisory-feedback', 'community-posts', 'weather', 'typhoon'];
+
+const FOCUSABLE ='a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 export function initAdvisoryModal() {
     const modal = document.querySelector('[data-fad-modal]');
@@ -27,6 +32,35 @@ export function initAdvisoryModal() {
     let currentUrl = null;
     let saving = false;
     let refreshing = false;
+
+    // Fetch this same page again and swap its body (.fad) in place: list, chips, counts, "Updated" time and
+    // announcements all come from one server snapshot. The pop-up lives outside .fad, so an open advisory stays open.
+    // Returns false when the page could not be fetched (the current one is kept).
+    async function reloadPage({ quiet = false } = {}) {
+        const page = await fetch(window.location.href, {
+            headers: { Accept: 'text/html' }, credentials: 'same-origin', loader: false,
+        }).catch(() => null);
+        if (!page?.ok) return false;
+        const template = document.createElement('template');
+        template.innerHTML = await page.text();
+        const current = document.querySelector('.fad');
+        const updated = template.content.querySelector('.fad');
+        if (!current || !updated) return false;
+        // Never pull a control out from under someone using it (e.g. the barangay picker); the next change catches up.
+        const active = document.activeElement;
+        if (quiet && active && current.contains(active) && active.matches('select, input, textarea')) return false;
+        if (quiet && current.innerHTML === updated.innerHTML) return true;
+        // The swapped-in copy must not subscribe a second time.
+        ['dashboardRealtimeBound', 'liveRefreshBound'].forEach((key) => { if (current.dataset[key]) updated.dataset[key] = current.dataset[key]; });
+        current.replaceWith(updated);
+        cache.clear();
+        updated.querySelectorAll('.ic-collapse').forEach((details) => {
+            details.open = window.matchMedia('(min-width: 768px)').matches || details.dataset.forceOpen === 'true';
+        });
+        return true;
+    }
+
+    initLiveRefresh({ root: document.querySelector('[data-adv-live]'), refresh: () => reloadPage({ quiet: true }), areas: LIVE_AREAS });
 
     // Refresh the configured PAGASA endpoint without navigating away. The
     // returned page is fetched again so cards, timestamps, and empty states
@@ -56,20 +90,7 @@ export function initAdvisoryModal() {
             });
             const result = await response.json().catch(() => ({}));
             if (!response.ok && response.status !== 503) throw new Error(result.message || 'Could not refresh advisories.');
-            const page = await fetch(window.location.href, { headers: { Accept: 'text/html' }, credentials: 'same-origin', loader: false });
-            if (!page.ok) throw new Error('Advisories refreshed, but the page could not be updated.');
-            const html = await page.text();
-            const template = document.createElement('template');
-            template.innerHTML = html;
-            const current = document.querySelector('.fad');
-            const updated = template.content.querySelector('.fad');
-            if (current && updated) {
-                current.replaceWith(updated);
-                cache.clear();
-                updated.querySelectorAll('.ic-collapse').forEach((details) => {
-                    details.open = window.matchMedia('(min-width: 768px)').matches || details.dataset.forceOpen === 'true';
-                });
-            }
+            if (!(await reloadPage())) throw new Error('Advisories refreshed, but the page could not be updated.');
             showStatus(result.message || 'Advisories refreshed.');
         } catch (error) {
             window.dispatchEvent(new CustomEvent('fad-refresh-error', { detail: error.message }));

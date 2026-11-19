@@ -74,9 +74,6 @@ class FarmerAdvisoryView
     {
         $source = (string) $this->advisory->source;
 
-        if ($viewer?->role === User::ROLE_IT_EXPERT) {
-            return $source ?: 'Open-Meteo + iClimate Rules';   // IT staff keep the exact technical source
-        }
 
         return match (true) {
             $this->isPagasa() => 'PAGASA',

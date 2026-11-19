@@ -48,6 +48,11 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            // Session time zone for TIMESTAMP columns. The stored data was written as UTC wall-clock strings
+            // through a +08:00 session (the XAMPP server's SYSTEM zone), so every server that serves this data
+            // must use the same session zone or all 168 TIMESTAMP columns read back shifted. Set DB_TIMEZONE=+08:00
+            // locally and in production; unset keeps the server's own zone.
+            'timezone' => env('DB_TIMEZONE') ?: null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 // Seconds to wait for the connection to open (see the pgsql connection).
                 PDO::ATTR_TIMEOUT => max(1, (int) env('DB_CONNECT_TIMEOUT', 3)),
@@ -55,6 +60,26 @@ return [
                     ? Mysql::ATTR_SSL_CA
                     : PDO::MYSQL_ATTR_SSL_CA
                 ) => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+
+        'mysql_backup' => [
+            'driver' => 'mysql',
+            'url' => env('BACKUP_DB_URL'),
+            'host' => env('BACKUP_DB_HOST', '127.0.0.1'),
+            'port' => env('BACKUP_DB_PORT', '3306'),
+            'database' => env('BACKUP_DB_DATABASE', 'iclimate_staging_20261103_fix3'),
+            'username' => env('BACKUP_DB_USERNAME', 'iclimate_backup'),
+            'password' => env('BACKUP_DB_PASSWORD', ''),
+            'unix_socket' => env('BACKUP_DB_SOCKET', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::ATTR_TIMEOUT => max(1, (int) env('BACKUP_DB_CONNECT_TIMEOUT', 3)),
             ]) : [],
         ],
 
@@ -73,6 +98,11 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+            // Session time zone for TIMESTAMP columns. The stored data was written as UTC wall-clock strings
+            // through a +08:00 session (the XAMPP server's SYSTEM zone), so every server that serves this data
+            // must use the same session zone or all 168 TIMESTAMP columns read back shifted. Set DB_TIMEZONE=+08:00
+            // locally and in production; unset keeps the server's own zone.
+            'timezone' => env('DB_TIMEZONE') ?: null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 // Seconds to wait for the connection to open (see the pgsql connection).
                 PDO::ATTR_TIMEOUT => max(1, (int) env('DB_CONNECT_TIMEOUT', 3)),

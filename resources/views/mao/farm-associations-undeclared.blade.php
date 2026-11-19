@@ -4,7 +4,7 @@
          of one barangay and "Set association" to answer for them (marked "Set by MAO"; the farmer can change it; no
          notification). --}}
     <div class="mfd itd itp">
-        <x-it.page-header kicker="Municipal Agriculture Office" title="Undeclared Farms" lede="Farms whose farmer has not said yet whether the farm is part of a farmers' association. You can answer for several farms of one barangay at once; the farmer sees “Set by MAO” and can still change it." />
+        <x-shared.page-header kicker="Municipal Agriculture Office" title="Undeclared Farms" lede="Farms whose farmer has not said yet whether the farm is part of a farmers' association. You can answer for several farms of one barangay at once; the farmer sees “Set by MAO” and can still change it." />
 
         @include('partials.manuscript-tabs', ['group' => 'farmers', 'label' => 'Farmers'])
 

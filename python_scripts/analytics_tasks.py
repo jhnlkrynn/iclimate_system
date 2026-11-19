@@ -376,14 +376,14 @@ def dataset_processing(payload: dict) -> dict:
     temporary_path = None
     output_path = None
     try:
+        allowed_directory = os.path.realpath(os.path.dirname(evaluation_service.DEFAULT_CSV))
+        os.makedirs(allowed_directory, exist_ok=True)
         requested_output = str(payload.get("requested_output_path") or "").strip()
         if requested_output:
-            allowed_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "storage", "app", "private", "ml"))
-            os.makedirs(allowed_directory, exist_ok=True)
             output_path = os.path.join(allowed_directory, os.path.basename(requested_output))
             handle = open(output_path, mode="w", newline="", encoding="utf-8")
         else:
-            handle = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", newline="", delete=False, encoding="utf-8")
+            handle = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", newline="", delete=False, encoding="utf-8", dir=allowed_directory)
             temporary_path = handle.name
 
         with handle:

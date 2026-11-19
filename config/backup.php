@@ -17,19 +17,23 @@ return [
     | The pg_dump program (PostgreSQL client tools). A bare name is looked up
     | on PATH; set the full location if it is not on PATH.
     */
-    'pg_dump_binary' => env('PG_DUMP_BINARY', 'pg_dump'),
+    'pg_dump_binary' => \App\Support\PostgresToolLocator::find('pg_dump', env('PG_DUMP_BINARY')) ?: 'pg_dump',
 
     /*
     | The mysqldump program, used when the database is MySQL/MariaDB. XAMPP ships it in its mysql/bin folder,
     | which is normally not on PATH, so that location is used when it exists.
     */
-    'mysqldump_binary' => env('MYSQLDUMP_BINARY') ?: (is_file('C:/xampp/mysql/bin/mysqldump.exe') ? 'C:/xampp/mysql/bin/mysqldump.exe' : 'mysqldump'),
+    'mysqldump_binary' => \App\Support\MysqlDumpLocator::find(env('MYSQLDUMP_BINARY')) ?: 'mysqldump',
+
+    /* Complete MySQL/MariaDB backups include triggers, routines, and events. */
+    'mysql_include_routines' => (bool) env('MYSQLDUMP_INCLUDE_ROUTINES', true),
+    'mysql_include_events' => (bool) env('MYSQLDUMP_INCLUDE_EVENTS', true),
 
     /*
     | The pg_restore program, used only by iclimate:verify-backup to LIST an
     | archive's contents (--list). Nothing is ever restored.
     */
-    'pg_restore_binary' => env('PG_RESTORE_BINARY', 'pg_restore'),
+    'pg_restore_binary' => \App\Support\PostgresToolLocator::find('pg_restore', env('PG_RESTORE_BINARY')) ?: 'pg_restore',
 
     /* Stop the archive check after this many seconds. */
     'verify_timeout_seconds' => (int) env('BACKUP_VERIFY_TIMEOUT_SECONDS', 120),

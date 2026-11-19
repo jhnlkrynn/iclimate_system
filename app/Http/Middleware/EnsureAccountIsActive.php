@@ -21,18 +21,20 @@ class EnsureAccountIsActive
     {
         $user = $request->user();
 
-        if ($user === null || $user->status === User::STATUS_ACTIVE) {
+        if ($user === null || $user->hasApplicationAccess()) {
             return $next($request);
         }
 
         SystemAuditLogger::record('Inactive Account Signed Out', $request, user: $user);
 
         Auth::guard('web')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
 
         // Manuscript – Naicel: a Pending or Rejected farmer is told why (User::signInRefusal).
-        $message = User::signInRefusal($user->status);
+        $message = in_array($user->role, User::ROLES, true) ? User::signInRefusal($user->status) : self::MESSAGE;
 
         if ($request->expectsJson()) {
             return response()->json(['message' => $message], 401);

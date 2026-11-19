@@ -10,7 +10,7 @@ other visitor wait. For real use, serve the app with Apache or Nginx.
 | MySQL / MariaDB | The database | Nothing works |
 | Web server + PHP 8.2 or newer | Serves the pages | Nothing works |
 | Scheduler (`php artisan schedule:work`, or cron `* * * * * php artisan schedule:run`) | Weather, risk, PAGASA advisories, daily backup, queue clean-up | Weather and risk go stale, no backups |
-| Queue worker (`php artisan queue:work --queue=analytics,default`) | Predictions and reports | "Check Weather", "Estimate My Harvest" and reports time out |
+| Queue worker (`php artisan queue:work --queue=analytics,default,broadcasts`) | Predictions and reports | "Check Weather", "Estimate My Harvest" and reports time out |
 | ML service (`uvicorn main:app --app-dir python_scripts --port 8010`) | Rice-yield model and on-demand predictions | Yield forecast unavailable |
 
 ## Windows (XAMPP's Apache) — tested
@@ -29,7 +29,7 @@ current, so both must run all the time.
 
 **Recommended (what this machine uses):** the supervisor in `scripts/iclimate-services.ps1` runs
 `php artisan schedule:work` (one run every minute) and
-`php artisan queue:work --queue=analytics,default --tries=2 --timeout=300 --max-time=3600`, and restarts either one
+`php artisan queue:work --queue=analytics,default,broadcasts --tries=2 --timeout=300 --max-time=3600`, and restarts either one
 if it stops.
 
 1. Open a terminal in the project folder and run `start-services.bat install-autostart` once. This adds the Windows
@@ -47,19 +47,19 @@ the project folder as **Start in**:
 | Task | Arguments | Trigger |
 |---|---|---|
 | iClimate scheduler | `artisan schedule:run` | Daily, repeat every **1 minute** for **Indefinitely** |
-| iClimate queue | `artisan queue:work --queue=analytics,default --tries=2 --timeout=300 --max-time=3600` | **At startup**; under Settings, "If the task fails, restart every 1 minute" and "If the task is already running: Do not start a new instance" |
+| iClimate queue | `artisan queue:work --queue=analytics,default,broadcasts --tries=2 --timeout=300 --max-time=3600` | **At startup**; under Settings, "If the task fails, restart every 1 minute" and "If the task is already running: Do not start a new instance" |
 
 From a terminal (run as Administrator) the same tasks are:
 
 ```
 schtasks /Create /TN "iClimate scheduler" /SC MINUTE /MO 1 /TR "cmd /c cd /d C:\xampp\htdocs\iclimate_system && C:\php85-cli\php.exe artisan schedule:run" /RU SYSTEM
-schtasks /Create /TN "iClimate queue" /SC ONSTART /TR "cmd /c cd /d C:\xampp\htdocs\iclimate_system && C:\php85-cli\php.exe artisan queue:work --queue=analytics,default --tries=2 --timeout=300 --max-time=3600" /RU SYSTEM
+schtasks /Create /TN "iClimate queue" /SC ONSTART /TR "cmd /c cd /d C:\xampp\htdocs\iclimate_system && C:\php85-cli\php.exe artisan queue:work --queue=analytics,default,broadcasts --tries=2 --timeout=300 --max-time=3600" /RU SYSTEM
 ```
 
 Use one method only: running both the supervisor and these tasks would start two schedulers.
 
 **Linux:** cron `* * * * * cd /path/to/iclimate_system && php artisan schedule:run >> /dev/null 2>&1`, and a
-systemd service or Supervisor program for `php artisan queue:work --queue=analytics,default --tries=2 --timeout=300 --max-time=3600`.
+systemd service or Supervisor program for `php artisan queue:work --queue=analytics,default,broadcasts --tries=2 --timeout=300 --max-time=3600`.
 
 ### `config:cache` only on the live server
 
@@ -104,12 +104,12 @@ rebuilds only what is due), refreshes weather, risk and PAGASA, and cleans repea
 **Queue worker** (`/etc/supervisor/conf.d/iclimate-worker.conf`). It runs reports, predictions, the farmers' yield
 estimates and the risk-map refresh. `--timeout=300` covers the longest job (the risk-map refresh) and stays under the
 queue's `retry_after` (330 s, `DB_QUEUE_RETRY_AFTER`), so a slow job is never handed to a second worker; each job's own
-`$tries` applies. One process is enough for this load; a second one would also take one more Supabase connection
-(the session pool allows 15).
+`$tries` applies. One process is enough for this load. The `broadcasts` queue holds realtime updates that could not
+reach Reverb immediately; each is retried a few times and dropped after 15 minutes (pages re-read the saved data).
 
 ```
 [program:iclimate-worker]
-command=/usr/bin/php /var/www/iclimate_system/artisan queue:work database --queue=analytics,default --sleep=3 --tries=2 --timeout=300 --max-time=3600
+command=/usr/bin/php /var/www/iclimate_system/artisan queue:work database --queue=analytics,default,broadcasts --sleep=3 --tries=2 --timeout=300 --max-time=3600
 directory=/var/www/iclimate_system
 user=www-data
 numprocs=1

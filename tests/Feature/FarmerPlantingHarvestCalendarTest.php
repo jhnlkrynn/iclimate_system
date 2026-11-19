@@ -204,7 +204,20 @@ class FarmerPlantingHarvestCalendarTest extends TestCase
     {
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
         $farmer = User::factory()->farmer()->create();
-        Schema::drop('farmer_planting_schedules');
+        // MySQL enforces inbound foreign keys while SQLite permits this test's
+        // temporary schema removal. Disable checks only for this isolated test
+        // operation and restore them immediately afterward.
+        $connection = Schema::getConnection();
+        if ($connection->getDriverName() === 'mysql') {
+            $connection->statement('SET SESSION FOREIGN_KEY_CHECKS=0');
+        }
+        try {
+            Schema::drop('farmer_planting_schedules');
+        } finally {
+            if ($connection->getDriverName() === 'mysql') {
+                $connection->statement('SET SESSION FOREIGN_KEY_CHECKS=1');
+            }
+        }
         \App\Support\SchemaCache::forget(); // a migration run does this; the test drops the table by hand
         $this->mock(WeatherApiService::class)->shouldReceive('forecast')->andReturnNull();
 

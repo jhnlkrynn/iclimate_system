@@ -21,7 +21,7 @@ class UserListSortTest extends TestCase
     {
         parent::setUp();
 
-        $this->it = User::factory()->create(['name' => 'Mara IT', 'role' => User::ROLE_IT_EXPERT, 'status' => User::STATUS_ACTIVE]);
+        $this->it = User::factory()->create(['name' => 'Mara MAO', 'role' => User::ROLE_MAO, 'is_mao_head' => true, 'status' => User::STATUS_ACTIVE]);
         foreach (['charlie Cruz', 'Ana Reyes', 'bea Santos', 'Ana Reyes', 'Diego Lim'] as $name) {
             User::factory()->farmer()->create(['name' => $name, 'status' => User::STATUS_ACTIVE]);
         }
@@ -37,7 +37,7 @@ class UserListSortTest extends TestCase
 
     public function test_the_first_page_lists_users_by_name_a_to_z_ignoring_case(): void
     {
-        $this->assertSame(['Ana Reyes', 'Ana Reyes', 'bea Santos', 'charlie Cruz', 'Diego Lim', 'Mara IT'], $this->listedNames());
+        $this->assertSame(['Ana Reyes', 'Ana Reyes', 'bea Santos', 'charlie Cruz', 'Diego Lim', 'Mara MAO'], $this->listedNames());
 
         // Same names keep a stable order (by id), so paging never repeats or skips one.
         $ids = collect($this->actingAs($this->it)->get(route('users.index'))->viewData('records')->items())
@@ -47,9 +47,9 @@ class UserListSortTest extends TestCase
 
     public function test_the_sort_select_changes_the_order(): void
     {
-        $this->assertSame(['Mara IT', 'Diego Lim', 'charlie Cruz', 'bea Santos', 'Ana Reyes', 'Ana Reyes'], $this->listedNames(['sort' => 'name_desc']));
-        $this->assertSame(['Diego Lim', 'Ana Reyes', 'bea Santos', 'Ana Reyes', 'charlie Cruz', 'Mara IT'], $this->listedNames(['sort' => 'newest']));
-        $this->assertSame(['Mara IT', 'charlie Cruz', 'Ana Reyes', 'bea Santos', 'Ana Reyes', 'Diego Lim'], $this->listedNames(['sort' => 'oldest']));
+        $this->assertSame(['Mara MAO', 'Diego Lim', 'charlie Cruz', 'bea Santos', 'Ana Reyes', 'Ana Reyes'], $this->listedNames(['sort' => 'name_desc']));
+        $this->assertSame(['Diego Lim', 'Ana Reyes', 'bea Santos', 'Ana Reyes', 'charlie Cruz', 'Mara MAO'], $this->listedNames(['sort' => 'newest']));
+        $this->assertSame(['Mara MAO', 'charlie Cruz', 'Ana Reyes', 'bea Santos', 'Ana Reyes', 'Diego Lim'], $this->listedNames(['sort' => 'oldest']));
         // An unknown value falls back to Name A–Z.
         $this->assertSame('Ana Reyes', $this->listedNames(['sort' => 'bogus'])[0]);
     }

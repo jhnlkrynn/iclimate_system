@@ -23,6 +23,9 @@ class AIChatTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // These tests check how a yield flows through the page/API; YieldModelGate (withholding estimates outside
+        // the model's training range) is tested on its own in YieldModelGateTest.
+        config(['prediction.rice_yield.gate' => 'off']);
 
         // Chat only reads prepared predictions; stand in for the scheduled refresh.
         $this->preparePredictions();

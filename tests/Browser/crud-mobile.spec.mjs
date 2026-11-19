@@ -9,7 +9,6 @@ async function logIn(page, email, dashboard) {
 }
 
 for (const [role, email, dashboard, routes] of [
-    ['it', 'it@browser.test', '/admin/dashboard', ['/users', '/system-logs', '/reports']],
     ['mao', 'mao@browser.test', '/mao/dashboard', ['/climate-records', '/rice-productions', '/farmer-profiles']],
 ]) {
     test(`${role} CRUD lists render compact mobile cards`, async ({ page }, testInfo) => {

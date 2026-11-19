@@ -53,16 +53,16 @@ class FarmerPagesSimplificationTest extends TestCase
         $menu = substr($html, strpos($html, 'class="ic-sidebar'), 8000);
 
         preg_match_all('/<span class="sidebar-label">([^<]+)<\/span>/', $menu, $m);
-        // Rice Varieties sits beside My Farm.
-        $this->assertSame(['Dashboard', 'Forecast', 'Heat Map', 'Advisories', 'My Farm', 'Rice Varieties', 'Messages'], array_slice($m[1], 0, 7));
-        foreach (['Climate Records', 'Rice Production', 'Community', 'Calendar'] as $gone) {
+        // Rice Production is a staff-only page; Rice Varieties sits beside My Farm.
+        $this->assertSame(['Farmer Dashboard', 'Forecast', 'Heat Map', 'Advisories', 'My Farm', 'Rice Varieties', 'Messages'], array_slice($m[1], 0, 7));
+        foreach (['Climate Records', 'Community', 'Calendar'] as $gone) {
             $this->assertNotContains($gone, $m[1]);
         }
 
         $farmer->forceFill(['preferred_language' => 'fil'])->save();
         $html = $this->actingAs($farmer)->get(route('farmer.my-farm'))->getContent();
         preg_match_all('/<span class="sidebar-label">([^<]+)<\/span>/', substr($html, strpos($html, 'class="ic-sidebar'), 8000), $m);
-        $this->assertSame(['Dashboard', 'Taya ng Panahon', 'Mapa ng Panganib', 'Payo', 'Aking Bukid', 'Mga Binhi ng Palay', 'Mensahe'], array_slice($m[1], 0, 7));
+        $this->assertSame(['Farmer Dashboard', 'Taya ng Panahon', 'Mapa ng Panganib', 'Payo', 'Aking Bukid', 'Mga Binhi ng Palay', 'Mensahe'], array_slice($m[1], 0, 7));
     }
 
     // ------------------------------------------------------------ Aking Bukid
@@ -124,12 +124,10 @@ class FarmerPagesSimplificationTest extends TestCase
         $announcements = route('planting-advisories.index').'#announcements';
 
         $cases = [
-            // Climate Records and the MAO's Rice Production records: every page, by typed URL, lands on Home.
+            // Climate Records remain staff-only and land on Home for farmers.
             ['get', route('climate-records.index'), route('farmer.dashboard')],
             ['get', route('climate-records.show', $record), route('farmer.dashboard')],
             ['get', route('climate-records.create'), route('farmer.dashboard')],
-            ['get', route('rice-productions.index'), route('farmer.dashboard')],
-            ['get', route('rice-productions.create'), route('farmer.dashboard')],
             // Community: reading moves to Announcements; posting, editing, archiving, comments, reactions and deleting too.
             ['get', route('community-feed.index'), $announcements],
             ['post', route('community-feed.store'), $announcements],

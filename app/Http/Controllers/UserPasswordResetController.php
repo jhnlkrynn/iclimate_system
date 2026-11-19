@@ -16,11 +16,12 @@ class UserPasswordResetController extends Controller
 {
     public function __invoke(Request $request, User $user): RedirectResponse
     {
+        abort_unless($request->user()->isMaoHead() && in_array($user->role, User::ROLES, true), 403);
         abort_if($user->is($request->user()), 403, 'Use Profile to change your own password.');
 
         // Letters, digits and a symbol, so it passes the password rules the user will meet when they change it.
         $temporary = Str::password(12, symbols: false).'#'.random_int(1, 9);
-        $user->forceFill(['password' => $temporary, 'remember_token' => null])->save();
+        $user->forceFill(['password' => $temporary, 'remember_token' => null, 'must_change_password' => true])->save();
         SystemAuditLogger::record('Reset User Password', $request, ['record_type' => 'User', 'record_id' => $user->getKey()]);
 
         return redirect()->route('users.show', $user)->with('temporary_password', $temporary)->with('success', 'Password reset.');

@@ -37,7 +37,7 @@
 
         @include('farmer-records._filters', ['placeholder' => 'Search titles and messages', 'hidden' => ['is_read']])
 
-        <section class="frec-panel" aria-labelledby="frecListTitle">
+        <section class="frec-panel" aria-labelledby="frecListTitle" @if (! empty($liveAreas)) data-live-region="records" data-live-areas="{{ $liveAreas }}" @endif>
             <div class="frec-panel-head is-row">
                 <h2 id="frecListTitle">{{ $tabs[(string) $readFilter] ?? 'All' }} Notifications</h2>
                 <p class="fad-support">Showing {{ $records->firstItem() ?? 0 }}–{{ $records->lastItem() ?? 0 }} of {{ $records->total() }}</p>
@@ -55,7 +55,7 @@
                                 </div>
                                 <h3 class="frec-note-title"><a href="{{ route('notifications.show', $note) }}" data-ic-view data-ic-size="normal" data-ic-notif-item aria-haspopup="dialog">{{ $note->title }}</a></h3>
                                 @if($note->message)<p class="frec-note-text">{{ \Illuminate\Support\Str::limit($note->message, 180) }}</p>@endif
-                                @if($when)<p class="fad-meta"><time datetime="{{ $note->created_at->toIso8601String() }}">{{ $when->format('M j, Y · g:i A') }}</time> · {{ $when->diffForHumans() }}</p>@endif
+                                @if($when)<p class="fad-meta"><time datetime="{{ $note->created_at->toIso8601String() }}">{{ $when->format('M j, Y · g:i A') }}</time> · <x-live-time :at="$note->created_at" /></p>@endif
                             </div>
                             <div class="frec-note-actions">
                                 {{-- Farmer – Naicel: a missing-info notification opens the page where it is added. --}}

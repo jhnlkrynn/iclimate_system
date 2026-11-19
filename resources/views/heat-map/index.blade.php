@@ -144,7 +144,7 @@
                                 </button></li>
                             @endforeach
                         </ul>
-                        <x-updated-at :at="$r['updated_at']" :label="trans('farmer.home.updated', [], $locale)" />
+                        <x-updated-at :at="$r['updated_at']" :label="trans('farmer.home.updated', [], $locale)" :data-weather-fetched="($r['follows_fetch'] ?? false) ? 'barangays' : null" />
                         @if ($r['delayed'])
                             <p class="hmx-source" data-heat-map-delayed>{{ $t('delayed') }}</p>
                         @endif

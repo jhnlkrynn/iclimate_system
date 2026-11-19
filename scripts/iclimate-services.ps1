@@ -63,7 +63,7 @@ if ($WebServer -eq 'apache') {
 $Services['scheduler'] = @{ Command = "`"$Php`" artisan schedule:work"; Match = 'artisan schedule:(run|work)'; Log = 'NUL' }
 # --max-time: the worker ends itself every hour and the supervisor starts a fresh one, so it never runs old code
 # for long. --timeout is the fallback for jobs without their own limit; it stays below retry_after (config/queue.php).
-$Services['queue'] = @{ Command = "`"$Php`" artisan queue:work --queue=analytics,default --tries=2 --timeout=300 --max-time=3600"; Match = 'artisan queue:work'; Log = 'queue.log' }
+$Services['queue'] = @{ Command = "`"$Php`" artisan queue:work --queue=analytics,default,broadcasts --tries=2 --timeout=300 --max-time=3600"; Match = 'artisan queue:work'; Log = 'queue.log' }
 
 function Get-ProjectProcesses([string] $pattern) {
     Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -and $_.CommandLine -match $pattern -and $_.ProcessId -ne $PID }

@@ -63,14 +63,15 @@ class AiPredictionReadOnlyTest extends TestCase
 
     /**
      * The yield model runs only when every input it needs is a real number, and the "previous month" and
-     * 3/6-month trend inputs come from the last six recorded months. Without those the engine reports the
-     * missing inputs and does not run the model, so these tests record six months of climate first.
+     * 3/6-month trend inputs come from the six months before the target month (verification 2026-11-18). The
+     * default target is next month and the municipality forecast is for this month, so these tests record this
+     * month and the six before it first; without them the engine reports the missing inputs and does not run.
      */
     private function recentClimate(): void
     {
-        foreach (range(1, 6) as $monthsAgo) {
+        foreach (range(0, 6) as $monthsAgo) {
             \App\Models\ClimateRecord::factory()->create([
-                'record_date' => now()->subMonths($monthsAgo)->startOfMonth()->toDateString(),
+                'record_date' => now()->subMonthsNoOverflow($monthsAgo)->startOfMonth()->toDateString(),
                 'rainfall' => 150 + $monthsAgo * 10, 'temperature' => 27 + $monthsAgo * 0.2, 'humidity' => 80,
                 'wind_speed' => 10, 'season' => \App\Models\ClimateRecord::SEASON_WET,
             ]);
@@ -269,14 +270,15 @@ class AiPredictionReadOnlyTest extends TestCase
             });
         });
 
-        $this->artisan('iclimate:warm-prediction-cache', ['--wait' => 0, '--months' => 4])->assertExitCode(0);
+        // Six months: the whole-season inputs need the forecasts up to the end of the season (verification 2026-11-18).
+        $this->artisan('iclimate:warm-prediction-cache', ['--wait' => 0, '--months' => 6])->assertExitCode(0);
 
-        $this->assertSame(4, MonthlyWeatherPrediction::where('status', 'ready')->count());
-        $this->assertSame(4, $calls, 'each month is built exactly once');
+        $this->assertSame(6, MonthlyWeatherPrediction::where('status', 'ready')->count());
+        $this->assertSame(6, $calls, 'each month is built exactly once');
 
         $state = Cache::get('predictions:cache_state');
         $this->assertTrue($state['ready']);
-        $this->assertSame(4, $state['months_ready']);
+        $this->assertSame(6, $state['months_ready']);
         $this->assertSame([], $state['months_missing']);
         $this->assertGreaterThan(0, $state['yield_results']);
         $this->assertGreaterThan(0, $this->pythonRequests(), 'the yield engine was run on the prepared forecasts');
@@ -288,7 +290,8 @@ class AiPredictionReadOnlyTest extends TestCase
         $this->fakePython();
         $this->mockForest(fn (MockInterface $mock) => $mock->shouldReceive('predict')->andReturn($this->readyForest()));
 
-        $this->artisan('iclimate:warm-prediction-cache', ['--wait' => 0, '--months' => 4])
+        $this->artisan('iclimate:warm-prediction-cache', ['--wait' => 0, '--months' => 6])
+            // One reason per warmed month (joined on one line); the month after next also lacks observed lag months.
             ->expectsOutputToContain('Yield results not produced: Not enough verified input data to run the rice-yield model (missing: area).')
             ->assertExitCode(0);
 

@@ -116,7 +116,7 @@ return [
         'establishment' => 'Establishment',
         'adaptation' => 'Adaptation',
         'planted_this' => 'I planted this variety',
-        'manual_entry' => 'Added by IT Personnel',
+        'manual_entry' => 'Added by MAO Staff',
     ],
     'reaction_levels' => ['resistant' => 'Resistant', 'intermediate' => 'Intermediate', 'susceptible' => 'Susceptible', 'not_tested' => 'Not tested'],
     'pests' => [

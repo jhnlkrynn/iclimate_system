@@ -32,7 +32,7 @@ class HeatMapApiTest extends TestCase
         foreach (['weather_risk', 'flood', 'drought', 'yield'] as $layer) foreach (['week', '2weeks'] as $period) {
             $json = $this->actingAs($mao)->getJson('/api/heat-map?layer='.$layer.'&period='.$period)->assertOk();
             $this->assertSame($layer, $json->json('layer'));
-            $this->assertCount(19, $json->json('barangays'));
+            $this->assertCount(count(\App\Support\LianBarangays::all()), $json->json('barangays'));
             $this->assertNotEmpty($json->json('source'));
             foreach ($json->json('barangays') as $row) $this->assertContains($row['level'], $layer === 'flood' ? ['flood_prone', 'moderate', 'low', 'unavailable'] : ['low', 'moderate', 'high', 'severe', 'unavailable']);
         }
@@ -49,8 +49,7 @@ class HeatMapApiTest extends TestCase
     public function test_flood_uses_latest_stored_rating_when_forecast_is_empty(): void
     {
         Cache::forever(LianBarangayWeatherService::STORE_KEY, ['records' => [], 'status' => []]);
-        HeatmapArea::query()->create([
-            'barangay' => 'Puting Kahoy',
+        HeatmapArea::query()->updateOrCreate(['barangay' => 'Balibago'], [
             'risk_level' => 'High',
             'risk_type' => 'Flood',
             'description' => 'Stored flood rating',
@@ -60,7 +59,7 @@ class HeatMapApiTest extends TestCase
 
         $json = $this->actingAs($mao)->getJson('/api/heat-map?layer=flood&period=week')->assertOk();
 
-        $puting = collect($json->json('barangays'))->firstWhere('name', 'Puting-Kahoy');
+        $puting = collect($json->json('barangays'))->firstWhere('name', 'Balibago');
         $this->assertSame('flood_prone', $puting['level']);
         $this->assertContains('Most recent stored flood rating', $puting['drivers']);
     }

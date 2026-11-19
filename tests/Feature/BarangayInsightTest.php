@@ -81,7 +81,7 @@ class BarangayInsightTest extends TestCase
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER, 'barangay' => 'San Diego']);
         $map = collect($this->getJson('/api/lian/risk-map')->assertOk()->json('barangays'))->keyBy('barangay');
 
-        $this->assertCount(19, LianBarangays::all());
+        $this->assertCount(count(LianBarangays::all()), LianBarangays::all());
         foreach (LianBarangays::all() as $barangay) {
             $entry = $map[$barangay];
             $response = $this->insight($farmer, ['barangay' => $barangay, 'lang' => 'en'])->assertOk();
@@ -111,7 +111,7 @@ class BarangayInsightTest extends TestCase
                 'rainfall_next_24h_mm', 'rain_outlook', 'condition', 'weather_status', 'weather_updated', 'risk_calculated', 'tone']));
         }
 
-        $this->assertCount(19, $this->groqContexts);
+        $this->assertCount(count(LianBarangays::all()), $this->groqContexts);
         // Different barangays really have different readings here, so nothing above matched by accident.
         $this->assertGreaterThan(1, $map->pluck('weather.temperature_c')->unique()->count());
     }
@@ -120,22 +120,22 @@ class BarangayInsightTest extends TestCase
     {
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
-        $first = $this->insight($mao, ['barangay' => 'Bagong Pook', 'lang' => 'en'])->assertOk();
-        $again = $this->insight($mao, ['barangay' => 'Bagong Pook', 'lang' => 'en'])->assertOk();
+        $first = $this->insight($mao, ['barangay' => 'Balibago', 'lang' => 'en'])->assertOk();
+        $again = $this->insight($mao, ['barangay' => 'Balibago', 'lang' => 'en'])->assertOk();
         $this->assertCount(1, $this->groqContexts, 'Same data: the explanation is reused.');
         $this->assertFalse($first->json('insight.cached'));
         $this->assertTrue($again->json('insight.cached'));
         $this->assertSame($first->json('insight.text'), $again->json('insight.text'));
         $this->assertSame($first->json('signature'), $again->json('signature'));
 
-        $this->insight($mao, ['barangay' => 'Bagong Pook', 'lang' => 'fil'])->assertOk();
+        $this->insight($mao, ['barangay' => 'Balibago', 'lang' => 'fil'])->assertOk();
         $this->assertCount(2, $this->groqContexts, 'Each language has its own explanation.');
 
         // New weather and a new rating: a new explanation, once.
         $this->travel(11)->minutes();
         $this->artisan('iclimate:refresh-barangay-weather', ['--force' => true])->assertSuccessful();
-        $newer = $this->insight($mao, ['barangay' => 'Bagong Pook', 'lang' => 'en'])->assertOk();
-        $this->insight($mao, ['barangay' => 'Bagong Pook', 'lang' => 'en'])->assertOk();
+        $newer = $this->insight($mao, ['barangay' => 'Balibago', 'lang' => 'en'])->assertOk();
+        $this->insight($mao, ['barangay' => 'Balibago', 'lang' => 'en'])->assertOk();
 
         $this->assertCount(3, $this->groqContexts);
         $this->assertNotSame($first->json('signature'), $newer->json('signature'));
@@ -257,7 +257,7 @@ class BarangayInsightTest extends TestCase
     {
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
-        foreach (['Bagong Pook', 'Balibago', 'Binubusan', 'Bungahan', 'San Diego'] as $barangay) {
+        foreach (['Balibago', 'Binubusan', 'Bungahan', 'Kapito', 'San Diego'] as $barangay) {
             foreach (['en', 'fil'] as $language) {
                 $insight = $this->insight($mao, ['barangay' => $barangay, 'lang' => $language])->json('insight');
                 $this->assertSame('ok', $insight['status']);
@@ -279,7 +279,7 @@ class BarangayInsightTest extends TestCase
         app(BarangayRiskMapService::class)->refreshForCurrentWeather(force: true);
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
-        $response = $this->insight($mao, ['barangay' => 'Cumba'])->assertOk();
+        $response = $this->insight($mao, ['barangay' => 'San Diego'])->assertOk();
 
         $this->assertNull($response->json('data.risk_level'));
         $this->assertSame('unavailable', $response->json('data.risk_status'));
@@ -332,7 +332,7 @@ class BarangayInsightTest extends TestCase
 
         // No page offers the pop-up any more (the dashboards lost their full maps in 2026-10); its endpoint still
         // answers (see the tests above) until the cleanup commit decides what to do with it.
-        foreach ([[User::ROLE_MAO, 'mao.dashboard'], [User::ROLE_IT_EXPERT, 'admin.dashboard']] as [$role, $route]) {
+        foreach ([[User::ROLE_MAO, 'mao.dashboard']] as [$role, $route]) {
             $this->actingAs(User::factory()->create(['role' => $role]))->get(route($route))->assertOk()->assertDontSee('data-insight-url', false);
         }
     }

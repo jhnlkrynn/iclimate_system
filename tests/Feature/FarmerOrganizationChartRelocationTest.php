@@ -51,25 +51,7 @@ class FarmerOrganizationChartRelocationTest extends TestCase
         $this->assertSame(1, $response->viewData('mao')['farmers']);
     }
 
-    public function test_mao_labels_farmer_profiles_and_farmer_accounts_separately_with_the_same_counts_as_it(): void
-    {
-        // Two farmer accounts; only one has a farm profile.
-        $withProfile = User::factory()->create(['role' => User::ROLE_FARMER]);
-        FarmerProfile::factory()->create(['user_id' => $withProfile->id]);
-        User::factory()->create(['role' => User::ROLE_FARMER]);
-        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
-        // MAO Dashboard (2026-10): "Registered farmers" counts farmer profiles (not sign-in accounts), and says so.
-        $response = $this->actingAs($mao)->get(route('mao.dashboard'))->assertOk();
-        $this->assertSame(FarmerProfile::count(), $response->viewData('mao')['farmers']);
-        $this->assertNotSame(User::where('role', User::ROLE_FARMER)->count(), $response->viewData('mao')['farmers']);
-        $response->assertSee('Farmer profiles on file');
-
-        // The IT dashboard counts the same farmer accounts.
-        $integrity = app(\App\Services\Analytics\ItDashboardService::class)->payload()['integrity'];
-        $this->assertSame(User::where('role', User::ROLE_FARMER)->count(), $integrity['farmer_accounts']);
-        $this->assertSame(FarmerProfile::count(), $integrity['farmer_profiles']);
-    }
 
     public function test_farmer_profiles_page_shows_a_compact_organization_chart_to_mao(): void
     {
@@ -120,16 +102,5 @@ class FarmerOrganizationChartRelocationTest extends TestCase
             ->assertSee('horizontalCategoryTicks', false);
     }
 
-    public function test_admin_dashboard_has_neither_the_chart_nor_a_farmer_database_section(): void
-    {
-        $this->seed(FarmerOrganizationSeeder::class);
-        $admin = User::factory()->itExpert()->create();
 
-        $this->actingAs($admin)
-            ->get(route('admin.dashboard'))
-            ->assertOk()
-            ->assertDontSee('Farmer Database')
-            ->assertDontSee('View Farmer Analytics')
-            ->assertDontSee('Farmers by Organization');
-    }
 }

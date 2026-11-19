@@ -1,0 +1,22 @@
+{
+  "candidate": "2026.11.18-rc2 (r2)",
+  "source_fingerprint": "04c7db9fedf0db9c077521adfebae8621291b1ddcf5e0e371a72a966dcb2d29d",
+  "archive_sha256": "c26275e0d6cbde76d5c3582afd9d637f23f992408dddd815ffd5aca2e24527ad",
+  "date": "2026-11-18 (Asia/Manila)",
+  "php_8_4_27_sqlite_working_tree": {"total": 1695, "passed": 1690, "failed": 0, "skipped": 5, "skip_reason": "MariaDB/MySQL-only migration tests"},
+  "php_8_4_27_mariadb_10_11_19_mysql_driver": {"total": 1695, "passed": 1695, "failed": 0, "skipped": 0},
+  "php_8_4_27_sqlite_from_extracted_archive": {"total": 1695, "passed": 1688, "failed": 0, "skipped": 7, "skip_reason": "5 MariaDB-only + 2 ML integration tests that need a project .venv; with the ML venv linked both pass from the archive (2 tests, 300 assertions)"},
+  "python_3_12": {"passed": 69, "failed": 0, "from_archive": 69},
+  "deployment_packaging_and_safety": {"passed": 25, "failed": 0},
+  "javascript_node_26_10": {"passed": 26, "failed": 0, "from_archive": 26, "note": "Node 22 not installed locally; Codex's earlier Node 22.23.5 run passed 26/26 on the previous candidate"},
+  "playwright_desktop_mobile": {"passed": 178, "failed": 0, "skipped": 18, "skip_reason": "viewport-specific"},
+  "playwright_verification_desktop_tablet_mobile": {"passed": 18, "failed": 0},
+  "ml_consistency_direct_api_laravel": {"distinct_inputs": 80, "mismatches": 0, "database": "restored audit clone on MariaDB 10.11 after RC2 migrations"},
+  "ml_backup_path_parity": {"inputs": 40, "mismatches": 0, "invalid_inputs_rejected_identically": "8/8"},
+  "farmer_visible_estimates": {"runs": 180, "shown": 0},
+  "model_sha256": "f3a54e12ecf85e66340475e2c49ce5c15d9c58efd82213435015a275734b777c",
+  "migration_rehearsal_mariadb_10_11": {"source": "audit clone 69 tables / 114,779 rows / 100 migrations", "restore_fidelity": "columns, row counts, checksums, foreign keys identical (10.4 -> 10.11)", "migrate_7": "all data checks OK", "rollback_7": "identical to pre-migration", "remigrate": "identical to first migration", "backup_restore_of_migrated": "identical (78 tables)", "runtime_account_health": "database/migrations OK with SELECT/INSERT/UPDATE/DELETE-only account"},
+  "dependency_audits": {"composer": "0 advisories", "npm_production": "0", "npm_dev_build": "12 high entries, 1 advisory GHSA-fc5q-39xc-vjpf (picomatch), mitigation verified on 3 installations", "python": "NOT re-run this session (audit tool download not permitted); previous candidate: 0 advisories on 26 pins"},
+  "secret_scan_release_files": {"files": 1504, "findings": 0, "note": "3 pattern hits reviewed: 2 REPLACE placeholders, 1 fake credential in a redaction test"},
+  "reproducible_build": "rebuilt archive and manifest byte-identical"
+}

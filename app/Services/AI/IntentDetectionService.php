@@ -171,6 +171,10 @@ class IntentDetectionService
             return $preferredLanguage;
         }
 
+        // Score only the words around place names: Lian barangay names such as
+        // "Bagong Pook" or "Lumaniag" contain Tagalog keyword fragments.
+        $text = mb_strtolower(LianBarangays::withoutNames($text));
+
         $tagalog = $this->score($text, [
             'ang ', ' ako', 'akin', 'kaba', 'natin', 'niyo', 'sila', 'siya',
             'bakit', 'dapat', 'gamit', 'ikaw', 'ilang', 'kailan', 'kaya', 'kung', 'mag', 'magiging',

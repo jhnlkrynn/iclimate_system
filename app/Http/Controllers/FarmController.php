@@ -261,7 +261,7 @@ class FarmController extends Controller
             $associationRules = [
                 'association_status' => [$asks ? 'required' : 'nullable', Rule::in(Farm::ASSOCIATION_ANSWERS)],
                 'farmer_organization_id' => ['nullable', 'required_if:association_status,'.Farm::ASSOCIATION_MEMBER, 'integer'],
-                'association_other_name' => ['nullable', 'required_if:association_status,'.Farm::ASSOCIATION_PENDING, 'string', 'max:120'],
+                'association_other_name' => ['nullable', 'string', 'max:120'],
             ];
         }
         $data = $request->validate($associationRules + [

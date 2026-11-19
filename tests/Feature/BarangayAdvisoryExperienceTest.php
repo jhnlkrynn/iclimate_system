@@ -69,8 +69,8 @@ class BarangayAdvisoryExperienceTest extends TestCase
 
         $this->assertCount(1, Http::recorded());
         $points = $this->requestedPoints(Http::recorded()[0][0]);
-        $this->assertCount(19, $points);
-        $this->assertCount(19, collect($points)->map(fn (array $point) => implode(',', $point))->unique());
+        $this->assertCount(count(LianBarangays::all()), $points);
+        $this->assertCount(count(LianBarangays::all()), collect($points)->map(fn (array $point) => implode(',', $point))->unique());
         $this->assertEquals(LianBarangays::coordinateFor('San Diego'), $points[0]);
         $this->assertSame(LianBarangays::coordinateFor('San Diego'), [$result['latitude'], $result['longitude']]);
 

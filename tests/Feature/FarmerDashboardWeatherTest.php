@@ -132,8 +132,12 @@ class FarmerDashboardWeatherTest extends TestCase
         $response->assertSee('Updated: ');
         $response->assertSee('data-mfd-refresh', false);
         $js = file_get_contents(resource_path('js/farmer-dashboard.js'));
-        $this->assertStringContainsString('const REFRESH_EVERY_MS = 300000;', $js);
-        $this->assertStringContainsString("if (document.visibilityState === 'visible') refresh(); }, REFRESH_EVERY_MS);", $js);
+        // The 5-minute poll was replaced by real-time updates (2026-11-11): the page reads itself again when the server
+        // says something changed, and the shared listener polls only while the tab is visible and disconnected.
+        $this->assertStringContainsString("import { initDashboardRealtime } from './dashboard-realtime';", $js);
+        $this->assertStringContainsString('initDashboardRealtime({ root, refresh });', $js);
+        $this->assertStringNotContainsString('REFRESH_EVERY_MS', $js, 'the fixed 5-minute poll is not brought back');
+        $this->assertStringContainsString('const FALLBACK_POLL_MS = 60_000;', file_get_contents(resource_path('js/dashboard-realtime.js')));
         $response->assertDontSee('Live as of', false);
         $response->assertDontSee('Observation updated', false);
         $response->assertDontSee('Dashboard checked', false);

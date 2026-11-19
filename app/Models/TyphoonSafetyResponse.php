@@ -8,6 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TyphoonSafetyResponse extends Model
 {
+    use \App\Models\Concerns\KeepsDatabaseClockColumns;
+
+    /** MariaDB refreshes this column itself on UPDATE (Manila clock); see KeepsDatabaseClockColumns. */
+    public const DATABASE_CLOCK_COLUMNS = ['responded_at'];
+
     use HasFactory;
 
     public const STATUS_SAFE = 'safe';

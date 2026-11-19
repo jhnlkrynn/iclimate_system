@@ -31,24 +31,14 @@ use App\Contracts\RiskMethodology;
 final class AgriculturalRiskScorer implements RiskMethodology
 {
     private const BARANGAY_EXPOSURE = [
-        'Bagong Pook' => 0.55,
         'Balibago' => 0.70,
-        'Barangay 1 (Pob.)' => 0.50,
-        'Barangay 2 (Pob.)' => 0.50,
-        'Barangay 3 (Pob.)' => 0.55,
-        'Barangay 4 (Pob.)' => 0.55,
-        'Barangay 5 (Pob.)' => 0.50,
         'Binubusan' => 0.45,
         'Bungahan' => 0.65,
-        'Cumba' => 0.80,
-        'Humayingan' => 0.75,
         'Kapito' => 0.70,
-        'Lumaniag' => 0.55,
         'Luyahan' => 0.75,
         'Malaruhatan' => 0.80,
         'Matabungkay' => 0.90,
         'Prenza' => 0.65,
-        'Puting-Kahoy' => 0.75,
         'San Diego' => 0.85,
     ];
 

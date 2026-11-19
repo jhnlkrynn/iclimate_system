@@ -38,12 +38,7 @@ class DevelopmentDemoSeeder extends Seeder
         $mao = User::query()->updateOrCreate(['email' => 'mao@iclimate.com'], [
             'name' => 'Default MAO Personnel', 'password' => Hash::make($defaultPassword), 'role' => User::ROLE_MAO,
             'contact_number' => '09170000002', 'address' => 'Municipal Agriculture Office, Lian, Batangas',
-            'barangay' => 'Poblacion', 'status' => User::STATUS_ACTIVE, 'email_verified_at' => now(),
-        ]);
-        User::query()->updateOrCreate(['email' => 'admin@iclimate.com'], [
-            'name' => 'Default IT Expert', 'password' => Hash::make($defaultPassword), 'role' => User::ROLE_IT_EXPERT,
-            'contact_number' => '09170000003', 'address' => 'Lian, Batangas', 'barangay' => 'Poblacion',
-            'status' => User::STATUS_ACTIVE, 'email_verified_at' => now(),
+            'barangay' => null, 'status' => User::STATUS_ACTIVE, 'email_verified_at' => now(),
         ]);
 
         FarmerProfile::query()->updateOrCreate(['user_id' => $farmer->id], [
@@ -62,7 +57,7 @@ class DevelopmentDemoSeeder extends Seeder
         }
         if (RiceProduction::query()->doesntExist()) {
             RiceProduction::factory()->count(5)->state(new Sequence(
-                ['barangay' => 'Binubusan'], ['barangay' => 'Lumaniag'], ['barangay' => 'Malaruhatan'],
+                ['barangay' => 'Binubusan'], ['barangay' => 'Malaruhatan'], ['barangay' => 'San Diego'],
                 ['barangay' => 'Matabungkay'], ['barangay' => 'Prenza'],
             ))->create();
         }

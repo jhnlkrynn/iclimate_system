@@ -16,7 +16,7 @@
  *   or data-chart-* attributes on the <canvas> (data-chart-source, data-chart-type, ...).
  */
 
-const ROLE_BY_LABEL = { 'Farmer': 'farmer', 'MAO Personnel': 'mao', 'IT Expert': 'it' };
+const ROLE_BY_LABEL = { 'Farmer': 'farmer', 'MAO Personnel': 'mao', farmer: 'farmer', mao: 'mao' };
 
 const DATA_TYPES = {
     historical: 'Historical (recorded in the past)',
@@ -273,7 +273,7 @@ const isForecastSeries = (ds) => ds.kind === 'predicted' || /forecast|predict/i.
 
 export function currentRole() {
     const raw = document.body?.dataset.userRole || '';
-    return ROLE_BY_LABEL[raw] || (['farmer', 'mao', 'it'].includes(raw) ? raw : 'farmer');
+    return ROLE_BY_LABEL[raw] || (['farmer', 'mao'].includes(raw) ? raw : 'farmer');
 }
 
 function chartKey(chart) {

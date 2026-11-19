@@ -25,7 +25,7 @@
                             <td>{{ $schedule->farmer?->farmerProfile?->full_name ?: $schedule->farmer?->name ?: 'Unknown farmer' }}</td>
                             <td>{{ $schedule->barangay ?: 'Not on file' }}</td>
                             <td>{{ $schedule->planting_date?->format('M j, Y') }}</td>
-                            <td class="text-end">{{ number_format((float) $schedule->predicted_yield, 2) }} t/ha</td>
+                            <td class="text-end">{{ number_format((float) $schedule->predicted_yield, 2) }} t/ha @include('components.unvalidated-estimate', ['compact' => true])</td>
                             <td class="text-end">{{ number_format((float) $schedule->historical_same_month_average, 2) }} t/ha</td>
                         </tr>
                     @endforeach

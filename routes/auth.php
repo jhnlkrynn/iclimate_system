@@ -25,6 +25,11 @@ Route::get('login/weather', [AuthenticatedSessionController::class, 'weather'])
     ->name('login.weather');
 
 Route::middleware('guest')->group(function () {
+    // Recovery for an account on a shared password: email link or a code from MAO Staff (AccountRecovery).
+    Route::view('account/recover', 'auth.recover-account')->name('account.recover');
+
+    Route::get('registration/resubmit', [\App\Http\Controllers\Auth\FarmerResubmissionController::class, 'create'])->name('registration.resubmit');
+    Route::post('registration/resubmit', [\App\Http\Controllers\Auth\FarmerResubmissionController::class, 'store'])->middleware('throttle:5,1,farmer-resubmit');
     // Signed in with the correct password of a deleted account: why it was deleted (DeletedAccountController).
     Route::get('account-deleted', \App\Http\Controllers\Auth\DeletedAccountController::class)->name('account.deleted');
 

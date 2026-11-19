@@ -15,7 +15,10 @@
         $statusTone = ['published' => 'good', 'pending_review' => 'watch', 'expired' => 'muted', 'rejected' => 'danger', 'archived' => 'muted', 'scheduled' => 'watch'];   // Manuscript – Naicel: + scheduled alerts
     @endphp
 
-    <div class="fad adv" lang="{{ $locale }}">
+    {{-- data-adv-live: the list refreshes itself when an advisory, announcement or weather check changes (Reverb
+         dashboard.changed on user.{id} / dashboard.{role}; a slow poll when the live connection is off). --}}
+    <div class="fad adv" lang="{{ $locale }}" data-adv-live data-dashboard-user-id="{{ auth()->id() }}"
+         data-dashboard-role="{{ ['farmer' => 'farmer', 'mao' => 'mao'][auth()->user()->role] ?? '' }}">
         <header class="fad-hero">
             <div class="fad-hero-text">
                 <span class="fad-kicker">{{ $t('kicker') }}</span>

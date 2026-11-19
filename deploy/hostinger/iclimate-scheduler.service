@@ -1,0 +1,17 @@
+[Unit]
+Description=iClimate Laravel scheduler tick
+After=network-online.target mariadb.service
+Wants=network-online.target mariadb.service
+
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/iclimate_system
+EnvironmentFile=/etc/iclimate/iclimate.env
+ExecStart=/usr/bin/flock -n /run/lock/iclimate-scheduler.lock /usr/bin/php artisan schedule:run
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=full
+ReadWritePaths=/var/www/iclimate_system/storage /var/www/iclimate_system/bootstrap/cache
+

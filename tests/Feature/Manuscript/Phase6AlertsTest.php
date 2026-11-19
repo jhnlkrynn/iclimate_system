@@ -23,7 +23,7 @@ class Phase6AlertsTest extends TestCase
         return $overrides + [
             'title' => 'Typhoon signal no. 2', 'type' => 'typhoon', 'severity' => 'high',
             'message' => 'Strong winds expected tomorrow.', 'recommended_action' => 'Harvest mature palay today.',
-            'recipients' => 'barangays', 'barangays' => ['Balibago', 'Cumba'], 'send' => 'now',
+            'recipients' => 'barangays', 'barangays' => ['Balibago', 'San Diego'], 'send' => 'now',
         ];
     }
 
@@ -31,7 +31,7 @@ class Phase6AlertsTest extends TestCase
     {
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
         $balibago = $this->farmer('Balibago');
-        $this->farmer('Cumba');
+        $this->farmer('San Diego');
         $prenza = $this->farmer('Prenza');
 
         $this->actingAs($mao)->post(route('mao.alerts.store'), $this->alert())->assertRedirect(route('mao.alerts.index'))
@@ -48,7 +48,7 @@ class Phase6AlertsTest extends TestCase
     {
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
         $reader = $this->farmer('Balibago');
-        $this->farmer('Cumba');
+        $this->farmer('San Diego');
         $this->actingAs($mao)->post(route('mao.alerts.store'), $this->alert(['recipients' => 'all']));
 
         $notice = Notification::query()->where('user_id', $reader->id)->sole();
@@ -111,7 +111,7 @@ class Phase6AlertsTest extends TestCase
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
         $this->actingAs($mao)->get(route('planting-advisories.index'))->assertOk()->assertSee('data-send-alert', false);
 
-        foreach ([User::ROLE_FARMER, User::ROLE_IT_EXPERT] as $role) {
+        foreach ([User::ROLE_FARMER] as $role) {
             $user = User::factory()->create(['role' => $role]);
             $this->actingAs($user)->post(route('mao.alerts.store'), $this->alert())->assertStatus(403);
         }

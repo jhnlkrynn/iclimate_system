@@ -9,7 +9,7 @@ use Throwable;
 
 /**
  * Talks to the Python ML service about which rice-yield model it has loaded.
- * Error messages are deliberately generic: they reach the IT Expert UI and the
+ * Error messages are deliberately generic: they reach the server operator UI and the
  * audit log, and must not carry hosts, paths or stack traces.
  */
 class RuntimeModelClient

@@ -755,20 +755,20 @@ class DashboardOverviewService
      | IT expert — "Is the system and data working properly?"
      * ------------------------------------------------------------------ */
 
-    public function it(): array
+    public function internalStatus(): array
     {
-        $data = \App\Support\StaleCache::scoped('it-dashboard', fn (string $token): string => 'dashboard:overview:it:'.$token, self::CACHE_SECONDS, fn (): array => $this->itStored());
+        $data = \App\Support\StaleCache::scoped('internal-status', fn (string $token): string => 'diagnostics:overview:'.$token, self::CACHE_SECONDS, fn (): array => $this->internalStored());
 
-        $data['sources'] = $this->provenance->it($data['status']);
+        $data['sources'] = $this->provenance->internalStatus($data['status']);
 
-        return ['role' => 'it', 'year' => null, 'years' => []] + $data;
+        return ['context' => 'internal', 'year' => null, 'years' => []] + $data;
     }
 
-    private function itStored(): array
+    private function internalStored(): array
     {
         $users = User::query()->selectRaw('role, status, COUNT(*) as total')->groupBy('role', 'status')->get();
         $totalUsers = (int) $users->sum('total');
-        $activeUsers = (int) $users->where('status', User::STATUS_ACTIVE)->sum('total');
+        $activeUsers = (int) $users->whereIn('status', [User::STATUS_ACTIVE, User::STATUS_APPROVED])->sum('total');
         $byRole = $users->groupBy('role')->map(fn (Collection $rows) => (int) $rows->sum('total'));
 
         $weatherRecords = SampleData::without(ClimateRecord::query(), 'climate_records')->count();
@@ -800,7 +800,7 @@ class DashboardOverviewService
         $postCount = FeedPost::query()->whereNull('archived_at')->count();
         $altKpis = [
             $this->kpi('log-events', 'System Log Events', $logTotal > 0 ? number_format(SystemLog::query()->where('created_at', '>=', \App\Support\BusinessClock::startOfDayUtc(29))->count()) : null, null,
-                'Audit events in the last 30 days · '.number_format($logTotal).' on file', route('system-logs.index')),
+                'Audit events in the last 30 days · '.number_format($logTotal).' on file', null),
             $this->kpi('active-rate', 'Active Accounts', $totalUsers > 0 ? number_format(round(($activeUsers / $totalUsers) * 100)) : null, '%',
                 $activeUsers.' of '.$totalUsers.' accounts are active', route('users.index')),
             $this->kpi('advisories', 'Planting Advisories', $advisoryTotal > 0 ? number_format($advisoryTotal) : null, null, 'Advisories created on the platform', route('planting-advisories.index')),

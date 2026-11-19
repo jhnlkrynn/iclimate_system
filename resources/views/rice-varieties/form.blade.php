@@ -1,5 +1,5 @@
 <x-app-layout>
-    {{-- IT Personnel: add or edit a rice variety (RiceVarietyController::store / update). Grouped like the Variety
+    {{-- MAO Staff: add or edit a rice variety (RiceVarietyController::store / update). Grouped like the Variety
          Details pop-up. Saved varieties are "manual", so a later NSIC import never overwrites them. A reaction imported
          as several results (by site or stem borer kind) can be kept as it is ("Keep imported"). --}}
     @include('rice-varieties._fonts')

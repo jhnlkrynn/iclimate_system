@@ -85,7 +85,7 @@ class HeatmapAreaUniquenessTest extends TestCase
         $service->riskMap(refresh: true);
         $service->riskMap(refresh: true);
 
-        $this->assertSame(19, HeatmapArea::query()->count());
-        $this->assertSame(19, HeatmapArea::query()->distinct()->count('barangay'));
+        $this->assertSame(count(\App\Support\LianBarangays::all()), HeatmapArea::query()->whereIn('barangay', \App\Support\LianBarangays::all())->count());
+        $this->assertSame(count(\App\Support\LianBarangays::all()), HeatmapArea::query()->whereIn('barangay', \App\Support\LianBarangays::all())->distinct()->count('barangay'));
     }
 }

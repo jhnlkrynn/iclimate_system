@@ -7,6 +7,7 @@ use App\Models\ExternalWeatherData;
 use App\Models\BackupVerification;
 use App\Models\MlModel;
 use App\Models\MonthlyWeatherPrediction;
+use App\Models\ScheduledTaskRun;
 use App\Services\MachineLearning\RuntimeModelClient;
 use App\Support\PythonRuntime;
 use Carbon\CarbonInterface;
@@ -52,6 +53,9 @@ class SystemHealthService
 
     /** The scheduler queues automation every 30 minutes; allow three missed runs. */
     public const SCHEDULER_MAX_AGE_MINUTES = 90;
+
+    /** A scheduled task left running beyond this window needs operator review. */
+    public const SCHEDULED_TASK_STUCK_MINUTES = 30;
 
     private const TIMEZONE = 'Asia/Manila';
 
@@ -141,8 +145,27 @@ class SystemHealthService
         return $this->result(
             $slow ? self::NEEDS_ATTENTION : self::HEALTHY,
             $slow ? 'The database answered, but slowly.' : 'The database is connected.',
-            ['Type' => $this->driverLabel(), 'Response time' => $milliseconds.' ms'],
+            ['Type' => $this->driverLabel(), 'Tables' => (string) $this->databaseTableCount(), 'Response time' => $milliseconds.' ms'],
         );
+    }
+
+    /** Uses information_schema instead of Laravel's db:show performance_schema query, which MariaDB 10.4 lacks. */
+    private function databaseTableCount(): int
+    {
+        $connection = DB::connection();
+        $driver = $connection->getDriverName();
+        if (! in_array($driver, ['mysql', 'mariadb', 'pgsql'], true)) {
+            return 0;
+        }
+
+        $schema = $driver === 'pgsql'
+            ? (string) config('database.connections.'.config('database.default').'.search_path', 'public')
+            : (string) $connection->getDatabaseName();
+
+        return (int) $connection->table('information_schema.tables')
+            ->where('table_schema', $schema)
+            ->whereIn('table_type', ['BASE TABLE', 'SYSTEM VERSIONED'])
+            ->count();
     }
 
     /**
@@ -249,6 +272,11 @@ class SystemHealthService
         if ($waiting > 0) {
             $details['Longest wait'] = $oldestMinutes.' min';
         }
+        // The worker's own heartbeat (QueueWorkerHeartbeat): says whether one is running, even when nothing waits.
+        $beat = \App\Support\QueueWorkerHeartbeat::lastBeat();
+        $details['Queue worker'] = \App\Support\QueueWorkerHeartbeat::alive('database')
+            ? 'Running'
+            : ($beat === null ? 'Not running' : 'Not running (last seen '.$this->when(\Illuminate\Support\Carbon::createFromTimestamp($beat)).')');
 
         if ($oldestMinutes > self::QUEUE_OLDEST_WAITING_MINUTES || $waiting > self::QUEUE_WAITING_LIMIT) {
             return $this->result(self::NEEDS_ATTENTION, 'Jobs are waiting longer than expected. Check that the queue worker is running.', $details);
@@ -451,6 +479,22 @@ class SystemHealthService
      */
     private function scheduler(): array
     {
+        $running = Schema::hasTable('scheduled_task_runs')
+            ? ScheduledTaskRun::query()->where('status', ScheduledTaskRun::RUNNING)->latest('started_at')->first()
+            : null;
+
+        if ($running && $running->started_at?->lt(now()->subMinutes(self::SCHEDULED_TASK_STUCK_MINUTES))) {
+            return $this->result(
+                self::NEEDS_ATTENTION,
+                'A scheduled task appears to be running longer than expected. Check the process and logs.',
+                [
+                    'Task' => (string) $running->task_name,
+                    'Started' => $this->when($running->started_at),
+                    'Running tasks' => (string) ScheduledTaskRun::query()->where('status', ScheduledTaskRun::RUNNING)->count(),
+                ],
+            );
+        }
+
         // Scheduled runs are created by iclimate:automation-run with no requesting user.
         $run = AnalyticsRun::query()
             ->whereNull('requested_by')

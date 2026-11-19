@@ -3,7 +3,6 @@ import { test, expect } from '@playwright/test';
 const accounts = [
     ['farmer', 'farmer@browser.test', '/farmer/dashboard', [/Today|Ngayon/, 'Forecast', /Advisories|Advice/, /My Farm|Aking Farm/, 'More']],
     ['mao', 'mao@browser.test', '/mao/dashboard', ['Home', 'Heat Map', 'Advisories', 'Records', 'More']],
-    ['it', 'it@browser.test', '/admin/dashboard', ['Home', 'Users', 'Reports', 'Messages', 'More']],
 ];
 
 async function logIn(page, email, dashboard) {

@@ -37,7 +37,7 @@ const COPY = {
         },
         nodata: {
             meaning: 'These barangays are monitored but do not have a rating yet, usually because the background update is still running. They are never counted as Low.',
-            action: 'Wait for the next scheduled update, or use Refresh Data. If a barangay stays without a rating, report it to IT Personnel.',
+            action: 'Wait for the next scheduled update, or use Refresh Data. If a barangay stays without a rating, report it to MAO Staff.',
         },
     },
     farmer: {

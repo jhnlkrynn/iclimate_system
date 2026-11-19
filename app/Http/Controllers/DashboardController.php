@@ -23,8 +23,6 @@ use App\Services\Analytics\DashboardKpiService;
 use App\Services\Analytics\DashboardOverviewService;
 use App\Services\Analytics\PreparedDashboards;
 use App\Services\Analytics\FarmerDashboardService;
-use App\Services\Analytics\ItDashboardInsights;
-use App\Services\Analytics\ItDashboardService;
 use App\Services\Analytics\MaoDashboardService;
 use App\Services\Analytics\MaoHomeService;
 use App\Services\FarmerOrganizationSummaryService;
@@ -69,7 +67,6 @@ class DashboardController extends Controller
     private const MAO_LIVE_SLOTS = ['kpis', 'attention', 'conditions', 'forecast', 'watch', 'planting', 'coverage', 'production'];
 
     /** The IT refresh button re-renders the plain-language staff dashboard card. */
-    private const IT_LIVE_SLOTS = ['staff'];
 
     /** The Farmer Home parts (partials under dashboards/farmer), in page order; the page and the refresh render the same list. */
     public const FARMER_SLOTS = ['message', 'typhoon', 'kpis', 'weather', 'risk', 'harvest', 'week'];   // Farmer – Naicel (2026-10-08): + kpis
@@ -191,6 +188,9 @@ class DashboardController extends Controller
     public function farmer(Request $request, FarmerDashboardService $farmer): View
     {
         $payload = $this->preparedFarmerPayload($request->user(), $farmer);
+        // The app shell's mobile navigation needs the same dashboard context; keep it request-local instead of
+        // rebuilding the farmer payload while rendering the shell.
+        $request->attributes->set('farmer_dashboard_payload', $payload);
         // Farmer – Naicel (2026-10): missing farm information goes to the notification bell (at most once a minute).
         // After the page data is read: a new notification clears the farmer's stored page, so it must not run first.
         app(\App\Services\Farmer\FarmerMissingInfoNotifier::class)->syncOnPageLoad($request->user());
@@ -205,14 +205,16 @@ class DashboardController extends Controller
     private function preparedFarmerPayload(User $user, FarmerDashboardService $farmer): array
     {
         $snapshot = CacheScope::snapshot('farmer-dashboard');
-        $payload = Cache::get(FarmerDashboardService::cacheKey($user, token: CacheScope::tokenAt($snapshot)));
+        $key = FarmerDashboardService::cacheKey($user, token: CacheScope::tokenAt($snapshot));
+        $payload = Cache::get($key);
         if (! is_array($payload)) {
             $payload = $farmer->payload($user);
             // Stored under the token that includes the build's own writes (a weather snapshot), so the next visit finds it.
             Cache::put(FarmerDashboardService::cacheKey($user, token: CacheScope::settledToken($snapshot)), $payload, now()->addSeconds(self::FARMER_OVERVIEW_CACHE_SECONDS));
         }
 
-        return $payload;
+        // The stored copy keeps its build-time values; the "Updated" times follow every later successful fetch.
+        return $farmer->withLatestFetchTimes($payload);
     }
 
     /**
@@ -675,86 +677,6 @@ class DashboardController extends Controller
         return preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) ? $value : null;
     }
 
-    /** IT overview: everything comes from ItDashboardService and is cached for a short time (the warm-up job refreshes it). */
-    public function admin(Request $request, ItDashboardService $it, PreparedDashboards $dashboards): View
-    {
-        // Expired or invalidated: the last good overview is shown and rebuilt after the response (the cold build is
-        // ~80 Supabase round trips, longer than a request may run).
-        $payload = $dashboards->it();
-
-        // IT Dashboard (2026-10): one screen — System Status, Users by Role, Errors and Failed Jobs, Security. No tabs.
-        return view('dashboards.it-expert', ['it' => $payload]);
-    }
-
-    /**
-     * The IT overview that is already prepared (by the scheduled warm-up, the IT dashboard or its Refresh button),
-     * for the System Health page, which carries Usage Patterns, Resources and the Data Pipeline since 2026-10.
-     * Read only: it never builds the overview, so that page calls no service and queues nothing. Null when no copy
-     * has been prepared yet.
-     *
-     * @return array<string, mixed>|null
-     */
-    public function preparedItOverview(): ?array
-    {
-        $fresh = Cache::get(PreparedDashboards::itKey(CacheScope::token('it-dashboard')));
-        if (is_array($fresh)) {
-            return $fresh;
-        }
-        $latest = Cache::get(PreparedDashboards::IT_LATEST_KEY);
-
-        return is_array($latest) && is_array($latest['value'] ?? null) ? $latest['value'] : null;
-    }
-
-    /**
-     * The page's timed refresh reads the prepared overview; the Refresh button (?refresh=1) rebuilds every section now,
-     * once even if several people press it together. Each section's HTML is returned.
-     */
-    public function adminLive(Request $request, PreparedDashboards $dashboards): JsonResponse
-    {
-        $payload = $request->boolean('refresh') ? $dashboards->refreshIt() : $dashboards->it();
-
-        $slots = [];
-        foreach (self::IT_LIVE_SLOTS as $slot) {
-            $slots[$slot] = view('dashboards.it.'.$slot, ['it' => $payload])->render();
-        }
-
-        return response()->json([
-            'slots' => $slots,
-            'refreshed_at' => $payload['checked_at']->format('g:i:s A'),
-            'weather_synced_at' => $payload['weather_synced_at']?->format('M j, g:i A'),
-            'level' => $payload['overall']['level'],
-            'status' => $payload['overall']['label'],
-        ]);
-    }
-
-    /** The Retry button on "Failed jobs by class": puts that class's failed jobs back on the queue. */
-    public function adminRetryFailed(Request $request): RedirectResponse
-    {
-        $class = (string) $request->input('class');
-        $ids = ItDashboardInsights::failedJobIds($class);
-        if ($ids !== []) {
-            SystemAuditLogger::record('Retry Failed Jobs', $request, ['job_class' => $class, 'jobs' => count($ids), 'retried_by' => $request->user()->name]);
-            Artisan::call('queue:retry', ['id' => $ids]);
-            Cache::forget(PreparedDashboards::itKey(CacheScope::token('it-dashboard')));
-        }
-
-        return redirect()->route('admin.dashboard')->with('status', count($ids).' failed '.(count($ids) === 1 ? 'job was' : 'jobs were').' put back on the queue.');
-    }
-
-    /** Recent System Activity with its filters (role, action type, date range); returns the table's HTML. */
-    public function adminRecent(Request $request, ItDashboardService $it): JsonResponse
-    {
-        $payload = ['recent' => $it->recentActivity($request->only(['role', 'action', 'from', 'to']))];
-
-        return response()->json(['html' => view('dashboards.it.recent-rows', ['it' => $payload])->render()]);
-    }
-
-    /** Daily counts per kind of event for the System Activity chart (range 7, 30 or 90 days; anything else is 30). */
-    public function adminActivity(Request $request, ItDashboardService $it): JsonResponse
-    {
-        return response()->json($it->activity((int) $request->query('range', 30)));
-    }
-
     private function recentOperationalData(): array
     {
         return StaleCache::remember('dashboard:recent-operational-data', 30, fn (): array => [
@@ -815,81 +737,6 @@ class DashboardController extends Controller
     /**
      * @return array{severity: string, title: string, message: string}[]
      */
-    private function itHighlights(
-        int $heatmapRefreshFailuresToday,
-        ?string $heatmapLastRefresh,
-        int $predictionAttemptsToday,
-        int $predictionFailuresToday,
-        int $inactiveUsersToday,
-        ?array $reportAnomaly,
-    ): array {
-        $highlights = [];
-
-        if ($heatmapRefreshFailuresToday > 0) {
-            $highlights[] = [
-                'severity' => 'critical',
-                'weight' => 3,
-                'title' => $heatmapRefreshFailuresToday.' heatmap refresh '.str('failure')->plural($heatmapRefreshFailuresToday).' today',
-                'message' => 'One or more barangays failed to recompute risk during the heatmap refresh. Check the newest file in storage/logs (laravel*.log).',
-            ];
-        }
-
-        if (! $heatmapLastRefresh) {
-            $highlights[] = [
-                'severity' => 'warning',
-                'weight' => 2,
-                'title' => 'Heatmap risk data has never been refreshed',
-                'message' => 'No scheduled job runs the heatmap refresh � it only fires when someone opens the Heat Map page.',
-            ];
-        } elseif (Carbon::parse($heatmapLastRefresh)->lt(now()->subDay())) {
-            $highlights[] = [
-                'severity' => 'warning',
-                'weight' => 2,
-                'title' => 'Heatmap risk data is stale',
-                'message' => 'Last refreshed '.Carbon::parse($heatmapLastRefresh)->diffForHumans().'.',
-            ];
-        }
-
-        if ($predictionAttemptsToday >= 3) {
-            $failureRate = round(($predictionFailuresToday / $predictionAttemptsToday) * 100);
-            if ($failureRate >= 30) {
-                $highlights[] = [
-                    'severity' => 'critical',
-                    'weight' => 3,
-                    'title' => $failureRate.'% of prediction calls failed today',
-                    'message' => "{$predictionFailuresToday} of {$predictionAttemptsToday} calls to the ML service failed today. Check the Farming AI API.",
-                ];
-            }
-        }
-
-        if ($inactiveUsersToday > 0) {
-            $highlights[] = [
-                'severity' => 'info',
-                'weight' => 1,
-                'title' => $inactiveUsersToday.' '.str('account')->plural($inactiveUsersToday).' marked inactive today',
-                'message' => 'Review recent status changes in User Management.',
-            ];
-        }
-
-        if ($reportAnomaly) {
-            $highlights[] = [
-                'severity' => 'warning',
-                'weight' => 2,
-                'title' => 'Unusual report-generation volume today',
-                'message' => $reportAnomaly['today'].' reports generated today vs a '.$reportAnomaly['average'].'/day average over the past week.',
-            ];
-        }
-
-        usort($highlights, fn (array $a, array $b) => $b['weight'] <=> $a['weight']);
-
-        return array_slice($highlights, 0, 3);
-    }
-
-    /**
-     * Flags today as anomalous when report generation is well above the
-     * trailing week's daily average � a plain volume check, not a
-     * statistical model.
-     */
     private function reportExportAnomaly(): ?array
     {
         $countsByDay = Report::query()
@@ -944,42 +791,6 @@ class DashboardController extends Controller
             'publishedAdvisoryCount' => Aggregates::count(PlantingAdvisory::query()->where('status', PlantingAdvisory::STATUS_PUBLISHED)),
             'communityPostCount' => Aggregates::count(FeedPost::query()->whereNull('archived_at')),
         ];
-    }
-
-    private function adminAggregates(): array
-    {
-        return StaleCache::remember('dashboard:admin-aggregates', 45, function (): array {
-            $users = User::query()
-                ->selectRaw('COUNT(*) as total')
-                ->selectRaw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as active_total', [User::STATUS_ACTIVE])
-                ->selectRaw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as inactive_total', [User::STATUS_INACTIVE])
-                ->selectRaw('SUM(CASE WHEN role = ? THEN 1 ELSE 0 END) as farmer_total', [User::ROLE_FARMER])
-                ->selectRaw('SUM(CASE WHEN role = ? THEN 1 ELSE 0 END) as mao_total', [User::ROLE_MAO])
-                ->selectRaw('SUM(CASE WHEN role = ? THEN 1 ELSE 0 END) as expert_total', [User::ROLE_IT_EXPERT])
-                ->first();
-
-            return [
-                'userCount' => (int) $users->total,
-                'activeUsers' => (int) $users->active_total,
-                'inactiveUsers' => (int) $users->inactive_total,
-                'logCount' => SystemLog::count(),
-                'roleCounts' => [
-                    User::ROLE_FARMER => (int) $users->farmer_total,
-                    User::ROLE_MAO => (int) $users->mao_total,
-                    User::ROLE_IT_EXPERT => (int) $users->expert_total,
-                ],
-                'moduleCounts' => [
-                    'Farmer Profiles' => FarmerProfile::count(),
-                    'Climate Records' => ClimateRecord::count(),
-                    'Rice Productions' => RiceProduction::count(),
-                    'Predictions' => MonthlyWeatherPrediction::count(),
-                    'Advisories' => PlantingAdvisory::count(),
-                    'Community Feed' => FeedPost::query()->whereNull('archived_at')->count(),
-                    'Notifications' => UserNotification::count(),
-                    'Reports' => Report::query()->realGenerated()->count(),
-                ],
-            ];
-        });
     }
 
     private function farmerOrganizationDashboardData(): array

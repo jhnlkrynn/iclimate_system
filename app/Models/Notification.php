@@ -15,6 +15,7 @@ class Notification extends Model
 
     protected $fillable = [
         'user_id',
+        'deduplication_key',
         'title',
         'message',
         'type',
@@ -33,6 +34,15 @@ class Notification extends Model
     /** Manuscript – Naicel (2026-10-08): read_at follows is_read on every save (bulk updates set it themselves). */
     protected static function booted(): void
     {
+        static::created(function (self $notification): void {
+            \App\Events\NotificationChanged::dispatch((int) $notification->user_id, 'created', $notification);
+        });
+        static::updated(function (self $notification): void {
+            \App\Events\NotificationChanged::dispatch((int) $notification->user_id, 'updated', $notification);
+        });
+        static::deleted(function (self $notification): void {
+            \App\Events\NotificationChanged::dispatch((int) $notification->user_id, 'deleted', $notification);
+        });
         static::saving(function (self $notification): void {
             if (! \App\Support\SchemaCache::hasColumn('notifications', 'read_at')) {
                 return;

@@ -96,7 +96,7 @@
           <li class="perk-item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Rice production information</li>
           <li class="perk-item"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Community updates and notifications</li>
         </ul>
-        <p class="reg-notes-staff">MAO staff and IT accounts are set up by the system administrators. Contact the Municipal Agriculture Office if you need staff access.</p>
+        <p class="reg-notes-staff">MAO Staff accounts are set up by the system administrators. Contact the Municipal Agriculture Office if you need staff access.</p>
       </section>
     </aside>
 

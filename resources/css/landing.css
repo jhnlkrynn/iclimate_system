@@ -47,10 +47,18 @@
         @apply mx-auto w-full max-w-[calc(1200px+4rem)] px-4 sm:px-8;
     }
 
+    @media (min-width: 1024px) {
+        .lp-wrap {
+            max-width: 1320px !important;
+            padding-left: 60px;
+            padding-right: 60px;
+        }
+    }
+
     /* Every section below the hero: 96px top and bottom on desktop, 56px on phones. Backgrounds alternate
        white, surface and (twice: the numbers band and the closing call to action) deep brand green. */
     .lp-section {
-        @apply relative py-14 lg:py-24;
+        @apply relative py-16 lg:py-24;
     }
 
     .lp-section-surface {
@@ -137,17 +145,225 @@
     }
 
     .lp-section-heading {
-        @apply mx-auto w-full max-w-[720px] text-center;
+        @apply relative mx-auto w-full max-w-[720px] text-center;
+    }
+
+    .lp-section-heading::after {
+        display: none;
     }
 
     .about-rule {
         width: 64px;
         height: 1px;
         background: var(--sage-300);
+        display: none;
     }
 
     .about-photo {
-        aspect-ratio: 16 / 7;
+        aspect-ratio: 16 / 9;
+        overflow: hidden;
+        border-radius: 0.75rem;
+        box-shadow: 0 16px 36px rgb(var(--sage-950-rgb) / 0.1);
+    }
+
+    .about-section,
+    .contact-section {
+        background-color: #fff;
+    }
+
+    .about-photo picture,
+    .features-photo picture,
+    .roles-photo picture,
+    .contact-photo picture {
+        display: block;
+        height: 100%;
+    }
+
+    .features-layout {
+        display: grid;
+        gap: 2.5rem;
+    }
+
+    .features-photo {
+        aspect-ratio: 16 / 9;
+        overflow: hidden;
+        border-radius: 0.75rem;
+        box-shadow: 0 12px 28px rgb(var(--sage-950-rgb) / 0.08);
+    }
+
+    .features-main {
+        display: grid;
+        gap: 2.5rem;
+        min-width: 0;
+    }
+
+    .features-preview {
+        position: relative;
+        min-height: 22rem;
+        overflow: hidden;
+        border-radius: 0.75rem;
+        background: var(--sage-950);
+        box-shadow: 0 18px 36px rgb(var(--sage-950-rgb) / 0.14);
+    }
+
+    .feature-preview-panel {
+        height: 100%;
+        min-height: 22rem;
+        transition: opacity .2s ease, transform .2s ease;
+    }
+
+    .feature-preview-panel[hidden] {
+        display: none;
+    }
+
+    .feature-preview-panel > img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        min-height: 22rem;
+        object-fit: cover;
+        object-position: top left;
+    }
+
+    .feature-preview-caption {
+        position: absolute;
+        right: 1rem;
+        bottom: 1rem;
+        margin: 0;
+        padding: .45rem .65rem;
+        border-radius: .35rem;
+        background: rgb(15 31 22 / .88);
+        color: white;
+        font-size: .75rem;
+    }
+
+    .feature-preview-placeholder {
+        display: flex;
+        min-height: 22rem;
+        height: 100%;
+        padding: clamp(1.5rem, 5vw, 3rem);
+        flex-direction: column;
+        justify-content: center;
+        gap: .65rem;
+        color: white;
+        background: radial-gradient(circle at 90% 10%, rgb(119 184 132 / .25), transparent 38%), var(--sage-950);
+    }
+
+    .feature-preview-placeholder strong {
+        max-width: 18rem;
+        font-size: clamp(1.5rem, 3vw, 2.25rem);
+        line-height: 1.1;
+    }
+
+    .feature-preview-placeholder > span:not(.feature-preview-kicker):not(.feature-preview-line) {
+        max-width: 24rem;
+        color: rgb(255 255 255 / .7);
+        font-size: .95rem;
+    }
+
+    .feature-preview-kicker {
+        color: var(--sage-300);
+        font-size: .72rem;
+        font-weight: 800;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+    }
+
+    .feature-preview-line {
+        display: block;
+        width: 4rem;
+        height: .2rem;
+        margin-top: 1rem;
+        border-radius: 999px;
+        background: var(--sage-400);
+    }
+
+    .features-list {
+        display: grid;
+        min-width: 0;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .25rem 1.5rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .feature-item {
+        min-width: 0;
+        padding: .85rem 0 .9rem;
+        border-top: 1px solid var(--sage-200);
+        transition: border-color .2s ease, transform .2s ease;
+    }
+
+    .feature-item.is-active {
+        border-top-color: var(--sage-600);
+        transform: translateY(-2px);
+    }
+
+    .feature-select {
+        display: grid;
+        width: 100%;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: .75rem;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .feature-index {
+        color: var(--sage-600);
+        font-size: .75rem;
+        font-weight: 800;
+        letter-spacing: .08em;
+    }
+
+    .feature-select .lp-card-title {
+        display: block;
+        font-size: 1.05rem;
+    }
+
+    .feature-description {
+        display: block;
+        margin-top: .35rem;
+        color: var(--text-muted, #66756f);
+        font-size: .88rem;
+        line-height: 1.45;
+    }
+
+    .feature-item.is-active .feature-select .lp-card-title,
+    .feature-item:hover .feature-select .lp-card-title {
+        color: var(--sage-700);
+    }
+
+    .feature-open {
+        display: inline-flex;
+        margin: .55rem 0 0 1.55rem;
+        color: var(--sage-700);
+        font-size: .78rem;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .feature-open:hover {
+        text-decoration: underline;
+    }
+
+    .roles-photo {
+        height: 120px;
+        overflow: hidden;
+        border-radius: 0.75rem;
+        box-shadow: 0 12px 28px rgb(var(--sage-950-rgb) / 0.08);
+    }
+
+    .contact-photo {
+        max-width: 1100px;
+        aspect-ratio: 21 / 9;
+        overflow: hidden;
+        border-radius: 0.75rem;
+        box-shadow: 0 16px 36px rgb(var(--sage-950-rgb) / 0.1);
     }
 
     .questions-accordion {
@@ -200,6 +416,14 @@
 
     .contact-form {
         container-type: inline-size;
+        box-shadow: 0 12px 28px rgb(var(--sage-950-rgb) / 0.04);
+        border: 0;
+    }
+
+    .lp-hero > .lp-wrap > div:first-child,
+    .lp-hero [data-login-card],
+    .lp-hero [data-auth-toggle] {
+        border: 0;
     }
 
     .contact-form-row {
@@ -233,7 +457,7 @@
     }
 
     .how-fragment {
-        @apply mt-5 flex h-[120px] min-h-[120px] flex-col justify-center rounded-lg border border-line bg-white px-4 py-3 text-sm leading-snug text-muted;
+        @apply mt-5 flex h-[120px] min-h-[120px] flex-col justify-center rounded-lg bg-sage-50 px-4 py-3 text-sm leading-snug text-muted;
     }
 
     .how-fragment strong {
@@ -281,12 +505,16 @@
        Over the hero (data-nav-state="hero"): a flat dark scrim on the photo with white text, at least 4.5:1 even on the
        pale sky. Only colours change between the two, in a short transition. */
     .lp-header {
-        @apply h-[var(--nav-h)] border-b border-line bg-white;
-        transition: background-color .2s ease, border-color .2s ease;
+        @apply h-[var(--nav-h)] border-transparent bg-white;
+        transition: background-color .2s ease, border-color .2s ease, box-shadow .2s ease;
     }
 
     .lp-header[data-nav-state='hero'] {
         @apply border-transparent bg-ink/65;
+    }
+
+    .lp-header[data-nav-state='solid'] {
+        box-shadow: none;
     }
 
     .lp-header-divider {
@@ -316,7 +544,7 @@
 
     /* The active section: a 2px underline (brand on white, white over the hero). */
     .lp-nav-link::after {
-        @apply absolute inset-x-3 bottom-1.5 h-0.5 bg-transparent content-[''];
+        display: none;
     }
 
     .lp-nav-link.is-active {
@@ -324,11 +552,11 @@
     }
 
     .lp-nav-link.is-active::after {
-        @apply bg-brand;
+        @apply absolute bottom-0 left-3 right-3 block h-0.5 bg-brand content-[''];
     }
 
     .lp-weather-chip {
-        @apply inline-flex h-11 min-w-[88px] items-center justify-center gap-1.5 rounded-md border border-line bg-white px-3 text-sm font-semibold text-ink transition-colors hover:bg-tint;
+        @apply inline-flex h-11 min-w-[88px] items-center justify-center gap-1.5 rounded-md bg-white px-3 text-sm font-semibold text-ink transition-colors hover:bg-tint;
     }
 
     .lp-weather-icon {
@@ -356,15 +584,19 @@
     }
 
     .lp-header[data-nav-state='hero'] .lp-nav-link:hover::after {
-        @apply bg-white/50;
+        display: none;
     }
 
     .lp-header[data-nav-state='hero'] .lp-nav-link.is-active::after {
-        @apply bg-white;
+        display: none;
     }
 
     .lp-header[data-nav-state='hero'] :is(.lp-weather-chip, .lp-header-btn) {
-        @apply border-white/80 bg-transparent text-white hover:bg-white hover:text-ink;
+        @apply border-transparent bg-transparent text-white hover:bg-white hover:text-ink;
+    }
+
+    .lp-header[data-nav-state='hero'] [data-nav-login] {
+        @apply border-white/80;
     }
 
     .lp-header[data-nav-state='hero'] .lp-weather-chip:hover .lp-weather-icon {
@@ -419,18 +651,67 @@ html[data-theme="dark"] #roles .text-brand { color: var(--sage-200); }
 }
 
 @media (max-width: 1023.98px) {
+    .lp-section { @apply py-14; }
     .how-steps { @apply mt-8 grid-cols-1 gap-8; }
     .how-fragment { @apply mt-4 max-w-[22rem]; }
 }
 
-@media (max-width: 767.98px) {
-    .contact-layout {
-        grid-template-columns: minmax(0, 1fr);
+@media (min-width: 1024px) {
+    .features-layout {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+        align-items: start;
+    }
+
+    .features-main { display: contents; }
+    .features-photo { grid-column: 1; grid-row: 1 / span 2; }
+    .features-list { grid-column: 2; grid-row: 1; }
+    .features-preview { grid-column: 2; grid-row: 2; }
+
+    .features-photo { aspect-ratio: 1; }
+
+    .features-preview,
+    .feature-preview-panel,
+    .feature-preview-panel > img,
+    .feature-preview-placeholder {
+        min-height: 30rem;
     }
 }
 
+.contact-map:focus-within {
+    outline: 3px solid var(--sage-500);
+    outline-offset: 2px;
+}
+
+.contact-map.is-focused {
+    outline: 3px solid var(--sage-500);
+    outline-offset: 2px;
+}
+
+@media (max-width: 767.98px) {
+    .lp-section {
+        @apply py-14;
+    }
+
+    .lp-section-heading::after {
+        @apply mt-6;
+    }
+
+    .contact-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .features-layout {
+        gap: 1.5rem;
+    }
+
+    .features-list {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+}
+
 @media (prefers-reduced-motion: reduce) {
-    .lp-header { transition: none; }
+    .lp-header, .features-layout > ul > li, .feature-item, .feature-preview-panel { transition: none; }
 }
 
 /* Hero card: the sign-up form (auth/partials/register-form*) keeps its /register look; only its button and checkbox
@@ -454,6 +735,9 @@ html[data-theme="dark"] #roles .text-brand { color: var(--sage-200); }
    keeps 30rem. Passwords get a row each; organization and barangay sit side by side only while each is at least
    16rem wide (a container query on the form); below 640px every field takes the full width. */
 [data-auth-card] { transition: width .2s ease; }
+@media (min-width: 1280px) {
+    [data-auth-card][data-auth-mode='login'] { width: 480px !important; }
+}
 @media (min-width: 1280px) {
     [data-auth-card][data-auth-mode='register'] { width: 40rem; }
 }

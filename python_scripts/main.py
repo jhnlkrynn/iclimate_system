@@ -24,6 +24,7 @@ service's /predict route. The legacy Flask app has been removed.
 """
 
 import hmac
+import logging
 import os
 from contextlib import asynccontextmanager
 from datetime import date
@@ -52,6 +53,8 @@ async def lifespan(app: FastAPI):
     yield
 
 
+logger = logging.getLogger(__name__)
+
 app = FastAPI(title="iClimate ML Service", version="0.1.0", lifespan=lifespan)
 
 
@@ -61,7 +64,8 @@ def health():
         models = rice_yield_service.load_models()
         loaded = sorted(models.keys())
     except Exception as exc:
-        return {"status": "degraded", "models_loaded": [], "error": str(exc)}
+        logger.exception("Model artifacts unavailable during health check")
+        return {"status": "degraded", "models_loaded": [], "error": "Model artifacts unavailable."}
 
     return {"status": "ok", "models_loaded": loaded}
 
@@ -72,7 +76,8 @@ def model_info():
     try:
         rice_yield_service.load_models()
     except Exception as exc:
-        raise HTTPException(status_code=503, detail=f"Models unavailable: {exc}") from exc
+        logger.exception("Model artifacts unavailable")
+        raise HTTPException(status_code=503, detail="Model artifacts unavailable.") from exc
 
     return rice_yield_service.model_info()
 
@@ -111,9 +116,15 @@ def predict(payload: PredictRequest):
         raise HTTPException(status_code=422, detail="Unsupported or missing prediction_type. Use 'weather' or 'rice_yield'.")
 
     try:
+        rice_yield_service.validate_supplied_features(payload.features)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    try:
         rice_yield_service.load_models()
     except Exception as exc:
-        raise HTTPException(status_code=503, detail=f"Models unavailable: {exc}") from exc
+        logger.exception("Model artifacts unavailable")
+        raise HTTPException(status_code=503, detail="Model artifacts unavailable.") from exc
 
     try:
         if payload.prediction_type == "weather":
@@ -158,14 +169,28 @@ def forecast_monthly_weather(payload: MonthlyWeatherRequest):
 
 @app.get("/metrics")
 def metrics(dataset_path: Optional[str] = None):
-    return evaluation_service.evaluate(dataset_path)
+    try:
+        return evaluation_service.evaluate(dataset_path)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @app.post("/analytics/{task_type}")
 def analytics(task_type: str, payload: dict):
+    for key in ("climate_records", "rice_productions", "areas", "source_rows", "weather_records"):
+        if key in payload and (not isinstance(payload[key], list) or any(not isinstance(row, dict) for row in payload[key])):
+            raise HTTPException(status_code=422, detail=f"{key} must be a list of records.")
+    if task_type in {"weather_prediction", "rice_yield_prediction"}:
+        try:
+            date.fromisoformat(str(payload["target_date"]))
+        except (KeyError, TypeError, ValueError) as exc:
+            raise HTTPException(status_code=422, detail="A valid target_date is required.") from exc
+    if task_type == "report_analytics" and payload.get("report_type") not in analytics_tasks.REPORT_COLUMNS:
+        raise HTTPException(status_code=422, detail="A supported report_type is required.")
     try:
         return analytics_tasks.run(task_type, payload)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Analytics processing failed: {exc}") from exc
+        logger.exception("Analytics processing failed")
+        raise HTTPException(status_code=500, detail="Analytics processing failed.") from exc

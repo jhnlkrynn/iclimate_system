@@ -16,7 +16,7 @@ use Illuminate\View\View;
  * Farmer Survey & Model Feedback – Naicel (2026-10-09): the farmer's short survey. Three questions (useful, accurate,
  * helpful; 1 to 5) about a yield prediction, the weather forecast, an advisory or the system, with an optional
  * comment. Opened from Home, from an advisory ("?advisory=ID") and from Yield Prediction ("?prediction=ID"), so the
- * answer is saved with the advisory or prediction it is about. The IT Expert reads the answers on Settings → Model Feedback.
+ * answer is saved with the advisory or prediction it is about. The server operator reads the answers on Settings → Model Feedback.
  */
 class FarmerSurveyController extends Controller
 {
@@ -77,7 +77,7 @@ class FarmerSurveyController extends Controller
             'comment' => filled($data['comment'] ?? null) ? trim((string) $data['comment']) : null,
             'barangay' => $user->registeredBarangay(),
             'model_version' => ModelFeedbackService::modelVersion(),
-            // A changed answer is read again by the IT Expert.
+            // A changed answer is read again by the server operator.
             'reviewed_at' => null, 'reviewed_by' => null,
         ])->save();
 

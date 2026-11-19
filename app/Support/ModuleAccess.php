@@ -16,31 +16,25 @@ class ModuleAccess
 
     private const M = User::ROLE_MAO;
 
-    private const I = User::ROLE_IT_EXPERT;
-
     /** key => [label, route-name patterns, supported roles, roles that can never lose it] */
     public const MODULES = [
         'weather_analysis' => ['Weather Analysis', ['analysis.weather'], [self::F, self::M], []],
-        'predictions' => ['Predictions / Forecast', ['weather-predictions.*'], [self::F, self::M, self::I], []],
-        'climate_data' => ['Climate Data Management', ['climate-records.*', 'records.*'], [self::M, self::I], []],
-        'production_data' => ['Production Data Management', ['rice-productions.*'], [self::M, self::I], []],
+        'predictions' => ['Predictions / Forecast', ['weather-predictions.*'], [self::F, self::M], []],
+        'climate_data' => ['Climate Data Management', ['climate-records.*', 'records.*'], [self::M], []],
+        'production_data' => ['Production Data Management', ['rice-productions.*', 'historical-rice-productions.*'], [self::M], []],
         'barangays' => ['Barangay / Location Management', ['mao.barangays.*'], [self::M], []],
-        'farmer_management' => ['Farmer Management', ['farmer-profiles.*', 'mao.farmer-approvals.*', 'mao.farm-associations.*'], [self::M, self::I], []],
+        'account_requests' => ['Account Requests', ['mao.farmer-approvals.*'], [self::M], [self::M]],
+        'farmer_management' => ['Farmer Management', ['farmer-profiles.*', 'mao.farm-associations.*'], [self::M], []],
+        'association_reporting' => ['Farmers Association Reporting', ['association-chairman.*', 'mao.association-reports.*'], [self::M, self::F], []],
         'impact_analysis' => ['Weather Impact Analysis', ['analysis.impact*'], [self::M], []],
         'yield_prediction' => ['Yield Prediction', ['analysis.yield*', 'analysis.forecast*'], [self::F, self::M], []],
-        'advisories' => ['Planting Advisory', ['planting-advisories.*', 'management.advisories.*', 'calendar.*'], [self::F, self::M, self::I], []],
+        'advisories' => ['Planting Advisory', ['planting-advisories.*', 'management.advisories.*', 'calendar.*'], [self::F, self::M], []],
         'alerts' => ['Advisory Notifications (send)', ['mao.alerts.*'], [self::M], []],
-        'heat_map' => ['Heat Map', ['heat-map.*'], [self::F, self::M, self::I], []],
-        'reports' => ['Reports & Analytics', ['reports.*', 'farmer.reports.*'], [self::F, self::M, self::I], []],
-        'community' => ['Announcements / Community Feed', ['community-feed.*'], [self::M, self::I], []],
-        'messages' => ['Messages', ['messages.*'], [self::F, self::M, self::I], []],
-        'user_management' => ['User Management', ['users.*'], [self::I], [self::I]],
-        'permissions' => ['Roles & Permissions', ['admin.permissions.*'], [self::I], [self::I]],
-        'system_logs' => ['System Logs / Audit Trail', ['system-logs.*', 'admin.system-logs.*'], [self::I], [self::I]],
-        'backups' => ['Database Backup / Restore', ['admin.backups.*'], [self::I], [self::I]],
-        'ml_models' => ['ML Model Management', ['model-registry.*', 'model-evaluation.*', 'admin.models.*'], [self::I], [self::I]],
-        'settings' => ['System Settings & Security', ['admin.settings.*', 'system-health.*'], [self::I], [self::I]],
-        'maintenance_records' => ['Maintenance Records', ['admin.maintenance.*'], [self::I], [self::I]],
+        'heat_map' => ['Heat Map', ['heat-map.*'], [self::F, self::M], []],
+        'reports' => ['Reports & Analytics', ['reports.*', 'farmer.reports.*'], [self::F, self::M], []],
+        'community' => ['Announcements / Community Feed', ['community-feed.*'], [self::M], []],
+        'messages' => ['Messages', ['messages.*'], [self::F, self::M], []],
+        'user_management' => ['User Management', ['users.*'], [self::M], [self::M]],
     ];
 
     /** The roles allowed a module now: the stored choice, or every supported role. Locked roles are always in. */
@@ -48,7 +42,7 @@ class ModuleAccess
     {
         [, , $supported, $locked] = self::MODULES[$module];
         $stored = SystemSettings::get('permissions', [])[$module] ?? null;
-        $roles = is_array($stored) ? array_values(array_intersect($supported, $stored)) : $supported;
+        $roles = is_array($stored) ? array_values(array_intersect($supported, array_map(User::canonicalRole(...), $stored))) : $supported;
 
         return array_values(array_unique([...$roles, ...$locked]));
     }
@@ -97,5 +91,17 @@ class ModuleAccess
         }
 
         return SystemSettings::set(['permissions' => $permissions], $userId);
+    }
+
+    /** Roles left with no supported module by a submitted matrix. Used as a deliberate confirmation gate. */
+    public static function rolesWithoutModules(array $ticked): array
+    {
+        $roles = User::ROLES;
+        $remaining = array_fill_keys($roles, 0);
+        foreach (self::MODULES as $key => [, , $supported, $locked]) {
+            $selected = array_unique(array_merge((array) ($ticked[$key] ?? []), $locked));
+            foreach ($supported as $role) if (in_array($role, $selected, true)) $remaining[$role]++;
+        }
+        return array_keys(array_filter($remaining, fn (int $count): bool => $count === 0));
     }
 }

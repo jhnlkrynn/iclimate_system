@@ -4,7 +4,6 @@ use App\Http\Controllers\Api\BarangayRiskForecastController;
 use App\Http\Controllers\Api\BarangayRiskMapController;
 use App\Http\Controllers\Api\LianBoundaryController;
 use App\Http\Controllers\Api\LianWeatherController;
-use App\Http\Controllers\Api\HeatMapController;
 use App\Http\Controllers\Api\MobileAuthController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Illuminate\Support\Facades\Route;
@@ -25,7 +24,7 @@ Route::get('lian/risk-map', [BarangayRiskMapController::class, 'index'])
 Route::get('lian/risk-map/{barangay}', [BarangayRiskMapController::class, 'show'])
     ->middleware('throttle:30,1,get-lian-risk-map-barangay');
 
-Route::get('heat-map', HeatMapController::class)->middleware(['auth', 'verified', 'throttle:60,1,get-heat-map']);
+// heat-map moved to routes/web.php (it is called by the browser with the session cookie).
 
 Route::get('lian/risk-forecast', BarangayRiskForecastController::class)
     ->middleware('throttle:30,1,get-lian-risk-forecast');
@@ -35,4 +34,8 @@ Route::prefix('mobile')->group(function (): void {
         ->middleware('throttle:5,1,post-login');
     Route::post('register', [MobileAuthController::class, 'register'])
         ->middleware('throttle:3,10,post-register-2');
+    Route::post('password', [MobileAuthController::class, 'changePassword'])
+        ->middleware('throttle:5,1,post-mobile-password');
+    Route::post('forgot-password', [MobileAuthController::class, 'forgotPassword'])
+        ->middleware('throttle:3,1,post-mobile-forgot-password');
 });

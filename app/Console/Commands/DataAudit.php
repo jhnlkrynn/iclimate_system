@@ -2,12 +2,14 @@
 
 namespace App\Console\Commands;
 
+use App\Models\AnalyticsRun;
 use App\Models\User;
 use App\Services\Analytics\DashboardOverviewService;
+use App\Support\DashboardData;
 use App\Support\ProjectYieldDataset;
+use App\Support\SampleData;
 use App\Support\SampleDataDetector;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
@@ -26,9 +28,6 @@ class DataAudit extends Command
 
     public function handle(SampleDataDetector $samples, DashboardOverviewService $overview, ProjectYieldDataset $yields): int
     {
-        // Audit the live database, not a cached view of it.
-        Cache::flush();
-
         $this->section('1. Rows that are NOT verified data');
         foreach (['rice_productions', 'climate_records', 'notifications', 'planting_advisories'] as $table) {
             $s = $samples->summary($table);
@@ -57,19 +56,19 @@ class DataAudit extends Command
 
         $this->section('4. Dashboard figures recounted independently');
         $mao = $overview->mao(null);
-        $it = $overview->it();
+        $internal = $overview->internalStatus();
         // A KPI that has no data is swapped for another one with data, so a missing key means "no figure shown".
         $kpi = fn (array $o, string $key): array => collect($o['kpis'])->firstWhere('key', $key) ?? ['value' => 'Insufficient verified data', 'note' => ''];
 
-        $this->compare('IT · Total users', (int) DB::table('users')->where(fn ($q) => $q->whereNull('status')->orWhere('status', '!=', \App\Models\User::STATUS_DELETED))->count(), (int) str_replace(',', '', $kpi($it, 'users')['value']));
+        $this->compare('Internal · Total users', (int) DB::table('users')->where(fn ($q) => $q->whereNull('status')->orWhere('status', '!=', \App\Models\User::STATUS_DELETED))->count(), (int) str_replace(',', '', $kpi($internal, 'users')['value']));
 
         $riceVerified = $samples->summary('rice_productions')['verified'];
-        $itRice = $kpi($it, 'rice-records')['value'];
-        $this->compare('IT · Rice production records', $riceVerified > 0 ? (string) $riceVerified : 'Insufficient verified data', $itRice);
+        $internalRice = $kpi($internal, 'rice-records')['value'];
+        $this->compare('Internal · Rice production records', $riceVerified > 0 ? (string) $riceVerified : 'Insufficient verified data', $internalRice);
 
         $notifVerified = $samples->summary('notifications')['verified'];
         // With nothing sent the card is swapped out (see $kpi above): no figure shown is the correct display for 0.
-        $this->compare('IT · Notifications sent (in note)', (string) $notifVerified, preg_match('/of ([\d,]+) sent/', $kpi($it, 'notifications')['note'], $m) ? str_replace(',', '', $m[1]) : ($kpi($it, 'notifications')['note'] === '' ? '0' : '?'));
+        $this->compare('Internal · Notifications sent (in note)', (string) $notifVerified, preg_match('/of ([\d,]+) sent/', $kpi($internal, 'notifications')['note'], $m) ? str_replace(',', '', $m[1]) : ($kpi($internal, 'notifications')['note'] === '' ? '0' : '?'));
 
         $year = $mao['year'];
         $expectedYield = $year && $yields->yearlyMean($year) !== null ? number_format($yields->yearlyMean($year), 2) : 'Insufficient verified data';
@@ -79,11 +78,17 @@ class DataAudit extends Command
         $actualProduction = $kpi($mao, 'production')['value'];
         $this->compare('MAO · Production (no verified harvest rows → must not show a number)', $expectedProduction, $riceVerified > 0 ? 'has value' : $actualProduction);
 
-        // The KPI counts calculated ratings; install placeholders (HeatmapArea::isSeedPlaceholder()) are not ratings.
-        $this->compare('MAO · Monitored barangays', (int) \App\Models\HeatmapArea::query()->computed()->distinct()->count('barangay'), (int) $kpi($mao, 'monitored')['value']);
+        // Match the dashboard's canonical list and latest-row rules; raw heatmap rows also contain unsupported labels.
+        $this->compare('MAO · Monitored barangays', app(DashboardData::class)->currentRiskRatings()->count(), (int) str_replace(',', '', (string) $kpi($mao, 'monitored')['value']));
 
-        $validRuns = DB::table('analytics_runs')->where('type', 'rice_yield_prediction')->where('status', 'completed')->count() - count(array_filter($runs, fn ($id) => DB::table('analytics_runs')->where('id', $id)->where('type', 'rice_yield_prediction')->exists()));
-        $this->compare('MAO · Valid yield prediction runs', $validRuns, (int) preg_replace('/\D.*/', '', (string) $kpi($mao, 'predictions')['value']) - (int) DB::table('farmer_planting_schedules')->whereNotNull('predicted_yield')->count());
+        // The dashboard KPI intentionally combines verified completed runs with prepared schedule estimates.
+        $completedRuns = SampleData::without(
+            AnalyticsRun::query(),
+            'analytics_runs',
+        )->where('type', 'rice_yield_prediction')->where('status', AnalyticsRun::STATUS_COMPLETED)->count();
+        $schedulePredictions = (int) DB::table('farmer_planting_schedules')->whereNotNull('predicted_yield')->count();
+        $dashboardPredictions = (int) str_replace(',', '', (string) $kpi($mao, 'predictions')['value']);
+        $this->compare('MAO · Valid yield prediction runs', $completedRuns + $schedulePredictions, $dashboardPredictions);
 
         $this->section('5. Result');
         if ($this->failures === 0) {

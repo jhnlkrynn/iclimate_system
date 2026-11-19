@@ -2,7 +2,7 @@
     <x-slot:title>Change your password</x-slot:title>
     {{-- Panel revision 4.4 A (FirstPasswordController): an account on the default password chooses its own first. --}}
     <div class="mfd itd itp itp-form" style="max-width: 640px;">
-        <x-it.page-header kicker="Account security" title="Change your password"
+        <x-shared.page-header kicker="Account security" title="Change your password"
             lede="You signed in with the default password. Choose your own password so that only you can use this account." />
 
         <section class="mfd-card" style="padding: 20px;" data-first-password>

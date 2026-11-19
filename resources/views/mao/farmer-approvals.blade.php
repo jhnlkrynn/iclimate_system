@@ -1,15 +1,15 @@
 <x-app-layout>
-    <x-slot:title>Farmer Approvals</x-slot:title>
+    <x-slot:title>Account Requests</x-slot:title>
     {{-- Manuscript – Naicel (2026-10-08), Phase 1: FarmerApprovalController. Farmer sign-ups wait here as Pending until the
          MAO approves them (they can then log in) or rejects them with a reason. --}}
     <div class="mfd itd itp">
-        <x-it.page-header kicker="Municipal Agriculture Office" title="Farmer Approvals" lede="New farmer sign-ups wait here. Approve a farmer so they can log in, or reject the sign-up with a reason." />
+        <x-shared.page-header kicker="Municipal Agriculture Office" title="Account Requests" lede="New farmer sign-ups wait here. Approve a farmer so they can log in, or reject the sign-up with a reason." />
 
         @include('partials.manuscript-tabs', ['group' => 'farmers', 'label' => 'Farmers'])
 
-        <nav class="ic-tabs mb-3" aria-label="Show sign-ups">
+        <nav class="ic-tabs mb-3" aria-label="Show sign-ups" data-live-region="approval-tabs" data-live-areas="users,farmers">
             @foreach (['pending' => 'Waiting', 'approved' => 'Approved', 'rejected' => 'Rejected'] as $key => $label)
-                <a href="{{ route('mao.farmer-approvals.index', array_filter(['show' => $key, 'barangay' => $barangay])) }}" @class(['ic-tab', 'is-active' => $show === $key]) @if ($show === $key) aria-current="page" @endif>
+                <a href="{{ route('mao.farmer-approvals.index', array_filter(['show' => $key, 'barangay' => $barangay, 'search' => $search])) }}" @class(['ic-tab', 'is-active' => $show === $key]) @if ($show === $key) aria-current="page" @endif>
                     {{ $label }}@if ($key === 'pending')<span class="ic-tab-count" data-pending-count>{{ number_format($pendingCount) }}</span>@endif
                 </a>
             @endforeach
@@ -17,6 +17,8 @@
 
         <form class="itd-filters mb-3" method="GET" action="{{ route('mao.farmer-approvals.index') }}">
             <input type="hidden" name="show" value="{{ $show }}">
+            <label>Search<input type="search" name="search" value="{{ $search }}" placeholder="Farmer name or email" maxlength="120"></label>
+            <button class="btn btn-outline-primary btn-sm" type="submit">Search</button>
             <label>Barangay
                 <select name="barangay" onchange="this.form.submit()">
                     <option value="">All</option>
@@ -26,7 +28,8 @@
             <noscript><button class="btn btn-primary btn-sm" type="submit">Apply</button></noscript>
         </form>
 
-        <section class="itp-section" aria-labelledby="faTitle">
+        {{-- data-live-region: a new sign-up appears here without reloading (resources/js/live-page.js). --}}
+        <section class="itp-section" aria-labelledby="faTitle" data-live-region="approvals" data-live-areas="users,farmers">
             <div class="itp-section-head">
                 <h2 id="faTitle">{{ ['pending' => 'Waiting for approval', 'approved' => 'Approved sign-ups', 'rejected' => 'Rejected sign-ups'][$show] }}</h2>
                 <p>{{ $show === 'pending' ? 'Oldest first. Check the name and barangay against the RSBSA list before approving.' : 'Newest first.' }}</p>
@@ -38,7 +41,7 @@
                 <div class="table-responsive mfd-card p-0">
                     <table class="table table-sm align-middle mb-0" data-farmer-approvals>
                         <thead>
-                            <tr><th>Name</th><th>Contact</th><th>Barangay</th><th>Farm</th><th>Signed up</th><th>{{ $show === 'rejected' ? 'Reason' : ($show === 'approved' ? 'Approved' : '') }}</th><th class="text-end">Action</th></tr>
+                            <tr><th>Name</th><th>Contact</th><th>Barangay</th><th>Farm</th><th>Signed up</th><th>Status</th><th>Reviewed</th><th>Reviewing MAO Staff</th><th>Rejection reason</th><th class="text-end">Action</th></tr>
                         </thead>
                         <tbody>
                             @foreach ($users as $farmer)
@@ -48,18 +51,26 @@
                                     <td>{{ $farmer->barangay ?: '—' }}</td>
                                     <td>{{ $farmer->farmerProfile?->farm_type ?: '—' }}@if ($farmer->farmerProfile?->farm_area) · {{ rtrim(rtrim(number_format((float) $farmer->farmerProfile->farm_area, 2), '0'), '.') }} ha @endif</td>
                                     <td>{{ $farmer->created_at?->timezone(\App\Support\BusinessClock::timezone())->format('M j, Y') }}</td>
-                                    <td class="small">
-                                        @if ($show === 'rejected'){{ $farmer->rejection_reason }}@elseif ($show === 'approved'){{ $farmer->approved_at?->timezone(\App\Support\BusinessClock::timezone())->format('M j, Y') }}@endif
-                                        {{-- Panel revision 4.4 C: who decided, and when. --}}
-                                        @if ($show !== 'pending' && $farmer->approved_by && ($decider = \App\Models\User::query()->find($farmer->approved_by, ['id', 'name'])))
-                                            <div class="small text-muted">{{ $show === 'rejected' ? 'Rejected' : 'Approved' }} by: {{ $decider->name }}{{ $farmer->approved_at ? ' on '.\App\Support\MaoStamp::format($farmer->approved_at) : '' }}</div>
-                                        @endif
-                                    </td>
+                                    <td>{{ $farmer->applicationStatus() }}</td>
+                                    <td>{{ $farmer->reviewed_at?->timezone('Asia/Manila')->format('M j, Y H:i') ?: $farmer->approved_at?->timezone('Asia/Manila')->format('M j, Y H:i') ?: ($farmer->status === \App\Models\User::STATUS_PENDING ? 'Awaiting review' : 'Not recorded') }}</td>
+                                    <td>{{ $farmer->accountReviewer?->name ?: $farmer->approver?->name ?: 'Not recorded' }}</td>
+                                    <td>{{ $farmer->status === \App\Models\User::STATUS_REJECTED ? $farmer->rejection_reason : '—' }}</td>
                                     <td class="text-end">
-                                        @if ($show !== 'approved')
+                                        <a class="btn btn-outline-primary btn-sm mb-2" href="{{ route('mao.farmer-approvals.show', $farmer) }}">View Details</a>
+                                        @if ($show === 'rejected')
+                                            <form method="POST" action="{{ route('mao.farmer-approvals.reconsider', $farmer) }}" class="text-start">
+                                                @csrf
+                                                <input type="hidden" name="revision" value="{{ (int) $farmer->registration_revision }}">
+                                                <label for="reconsider{{ $farmer->id }}">Reason for reconsideration</label>
+                                                <textarea id="reconsider{{ $farmer->id }}" name="resubmission_note" required minlength="10" maxlength="2000" class="form-control form-control-sm"></textarea>
+                                                <button class="btn btn-outline-primary btn-sm mt-1">Return to Pending</button>
+                                            </form>
+                                        @endif
+                                        @if ($show === 'pending')
                                             <div class="d-flex gap-2 justify-content-end flex-wrap">
                                                 <form method="POST" action="{{ route('mao.farmer-approvals.approve', $farmer) }}" data-loading="true">
                                                     @csrf
+                                                    <input type="hidden" name="revision" value="{{ (int) $farmer->registration_revision }}">
                                                     <button class="btn btn-primary btn-sm" type="submit" data-loading-text="Approving...">Approve</button>
                                                 </form>
                                                 @if ($show === 'pending')
@@ -67,6 +78,7 @@
                                                         <summary class="btn btn-outline-danger btn-sm">Reject</summary>
                                                         <form method="POST" action="{{ route('mao.farmer-approvals.reject', $farmer) }}" class="mt-2 text-start" data-loading="true">
                                                             @csrf
+                                                    <input type="hidden" name="revision" value="{{ (int) $farmer->registration_revision }}">
                                                             {{-- A reason is required (config/user_rejection.php); the note is optional except for "Other". The farmer is emailed the reason in their language, with the note under it. --}}
                                                             <label class="form-label small" for="reason{{ $farmer->id }}">Reason</label>
                                                             <select class="form-select form-select-sm" id="reason{{ $farmer->id }}" name="reason" required data-reject-reason>

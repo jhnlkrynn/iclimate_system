@@ -303,7 +303,7 @@ class FarmerHomeTest extends TestCase
 
     public function test_risk_is_one_badge_with_the_heat_maps_week_rating(): void
     {
-        foreach (['Low' => ['Low', 'is-good'], 'Moderate' => ['Moderate', 'is-watch'], 'High' => ['High', 'is-danger']] as $level => [$label, $tone]) {
+        foreach (['Low' => ['Low Risk', 'is-good'], 'Moderate' => ['Moderate Risk', 'is-watch'], 'High' => ['High Risk', 'is-danger']] as $level => [$label, $tone]) {
             $this->mockRisk($level);
             $html = $this->home($this->farmer(attributes: ['email' => strtolower($level).'@example.test']))->getContent();
             $this->assertMatchesRegularExpression('#<p class="fh-risk-badge '.$tone.'">'.$label.'</p>#', $html, $level);
@@ -328,6 +328,7 @@ class FarmerHomeTest extends TestCase
 
     public function test_yield_is_one_number_for_this_season_with_normal_higher_or_lower(): void
     {
+        config(['prediction.rice_yield.gate' => 'off']);   // display formatting; the gate itself: YieldModelGateTest
         $this->lianYields(4.0);
         foreach ([4.1 => 'Normal', 5.0 => 'Higher', 3.0 => 'Lower'] as $yield => $label) {
             $this->mockPrediction((float) $yield);
@@ -372,6 +373,7 @@ class FarmerHomeTest extends TestCase
 
     public function test_the_harvest_check_only_reads_and_answers_once_the_estimate_is_saved(): void
     {
+        config(['prediction.rice_yield.gate' => 'off']);   // display formatting; the gate itself: YieldModelGateTest
         Queue::fake();
         $farmer = $this->farmer();
         Cache::forget(FarmerDashboardService::predictionCacheKey($farmer->id));

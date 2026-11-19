@@ -202,9 +202,9 @@ class AuthenticationTest extends TestCase
         $response->assertRedirect(route('mao.dashboard', absolute: false));
     }
 
-    public function test_it_expert_is_redirected_after_login(): void
+    public function test_it_expert_login_is_rejected(): void
     {
-        $user = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
+        $user = User::factory()->create(['role' => 'IT Expert']);
 
         $response = $this->withSession($this->captchaSession('login', '7'))->post('/login', [
             'email' => $user->email,
@@ -212,33 +212,35 @@ class AuthenticationTest extends TestCase
             'captcha_answer' => '7',
         ]);
 
-        $this->assertAuthenticated();
-        $response->assertRedirect(route('admin.dashboard', absolute: false));
+        $this->assertGuest();
+        $response->assertSessionHasErrors('email');
     }
 
     public function test_seeded_staff_accounts_sign_in_and_reach_their_own_dashboard(): void
     {
-        config(['iclimate.staff_account_password' => 'Password@123']);
+        // A unique seed password: the shared default only opens the change-password page (test below).
+        config(['iclimate.staff_account_password' => 'Staff-Seed-2027!']);
         $this->seed(StaffLoginAccountSeeder::class);
         $this->seed(StaffLoginAccountSeeder::class);
 
-        $this->assertSame(1, User::query()->where('email', 'it@gmail.com')->count());
+        $this->assertSame(0, User::query()->where('email', 'it@gmail.com')->count());
         $this->assertSame(1, User::query()->where('email', 'mao@gmail.com')->count());
-        $this->assertNotSame('Password@123', User::query()->where('email', 'it@gmail.com')->value('password'));
 
-        $this->post('/login', ['email' => 'it@gmail.com', 'password' => 'Password@123'])
-            ->assertRedirect(route('admin.dashboard', absolute: false));
-        $this->assertAuthenticated();
-        $this->assertSame(User::ROLE_IT_EXPERT, Auth::user()->role);
-        $this->get(route('admin.dashboard'))->assertOk();
-        $this->get(route('mao.dashboard'))->assertForbidden();
-        $this->post('/logout');
-
-        $this->post('/login', ['email' => 'mao@gmail.com', 'password' => 'Password@123'])
+        $this->post('/login', ['email' => 'mao@gmail.com', 'password' => 'Staff-Seed-2027!'])
             ->assertRedirect(route('mao.dashboard', absolute: false));
         $this->assertSame(User::ROLE_MAO, Auth::user()->role);
         $this->get(route('mao.dashboard'))->assertOk();
-        $this->get(route('admin.dashboard'))->assertForbidden();
+        $this->get('/admin/dashboard')->assertNotFound();
+    }
+
+    public function test_staff_seeded_with_the_shared_default_get_no_session_and_must_recover(): void
+    {
+        config(['iclimate.staff_account_password' => 'Password@123']);
+        $this->seed(StaffLoginAccountSeeder::class);
+
+        // The shared default proves nothing: no session; the account recovers by email link or a MAO-issued code.
+        $this->post('/login', ['email' => 'mao@gmail.com', 'password' => 'Password@123'])->assertRedirect(route('account.recover'));
+        $this->assertGuest();
     }
 
     public function test_seeded_staff_accounts_reject_a_wrong_password(): void
@@ -276,7 +278,7 @@ class AuthenticationTest extends TestCase
     {
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
-        $this->get(route('admin.dashboard'))->assertRedirect(route('login'));
+        $this->get('/admin/dashboard')->assertNotFound();
 
         $this->post('/login', ['email' => $mao->email, 'password' => 'password'])
             ->assertRedirect(route('mao.dashboard', absolute: false));
@@ -298,7 +300,7 @@ class AuthenticationTest extends TestCase
     {
         $farmer = User::factory()->create();
 
-        $this->actingAs($farmer)->get(route('admin.dashboard'))->assertForbidden();
+        $this->actingAs($farmer)->get('/admin/dashboard')->assertNotFound();
         $this->actingAs($farmer)->get(route('mao.dashboard'))->assertForbidden();
     }
 

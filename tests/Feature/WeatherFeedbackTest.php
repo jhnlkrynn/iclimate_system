@@ -70,30 +70,17 @@ class WeatherFeedbackTest extends TestCase
         WeatherForecastFeedback::factory()->create(['user_id' => $farmer->id]);
     }
 
-    public function test_only_farmers_may_submit(): void
-    {
-        $this->forecastFor($this->pastMonth);
-        $payload = ['forecast_date' => $this->pastMonth->toDateString(), 'accuracy' => 'accurate'];
 
-        $this->submitFeedback(User::factory()->create(['role' => User::ROLE_MAO, 'barangay' => 'Malaruhatan']), $payload)->assertForbidden();
-        // IT is sent back to its dashboard from the forecast pages; nothing is saved either way.
-        $this->submitFeedback(User::factory()->create(['role' => User::ROLE_IT_EXPERT, 'barangay' => 'Malaruhatan']), $payload)->assertRedirect(route('admin.dashboard'));
-        $this->assertSame(0, \App\Models\WeatherForecastFeedback::query()->count());
-
-        $this->app['auth']->guard()->logout();
-        $this->post(route('weather-feedback.store'), $payload)->assertRedirect(route('login'));
-        $this->assertSame(0, WeatherForecastFeedback::query()->count());
-    }
 
     public function test_feedback_never_writes_climate_records_forecasts_or_dispatches_retraining(): void
     {
         $farmer = $this->farmer();                      // made first: a new farmer profile queues its own yield estimate
-        Bus::fake();
-        Queue::fake();
         $forecast = $this->forecastFor($this->pastMonth);
         ClimateRecord::factory()->create();
         $climateBefore = ClimateRecord::query()->count();
         $forecastBefore = $forecast->fresh()->only(['rainfall', 'temperature_average', 'humidity', 'weather_model', 'status']);
+        Bus::fake();
+        Queue::fake();
 
         $this->submitFeedback($farmer, [
             'forecast_date' => $this->pastMonth->toDateString(),

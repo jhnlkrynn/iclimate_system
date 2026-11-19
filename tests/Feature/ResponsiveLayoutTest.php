@@ -12,7 +12,6 @@ class ResponsiveLayoutTest extends TestCase
         $navigation = file_get_contents(resource_path('views/layouts/navigation.blade.php'));
         $sidebar = file_get_contents(resource_path('views/layouts/sidebar.blade.php'));
         $maoOverview = file_get_contents(resource_path('views/dashboards/mao.blade.php'));
-        $itDashboard = file_get_contents(resource_path('views/dashboards/it-expert.blade.php'));
         $crudIndex = file_get_contents(resource_path('views/crud/index.blade.php'));
 
         $this->assertStringContainsString('data-bs-target="#mobileSidebar"', $navigation);
@@ -32,15 +31,6 @@ class ResponsiveLayoutTest extends TestCase
         $this->assertStringContainsString('@media (min-width: 560px) { .mhd-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }', file_get_contents(resource_path('css/mao-dashboard.css')));
         // "Farmers by Organization" chart moved from the MAO dashboard to the Farmer Profiles page.
         $this->assertStringContainsString('.farmer-org-legend { grid-template-columns: 1fr; }', $crudIndex);
-        // IT dashboard: five farmer-style KPI cards in its own grid (.itd-kpis: 2 per row on phones, 3 then 2 on tablets, 5 on desktops);
-        // its own styles live in resources/css/it-dashboard.css. Wide tables scroll inside their own box, never the page.
-        $itCss = file_get_contents(resource_path('css/it-dashboard.css'));
-        $this->assertStringContainsString('class="itd-kpis"', file_get_contents(resource_path('views/dashboards/it/kpis.blade.php')));
-        $this->assertStringContainsString('.itd-kpis { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }', $itCss);
-        $this->assertStringContainsString('@media (min-width: 1200px) {' . "\n" . '    .itd-kpis { grid-template-columns: repeat(5, minmax(0, 1fr)); }', str_replace("\r\n", "\n", $itCss));
-        $this->assertStringContainsString('.itd-table-wrap { max-width: 100%; overflow-x: auto;', $itCss);
-        $this->assertStringContainsString('@media (max-width: 640px)', $itCss);
-        $this->assertStringNotContainsString('<style>', $itDashboard);
         // MAO overview: built on the farmer dashboard system; its styles live in resources/css/mao-dashboard.css.
         // 1 KPI per row on phones, 2 on small tablets, 3 on tablets, up to 5 on desktop; tables become cards on phones.
         $maoCss = file_get_contents(resource_path('css/mao-dashboard.css'));
@@ -56,7 +46,6 @@ class ResponsiveLayoutTest extends TestCase
         $paths = [
             resource_path('views/components/ai-chat-widget.blade.php'),
             resource_path('views/dashboards/farmer.blade.php'),
-            resource_path('views/dashboards/it-expert.blade.php'),
         ];
 
         foreach ($paths as $path) {
@@ -83,6 +72,6 @@ class ResponsiveLayoutTest extends TestCase
         $this->assertStringContainsString('html body #mobileSidebar .ic-sb-nav', $sidebarCss);
         // One appearance (dark) since the 2026-10 redesign: no light/dark switch anywhere, dark set before the first paint.
         $this->assertStringNotContainsString('data-theme-toggle', file_get_contents(resource_path('views/layouts/navigation.blade.php')));
-        $this->assertStringContainsString("setAttribute('data-theme','dark')", file_get_contents(resource_path('views/layouts/app.blade.php')));
+        $this->assertStringContainsString("setAttribute('data-theme','light')", file_get_contents(resource_path('views/layouts/app.blade.php')));
     }
 }

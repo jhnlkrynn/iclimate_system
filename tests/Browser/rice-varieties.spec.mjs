@@ -76,17 +76,17 @@ test('V2 a farmer can open Choose variety and see the variety picker on the plan
     await expect(page.locator('#rice_variety_id option', { hasText: 'GSR 8' })).toHaveCount(1);
 });
 
-async function logInAsIt(page) {
+async function logInAsMao(page) {
     await page.goto('/');
-    await page.locator('#login-email').fill('it@browser.test');
+    await page.locator('#login-email').fill('mao@browser.test');
     await page.locator('#login-password').fill('password');
     await page.locator('[data-login-form] button[type="submit"]').click();
-    await page.waitForURL('**/admin/dashboard', { waitUntil: 'commit' });
+    await page.waitForURL('**/mao/dashboard', { waitUntil: 'commit' });
 }
 
-test('V3 IT list: a row opens the pop-up, ⋯ shows Edit, and the Filters popover applies Irrigated', async ({ page }) => {
-    await logInAsIt(page);
-    await page.goto('/rice-varieties');
+test('V3 MAO list: a row opens the pop-up, ⋯ shows Edit, and the Filters popover applies Irrigated', async ({ page }) => {
+    await logInAsMao(page);
+    await page.goto('/rice-varieties?manage=1');
     const row = page.locator('tr.rv-row', { hasText: 'Mestiso 176' });
 
     // A click anywhere on the row opens the details pop-up.

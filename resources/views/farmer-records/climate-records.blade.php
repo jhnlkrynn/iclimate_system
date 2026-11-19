@@ -58,7 +58,7 @@
             </section>
         @endif
 
-        <section class="frec-panel" aria-labelledby="frecListTitle">
+        <section class="frec-panel" aria-labelledby="frecListTitle" @if (! empty($liveAreas)) data-live-region="records" data-live-areas="{{ $liveAreas }}" @endif>
             <div class="frec-panel-head is-row">
                 <h2 id="frecListTitle">Records</h2>
                 <p class="fad-support">

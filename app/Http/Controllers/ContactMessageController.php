@@ -8,6 +8,7 @@ use App\Services\SystemAuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 /**
  * The "Send us a message" form on the public home page. The message is delivered to every active MAO
@@ -20,7 +21,7 @@ class ContactMessageController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'string', 'email', 'max:255'],
-            'role' => ['nullable', 'string', 'in:Rice Farmer,MAO Personnel,IT Personnel,Other'],
+            'role' => ['nullable', 'string', 'in:Rice Farmer,MAO Personnel,Other'],
             'message' => ['required', 'string', 'min:5', 'max:2000'],
             // Hidden from people; a filled value means an automated form filler.
             'website' => ['nullable', 'string', 'max:0'],
@@ -41,15 +42,17 @@ class ContactMessageController extends Controller
         $now = now();
         $body = "From: {$data['name']} ({$data['email']})".(filled($data['role'] ?? null) ? "\nRole: {$data['role']}" : '')."\n\n".$data['message'];
 
-        Notification::query()->insert($recipients->map(fn (int $userId): array => [
-            'user_id' => $userId,
-            'title' => 'Website message from '.$data['name'],
-            'message' => $body,
-            'type' => 'Announcement',
-            'is_read' => false,
-            'created_at' => $now,
-            'updated_at' => $now,
-        ])->all());
+        DB::transaction(function () use ($recipients, $data, $body, $now): void {
+            $recipients->each(fn (int $userId) => Notification::query()->create([
+                'user_id' => $userId,
+                'title' => 'Website message from '.$data['name'],
+                'message' => $body,
+                'type' => 'Announcement',
+                'is_read' => false,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]));
+        });
 
         $recipients->each(fn (int $userId) => Cache::forget('sidebar:unread-notifications:'.$userId));
         SystemAuditLogger::record('Website Contact Message', $request, ['recipient_count' => $recipients->count()]);

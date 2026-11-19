@@ -3,7 +3,7 @@
     {{-- Panel revision 4.4 (MaoPersonnelController): who covers which barangay. The Municipal Agriculturist adds accounts
          and edits positions, area covered and barangay assignments; everyone else reads it. --}}
     <div class="mfd itd itp" data-mao-personnel>
-        <x-it.page-header kicker="Municipal Agriculture Office" title="MAO Personnel"
+        <x-shared.page-header kicker="Municipal Agriculture Office" title="MAO Personnel"
             lede="Each MAO account belongs to one staff member, with their position and the barangays they cover." />
 
         @include('partials.manuscript-tabs', ['group' => 'mao-office', 'label' => 'MAO Office'])

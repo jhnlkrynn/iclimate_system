@@ -75,9 +75,9 @@
     </section>
 
     @if ($analyticsRun && in_array($analyticsRun->status, ['pending', 'processing'], true))
-        <div class="alert alert-info border" data-analytics-run="{{ route('analytics-runs.show', $analyticsRun) }}">
-            <strong>Preparing your report&hellip;</strong>
-            This page will refresh by itself when the report is ready.
+        <div class="alert alert-info border" data-analytics-run="{{ route('analytics-runs.show', $analyticsRun) }}" data-prediction-realtime data-prediction-labels='{"requested":"Report requested","processing":"Report processing","completed":"Report completed","failed":"Report failed"}'>
+            <strong data-prediction-status-text>Preparing your report&hellip;</strong>
+            <span data-prediction-status-detail>This page will update when the report is ready.</span>
         </div>
     @elseif ($analyticsRun?->status === 'failed')
         <div class="alert alert-danger border">
@@ -86,7 +86,9 @@
     @endif
 
     <div class="report-shell">
-    <div class="card no-lift">
+    {{-- data-live-region: the source-data counts follow new records while open. A generated report is a snapshot of
+         the moment it was made and stays as it is. --}}
+    <div class="card no-lift" data-live-region="report-sources" data-live-areas="farmers,climate,rice,advisories,community-posts">
         <div class="card-body p-3">
             <div class="report-live-strip">
                 <div class="report-live-item">
@@ -264,7 +266,8 @@
                     try {
                         const response = await fetch(banner.dataset.analyticsRun, { headers: { Accept: 'application/json' }, loader: false });
                         const run = await response.json();
-                        if (run.status === 'completed' || run.status === 'failed') window.location.reload();
+                        window.iClimatePredictionApply?.(banner, run);
+                        banner.dispatchEvent(new CustomEvent('iclimate:prediction-poll', { detail: { element: banner, run } }));
                     } catch (_) {}
                 };
                 window.setInterval(check, 2500);

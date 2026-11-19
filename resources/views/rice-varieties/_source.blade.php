@@ -1,4 +1,4 @@
-{{-- Where the catalog comes from, as one small muted line; IT Personnel also see when it was last imported. --}}
+{{-- Where the catalog comes from, as one small muted line; MAO Staff also see when it was last imported. --}}
 @php
     $lastImport = ($showImport ?? false) ? \App\Support\RiceVarieties\SourceDocument::lastImport() : null;
 @endphp

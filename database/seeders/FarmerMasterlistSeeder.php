@@ -57,8 +57,6 @@ class FarmerMasterlistSeeder extends Seeder
             return;
         }
 
-        $sharedPassword = (string) config('iclimate.farmer_account_password');
-        $sharedHash = $sharedPassword !== '' ? Hash::make($sharedPassword) : null;
         $imported = 0;
         $skipped = 0;
         $rowNumber = 1; // header was row 0
@@ -99,7 +97,6 @@ class FarmerMasterlistSeeder extends Seeder
                 $barangayRaw,
                 $areaRaw,
                 $associationRaw,
-                $hashedPassword,
             ) {
                 $identifier = $rsbsaNo !== '' ? $rsbsaNo : $this->placeholderIdentifier($no);
 
@@ -140,7 +137,7 @@ class FarmerMasterlistSeeder extends Seeder
                 $user->email_verified_at ??= now();
                 if (! $user->exists) {
                     // Re-running the import never resets a password a farmer (or IT) has already set.
-                    $user->password = $sharedHash ?? Hash::make(Str::password(24));
+                    $user->password = Hash::make(Str::password(24));
                 }
                 $user->save();
 
@@ -211,7 +208,7 @@ class FarmerMasterlistSeeder extends Seeder
         'BALIBAGO FA' => 'Balibago Farmers Association',
         'CUACO IA' => 'Cuaco Irrigator\'s Association',
         'BUNGAHAN BALDEO IA' => 'Bungahan Baldeo Irrigators Association Inc',
-        'MOLINO FA' => 'Molino-Resagwa Farmers Irrigators Association Inc',
+        'MOLINO FA' => 'Molino-Resgawa Farmers Irrigators Association Inc',
         'LUMANG TUBIGAN FA' => 'Lumang Tubigan Farmers Association',
         'SALUYSOY FA' => 'Saluysoy Farmers Association',
         'LUYAHAN FA' => 'Luyahan Farmers Association',

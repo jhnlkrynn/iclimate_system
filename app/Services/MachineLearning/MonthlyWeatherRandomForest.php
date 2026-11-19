@@ -1674,15 +1674,17 @@ class RandomForestRegressor
             $i < $this->treeCount;
             $i++
         ) {
-            mt_srand(
-                $this->seed
-                +
-                $i
+            // Use a model-local stream.  Seeding PHP's process-global mt_rand()
+            // made this model depend on unrelated Faker/tests and allowed any
+            // intervening random call to change the trained forest.
+            $random = new DeterministicRandom(
+                $this->seed + $i
             );
 
             $bootstrap =
                 $this->bootstrap(
-                    $samples
+                    $samples,
+                    $random
                 );
 
             $featureSubsetSize =
@@ -1702,7 +1704,8 @@ class RandomForestRegressor
                 new DecisionTreeRegressor(
                     $this->maxDepth,
                     $this->minSamplesSplit,
-                    $featureSubsetSize
+                    $featureSubsetSize,
+                    $random
                 );
 
             $tree->train(
@@ -1752,7 +1755,8 @@ class RandomForestRegressor
     }
 
     private function bootstrap(
-        array $samples
+        array $samples,
+        DeterministicRandom $random
     ): array {
         $result = [];
 
@@ -1772,7 +1776,7 @@ class RandomForestRegressor
         ) {
             $result[] =
                 $samples[
-                    mt_rand(
+                    $random->nextInt(
                         0,
                         $max
                     )
@@ -1798,6 +1802,7 @@ class DecisionTreeRegressor
         private readonly int $maxDepth,
         private readonly int $minSamplesSplit,
         private readonly int $featureSubsetSize,
+        private readonly DeterministicRandom $random,
     ) {
     }
 
@@ -2146,9 +2151,12 @@ class DecisionTreeRegressor
         $copy =
             $features;
 
-        shuffle(
-            $copy
-        );
+        // Fisher-Yates with the forest's local RNG; never use PHP's global
+        // shuffle(), whose result depends on unrelated application activity.
+        for ($i = count($copy) - 1; $i > 0; $i--) {
+            $j = $this->random->nextInt(0, $i);
+            [$copy[$i], $copy[$j]] = [$copy[$j], $copy[$i]];
+        }
 
         return array_slice(
             $copy,
@@ -2227,5 +2235,35 @@ class DecisionTreeRegressor
         count(
             $samples
         );
+    }
+}
+
+/**
+ * Small deterministic PRNG isolated from PHP's process-global random state.
+ * The generator is intentionally local to one trained tree.
+ */
+class DeterministicRandom
+{
+    private int $state;
+
+    public function __construct(int $seed)
+    {
+        $modulus = 2147483647;
+        $this->state = abs($seed) % $modulus;
+
+        if ($this->state === 0) {
+            $this->state = 1;
+        }
+    }
+
+    public function nextInt(int $min, int $max): int
+    {
+        if ($min > $max) {
+            throw new \InvalidArgumentException('Random range minimum exceeds maximum.');
+        }
+
+        $this->state = (int) (($this->state * 48271) % 2147483647);
+
+        return $min + ($this->state % ($max - $min + 1));
     }
 }

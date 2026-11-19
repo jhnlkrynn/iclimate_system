@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Analytics\FarmerDashboardService;
 use App\Support\LianBarangays;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 /**
  * When the MAO publishes an advisory, the farmers it is for get one short alert ("New advisory for your barangay")
@@ -49,19 +50,20 @@ class AdvisoryPublishedNotifier
         $now = now();
         // Manuscript – Naicel (2026-10-08): each alert names its advisory, so the MAO sees how many farmers read it.
         $tracked = \App\Support\SchemaCache::hasColumn('notifications', 'planting_advisory_id');
-        Notification::query()->insert($farmers->map(function (User $farmer) use ($target, $now, $tracked, $advisory, $category): array {
-            $locale = $farmer->preferred_language === 'fil' ? 'fil' : 'en';
-
-            return [
-                'user_id' => $farmer->id,
-                'title' => trans($target ? 'farmer.advisories_page.alert_title' : 'farmer.advisories_page.alert_title_lian', [], $locale),
-                'message' => trans('farmer.advisories_page.alert_message', [], $locale),
-                'type' => 'Advisory',
-                'is_read' => false,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ] + ($tracked ? ['planting_advisory_id' => $advisory->getKey()] : []) + ($category ? ['category' => $category] : []);
-        })->all());
+        DB::transaction(function () use ($farmers, $target, $now, $tracked, $advisory, $category): void {
+            foreach ($farmers as $farmer) {
+                $locale = $farmer->preferred_language === 'fil' ? 'fil' : 'en';
+                Notification::query()->create([
+                    'user_id' => $farmer->id,
+                    'title' => trans($target ? 'farmer.advisories_page.alert_title' : 'farmer.advisories_page.alert_title_lian', [], $locale),
+                    'message' => trans('farmer.advisories_page.alert_message', [], $locale),
+                    'type' => 'Advisory',
+                    'is_read' => false,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ] + ($tracked ? ['planting_advisory_id' => $advisory->getKey()] : []) + ($category ? ['category' => $category] : []));
+            }
+        });
 
         foreach ($farmers as $farmer) {
             Cache::forget('sidebar:unread-notifications:'.$farmer->id);

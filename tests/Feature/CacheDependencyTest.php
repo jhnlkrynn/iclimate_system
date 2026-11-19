@@ -33,7 +33,7 @@ class CacheDependencyTest extends TestCase
     use RefreshDatabase;
 
     /** Pages / payloads watched in each test. */
-    private const WATCHED = ['farmer-dashboard', 'mao-dashboard', 'it-dashboard', 'community-feed', 'calendar', 'advisories-index',
+    private const WATCHED = ['farmer-dashboard', 'mao-dashboard', 'internal-status', 'community-feed', 'calendar', 'advisories-index',
         'system-health', 'crud-user-options'];
 
     /** @var array<string, int> builds per watched cache */
@@ -64,7 +64,7 @@ class CacheDependencyTest extends TestCase
 
         Notification::factory()->create(['user_id' => $alice->id, 'is_read' => false]);
 
-        $this->assertSame(['it-dashboard'], $this->rebuilt(), 'only the IT overview counts notifications for everyone');
+        $this->assertSame(['internal-status'], $this->rebuilt(), 'only the IT overview counts notifications for everyone');
         $this->assertNotSame($aliceKey, \App\Services\Analytics\FarmerDashboardService::cacheKey($alice), "Alice's own dashboard is rebuilt");
         $this->assertSame($bobKey, \App\Services\Analytics\FarmerDashboardService::cacheKey($bob), "Bob's dashboard stays cached");
     }
@@ -83,7 +83,7 @@ class CacheDependencyTest extends TestCase
         $this->assertSame(1, $this->builds['sample-data:batches'], 'the read flag is not text the seed scan looks at');
         $this->assertSame(1, $this->builds['sample-data:rice_productions']);
         $this->probe('provenance');
-        $this->assertContains('it-dashboard', $this->rebuilt(), 'the unread total did change');
+        $this->assertContains('internal-status', $this->rebuilt(), 'the unread total did change');
         $this->assertSame(1, $this->builds['provenance'], 'record counts and newest dates did not change');
 
         Notification::factory()->create(['user_id' => $notification->user_id]);
@@ -111,7 +111,7 @@ class CacheDependencyTest extends TestCase
         $this->assertSame([], $this->rebuilt(), 'fetched again, nothing a page shows changed');
 
         $row->update(['temperature' => 31.9, 'fetched_at' => now()->addMinutes(6)]);
-        $this->assertSame(['farmer-dashboard', 'mao-dashboard', 'it-dashboard', 'advisories-index', 'system-health'], $this->rebuilt(),
+        $this->assertSame(['farmer-dashboard', 'mao-dashboard', 'internal-status', 'advisories-index', 'system-health'], $this->rebuilt(),
             'the weather changed: every page showing weather is rebuilt, User Management, Community and the calendar are not');
     }
 
@@ -129,7 +129,7 @@ class CacheDependencyTest extends TestCase
         $this->assertSame([], $this->rebuilt(), '"24.50" and 24.5 are the same reading: nothing to rebuild');
 
         $stored->update(['temperature' => 25.1]);
-        $this->assertSame(['farmer-dashboard', 'mao-dashboard', 'it-dashboard', 'advisories-index', 'system-health'], $this->rebuilt(),
+        $this->assertSame(['farmer-dashboard', 'mao-dashboard', 'internal-status', 'advisories-index', 'system-health'], $this->rebuilt(),
             'a really different temperature retires every weather reader, and only those');
     }
 
@@ -156,7 +156,7 @@ class CacheDependencyTest extends TestCase
 
         $farmer->farmerProfile->update(['farm_area' => 3.5]);
 
-        $this->assertSame(['mao-dashboard', 'it-dashboard', 'calendar'], $this->rebuilt());
+        $this->assertSame(['mao-dashboard', 'internal-status', 'calendar'], $this->rebuilt());
         $this->assertNotSame($ownKey, \App\Services\Analytics\FarmerDashboardService::cacheKey($farmer));
         $this->assertSame($otherKey, \App\Services\Analytics\FarmerDashboardService::cacheKey($other));
     }
@@ -169,7 +169,7 @@ class CacheDependencyTest extends TestCase
 
         ClimateRecord::factory()->create();
 
-        $this->assertSame(['mao-dashboard', 'it-dashboard'], $this->rebuilt());
+        $this->assertSame(['mao-dashboard', 'internal-status'], $this->rebuilt());
         $this->assertNull(Cache::get('reports:source-stats'), 'report source figures are recounted');
         $this->assertSame(['kept'], Cache::get('dashboard:mao-action-items'), 'figures that do not read climate records stay');
     }
@@ -181,12 +181,12 @@ class CacheDependencyTest extends TestCase
 
         $area->update(['risk_level' => 'High', 'risk_score' => 0.81]);
 
-        $this->assertSame(['farmer-dashboard', 'mao-dashboard', 'it-dashboard', 'advisories-index'], $this->rebuilt());
+        $this->assertSame(['farmer-dashboard', 'mao-dashboard', 'internal-status', 'advisories-index'], $this->rebuilt());
     }
 
     public function test_deactivating_a_user_retires_user_lists_and_shows_at_once(): void
     {
-        $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
+        $it = User::factory()->create(['role' => User::ROLE_MAO, 'is_mao_head' => true]);
         $farmer = $this->farmer();
         $this->warm();
 
@@ -277,7 +277,7 @@ class CacheDependencyTest extends TestCase
         };
         PageCache::shared('mao-dashboard', 600, $writer, ['part' => 'writer']);
 
-        $this->assertSame(['farmer-dashboard', 'mao-dashboard', 'it-dashboard', 'advisories-index', 'system-health'], $this->rebuilt(),
+        $this->assertSame(['farmer-dashboard', 'mao-dashboard', 'internal-status', 'advisories-index', 'system-health'], $this->rebuilt(),
             'every other cache that reads weather is rebuilt');
         PageCache::shared('mao-dashboard', 600, $writer, ['part' => 'writer']);
         $this->assertSame(1, $writerBuilds, 'the build that wrote the snapshot is not rebuilt: its value already includes it');

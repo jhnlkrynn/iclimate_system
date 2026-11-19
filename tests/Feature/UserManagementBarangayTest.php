@@ -10,23 +10,23 @@ class UserManagementBarangayTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function itExpert(): User
+    private function maoPersonnel(): User
     {
         return User::factory()->create([
-            'role' => User::ROLE_IT_EXPERT,
+            'role' => User::ROLE_MAO,
+            'is_mao_head' => true,
             'status' => User::STATUS_ACTIVE,
         ]);
     }
 
     public function test_create_user_shows_the_lian_barangay_select_and_persists_the_selected_value(): void
     {
-        $admin = $this->itExpert();
+        $admin = $this->maoPersonnel();
 
         $this->actingAs($admin)->get(route('users.create'))
             ->assertOk()
             ->assertSee('<option value="">Select Barangay</option>', false)
-            ->assertSee('value="Barangay 1 (Pob.)"', false)
-            ->assertSee('>Barangay 1</option>', false)
+            ->assertSee('value="Balibago"', false)
             ->assertSee('<select class="form-select', false);
 
         $this->actingAs($admin)->post(route('users.store'), [
@@ -46,7 +46,7 @@ class UserManagementBarangayTest extends TestCase
 
     public function test_edit_user_preselects_and_persists_a_changed_barangay(): void
     {
-        $admin = $this->itExpert();
+        $admin = $this->maoPersonnel();
         $user = User::factory()->create(['barangay' => 'Binubusan']);
 
         $this->actingAs($admin)->get(route('users.edit', $user))
@@ -69,7 +69,7 @@ class UserManagementBarangayTest extends TestCase
 
     public function test_invalid_barangay_is_rejected_and_old_value_is_retained(): void
     {
-        $admin = $this->itExpert();
+        $admin = $this->maoPersonnel();
 
         $response = $this->actingAs($admin)->from(route('users.create'))->post(route('users.store'), [
             'name' => 'Invalid Lian User',

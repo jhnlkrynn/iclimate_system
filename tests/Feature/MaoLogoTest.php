@@ -6,16 +6,16 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-/** The MAO rice logo (public/images/mao-logo.png) replaced the Lian seal (images/lian-seal.jpg) on every page. */
+/** The current shared shell uses the municipal MAO/Lian seal asset on public and role pages. */
 class MaoLogoTest extends TestCase
 {
     use RefreshDatabase;
 
     private function assertMaoLogo(string $html, string $page): void
     {
-        $this->assertStringContainsString('images/mao-logo.png', $html, "{$page} does not show the MAO logo");
+        $this->assertStringContainsString('images/mao-lian-seal.png', $html, "{$page} does not show the MAO logo");
         $this->assertStringContainsString('alt="Municipal Agriculture Office logo"', $html, "{$page}: MAO logo has no alt text");
-        $this->assertStringNotContainsString('lian-seal', $html, "{$page} still uses the Lian seal");
+        $this->assertStringNotContainsString('mao-logo.png', $html, "{$page} uses the removed logo asset");
     }
 
     public function test_the_logo_file_is_a_square_transparent_png(): void
@@ -42,10 +42,10 @@ class MaoLogoTest extends TestCase
 
     public function test_each_role_dashboard_shows_the_mao_logo_instead_of_the_seal(): void
     {
-        foreach ([User::ROLE_FARMER => 'farmer.dashboard', User::ROLE_MAO => 'mao.dashboard', User::ROLE_IT_EXPERT => 'admin.dashboard'] as $role => $dashboard) {
+        foreach ([User::ROLE_FARMER => 'farmer.dashboard', User::ROLE_MAO => 'mao.dashboard'] as $role => $dashboard) {
             $html = $this->actingAs(User::factory()->create(['role' => $role]))->get(route($dashboard))->assertOk()->getContent();
             $this->assertMaoLogo($html, $dashboard);
-            $this->assertStringContainsString('class="gov-mao-logo" src="'.asset('images/mao-logo.png').'" alt="Municipal Agriculture Office logo" width="46" height="46"', $html);
+            $this->assertStringContainsString('class="gov-mao-logo" src="'.asset('images/mao-lian-seal.png').'" alt="Municipal Agriculture Office logo" width="46" height="46"', $html);
         }
     }
 }

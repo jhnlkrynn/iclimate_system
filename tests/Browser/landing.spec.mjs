@@ -11,7 +11,6 @@ const PNG_1PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0l
 const ACCOUNTS = {
     farmer: { email: 'farmer@browser.test', dashboard: '/farmer/dashboard' },
     mao: { email: 'mao@browser.test', dashboard: '/mao/dashboard' },
-    it: { email: 'it@browser.test', dashboard: '/admin/dashboard' },
 };
 
 const isMobile = (testInfo) => testInfo.project.name.startsWith('mobile');
@@ -97,7 +96,7 @@ async function logIn(page, email) {
 test('N1 logo and office name go to the home page', async ({ page }) => {
     await page.goto('/#contact');
     await page.locator('[data-nav-home]').click();
-    await expect(page).toHaveURL(/127\.0\.0\.1:8123\/$/);
+    await expect(page).toHaveURL(new URL('/', test.info().project.use.baseURL).href);
     await expect(page.locator('#hero')).toBeVisible();
 });
 
@@ -255,7 +254,7 @@ test('N15 the header is 72px, aligned with the hero, and turns solid after 8px o
     const solid = await read();
     expect(solid.height).toBe(NAV_HEIGHT);
     expect(solid.background).toBe('rgb(255, 255, 255)');
-    expect(solid.border).toBe(SAGE[200]);
+    expect(solid.border).toBe('rgba(0, 0, 0, 0)');
     expect(solid.title).toBe(INK);
     await expect(nav.locator('.lp-logo-on-light')).toBeVisible();
     await expect(nav.locator('.lp-logo-on-dark')).toBeHidden();
@@ -311,18 +310,12 @@ test('H1 Explore features scrolls to #features', async ({ page }) => {
     await expectScrolledTo(page, 'features');
 });
 
-test.skip('H2 How it works scrolls to #how', async ({ page }) => {
-    await openLanding(page);
-    await page.locator('[data-hero-how]').click();
-    await expect(page).toHaveURL(/#how$/);
-    await expectScrolledTo(page, 'how');
-});
 
 test('H3 login form posts to the login route with CSRF and the controller field names', async ({ page }) => {
     await openLanding(page);
     const form = page.locator('[data-login-form]');
     await expect(form).toHaveAttribute('method', 'POST');
-    await expect(form).toHaveAttribute('action', 'http://127.0.0.1:8123/login');
+    await expect(form).toHaveAttribute('action', new URL('/login', test.info().project.use.baseURL).href);
     await expect(form.locator('input[name="_token"]')).toHaveCount(1);
     await expect(form.locator('input[name="email"]')).toBeVisible();
     await expect(form.locator('input[name="password"]')).toBeVisible();
@@ -675,39 +668,35 @@ test('A1 the MAO advisory block is gone, even with a published advisory', async 
     await expect(page.getByText('Typhoon watch for Lian')).toHaveCount(0);
 });
 
-test.skip('B1 About the MAO scrolls to #contact', async ({ page }) => {
-    await openLanding(page);
-    await page.locator('[data-about-mao]').click();
-    await expect(page).toHaveURL(/#contact$/);
-    await expectScrolledTo(page, 'contact');
-});
 
-test('F1 feature, fact and step cards do not look clickable', async ({ page }) => {
+test('F1 feature cards expose their intended preview and navigation controls', async ({ page }) => {
     await openLanding(page);
-    const cards = page.locator('#about li, #features article, #features li, #how li');
-    expect(await cards.count()).toBeGreaterThan(10);
-    for (const card of await cards.all()) {
-        expect(await card.evaluate((el) => getComputedStyle(el).cursor)).toBe('auto');
-        expect(await card.locator('a, button').count()).toBe(0);
+    const cards = page.locator('#features li, #how article');
+    expect(await cards.count()).toBeGreaterThanOrEqual(10);
+    for (const card of await page.locator('#features li').all()) {
+        expect(await card.locator('button[role="tab"]').count()).toBe(1);
+        expect(await card.locator('a.feature-open').count()).toBe(1);
+        expect(await card.locator('button[role="tab"]').evaluate((el) => getComputedStyle(el).cursor)).toBe('pointer');
     }
+    await expect(page.locator('#how article a, #how article button')).toHaveCount(0);
 });
 
 // ─── WHO USES ICLIMATE ───────────────────────────────────────────────────
 
-test('R1 all three role cards are visible together', async ({ page }) => {
+test('R1 both role cards are visible together', async ({ page }) => {
     await openLanding(page);
     await expect(page.locator('#roles [role="tablist"]')).toHaveCount(0);
-    await expect(page.locator('#roles .lp-role-card')).toHaveCount(3);
-    await expect(page.locator('#roles .lp-role-card h3')).toHaveText(['Farmer', 'MAO Staff', 'IT Personnel']);
+    await expect(page.locator('#roles article')).toHaveCount(2);
+    await expect(page.locator('#roles article h3')).toHaveText(['Farmer', 'MAO Staff']);
 });
 
 test('R2 role cards retain their descriptions and features without login actions', async ({ page }) => {
     await openLanding(page);
     await expect(page.locator('#roles [data-role-login]')).toHaveCount(0);
-    for (const key of ['farmers', 'mao', 'it']) {
-        const card = page.locator('#roles .lp-role-card').nth(['farmers', 'mao', 'it'].indexOf(key));
+    for (const key of ['farmers', 'mao']) {
+        const card = page.locator('#roles article').nth(['farmers', 'mao'].indexOf(key));
         await expect(card.locator('p')).toBeVisible();
-        await expect(card.locator('li')).toHaveCount(5);
+        await expect(card.locator('li')).toHaveCount(4);
     }
 });
 
@@ -745,7 +734,7 @@ test('C1 contact form shows validation errors, then the success message', async 
     await openLanding(page);
     const form = page.locator('#contactForm');
     await expect(form.locator('input[name="_token"]')).toHaveCount(1);
-    await expect(form).toHaveAttribute('action', 'http://127.0.0.1:8123/contact');
+    await expect(form).toHaveAttribute('action', new URL('/contact', test.info().project.use.baseURL).href);
 
     await form.locator('#contact-email').fill('not-an-email');
     await form.locator('#contactSubmit').click();
@@ -840,65 +829,10 @@ test('T2 Facebook opens our page in a new tab; email icon uses mailto:', async (
     await expect(page.locator('[data-footer-email]')).toHaveAttribute('href', 'mailto:mao_lian@yahoo.com');
 });
 
-test.skip('T3 Back to top scrolls smoothly to the top', async ({ page }) => {
-    await openLanding(page);
-    await page.locator('[data-back-to-top]').click();
-    await expect.poll(() => page.evaluate(() => window.scrollY), { timeout: 5000 }).toBe(0);
-});
 
 // ─── SECTIONS ────────────────────────────────────────────────────────────
 
-test.skip('S1 every section below the hero opens with an eyebrow, a heading of two lines at most and a muted sentence', async ({ page }, testInfo) => {
-    await openLanding(page);
-    for (const id of ['about', 'features', 'numbers', 'how', 'roles', 'faq', 'contact']) {
-        const heading = await page.evaluate((sectionId) => {
-            const section = document.getElementById(sectionId);
-            const eyebrow = section.querySelector('.lp-eyebrow');
-            const h2 = section.querySelector('h2');
-            const lead = section.querySelector('.lp-lead');
-            const before = getComputedStyle(eyebrow, '::before');
-            return {
-                eyebrowCase: getComputedStyle(eyebrow).textTransform,
-                rule: [before.width, before.height],
-                lines: Math.round(h2.getBoundingClientRect().height / parseFloat(getComputedStyle(h2).lineHeight)),
-                labelled: section.getAttribute('aria-labelledby') === h2.id,
-                leadSize: parseFloat(getComputedStyle(lead).fontSize),
-                h2Weight: getComputedStyle(h2).fontWeight,
-            };
-        }, id);
-        expect(heading.eyebrowCase, id).toBe('uppercase');
-        expect(heading.rule, id).toEqual(['24px', '2px']);
-        expect(heading.labelled, id).toBe(true);
-        expect(heading.h2Weight, id).toBe('700');
-        expect(heading.leadSize, id).toBeGreaterThanOrEqual(16);
-        expect(heading.leadSize, id).toBeLessThanOrEqual(18);
-        if (!isMobile(testInfo)) expect(heading.lines, id).toBeLessThanOrEqual(2);
-    }
-});
 
-test.skip('S2 backgrounds alternate white, surface and two dark brand bands, and the footer is ink', async ({ page }) => {
-    await openLanding(page);
-    const colors = await page.evaluate(() => [...document.querySelectorAll('main > section:not(#hero), footer')]
-        .map((el) => `${el.id || 'footer'} ${getComputedStyle(el).backgroundColor}`));
-    expect(colors).toEqual([
-        'about rgba(0, 0, 0, 0)', // the white page
-        `features ${SAGE[50]}`,
-        `numbers ${SAGE[700]}`,
-        'how rgba(0, 0, 0, 0)',
-        `roles ${SAGE[50]}`,
-        'faq rgba(0, 0, 0, 0)',
-        `contact ${SAGE[50]}`,
-        `get-started ${SAGE[700]}`,
-        `footer ${INK}`,
-    ]);
-    // The dark bands: white heading, the rice field photo faint behind a sage layer.
-    for (const id of ['numbers', 'get-started']) {
-        expect(await page.locator(`#${id} h2`).evaluate((el) => getComputedStyle(el).color)).toBe('rgb(255, 255, 255)');
-        // The photo under a sage-800 layer at 85%.
-        expect(await page.locator(`#${id}`).evaluate((el) => getComputedStyle(el, '::before').backgroundColor)).toBe('rgba(54, 68, 50, 0.85)');
-        await expect(page.locator(`#${id} .lp-band-photo`)).toHaveCount(1);
-    }
-});
 
 test('S3 one 1200px container for the nav and every section', async ({ page }, testInfo) => {
     test.skip(isMobile(testInfo), 'the container only reaches its width on wide screens');
@@ -913,32 +847,7 @@ test('S3 one 1200px container for the nav and every section', async ({ page }, t
     for (const box of boxes) expect(box).toEqual([120, 1320]);
 });
 
-test.skip('S4 the hero card lists local forecasts, planting advisories and harvest dates under its buttons, as plain text', async ({ page }) => {
-    await openLanding(page);
-    const points = page.locator('#hero [data-hero-points]');
-    await expect(points).toHaveText('Local forecasts · Planting advisories · Harvest dates');
-    await expect(points.locator('svg')).toHaveCount(0);
-});
 
-test.skip('S5 features: six equal cards in a 3 by 2 grid, each a sage top edge, a 20px title and one line, no icon or number', async ({ page }, testInfo) => {
-    await openLanding(page);
-    const cards = page.locator('#features [data-feature]');
-    await expect(cards).toHaveCount(6);
-    await expect(cards.locator('h3')).toHaveText(['Weather analysis', 'Rice production', 'Planting advisory', 'Climate monitoring', 'Heat map', 'Reports']);
-    const boxes = await cards.evaluateAll((els) => els.map((el) => ({ top: Math.round(el.getBoundingClientRect().top), height: Math.round(el.getBoundingClientRect().height), shadow: getComputedStyle(el).boxShadow })));
-    for (const box of boxes) expect(box.shadow).toBe('none');
-    if (!isMobile(testInfo)) {
-        expect(new Set(boxes.map((b) => b.top)).size).toBe(2); // two rows of three
-        expect(new Set(boxes.map((b) => b.height)).size).toBe(1); // equal heights
-    }
-    for (const card of await cards.all()) {
-        await expect(card.locator('svg')).toHaveCount(0);
-        await expect(card.locator('p')).toHaveCount(1);
-        expect(await card.evaluate((el) => [getComputedStyle(el).borderTopWidth, getComputedStyle(el).borderTopColor])).toEqual(['3px', SAGE[500]]);
-        expect(await card.locator('h3').evaluate((el) => [getComputedStyle(el).fontSize, getComputedStyle(el).fontWeight])).toEqual(['20px', '600']);
-    }
-    await expect(page.locator('#features [data-step-number]')).toHaveCount(0);
-});
 
 test('S6 the numbers band shows real counts from the database', async ({ page }) => {
     await openLanding(page);
@@ -970,30 +879,7 @@ test('S7 How it works keeps four ordered columns with real UI fragments', async 
     if (!isMobile(testInfo)) expect((await page.locator('#how [data-steps]').evaluate((el) => getComputedStyle(el).gridTemplateColumns)).split(' ').length).toBe(4);
 });
 
-test.skip('S8 the closing call to action opens the sign-in card in either mode', async ({ page }, testInfo) => {
-    await openLanding(page);
-    await expect(page.locator('#get-started h2')).toHaveText('Plan your next planting with iClimate');
-    await page.locator('[data-cta="register"]').click();
-    await expect(page.locator('[data-auth-card]')).toHaveAttribute('data-auth-mode', 'register');
-    await expectScrolledTo(page, 'hero');
-    await page.locator('#get-started').scrollIntoViewIfNeeded();
-    await page.locator('[data-cta="login"]').click();
-    await expect(page.locator('[data-auth-card]')).toHaveAttribute('data-auth-mode', 'login');
-    await expect(page.locator('#login-email')).toBeFocused();
-});
 
-test.skip('S9 footer: link columns, the MAO card, a closed Data Privacy notice that opens, and the bottom row', async ({ page }) => {
-    await openLanding(page);
-    const footer = page.locator('footer');
-    await expect(footer.locator('nav h2, div > h2')).toHaveText(['Platform', 'Account', 'Contact']);
-    await expect(footer.locator('[data-footer-mao]')).toContainText('Lian Municipal Hall, Poblacion, Lian, Batangas');
-    const privacy = footer.locator('[data-privacy]');
-    await expect(privacy).not.toHaveAttribute('open', '');
-    await expect(privacy.getByText('Data Privacy Act of 2012')).toBeHidden();
-    await privacy.locator('summary').click();
-    await expect(privacy.getByText('Data Privacy Act of 2012', { exact: false })).toBeVisible();
-    await expect(footer).toContainText(`© ${new Date().getFullYear()} iClimate · Capstone Project`);
-});
 
 test('S10 no decorative icons: only the weather chip, menu, close, password eye, form fields and open/close chevrons draw one', async ({ page }) => {
     await openLanding(page);
@@ -1019,7 +905,7 @@ test('S11 the landing page uses plain section headings and the new service-site 
     await expect(page.locator('#get-started')).toHaveCount(0);
     await expect(page.locator('#numbers .lp-band-photo, #get-started .lp-band-photo')).toHaveCount(0);
     await expect(page.locator('#features [data-feature]')).toHaveCount(6);
-    await expect(page.locator('#roles article')).toHaveCount(3);
+    await expect(page.locator('#roles article')).toHaveCount(2);
     await expect(page.locator('#questions')).toContainText('Common questions');
     await expect(page.locator('#contact iframe[data-office-map]')).toHaveCount(1);
     await expect(page.locator('#contactForm')).toBeVisible();
@@ -1047,6 +933,35 @@ test('S11a About iClimate is centered with attributed quote and source grid', as
     await expect(about.locator('.about-sources')).toContainText('Harvests and yields by barangay and season');
     await expect(about.locator('ul, li')).toHaveCount(0);
     await expect(about.locator('[data-about-photo]')).toHaveCount(0);
+    await expect(about).toHaveAttribute('style', /lian-rice-dawn-960/);
+});
+
+test('S11c Lian field photos use the requested responsive layouts and accessible sources', async ({ page }) => {
+    for (const width of [1440, 768, 375]) {
+        await page.setViewportSize({ width, height: 768 });
+        await openLanding(page);
+        const photos = {
+            features: page.locator('#features [data-features-photo]'),
+            roles: page.locator('#roles [data-roles-photo]'),
+        };
+        await expect(photos.features.locator('img')).toHaveAttribute('alt', 'Green rice fields in Lian');
+        await expect(photos.roles.locator('img')).toHaveAttribute('alt', 'Ripening rice stalks');
+        for (const photo of Object.values(photos)) {
+            await expect(photo.locator('source[type="image/webp"]')).toHaveCount(1);
+            await expect(photo.locator('source[type="image/jpeg"]')).toHaveCount(1);
+            await expect(photo.locator('img')).toHaveAttribute('loading', 'lazy');
+        }
+        const layout = await photos.features.evaluate((photo) => ({
+            photoRatio: photo.getBoundingClientRect().width / photo.getBoundingClientRect().height,
+            listTop: photo.parentElement.querySelector('[data-feature-grid]').getBoundingClientRect().top,
+            photoTop: photo.getBoundingClientRect().top,
+        }));
+        expect(Math.abs(layout.photoRatio - (width >= 1024 ? 1 : 16 / 9))).toBeLessThan(0.03);
+        if (width < 1024) expect(layout.listTop).toBeGreaterThan(layout.photoTop);
+        if (width >= 1024) expect(layout.listTop).toBeLessThan(layout.photoTop + 20);
+        await expect(photos.roles).toHaveCSS('height', '120px');
+        await expect(page.locator('#contact')).toHaveAttribute('style', /lian-rice-horizon/);
+    }
 });
 
 test('S11b section heading blocks share About’s centered alignment', async ({ page }) => {
@@ -1220,81 +1135,15 @@ test('G4 keyboard focus reaches the controls and is always visible', async ({ pa
         seen.add(focus.key);
     }
     // The role cards hold no controls (no tabs, no log-in buttons), so focus goes from the sign-in card to the FAQ.
-    for (const expected of ['/login', 'login-email', 'login-password', 'faq-q-0']) {
-        if (isMobile(testInfo) && expected === '/login') continue;
+    for (const expected of ['#login', 'login-email', 'login-password', 'faq-q-0']) {
+        if (isMobile(testInfo) && expected === '#login') continue;
         expect([...seen].some((key) => key === expected || key.endsWith(expected)), `${expected} is keyboard reachable`).toBe(true);
     }
 });
 
 // ─── SCROLL ANIMATIONS ───────────────────────────────────────────────────
 
-test.describe.skip('scroll reveal with motion allowed', () => {
-    test.use({ reducedMotion: 'no-preference' });
 
-    test('M1 the Features cards fade in when scrolled to, once, and the page never scrolls sideways', async ({ page }, testInfo) => {
-        test.skip(isMobile(testInfo), 'one size is enough for the motion');
-        await page.goto('/');
-        await expect(page.locator('html')).toHaveClass(/js-reveal/);
-        await expect(page.locator('html')).toHaveAttribute('data-reveal', 'ready');
-        expect(await page.evaluate(() => getComputedStyle(document.documentElement).scrollBehavior)).toBe('smooth');
-        // The hero is not animated: its heading is there on load, without any scrolling.
-        await expect(page.locator('#hero h1')).toBeVisible();
-        expect(await page.locator('#hero h1').getAttribute('data-reveal')).toBeNull();
-        expect(await page.locator('#hero h1').evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
-        await expect.poll(() => page.locator('[data-auth-card]').evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
-
-        const cards = page.locator('#features [data-reveal-group] [data-reveal]');
-        expect(await cards.count()).toBe(6);
-        // Below the fold the cards wait, hidden, even after the 2s safety net.
-        await page.waitForTimeout(2200);
-        await expect(cards.first()).not.toHaveClass(/is-visible/);
-        expect(await cards.first().evaluate((el) => getComputedStyle(el).opacity)).toBe('0');
-
-        // Scrolling (not a link) brings them in, one after another.
-        await page.evaluate(() => window.scrollTo({ top: document.getElementById('features').offsetTop - 72, behavior: 'instant' }));
-        for (let i = 0; i < 6; i += 1) await expect(cards.nth(i)).toHaveClass(/is-visible/);
-        const delays = await cards.evaluateAll((els) => els.map((el) => el.style.getPropertyValue('--reveal-delay')));
-        expect(delays).toEqual(['0ms', '70ms', '140ms', '210ms', '280ms', '350ms']);
-        await expect.poll(() => cards.evaluateAll((els) => els.map((el) => getComputedStyle(el).opacity)), { timeout: 3000 })
-            .toEqual(['1', '1', '1', '1', '1', '1']);
-        await expect.poll(() => cards.last().evaluate((el) => getComputedStyle(el).transform)).toBe('none');
-
-        // Past the hero the nav is solid white, switched with a short colour transition.
-        await expect(page.locator('[data-public-nav]')).toHaveAttribute('data-nav-state', 'solid');
-        expect(await page.locator('[data-public-nav]').evaluate((nav) => [getComputedStyle(nav).transitionProperty, getComputedStyle(nav).transitionDuration]))
-            .toEqual(['background-color, border-color', '0.2s, 0.2s']);
-        expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
-    });
-
-    test('M2 a nav link shows its section straight away; the only motion is a fade-up', async ({ page }, testInfo) => {
-        test.skip(isMobile(testInfo), 'desktop nav');
-        await page.goto('/');
-        await navLink(page, 'roles', testInfo).click();
-        // Shown at once (no transition), not after the scroll.
-        const heading = page.locator('#roles h2').locator('xpath=ancestor::*[@data-reveal][1]');
-        await expect(heading).toHaveClass(/reveal-now/);
-        expect(await heading.evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
-
-        await page.evaluate(() => window.scrollTo({ top: document.getElementById('how').offsetTop - 72, behavior: 'instant' }));
-        const step = page.locator('#how [data-steps] [data-reveal]').first();
-        await expect.poll(() => step.evaluate((el) => [getComputedStyle(el).opacity, getComputedStyle(el).transform]), { timeout: 3000 }).toEqual(['1', 'none']);
-        // Fade and rise only: no drawn lines, nothing that moves sideways or scales.
-        expect(await page.locator('[data-reveal-line]').count()).toBe(0);
-        // Nothing inside the hero card or the map is ever marked for animation.
-        expect(await page.locator('[data-auth-card] [data-reveal], [data-office-map-box][data-reveal], [data-office-map-box] [data-reveal], #contactForm [data-reveal]').count()).toBe(0);
-    });
-});
-
-test.skip('M3 with reduced motion every [data-reveal] item is visible on load', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.locator('html')).not.toHaveClass(/js-reveal/);
-    const hidden = await page.locator('[data-reveal]').evaluateAll((els) => els
-        .filter((el) => el.offsetParent !== null || el.closest('[hidden]') === null)
-        .filter((el) => { const cs = getComputedStyle(el); return cs.opacity !== '1' || cs.transform !== 'none'; })
-        .map((el) => el.outerHTML.slice(0, 80)));
-    expect(hidden).toEqual([]);
-    expect(await page.locator('[data-reveal]').count()).toBeGreaterThan(20);
-});
 
 test('L1 the MAO logo (the Lian seal) in the nav and footer loads, square and unstretched, beside the iClimate logo', async ({ page }) => {
     await openLanding(page);
@@ -1441,6 +1290,7 @@ test('X2 the nav at 375 and 1280px: no sideways scroll, nothing cut off or under
                 }
                 for (const id of ['hero', 'about', 'features', 'how', 'roles', 'faq', 'contact']) {
                     const section = document.getElementById(id);
+                    if (!section) continue;
                     if (section.scrollHeight > section.clientHeight + 1) out.push(`#${id} content overflows`);
                     section.scrollIntoView({ behavior: 'instant' });
                     const navBottom = nav.getBoundingClientRect().bottom;

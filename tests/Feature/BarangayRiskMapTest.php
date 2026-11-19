@@ -118,7 +118,7 @@ class BarangayRiskMapTest extends TestCase
         $service = app(BarangayRiskMapService::class);
         $map = $service->riskMap(refresh: true);
 
-        $this->assertCount(19, $map['barangays']);
+        $this->assertCount(count(\App\Support\LianBarangays::all()), $map['barangays']);
         $names = collect($map['barangays'])->pluck('barangay')->sort()->values()->all();
         $this->assertSame(LianBarangays::all(), collect($names)->sortBy(fn ($n) => array_search($n, LianBarangays::all()))->values()->all());
 
@@ -359,20 +359,19 @@ class BarangayRiskMapTest extends TestCase
         $service = app(BarangayRiskMapService::class);
         $map = $service->riskMap(refresh: true);
 
-        // Bagong Pook is a Polygon feature, Lumaniag is a MultiPolygon feature
-        // in the bundled GeoJSON — both must resolve a psgc_10d.
-        $polygon = collect($map['barangays'])->firstWhere('barangay', 'Bagong Pook');
-        $multiPolygon = collect($map['barangays'])->firstWhere('barangay', 'Lumaniag');
+        // Two supported GeoJSON features must resolve their psgc_10d values.
+        $polygon = collect($map['barangays'])->firstWhere('barangay', 'Balibago');
+        $multiPolygon = collect($map['barangays'])->firstWhere('barangay', 'Luyahan');
 
-        $this->assertSame('0401013002', $polygon['psgc_10d']);
-        $this->assertSame('0401013012', $multiPolygon['psgc_10d']);
+        $this->assertSame('0401013003', $polygon['psgc_10d']);
+        $this->assertSame('0401013013', $multiPolygon['psgc_10d']);
     }
 
     public function test_unmatchable_barangay_name_is_excluded_not_misassigned(): void
     {
         $this->assertNull(LianBarangays::canonicalName('Totally Unknown Place'));
         $this->assertNull(LianBarangays::canonicalName(''));
-        $this->assertSame('Bagong Pook', LianBarangays::canonicalName('bagong  pook'));
+        $this->assertSame('Balibago', LianBarangays::canonicalName('balibago'));
     }
 
     public function test_api_endpoint_returns_graceful_response_on_service_failure(): void
@@ -398,7 +397,7 @@ class BarangayRiskMapTest extends TestCase
         $response = $this->getJson('/api/lian/risk-map');
 
         $response->assertStatus(200)->assertJson(['status' => 'ok']);
-        $response->assertJsonCount(19, 'barangays');
+        $response->assertJsonCount(count(\App\Support\LianBarangays::all()), 'barangays');
         $first = $response->json('barangays.0');
         $this->assertArrayNotHasKey('risk_breakdown', $first);
         $this->assertArrayNotHasKey('advisory', $first);
@@ -432,7 +431,7 @@ class BarangayRiskMapTest extends TestCase
         $map = $service->riskMap(); // no explicit refresh — proves the NEW key is simply never populated with the old array.
 
         $this->assertNotSame($staleOldKeyPayload['source_note'], $map['source_note']);
-        $this->assertCount(19, $map['barangays']);
+        $this->assertCount(count(\App\Support\LianBarangays::all()), $map['barangays']);
         $this->assertTrue(Cache::has(BarangayRiskMapService::CACHE_KEY));
     }
 
@@ -442,12 +441,12 @@ class BarangayRiskMapTest extends TestCase
         Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
 
         $user = User::factory()->create(['role' => User::ROLE_FARMER]);
-        FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Bagong Pook']);
+        FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Balibago']);
 
         $response = $this->actingAs($user)->get(route('farmer.dashboard'));
 
         $response->assertOk();
-        $response->assertSee('Bagong Pook');                      // the barangay is on the farm information card (the risk card needs a stored rating)
+        $response->assertSee('Balibago');                         // the barangay is on the farm information card (the risk card needs a stored rating)
         $response->assertDontSee('Farm Outline');                 // no mapped farm: no outline row
     }
 
@@ -457,7 +456,7 @@ class BarangayRiskMapTest extends TestCase
         Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
 
         $user = User::factory()->create(['role' => User::ROLE_FARMER]);
-        $profile = FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Bagong Pook']);
+        $profile = FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Balibago']);
         FarmBoundary::factory()->create([
             'farmer_profile_id' => $profile->id,
             'boundary_coordinates' => [[14.02, 120.64], [14.021, 120.641], [14.019, 120.642]],
@@ -467,7 +466,7 @@ class BarangayRiskMapTest extends TestCase
         $response = $this->actingAs($user)->get(route('farmer.dashboard'));
 
         $response->assertOk();
-        $response->assertSee('Bagong Pook');                      // the barangay is in the header (the risk card needs a stored rating)
+        $response->assertSee('Balibago');                         // the barangay is in the header (the risk card needs a stored rating)
         $response->assertDontSee('Draw your farm on the map');    // a saved outline completes that setup step
     }
 
@@ -590,7 +589,7 @@ class BarangayRiskMapTest extends TestCase
         Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
 
         $user = User::factory()->create(['role' => User::ROLE_FARMER]);
-        FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Bagong Pook']);
+        FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Balibago']);
 
         // The redesigned Farmer Dashboard links to the dedicated Heat Map instead of embedding the map.
         $response = $this->actingAs($user)->get(route('heat-map.index'));
@@ -602,7 +601,7 @@ class BarangayRiskMapTest extends TestCase
         $response->assertSee('data-boundary-url="'.url('/api/boundaries/lian-barangays').'"', false);
         // All 19 barangays remain in the compact map dataset; detail panels are loaded on demand.
         preg_match('#<script type="application/json" data-heat-map-levels>(.*?)</script>#s', (string) $response->getContent(), $levels);
-        $this->assertCount(19, json_decode($levels[1], true)['levels']['week']);
+        $this->assertCount(count(\App\Support\LianBarangays::all()), json_decode($levels[1], true)['levels']['week']);
         $this->assertSame(0, preg_match_all('#data-heat-map-view="week:(?!summary)[^"]+"#', (string) $response->getContent()));
         // The page reads saved data: it has no refresh control and no pop-up.
         $response->assertDontSee('data-risk-map-refresh', false);
@@ -636,50 +635,9 @@ class BarangayRiskMapTest extends TestCase
             ->assertSee('id="heatMapCanvas"', false);
     }
 
-    public function test_shared_heat_map_page_is_available_to_every_account_role(): void
-    {
-        // IT is the system controller (2026-10): the Heat Map sends it back to its dashboard.
-        $this->actingAs(User::factory()->create(['role' => User::ROLE_IT_EXPERT]))->get(route('heat-map.index'))->assertRedirect(route('admin.dashboard'));
 
-        foreach ([User::ROLE_FARMER, User::ROLE_MAO] as $role) {
-            $user = User::factory()->create(['role' => $role]);
 
-            $this->actingAs($user)->get(route('heat-map.index'))
-                ->assertOk()
-                ->assertSee('Heat Map')
-                ->assertSee('id="heatMapCanvas"', false)
-                ->assertSee('class="hmx-legend"', false)
-                ->assertSee('data-heat-map-panel', false)
-                ->assertSee('data-boundary-url="'.url('/api/boundaries/lian-barangays').'"', false)
-                ->assertSee('href="'.route('heat-map.index').'"', false);
-        }
-    }
 
-    public function test_admin_dashboard_has_a_heat_map_tab_and_mao_still_does(): void
-    {
-        Cache::flush();
-        $this->computedRiskRating();                                // the MAO map shows once a barangay has a computed rating
-        Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
-
-        $itExpert = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
-
-        // IT Dashboard (2026-10): no Heat Map tab and no Heat Map menu item; the page sends IT back to its dashboard.
-        $this->actingAs($itExpert)->get(route('admin.dashboard'))
-            ->assertOk()
-            ->assertDontSee('href="'.route('heat-map.index').'"', false)
-            ->assertDontSee('id="itd-panel-heatmap"', false)
-            ->assertDontSee('id="barangayRiskMap"', false);
-        $this->actingAs($itExpert)->get(route('heat-map.index'))->assertRedirect(route('admin.dashboard'));
-
-        // MAO Dashboard (2026-10): the preview card links to the Heat Map page; the page reads saved data (no refresh control).
-        $this->storeWeekForecast();
-        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
-        $response = $this->actingAs($mao)->get(route('mao.dashboard'));
-        $response->assertOk();
-        $response->assertSee('Open Heat Map');
-        $response->assertSee('href="'.route('heat-map.index').'"', false);
-        $response->assertDontSee('data-risk-map-refresh', false);
-    }
 
     public function test_farmers_own_barangay_is_highlighted_on_the_full_map(): void
     {
@@ -687,16 +645,16 @@ class BarangayRiskMapTest extends TestCase
         Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
 
         $user = User::factory()->create(['role' => User::ROLE_FARMER]);
-        FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Cumba']);
+        FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'San Diego']);
 
         $response = $this->actingAs($user)->get(route('heat-map.index'));
 
         $response->assertOk();
-        $response->assertSee('data-own-barangay="Cumba"', false);
+        $response->assertSee('data-own-barangay="San Diego"', false);
         // Highlighting one barangay must not hide/remove any of the others; detail panels are lazy-loaded.
         $response->assertSee('id="heatMapCanvas"', false);
         preg_match('#<script type="application/json" data-heat-map-levels>(.*?)</script>#s', (string) $response->getContent(), $levels);
-        $this->assertCount(19, json_decode($levels[1], true)['levels']['week']);
+        $this->assertCount(count(\App\Support\LianBarangays::all()), json_decode($levels[1], true)['levels']['week']);
         $this->assertSame(0, preg_match_all('#data-heat-map-view="week:(?!summary)[^"]+"#', (string) $response->getContent()));
     }
 
@@ -709,14 +667,14 @@ class BarangayRiskMapTest extends TestCase
         // A messy, non-canonical spelling that LianBarangays::canonicalName()
         // is already responsible for resolving (same normalizer the risk
         // scoring pipeline itself relies on for weather lookups).
-        FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Brgy. 1']);
+        FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'San Diego ']);
 
-        $this->assertSame('Barangay 1 (Pob.)', LianBarangays::canonicalName('Brgy. 1'));
+        $this->assertSame('San Diego', LianBarangays::canonicalName('san diego'));
 
         $response = $this->actingAs($user)->get(route('heat-map.index'));
 
         $response->assertOk();
-        $response->assertSee('data-own-barangay="Barangay 1 (Pob.)"', false);
+        $response->assertSee('data-own-barangay="San Diego"', false);
     }
 
     public function test_farmer_with_unresolvable_legacy_barangay_still_sees_full_map_without_crashing(): void
@@ -746,7 +704,7 @@ class BarangayRiskMapTest extends TestCase
         Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(200, 28)]);
 
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER]);
-        FarmerProfile::factory()->create(['user_id' => $farmer->id, 'barangay' => 'Bagong Pook']);
+        FarmerProfile::factory()->create(['user_id' => $farmer->id, 'barangay' => 'Balibago']);
 
         // Since 2026-10 the Heat Map page is the one map for every role (the MAO dashboard has a small preview of it
         // and the IT dashboard none): each role's page points at the same boundary file and the same three levels.
@@ -782,9 +740,9 @@ class BarangayRiskMapTest extends TestCase
         Http::fake(['api.open-meteo.com/*' => Http::response($payload, 200)]);
 
         $user = User::factory()->create(['role' => User::ROLE_FARMER]);
-        FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Bagong Pook']);
+        FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Balibago']);
         RiceProduction::factory()->create([
-            'barangay' => 'Bagong Pook',
+            'barangay' => 'Balibago',
             'yield_per_hectare' => 4.1,
             'year' => 2026,
             'season' => 'Wet',
@@ -799,13 +757,13 @@ class BarangayRiskMapTest extends TestCase
         $farmerResponse = $this->actingAs($user)->get(route('farmer.dashboard'));
         $farmerResponse->assertOk();
 
-        $week = app(BarangayWeekRiskService::class)->forBarangay('Bagong Pook');
+        $week = app(BarangayWeekRiskService::class)->forBarangay('Balibago');
 
         $this->assertSame('high', $week['level'] ?? null);
         // (The "Bagong Pook, Lian, Batangas" line lived in the farmer dashboard header, removed in the 2026-10 redesign.)
-        $farmerResponse->assertSee('<p class="fh-risk-badge is-danger">High</p>', false);
+        $farmerResponse->assertSee('<p class="fh-risk-badge is-danger">High Risk</p>', false);
         $this->actingAs($user)->get(route('heat-map.index'))->assertOk()
-            ->assertSee('<span class="hmx-badge is-high">High</span>', false);
+            ->assertSee('<span class="hmx-badge is-high">High Risk</span>', false);
     }
 
     /**
@@ -824,7 +782,7 @@ class BarangayRiskMapTest extends TestCase
         $service = app(BarangayRiskMapService::class);
         $map = $service->riskMap(refresh: true);
 
-        $entry = collect($map['barangays'])->firstWhere('barangay', 'Bagong Pook');
+        $entry = collect($map['barangays'])->firstWhere('barangay', 'Balibago');
 
         $this->assertNotNull($entry);
         $this->assertSame('fresh', $entry['weather']['status']);
@@ -857,7 +815,7 @@ class BarangayRiskMapTest extends TestCase
             'generated_at' => now()->subMinutes(8)->toIso8601String(),
             'source_note' => 'Verified test map.',
             'barangays' => [[
-                'barangay' => 'Bagong Pook',
+                'barangay' => 'Balibago',
                 'risk_level' => 'High',
                 'risk_score' => 0.72,
                 'color' => 'orange',
@@ -869,7 +827,7 @@ class BarangayRiskMapTest extends TestCase
         Http::fake(['api.open-meteo.com/*' => Http::response([], 500)]);
 
         $map = app(BarangayRiskMapService::class)->riskMap(refresh: true);
-        $entry = collect($map['barangays'])->firstWhere('barangay', 'Bagong Pook');
+        $entry = collect($map['barangays'])->firstWhere('barangay', 'Balibago');
 
         $this->assertSame('High', $entry['risk_level']);
         $this->assertSame('stale', $entry['status']);
@@ -884,7 +842,7 @@ class BarangayRiskMapTest extends TestCase
         Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(150, 28, weatherCode: 95)]);
 
         $user = User::factory()->create(['role' => User::ROLE_FARMER]);
-        FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Bagong Pook']);
+        FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Balibago']);
         // Pages never call the provider; the scheduled refresh stores the reading the dashboard shows.
         $this->artisan('iclimate:refresh-weather-cache');
 
@@ -901,7 +859,7 @@ class BarangayRiskMapTest extends TestCase
         Http::fake(['api.open-meteo.com/*' => fn () => $this->fakeFreshWeather(12, 29, null, 10)]);
 
         $map = app(BarangayRiskMapService::class)->riskMap(refresh: true);
-        $entry = collect($map['barangays'])->firstWhere('barangay', 'Puting-Kahoy');
+        $entry = collect($map['barangays'])->firstWhere('barangay', 'Balibago');
 
         $this->assertNotNull($entry);
         $this->assertSame('fresh', $entry['weather']['status']);

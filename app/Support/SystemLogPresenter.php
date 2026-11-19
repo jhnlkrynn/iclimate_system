@@ -132,7 +132,8 @@ class SystemLogPresenter
     {
         $payload = self::parse($log->details);
         $label = self::actionLabel($log->action);
-        $when = $log->created_at?->timezone(config('app.timezone'));
+        // Shown in Philippine time: app.timezone is UTC (storage), so converting to it showed UTC clock times on System Logs.
+        $when = $log->created_at?->copy()->timezone(\App\Support\BusinessClock::timezone());
         $role = self::roleInfo($log, $payload);
 
         return [

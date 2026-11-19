@@ -1,0 +1,44 @@
+{
+  "phase": 26,
+  "retrieved_at": "2026-11-13T23:59:10+08:00",
+  "status": "AUTHENTIC_AGGREGATE_EVIDENCE_ONLY",
+  "production_use": false,
+  "evaluation_use": false,
+  "accuracy_status": "ACCURACY NOT VERIFIED",
+  "artifacts": [
+    {
+      "path": "psa-batangas/palay-production-batangas-2015-2025.csv",
+      "provider": "Philippine Statistics Authority",
+      "source_url": "https://openstat.psa.gov.ph:443/PXWeb/api/v1/en/DB/2E/CS/0012E4EVCP0.px",
+      "geographic_level": "province",
+      "geography": "Batangas",
+      "unit": "metric tons",
+      "coverage": "2015-2025, quarterly/semester/annual PSA periods",
+      "sha256": "a16d12c0d2909ee4681d834a67df058b012dd172f65877a1c936314997a9167f",
+      "classification": "authentic official aggregate observation; not farm or municipal evidence"
+    },
+    {
+      "path": "psa-batangas/palay-area-harvested-batangas-2015-2025.csv",
+      "provider": "Philippine Statistics Authority",
+      "source_url": "https://openstat.psa.gov.ph:443/PXWeb/api/v1/en/DB/2E/CS/0022E4EAHC0.px",
+      "geographic_level": "province",
+      "geography": "Batangas",
+      "unit": "hectares",
+      "coverage": "2015-2025, quarterly/semester/annual PSA periods",
+      "sha256": "a2d26eeb3aef36c27c6080f5fdbcc0cd0e5e440ce67816d448196f2cc67604a4",
+      "classification": "authentic official aggregate observation; not farm or municipal evidence"
+    },
+    {
+      "path": "ambulong-climatological-normals-1991-2020.pdf",
+      "provider": "DOST-PAGASA, Climatology and Agrometeorology Division",
+      "source_url": "https://pubfiles.pagasa.dost.gov.ph/pagasaweb/files/cad/CLIMATOLOGICAL%20NORMALS%20%281991-2020%29/AMBULONG.pdf",
+      "geographic_level": "station",
+      "geography": "Ambulong, Batangas",
+      "unit": "monthly climatological normals; rainfall mm and temperature °C among reported elements",
+      "coverage": "1991-2020 normals, not annual or season-specific observations",
+      "sha256": "93f65373eb736e4b77c2fa02c9f8247ca20ee17212a4d27b344133e42c1eb108",
+      "classification": "authentic official climate context; insufficient as historical crop-season evaluation input"
+    }
+  ],
+  "derived_target_note": "For each completed annual PSA period, production metric tons divided by area harvested hectares yields a province-level derived metric-ton-per-hectare value. These derived aggregates are not imported into the application and are not approved evaluation rows."
+}

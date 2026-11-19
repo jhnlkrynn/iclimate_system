@@ -18,6 +18,8 @@ class YieldPredictionRequest extends Model
 
     public const QUEUED = 'queued';
 
+    public const PROCESSING = 'processing';
+
     public const DONE = 'done';
 
     public const FAILED = 'failed';

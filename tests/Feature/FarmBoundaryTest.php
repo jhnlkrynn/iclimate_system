@@ -30,7 +30,7 @@ class FarmBoundaryTest extends TestCase
     public function test_non_farmer_roles_cannot_use_farmer_boundary_editor(): void
     {
         $mao = User::factory()->maoPersonnel()->create();
-        $itExpert = User::factory()->itExpert()->create();
+        $itExpert = User::factory()->maoPersonnel()->create();
 
         $this->actingAs($mao)->get(route('farmer.boundary.edit'))->assertForbidden();
         $this->actingAs($itExpert)->get(route('farmer.boundary.edit'))->assertForbidden();
@@ -47,7 +47,7 @@ class FarmBoundaryTest extends TestCase
             ->assertOk()
             ->assertSee('Mapped Farm Boundary');
 
-        $this->actingAs(User::factory()->itExpert()->create())
+        $this->actingAs(User::factory()->maoPersonnel()->create())
             ->get(route('farmer-profiles.show', $profile))
             ->assertOk()
             ->assertSee('Mapped Farm Boundary');

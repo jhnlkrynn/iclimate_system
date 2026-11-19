@@ -56,8 +56,10 @@ class PythonRuntimeTest extends TestCase
         }
 
         $this->assertStringStartsWith('/usr/bin'.PATH_SEPARATOR, $env['PATH']);
-        $this->assertArrayNotHasKey('VIRTUAL_ENV', $env);              // not a virtualenv: its packages stay visible
-        $this->assertArrayNotHasKey('PYTHONNOUSERSITE', $env);
+        // Not a virtualenv: its packages stay visible. Explicitly removed (false), not just left out, so an activated
+        // shell's VIRTUAL_ENV / PYTHONNOUSERSITE is not inherited by this interpreter either.
+        $this->assertFalse($env['VIRTUAL_ENV']);
+        $this->assertFalse($env['PYTHONNOUSERSITE']);
         $this->assertArrayNotHasKey('SYSTEMROOT', $env);
         $this->assertStringNotContainsString('C:\\', implode('|', array_filter($env, 'is_string')));
         $this->assertSame('1', $env['OMP_NUM_THREADS']);
@@ -141,5 +143,87 @@ class PythonRuntimeTest extends TestCase
         $this->assertStringNotContainsString('C:\\', $path);
         $this->assertSame('none', $venv);                                        // not the project venv: not marked as one
         $this->assertSame(base_path('python_scripts/predict_rice_yield_candidate.py'), $script);
+    }
+
+    /** @return array<string, array{0: ?string}> */
+    public static function inheritedVirtualenvs(): array
+    {
+        return [
+            'no activated virtualenv' => [null],
+            'an activated .venv-ml shell' => ['@project/.venv-ml'],
+            'some other activated virtualenv' => ['/opt/other-venv'],
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('inheritedVirtualenvs')]
+    public function test_a_python_outside_the_project_virtualenvs_never_inherits_an_activated_virtualenv(?string $inherited): void
+    {
+        if (PHP_OS_FAMILY === 'Windows') {
+            $this->markTestSkipped('Uses a POSIX shell script as a stand-in Python.');
+        }
+
+        $this->tempDir = sys_get_temp_dir().DIRECTORY_SEPARATOR.'iclimate-python-'.bin2hex(random_bytes(4));
+        File::ensureDirectoryExists($this->tempDir);
+        $python = $this->tempDir.DIRECTORY_SEPARATOR.'python';
+        File::put($python, "#!/bin/sh\nprintf '%s|%s' \"\${VIRTUAL_ENV:-none}\" \"\${PYTHONNOUSERSITE:-none}\"\n");
+        chmod($python, 0755);
+
+        $output = $this->withInheritedVirtualenv($inherited, function () use ($python): string {
+            $process = new \Symfony\Component\Process\Process([$python], base_path(), PythonRuntime::environment($python));
+            $process->mustRun();
+
+            return $process->getOutput();
+        });
+
+        $this->assertSame('none|none', $output);
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('inheritedVirtualenvs')]
+    public function test_a_project_virtualenv_python_always_runs_as_its_own_virtualenv(?string $inherited): void
+    {
+        config(['iclimate.python_os_family' => 'Linux']);
+
+        foreach (['.venv', '.venv-ml'] as $folder) {
+            $env = $this->withInheritedVirtualenv($inherited, fn (): array => PythonRuntime::environment(base_path($folder.'/bin/python')));
+
+            $this->assertSame(base_path($folder), $env['VIRTUAL_ENV'], $folder);
+            $this->assertSame('1', $env['PYTHONNOUSERSITE'], $folder);
+            $this->assertStringStartsWith(base_path($folder.'/bin').PATH_SEPARATOR, $env['PATH'], $folder);
+        }
+    }
+
+    /**
+     * Runs $callback as if the test process had been started from a shell with $venv activated (null: none).
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    private function withInheritedVirtualenv(?string $venv, callable $callback): mixed
+    {
+        // Data providers run before the app boots, so the project folder is resolved here.
+        $venv = $venv !== null && str_starts_with($venv, '@project/') ? base_path(substr($venv, strlen('@project/'))) : $venv;
+        $saved = ['VIRTUAL_ENV' => getenv('VIRTUAL_ENV'), 'PYTHONNOUSERSITE' => getenv('PYTHONNOUSERSITE')];
+        $set = function (string $name, string|false|null $value): void {
+            if ($value === false || $value === null) {
+                putenv($name);
+                unset($_ENV[$name], $_SERVER[$name]);
+            } else {
+                putenv($name.'='.$value);
+                $_ENV[$name] = $_SERVER[$name] = $value;
+            }
+        };
+
+        $set('VIRTUAL_ENV', $venv);
+        $set('PYTHONNOUSERSITE', $venv === null ? null : '1');
+
+        try {
+            return $callback();
+        } finally {
+            foreach ($saved as $name => $value) {
+                $set($name, $value);
+            }
+        }
     }
 }

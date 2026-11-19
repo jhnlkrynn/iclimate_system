@@ -111,6 +111,17 @@ TXT;
         });
     }
 
+    public function test_non_recording_inspection_does_not_write_a_verification_row(): void
+    {
+        $this->backup('iclimate_2026-09-25_0315.backup');
+        $this->fakeRestore();
+
+        $result = $this->verifier()->verify(false);
+
+        $this->assertSame('passed', $result->status);
+        $this->assertDatabaseCount('backup_verifications', 0);
+    }
+
     public function test_sha256_and_size_are_persisted(): void
     {
         $path = $this->backup('iclimate_2026-09-25_0315.backup', "PGDMP\x01\x0e-distinct-contents");
@@ -377,24 +388,7 @@ TXT;
         $this->assertSame('Healthy', $this->health()['status']);
     }
 
-    public function test_health_card_is_separate_from_database_backup_and_leaks_nothing(): void
-    {
-        $path = $this->backup('iclimate_2026-09-25_0315.backup');
-        $this->record(['backup_size_bytes' => filesize($path)]);
-        Process::fake();
 
-        $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
-        $html = $this->actingAs($it)->get(route('system-health.index'))->assertOk()->getContent();
-
-        $this->assertStringContainsString('data-health-check="backup"', $html);
-        $this->assertStringContainsString('data-health-check="backup-verification"', $html);
-        $this->assertStringContainsString('Backup Verification', $html);
-        foreach ([base_path(), storage_path(), $this->root, 'pg_restore.exe'] as $leak) {
-            $this->assertStringNotContainsString($leak, $html);
-        }
-        // Opening the page reads recorded results only; it never runs pg_restore.
-        Process::assertNothingRan();
-    }
 
     // --------------------------------------------------------------- schedule
 

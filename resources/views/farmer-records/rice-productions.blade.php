@@ -47,6 +47,37 @@
 
         @include('farmer-records._filters', ['placeholder' => 'Search by place, season or year', 'labels' => ['irrigation_type' => 'Irrigation']])
 
+        <section class="frec-panel" aria-labelledby="frecFederationTitle">
+            <div class="frec-panel-head">
+                <h2 id="frecFederationTitle">Lian Federation land-area reference</h2>
+                <p class="fad-support">Association-level source data only. It does not assign an irrigation status to every farm or barangay.</p>
+            </div>
+            <div class="frec-kpis">
+                <article class="frec-kpi"><h3 class="fad-label">Irrigated area</h3><p class="frec-kpi-value">{{ number_format($federationSummary['irrigated_area_hectares'], 2) }}<small>ha</small></p></article>
+                <article class="frec-kpi"><h3 class="fad-label">Rainfed / non-irrigated</h3><p class="frec-kpi-value">{{ number_format($federationSummary['rainfed_area_hectares'], 2) }}<small>ha</small></p></article>
+                <article class="frec-kpi"><h3 class="fad-label">Total area</h3><p class="frec-kpi-value">{{ number_format($federationSummary['total_area_hectares'], 2) }}<small>ha</small></p></article>
+            </div>
+            <div class="frec-table-wrap" id="frecFederationTable">
+                <table class="frec-table">
+                    <caption class="visually-hidden">Federation association land-area reference</caption>
+                    <thead>
+                        <tr><th scope="col">Barangay</th><th scope="col">Association</th><th scope="col" class="is-num">Area (ha)</th><th scope="col">Source classification</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach($federationSummary['associations'] as $association)
+                            <tr>
+                                <th scope="row">{{ $association['barangay'] }}</th>
+                                <td>{{ $association['association'] }}</td>
+                                <td class="is-num">{{ number_format((float) $association['area_hectares'], 2) }}</td>
+                                <td>{{ $association['source_status'] === 'Irrigated' ? 'Irrigated' : 'Rainfed / Non-irrigated' }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <p class="fad-support">The association classifications shown in this source are not used as automatic classifications for individual Production Records. Authorized Admin/MAO users must classify each record; blank values remain unknown.</p>
+        </section>
+
         @if($yieldBars->isNotEmpty())
             <section class="frec-panel" aria-labelledby="frecYieldTitle">
                 <div class="frec-panel-head">
@@ -66,7 +97,7 @@
             </section>
         @endif
 
-        <section class="frec-panel" aria-labelledby="frecListTitle">
+        <section class="frec-panel" aria-labelledby="frecListTitle" @if (! empty($liveAreas)) data-live-region="records" data-live-areas="{{ $liveAreas }}" @endif>
             <div class="frec-panel-head is-row">
                 <h2 id="frecListTitle">Production Records</h2>
                 <p class="fad-support">Showing {{ $records->firstItem() ?? 0 }}–{{ $records->lastItem() ?? 0 }} of {{ $records->total() }}</p>
@@ -151,7 +182,7 @@
 
         <section class="frec-note" aria-labelledby="frecAboutTitle">
             <h2 id="frecAboutTitle" class="fad-label">About these records</h2>
-            <p class="fad-support">Lian Municipal Average rows are past rice yield for all of Lian, from {{ $datasetSource }}. They do not show a barangay, irrigation, area or production. Other rows are barangay records added by the Municipal Agriculture Office. To record your own planting and harvest, use <a href="{{ route('calendar.index') }}">My Planting and Harvest Records</a> on the Calendar.</p>
+            <p class="fad-support">Seasonal barangay benchmark rows come from the imported RICE-PRODUCTION (LIAN) workbook and are read-only. Missing source values stay blank. Other rows are barangay records added by the Municipal Agriculture Office. To record your own planting and harvest, use <a href="{{ route('calendar.index') }}">My Planting and Harvest Records</a> on the Calendar.</p>
         </section>
     </div>
 </x-app-layout>

@@ -319,12 +319,12 @@ class PanelRevisionsTest extends TestCase
     {
         $jean = $this->jean();
         $payload = ['name' => $jean->name, 'position' => $jean->position, 'station_type' => 'Municipal', 'area_covered_ha' => 250,
-            'status' => 'Active', 'barangays' => ['Kapito', 'Cumba']];
+            'status' => 'Active', 'barangays' => ['Kapito', 'Balibago']];
 
         $this->actingAs($jean)->put(route('mao.personnel.update', $jean), $payload)->assertForbidden();
         $this->actingAs($this->ofelia())->put(route('mao.personnel.update', $jean), $payload)->assertRedirect();
 
-        $this->assertSame(['Cumba', 'Kapito'], $jean->fresh()->coveredBarangays());
+        $this->assertSame(['Balibago', 'Kapito'], $jean->fresh()->coveredBarangays());
         $this->assertEquals(250, (float) $jean->fresh()->area_covered_ha);
         $this->assertTrue(MaoActivityLog::query()->where('user_id', $this->ofelia()->id)->where('action', 'edited')->exists());
     }
@@ -365,26 +365,26 @@ class PanelRevisionsTest extends TestCase
         $this->actingAs($this->jean())->get(route('mao.activity-log.index'))->assertOk()->assertSee('Validated record')->assertDontSee('Evelyn M. Mayari');
     }
 
-    // ------------------------------------------------------------ 4.4 A accounts, default password, first sign-in
+    // ------------------------------------------------------------ 4.4 A accounts, per-account password, first sign-in
 
-    public function test_the_four_mao_accounts_sign_in_with_the_default_password_stored_hashed_and_must_change_it(): void
+    public function test_the_four_mao_accounts_have_distinct_hashed_passwords_and_must_change_it(): void
     {
         User::query()->where('role', User::ROLE_MAO)->update(['must_change_password' => true]);
         $expected = ['ofeliarodil@gmail.com' => 'Admin', 'jeanlaviste@gmail.com' => 'MAO', 'lodivicocachuela@gmail.com' => 'MAO', 'evelynmayari@gmail.com' => 'MAO'];
+        $hashes = [];
         foreach ($expected as $email => $role) {
             $user = $this->mao($email);
-            $this->assertNotSame('Password@123', $user->getRawOriginal('password'));
-            $this->assertTrue(\Illuminate\Support\Facades\Hash::check('Password@123', $user->password), $email);
+            $this->assertNotSame('', (string) $user->getRawOriginal('password'));
+            $hashes[$email] = $user->getRawOriginal('password');
             $this->assertSame($role, $user->maoRoleLabel());
         }
+        $this->assertCount(4, array_unique($hashes));
 
         // Signed in, every page sends them to "Change your password" until they do (or skip, for testing).
         $jean = $this->jean()->fresh();
         $this->actingAs($jean)->get(route('mao.dashboard'))->assertRedirect(route('password.first-change'));
         $this->actingAs($jean)->get(route('password.first-change'))->assertOk()->assertSee('Skip for now');
 
-        $this->actingAs($jean)->post(route('password.first-change.update'), ['password' => 'Password@123', 'password_confirmation' => 'Password@123'])
-            ->assertSessionHasErrors('password');   // not the default again
         $this->actingAs($jean)->post(route('password.first-change.update'), ['password' => 'Kapito-Rice-2026', 'password_confirmation' => 'Kapito-Rice-2026'])
             ->assertRedirect(route('mao.dashboard'));
         $this->assertFalse($jean->fresh()->must_change_password);
@@ -406,16 +406,16 @@ class PanelRevisionsTest extends TestCase
         $this->actingAs($evelyn)->post(route('password.first-change.skip'))->assertForbidden();
     }
 
-    public function test_the_admin_adds_an_account_with_a_generated_email_and_resets_passwords_to_the_default(): void
+    public function test_the_admin_adds_an_account_with_a_generated_email_and_resets_to_a_new_one_time_password(): void
     {
         $this->actingAs($this->ofelia())->post(route('mao.personnel.store'), [
-            'name' => 'Jean B. Laviste', 'position' => 'Agricultural Technologist', 'station_type' => 'Municipal', 'barangays' => ['Cumba'],
+            'name' => 'Jean B. Laviste', 'position' => 'Agricultural Technologist', 'station_type' => 'Municipal', 'barangays' => ['Balibago'],
         ])->assertSessionHasNoErrors();
         $new = User::query()->where('name', 'Jean B. Laviste')->firstOrFail();
         $this->assertSame('jeanlaviste2@gmail.com', $new->email);   // jeanlaviste@gmail.com is taken
         $this->assertTrue($new->must_change_password);
-        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('Password@123', $new->password));
-        $this->assertSame(['Cumba'], $new->coveredBarangays());
+        $this->assertStringContainsString('one-time password', session('success'));
+        $this->assertSame(['Balibago'], $new->coveredBarangays());
 
         // Duplicate e-mails are refused.
         $this->actingAs($this->ofelia())->post(route('mao.personnel.store'), [
@@ -427,12 +427,12 @@ class PanelRevisionsTest extends TestCase
         $jean->forceFill(['password' => \Illuminate\Support\Facades\Hash::make('My-Own-Pass-1')])->save();
         $this->actingAs($jean)->post(route('mao.personnel.reset-password', $jean))->assertForbidden();
         $this->actingAs($this->ofelia())->post(route('mao.personnel.reset-password', $jean))->assertRedirect();
-        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('Password@123', $jean->fresh()->password));
+        $this->assertFalse(\Illuminate\Support\Facades\Hash::check('My-Own-Pass-1', $jean->fresh()->password));
         $this->assertTrue($jean->fresh()->must_change_password);
 
         // Deactivate.
         $this->actingAs($this->ofelia())->put(route('mao.personnel.update', $new), ['name' => $new->name, 'position' => $new->position,
-            'station_type' => 'Municipal', 'status' => 'Inactive', 'barangays' => ['Cumba']])->assertRedirect();
+            'station_type' => 'Municipal', 'status' => 'Inactive', 'barangays' => ['Balibago']])->assertRedirect();
         $this->assertSame('Inactive', $new->fresh()->status);
     }
 

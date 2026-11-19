@@ -17,13 +17,11 @@ class PasswordController extends Controller
     {
         $validated = $request->validateWithBag('updatePassword', [
             'current_password' => ['required', 'current_password'],
-            'password' => ['required', Password::defaults(), 'confirmed'],
+            'password' => ['required', Password::defaults(), 'confirmed', new \App\Rules\NotKnownDefaultPassword],
         ]);
 
-        $request->user()->forceFill([
-            'password' => Hash::make($validated['password']),
-            'must_change_password' => false,   // panel revision 4.4 A
-        ])->save();
+        // panel revision 4.4 A: clears "must change password"; also ends the account's other sessions.
+        \App\Services\Accounts\PasswordChange::apply($request->user(), $validated['password'], $request, 'profile');
 
         return back()->with('status', 'password-updated');
     }

@@ -3,7 +3,7 @@
     {{-- FarmAssociationReviewController: farms whose farmer said "my association isn't listed". Link the farm to an
          association of its barangay, add the association and link it, or reject the name with a note for the farmer. --}}
     <div class="mfd itd itp">
-        <x-it.page-header kicker="Municipal Agriculture Office" title="Association Requests" lede="Farmers who could not find their association in the list. Link the farm to an association, add the association, or reject the request with a note." />
+        <x-shared.page-header kicker="Municipal Agriculture Office" title="Association Requests" lede="Farmers who could not find their association in the list. Link the farm to an association, add the association, or reject the request with a note." />
 
         @include('partials.manuscript-tabs', ['group' => 'farmers', 'label' => 'Farmers'])
 
@@ -17,7 +17,8 @@
             <noscript><button class="btn btn-primary btn-sm" type="submit">Apply</button></noscript>
         </form>
 
-        <section class="itp-section" aria-labelledby="faaTitle">
+        {{-- data-live-region: new association requests appear without reloading (resources/js/live-page.js). --}}
+        <section class="itp-section" aria-labelledby="faaTitle" data-live-region="associations" data-live-areas="farmers">
             <div class="itp-section-head">
                 <h2 id="faaTitle">Waiting for review <span class="ic-tab-count" data-pending-count>{{ number_format($pendingCount) }}</span></h2>
                 <p>Oldest first. Only associations in the farm's barangay can be linked.</p>

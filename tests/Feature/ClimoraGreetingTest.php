@@ -28,7 +28,6 @@ class ClimoraGreetingTest extends TestCase
         return [
             'farmer' => [User::ROLE_FARMER],
             'mao' => [User::ROLE_MAO],
-            'it' => [User::ROLE_IT_EXPERT],
         ];
     }
 

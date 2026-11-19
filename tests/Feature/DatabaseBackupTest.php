@@ -197,7 +197,7 @@ class DatabaseBackupTest extends TestCase
 
     public function test_only_mysql_and_postgres_connections_can_be_backed_up(): void
     {
-        config(['backup.connection' => null]); // falls back to the test SQLite connection
+        config(['backup.connection' => 'sqlite']);
         Process::fake();
 
         $this->artisan('iclimate:backup-database')
@@ -247,6 +247,53 @@ class DatabaseBackupTest extends TestCase
         $this->assertSame(\App\Models\BackupVerification::PASSED, $record->status);
         $this->assertSame(2, $record->archive_entry_count);
         $this->assertSame('ok', app(DatabaseBackupService::class)->status()['state']);
+    }
+
+    public function test_backup_files_and_folder_are_readable_only_by_their_owner(): void
+    {
+        if (DIRECTORY_SEPARATOR !== '/') {
+            $this->markTestSkipped('POSIX file modes only.');
+        }
+
+        chmod($this->dir, 0755);
+        $previous = umask(0022);
+
+        try {
+            $this->useMysqlConnection("-- MariaDB dump 10.19  Distrib 10.4.28-MariaDB\n--\nCREATE TABLE `users` (`id` int);\n-- Dump completed on 2026-11-10  3:15:00\n");
+            $this->artisan('iclimate:backup-database')->assertExitCode(0);
+
+            $this->fakePgDump();
+            $this->travel(2)->minutes();
+            config(['backup.connection' => 'pg_backup_test']);
+            $this->artisan('iclimate:backup-database')->assertExitCode(0);
+
+            $this->assertSame(0022, umask(), 'the process umask is restored after the dump');
+        } finally {
+            umask($previous);
+        }
+
+        $files = $this->files();
+        $this->assertCount(2, $files);
+        foreach ($files as $file) {
+            $this->assertSame('0600', substr(sprintf('%o', fileperms($this->dir.'/'.$file)), -4), $file.' must be owner-only');
+        }
+        clearstatcache();
+        $this->assertSame('0700', substr(sprintf('%o', fileperms($this->dir)), -4));
+    }
+
+    public function test_a_new_backup_folder_is_created_owner_only(): void
+    {
+        if (DIRECTORY_SEPARATOR !== '/') {
+            $this->markTestSkipped('POSIX file modes only.');
+        }
+
+        $fresh = $this->root.'/fresh/backups';
+        config(['backup.directory' => $fresh]);
+        $this->fakePgDump();
+
+        $this->artisan('iclimate:backup-database')->assertExitCode(0);
+
+        $this->assertSame('0700', substr(sprintf('%o', fileperms($fresh)), -4));
     }
 
     public function test_a_mysql_dump_that_was_cut_short_is_rejected(): void
@@ -424,52 +471,13 @@ class DatabaseBackupTest extends TestCase
         $this->assertSame('Unavailable', $this->backupCheck()['status']);
     }
 
-    public function test_opening_system_health_never_starts_or_changes_a_backup(): void
-    {
-        Process::fake();
-        $before = $this->files();
-        $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
 
-        $this->actingAs($it)->get(route('system-health.index'))->assertOk()->assertSee('Database Backup');
 
-        Process::assertNothingRan();
-        $this->assertSame($before, $this->files());
-    }
 
-    public function test_it_expert_sees_the_backup_card_with_last_backup_time(): void
-    {
-        $this->backupFile('iclimate_2026-09-25_0315.backup', 0);
-        $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
 
-        $this->actingAs($it)->get(route('system-health.index'))
-            ->assertOk()
-            ->assertSee('Database Backup')
-            ->assertSee('Last backup')
-            ->assertSee('A recent backup is available.');
-    }
 
-    public function test_system_health_stays_it_expert_only(): void
-    {
-        $this->backupFile('iclimate_2026-09-25_0315.backup', 0);
 
-        $this->actingAs(User::factory()->farmer()->create())->get(route('system-health.index'))->assertForbidden();
-        $this->actingAs(User::factory()->create(['role' => User::ROLE_MAO]))->get(route('system-health.index'))->assertForbidden();
-        $this->post('/logout');
-        auth()->logout();
-        $this->get(route('system-health.index'))->assertRedirect(route('login'));
-    }
 
-    public function test_system_health_page_does_not_expose_backup_paths_or_secrets(): void
-    {
-        $this->backupFile('iclimate_2026-09-25_0315.backup', 0);
-        $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
-
-        $html = $this->actingAs($it)->get(route('system-health.index'))->assertOk()->getContent();
-
-        foreach ([$this->dir, $this->root, base_path(), storage_path(), self::PASSWORD, self::HOST, self::USER, 'iclimate_2026-09-25_0315.backup', 'pg_dump'] as $secret) {
-            $this->assertStringNotContainsString($secret, $html);
-        }
-    }
 
     // --------------------------------------------------------------- schedule
 

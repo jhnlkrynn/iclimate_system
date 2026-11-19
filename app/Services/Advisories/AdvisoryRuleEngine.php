@@ -460,7 +460,7 @@ class AdvisoryRuleEngine
     private function systemUserId(): int
     {
         $userId = User::query()
-            ->whereIn('role', [User::ROLE_MAO, User::ROLE_IT_EXPERT])
+            ->whereIn('role', [User::ROLE_MAO])
             ->orderBy('id')
             ->value('id') ?? User::query()->orderBy('id')->value('id');
 
@@ -473,8 +473,8 @@ class AdvisoryRuleEngine
             [
                 'name' => 'iClimate System',
                 'password' => Hash::make(Str::random(32)),
-                'role' => User::ROLE_IT_EXPERT,
-                'status' => User::STATUS_ACTIVE,
+                'role' => User::ROLE_FARMER,
+                'status' => User::STATUS_INACTIVE,
             ],
         )->id;
     }

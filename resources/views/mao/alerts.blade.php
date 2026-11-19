@@ -4,9 +4,9 @@
          it; the history shows how many farmers got each alert and how many read it. --}}
     @php $tz = \App\Support\BusinessClock::timezone(); @endphp
     <div class="mfd itd itp" data-alerts-page>
-        <x-it.page-header kicker="Advisories" title="Send Alert" lede="Warn farmers about a typhoon, flood, drought or extreme heat, or send a farming recommendation, to all farmers or chosen barangays.">
+        <x-shared.page-header kicker="Advisories" title="Send Alert" lede="Warn farmers about a typhoon, flood, drought or extreme heat, or send a farming recommendation, to all farmers or chosen barangays.">
             <a class="btn btn-outline-secondary btn-sm" href="{{ route('planting-advisories.index') }}">Back to Advisories</a>
-        </x-it.page-header>
+        </x-shared.page-header>
 
         <section class="itp-section" aria-labelledby="alComposeTitle">
             <div class="itp-section-head">
@@ -56,7 +56,8 @@
             </form>
         </section>
 
-        <section class="itp-section" aria-labelledby="alHistoryTitle">
+        {{-- data-live-region: updates while open when this data changes (resources/js/live-page.js). --}}
+        <section class="itp-section" aria-labelledby="alHistoryTitle" data-live-region="alert-history" data-live-areas="advisories,notification-reads">
             <div class="itp-section-head">
                 <h2 id="alHistoryTitle">Sent alerts</h2>
                 <p>Delivered: farmers who got the bell notice. Read: farmers who opened it.</p>

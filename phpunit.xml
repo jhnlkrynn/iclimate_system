@@ -41,6 +41,7 @@
              test fail with "rename(...): Access is denied" when both compiled the same template at once (Windows file lock). -->
         <env name="VIEW_COMPILED_PATH" value="storage/framework/testing/views"/>
         <env name="MAIL_MAILER" value="array"/>
+        <env name="ICLIMATE_PASSWORD_LOCKDOWN" value="true"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>

@@ -17,6 +17,7 @@
     $compare = $f['compare'] ?? ['state' => 'nodata'];
     $compareData = $compare['state'] === 'ok' ? [
         'keys' => $compare['keys'], 'labels' => $compare['labels'], 'values' => $compare['values'],
+        'totals' => $compare['totals'] ?? [], 'deviations' => $compare['deviations'] ?? [], 'statuses' => $compare['statuses'] ?? [], 'benchmark' => $compare['benchmark'] ?? null,
         'text' => ['axis' => __('farmer.charts.harvest_axis')],
     ] : null;
     $compareWords = $compareData ? collect($compare['labels'])->map(fn ($label, $i) => $label.' '.number_format($compare['values'][$i], 2).' t/ha')->implode(', ') : '';
@@ -99,6 +100,14 @@
             <canvas id="fhCompareChart" role="img" aria-label="{{ __('farmer.kpis.compare.title') }}: {{ $compareWords }}"></canvas>
         </div>
         <script type="application/json" data-fh-chart-data="compare">@json($compareData)</script>
+        <div class="fh-words fh-compare-summary" aria-live="polite">
+            @foreach ($compare['labels'] as $i => $label)
+                <span>{{ $label }}: {{ number_format($compare['values'][$i], 2) }} t/ha
+                    @if (($compare['totals'][$i] ?? null) !== null) · {{ __('farmer.kpis.compare.total', ['value' => number_format($compare['totals'][$i], 2)]) }} @endif
+                    @if (($compare['statuses'][$i] ?? null) !== null && $compare['keys'][$i] !== 'historical') · {{ __('farmer.kpis.compare.'.($compare['statuses'][$i] ?? 'near')) }} · {{ __('farmer.kpis.compare.deviation', ['value' => number_format($compare['deviations'][$i], 1)]) }} @endif
+                </span>
+            @endforeach
+        </div>
     </section>
     @endif
 </div>

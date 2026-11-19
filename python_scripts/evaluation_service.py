@@ -61,6 +61,10 @@ def _pipeline(estimator) -> Pipeline:
 
 def _not_ready(sample_count: int, message: str) -> dict:
     return {
+        "accuracy_status": "ACCURACY NOT VERIFIED",
+        "evaluation_scope": "candidate_schema_cross_validation",
+        "deployed_model_evaluated": False,
+        "independent_validation": False,
         "ready": False,
         "message": message,
         "sample_count": sample_count,
@@ -76,6 +80,13 @@ def evaluate(csv_path: str | None = None) -> dict:
 
     if not os.path.isabs(path):
         path = os.path.join(BASE_DIR, path)
+
+    # /metrics?dataset_path= must not read (or reveal the existence of) files outside the private ML data folder.
+    allowed = os.path.realpath(os.path.dirname(DEFAULT_CSV))
+    resolved = os.path.realpath(path)
+    if os.path.commonpath([allowed, resolved]) != allowed or not resolved.endswith(".csv"):
+        raise ValueError("dataset_path must be a .csv file inside storage/app/private/ml")
+    path = resolved
 
     if not os.path.exists(path):
         return _not_ready(
@@ -112,6 +123,10 @@ def evaluate(csv_path: str | None = None) -> dict:
     best = max(rows, key=lambda row: row["r2"])
 
     result = {
+        "accuracy_status": "ACCURACY NOT VERIFIED",
+        "evaluation_scope": "candidate_schema_cross_validation",
+        "deployed_model_evaluated": False,
+        "independent_validation": False,
         "ready": True,
         "message": "Evaluation metrics computed live from the current exported training data.",
         "sample_count": len(df),

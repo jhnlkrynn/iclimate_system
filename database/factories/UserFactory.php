@@ -28,7 +28,8 @@ class UserFactory extends Factory
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
+            // Hashed per user: identical hashes mean a copied (shared) password, which sign-in now refuses to keep.
+            'password' => Hash::make('password'),
             'role' => User::ROLE_FARMER,
             'contact_number' => fake()->numerify('09#########'),
             'address' => fake()->streetAddress(),
@@ -48,9 +49,9 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => ['role' => User::ROLE_MAO]);
     }
 
-    public function itExpert(): static
+    public function maoHead(): static
     {
-        return $this->state(fn (array $attributes) => ['role' => User::ROLE_IT_EXPERT]);
+        return $this->maoPersonnel()->state(['is_mao_head' => true]);
     }
 
     /**

@@ -14,7 +14,7 @@
             @if ($w['rain'])<li>@include('dashboards.mao.icon', ['name' => 'rain'])<span class="fh-when">{{ __('farmer.home.weather.all_day') }}:</span> {{ $w['rain'] }}</li>@endif
             @if ($w['wind'])<li>@include('dashboards.mao.icon', ['name' => 'wind'])<span class="fh-when">{{ __('farmer.home.weather.now') }}:</span> {{ $w['wind'] }}</li>@endif
         </ul>
-        <x-updated-at :at="$w['updated_at']" :label="__('farmer.home.updated')" />
+        <x-updated-at :at="$w['updated_at']" :label="__('farmer.home.updated')" data-weather-fetched="current" />
     @else
         <x-no-data :label="__('farmer.home.no_data')" :note="__('farmer.home.no_data_note')" />
     @endif

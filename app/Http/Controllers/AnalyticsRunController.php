@@ -26,17 +26,13 @@ class AnalyticsRunController extends Controller
             'status' => $analyticsRun->status,
             // The stored result holds model inputs, source/model names and file
             // paths. Page scripts only need `status` (they reload to render the
-            // result server-side), so only IT Expert accounts get the raw result.
-            'result' => $analyticsRun->status === AnalyticsRun::STATUS_COMPLETED && $request->user()->role === User::ROLE_IT_EXPERT
-                ? $analyticsRun->result
-                : null,
-            // Raw failure text is for IT Expert accounts only; everyone else
+            // result server-side), so only server operator accounts get the raw result.
+            'result' => null,
+            // Raw failure text is for server operator accounts only; everyone else
             // gets a generic plain-language title (the raw text stays in the
             // database / logs).
             'error' => $analyticsRun->status === AnalyticsRun::STATUS_FAILED
-                ? ($request->user()->role === User::ROLE_IT_EXPERT
-                    ? $analyticsRun->error
-                    : PredictionWording::friendlyFailure($analyticsRun->error)['title'])
+                ? PredictionWording::friendlyFailure($analyticsRun->error)['title']
                 : null,
             'completed_at' => $analyticsRun->completed_at?->toISOString(),
         ]);

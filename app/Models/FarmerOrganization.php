@@ -9,17 +9,36 @@ class FarmerOrganization extends Model
 {
     use \App\Models\Concerns\RecordsAuthor;   // panel revision 4.4: created_by / updated_by
 
+    protected static function booted(): void
+    {
+        static::deleting(function (self $record): void {
+            if (\App\Support\SchemaCache::hasTable('association_yield_report_submissions')
+                && $record->yieldReports()->whereHas('submissions')->exists()) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['association' => 'This record has formal submission history and must be retained.']);
+            }
+        });
+    }
+
     protected $fillable = [
         'name',
         'barangay',
         'farm_type',
         'area_hectares',
         'farmer_count',
+        'directory_key',
+        'directory_status',
+        'chairman_name',
+        'directory_source',
+        'contact_verified_at',
+        'confirmed_at',
+        'confirmed_by',
     ];
 
     protected $casts = [
         'area_hectares' => 'decimal:2',
         'farmer_count' => 'integer',
+        'contact_verified_at' => 'datetime',
+        'confirmed_at' => 'datetime',
     ];
 
     /** Farmers whose PRIMARY organization this is. */
@@ -38,5 +57,20 @@ class FarmerOrganization extends Model
     public function members(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
         return $this->belongsToMany(FarmerProfile::class, 'farmer_organization_members')->withPivot('date_joined')->withTimestamps();
+    }
+
+    public function chairmanAssignments(): HasMany
+    {
+        return $this->hasMany(AssociationChairmanAssignment::class);
+    }
+
+    public function reportingPeriods(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(AssociationReportingPeriod::class, 'association_yield_reports', 'farmer_organization_id', 'reporting_period_id');
+    }
+
+    public function yieldReports(): HasMany
+    {
+        return $this->hasMany(AssociationYieldReport::class);
     }
 }

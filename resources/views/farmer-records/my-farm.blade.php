@@ -5,7 +5,7 @@
         $date = fn ($value) => $value ? \Illuminate\Support\Carbon::parse($value)->locale(app()->getLocale())->translatedFormat('M j, Y') : '—';
     @endphp
 
-    <div class="fad frec fmf" data-my-farm>
+    <div class="fad frec fmf" data-my-farm data-farm-realtime-user-id="{{ auth()->id() }}" data-farm-realtime-farm-id="{{ $current?->getKey() ?? '' }}">
         {{-- Printed on paper only (Print button): the office name and the print date. --}}
         <div class="fmf-print-head">
             <strong>{{ __('farmer.my_farm_page.print_header') }}</strong>
@@ -33,7 +33,7 @@
         @endif
 
         @if ($available)
-            {{-- My Farms: every farm of this farmer, each with its own location, size and map. --}}
+            {{-- My Farms: every farm of this farmer, each with its own location and size. --}}
             <section class="frec-panel fmf-no-print" aria-labelledby="ffmListTitle" data-my-farms>
                 <div class="frec-panel-head is-row">
                     <h2 id="ffmListTitle">{{ __('farms.title') }}</h2>
@@ -60,23 +60,8 @@
                                         @if ($f['association']['set_by_mao'] ?? false)<small class="d-block fad-m-small" data-association-set-by-mao>{{ __('farms.association.card.set_by_mao') }}</small>@endif
                                     </p>
                                 @endif
-                                <p class="ffm-card-map"><span class="fad-badge {{ $f['mapped'] ? 'is-good' : 'is-muted' }}">{{ $f['mapped'] ? __('farms.mapped') : __('farms.not_mapped') }}</span></p>
                                 <div class="ffm-card-actions">
-                                    @unless ($f['current'])
-                                        <form method="POST" action="{{ route('farmer.farms.select') }}">
-                                            @csrf
-                                            <input type="hidden" name="farm_id" value="{{ $f['id'] }}">
-                                            <button type="submit" class="fad-btn is-quiet is-compact">{{ __('farms.view') }}</button>
-                                        </form>
-                                    @endunless
                                     <a class="fad-btn is-quiet is-compact" href="{{ route('farmer.farms.edit', $f['id']) }}">{{ __('farms.edit') }}</a>
-                                    <a class="fad-btn is-quiet is-compact" href="{{ route('farmer.farms.map', $f['id']) }}">{{ __('farms.map_action') }}</a>
-                                    @unless ($f['primary'])
-                                        <form method="POST" action="{{ route('farmer.farms.primary', $f['id']) }}">
-                                            @csrf
-                                            <button type="submit" class="fad-btn is-quiet is-compact">{{ __('farms.set_primary') }}</button>
-                                        </form>
-                                    @endunless
                                     <form method="POST" action="{{ route('farmer.farms.destroy', $f['id']) }}"
                                         data-ic-confirm="{{ count($farms) === 1 ? __('farms.remove_only_confirm', ['name' => $f['name']]) : __('farms.remove_confirm', ['name' => $f['name']]) }}">
                                         @csrf

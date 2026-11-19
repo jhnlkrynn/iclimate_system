@@ -260,11 +260,12 @@ class MaoDashboardTest extends TestCase
 
         $data = $this->data();
 
-        // Monitored = every official barangay in the risk-map dataset (the 19 polygons); unrated ones are "awaiting data".
+        // Monitored = every official barangay in the verified risk-map dataset; unrated ones are "awaiting data".
         $b = $this->kpi($data, 'barangays');
-        $this->assertSame('19', $b['value']);
-        $this->assertSame('of 19', $b['unit']);
-        $this->assertSame('2 rated · 17 awaiting data', $b['context']);
+        $officialCount = count(\App\Support\LianBarangays::all());
+        $this->assertSame((string) $officialCount, $b['value']);
+        $this->assertSame('of '.$officialCount, $b['unit']);
+        $this->assertSame('2 rated · '.($officialCount - 2).' awaiting data', $b['context']);
         $this->assertSame('monitored', $b['risk_category']);                                     // opens the Municipal Risk Overview pop-up
         $a = $this->kpi($data, 'advisories');
         $this->assertSame('2', $a['value']);                                                    // published only; pending and archived are separate
@@ -350,16 +351,19 @@ class MaoDashboardTest extends TestCase
     public function test_risk_counts_use_the_latest_rating_of_each_official_barangay_only(): void
     {
         HeatmapArea::factory()->create(['barangay' => 'Prenza', 'risk_level' => 'Severe', 'risk_score' => 0.9, 'risk_computed_at' => now()->subDays(3)]);
-        HeatmapArea::factory()->create(['barangay' => 'PRENZA', 'risk_level' => 'Low', 'risk_score' => 0.2, 'risk_computed_at' => now()]);
+        HeatmapArea::query()->updateOrCreate(
+            ['barangay' => 'PRENZA'],
+            ['risk_level' => 'Low', 'risk_score' => 0.2, 'risk_computed_at' => now()]
+        );
         $this->rating('Atlantis', 'Severe', 0.95);                                                  // not a Lian barangay
 
         $risk = $this->data()['risk'];
 
-        $this->assertSame(19, $risk['total']);                                                    // the 19 official barangays, never Atlantis
+        $this->assertSame(count(\App\Support\LianBarangays::all()), $risk['total']);              // the verified official barangays, never Atlantis
         $this->assertSame(1, $risk['rated']);
         $this->assertSame(1, $risk['counts']['Low']);                                             // the newer Prenza rating wins
         $this->assertSame(0, $risk['counts']['Severe']);
-        $this->assertSame(18, $risk['no_data']);
+        $this->assertSame(count(\App\Support\LianBarangays::all()) - 1, $risk['no_data']);
     }
 
     public function test_production_uses_only_the_latest_harvest_year(): void

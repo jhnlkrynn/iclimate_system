@@ -8,14 +8,14 @@ use App\Models\User;
 use App\Support\LianBarangays;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 /**
  * Panel revision 4.4 A: one sign-in account for each Municipal Agriculture Office staff member of Lian, with their
  * position, role (Admin = Municipal Agriculturist, MAO = the others), station, area covered and barangays
  * (mao_user_barangays). Every action is then recorded under the person's own name.
  *
- * Password: the default MAO password (config iclimate.mao_default_password, "Password@123"), stored HASHED; the account
- * must change it at the first sign-in (must_change_password).
+ * Passwords are configured explicitly or generated per account, stored hashed; every new account must change it.
  *
  * Safe to run again: an account is found by its e-mail (or the e-mail an earlier version of this seeder gave it, which
  * is then changed to the one below). Details and barangays are written only when the account is first made, so a run
@@ -71,7 +71,7 @@ class MaoPersonnelSeeder extends Seeder
 
     public function run(): void
     {
-        $password = (string) config('iclimate.mao_default_password', 'Password@123');
+        $configuredPassword = config('iclimate.mao_default_password');
         $resetCoverage = filter_var(env('MAO_SEED_RESET_COVERAGE', false), FILTER_VALIDATE_BOOL);
         $made = $moved = 0;
 
@@ -82,7 +82,7 @@ class MaoPersonnelSeeder extends Seeder
             if (! $user && ($user = User::query()->whereIn('email', $person['previous_emails'])->first())) {
                 // An account made by the earlier version of this seeder: same person, new sign-in e-mail and the
                 // default password (its history stays attached to it).
-                $user->forceFill(['email' => $person['email'], 'password' => Hash::make($password), 'must_change_password' => true])->save();
+                $user->forceFill(['email' => $person['email'], 'password' => Hash::make($configuredPassword ?: Str::password(24)), 'must_change_password' => true])->save();
                 $moved++;
             }
 
@@ -98,9 +98,9 @@ class MaoPersonnelSeeder extends Seeder
                     'area_covered_ha' => $person['area_covered_ha'],
                     'is_mao_head' => $person['is_mao_head'],
                     'address' => 'Municipal Agriculture Office, Lian, Batangas',
-                    'barangay' => 'Barangay 1 (Pob.)',
+                    'barangay' => null,
                     'status' => User::STATUS_ACTIVE,
-                    'password' => Hash::make($password),
+                    'password' => Hash::make($configuredPassword ?: Str::password(24)),
                     'must_change_password' => true,
                 ]);
                 $user->email_verified_at = now();

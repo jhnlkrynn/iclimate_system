@@ -1,0 +1,357 @@
+diff --git a/app/Services/Prediction/PredictionEngine.php b/app/Services/Prediction/PredictionEngine.php
+index f86b000a..12ae1871 100644
+--- a/app/Services/Prediction/PredictionEngine.php
++++ b/app/Services/Prediction/PredictionEngine.php
+@@ -124,12 +124,10 @@ private function buildModelInput(
+         array $manualOverrides,
+     ): array {
+         $predictions = $weatherResult['predictions'] ?? [];
+-        // The recent real climate behind the "previous" and trailing-window inputs: the latest six months of
+-        // App\Support\ClimateHistory (entered records when they cover six months, otherwise the Ambulong
+-        // station record; never impossible rows, never seeded sample rows). The on-demand prediction run by
+-        // the Python service reads the same history, so both give the same inputs.
+-        $recent = \App\Support\ClimateHistory::months()->take(\App\Support\ClimateHistory::WINDOW)->values();
+-        $latest = $recent->first();
++        // The climate inputs of THIS target month: lags and trailing windows end at the month before it (never the
++        // latest months on file, which gave every prediction the same eight inputs), Rainfall_6M is a six-month mean
++        // and TEMP_RANGE the month's TMAX - TMIN, as the model was trained. Unobserved months stay missing.
++        $climate = \App\Support\YieldModelClimateWindow::features($targetDate, $predictions);
+ 
+         $num = static fn ($v): ?float => is_numeric($v) ? (float) $v : null;
+         $round = static fn (?float $v): ?float => $v === null ? null : round($v, 2);
+@@ -141,13 +139,6 @@ private function buildModelInput(
+         // The deployed model's "season" input and its same-season months use the encoding it was trained with,
+         // worked out from the month (never a stored label), so the iClimate calendar can differ (App\Support\RiceSeason).
+         $season = \App\Support\RiceSeason::forTrainedYieldModel((int) $targetDate->format('n'));
+-        $modelSeasonOf = static fn (object $row): ?string => ! empty($row->record_date) ? \App\Support\RiceSeason::forTrainedYieldModel((int) substr((string) $row->record_date, 5, 2)) : null;
+-
+-        // Trailing windows are only valid when the whole window is present.
+-        $has6 = $recent->count() >= 6;
+-        $has3 = $recent->count() >= 3;
+-        $inSeason = $recent->filter(fn (object $row): bool => $modelSeasonOf($row) === $season);
+-        $temps = $recent->pluck('temperature')->filter(fn ($v) => $v !== null);
+ 
+         $activeFarm = $user && $user->role === User::ROLE_FARMER ? ActiveFarm::current($user) : null;
+         $farmArea = $activeFarm?->modelArea();
+@@ -161,17 +152,17 @@ private function buildModelInput(
+         $modelInput = [
+             'rainfall' => $round($rainfall),
+             'temp_avg' => $round($temperature),
+-            'temp_range' => $temps->isNotEmpty() ? round((float) $temps->max() - (float) $temps->min(), 2) : null,
++            'temp_range' => $climate['features']['temp_range'],
+             'area' => $round($area),
+-            'previous_rainfall' => $round($num($latest?->rainfall)),
+-            'previous_temp' => $round($num($latest?->temperature)),
+-            'previous_humidity' => $round($num($latest?->humidity)),
+-            'previous_wind_speed' => $round($num($latest?->wind_speed)),
+-            'rainfall_6m' => $has6 ? round((float) $recent->sum('rainfall'), 2) : null,
+-            'temp_3m' => $has3 ? $round($num($recent->take(3)->avg('temperature'))) : null,
+-            'temp_6m' => $has6 ? $round($num($recent->avg('temperature'))) : null,
+-            'seasonal_rainfall' => $inSeason->isNotEmpty() ? round((float) $inSeason->sum('rainfall'), 2) : null,
+-            'seasonal_temp' => $inSeason->isNotEmpty() ? $round($num($inSeason->avg('temperature'))) : null,
++            'previous_rainfall' => $climate['features']['previous_rainfall'],
++            'previous_temp' => $climate['features']['previous_temp'],
++            'previous_humidity' => $climate['features']['previous_humidity'],
++            'previous_wind_speed' => $climate['features']['previous_wind_speed'],
++            'rainfall_6m' => $climate['features']['rainfall_6m'],
++            'temp_3m' => $climate['features']['temp_3m'],
++            'temp_6m' => $climate['features']['temp_6m'],
++            'seasonal_rainfall' => $climate['features']['seasonal_rainfall'],
++            'seasonal_temp' => $climate['features']['seasonal_temp'],
+             'humidity' => $round($humidity),
+             'wind_speed' => $round($windSpeed),
+             'season' => $season,
+diff --git a/app/Services/Prediction/RiceYieldPredictionService.php b/app/Services/Prediction/RiceYieldPredictionService.php
+index 6d1ef5d1..5c99af0c 100644
+--- a/app/Services/Prediction/RiceYieldPredictionService.php
++++ b/app/Services/Prediction/RiceYieldPredictionService.php
+@@ -147,7 +147,7 @@ private function applyGate(array $result, mixed $modelInput): array
+             return $result;
+         }
+         $assessment = YieldModelGate::assess(is_array($modelInput) ? $modelInput : null);
+-        $result['validation_status'] = $assessment['compatible'] ? 'within_training_range' : 'outside_training_range';
++        $result['validation_status'] = ($assessment['within_range'] ?? $assessment['compatible']) ? 'within_training_range' : 'outside_training_range';
+         $result['outside_training_range'] = $assessment['outside'];
+         $result['accuracy_verified'] = false;
+         if ($assessment['compatible'] || YieldModelGate::mode() === YieldModelGate::LABEL) {
+diff --git a/app/Services/Prediction/YieldModelGate.php b/app/Services/Prediction/YieldModelGate.php
+index 4761778c..20a750aa 100644
+--- a/app/Services/Prediction/YieldModelGate.php
++++ b/app/Services/Prediction/YieldModelGate.php
+@@ -16,6 +16,10 @@
+  *   label     the number is shown, marked "unvalidated estimate, not a recommendation".
+  *   off       no gate (only for a model that has passed validation).
+  *
++ * Under "withhold" an in-range estimate is also withheld until prediction.rice_yield.accuracy_verified is true
++ * (verification 2026-11-18: once the climate inputs follow the target month, in-range inputs occur, and an
++ * in-range estimate is still not a verified one).
++ *
+  * Nothing is deleted or rewritten: stored predictions stay in yield_predictions as history.
+  */
+ final class YieldModelGate
+@@ -40,12 +44,13 @@ public static function mode(): string
+ 
+     /**
+      * @param  array<string, mixed>|null  $modelInput  application input names (area, rainfall_6m, temp_range, ...)
+-     * @return array{compatible: bool, outside: list<string>}
++     * @return array{compatible: bool, outside: list<string>, within_range?: bool}
++     *                compatible = may be shown as a number; within_range = inside the training envelope
+      */
+     public static function assess(?array $modelInput): array
+     {
+         if (! is_array($modelInput) || $modelInput === []) {
+-            return ['compatible' => false, 'outside' => ['model_input']];   // cannot be checked: not shown as validated
++            return ['compatible' => false, 'outside' => ['model_input'], 'within_range' => false];   // cannot be checked: not shown as validated
+         }
+         $outside = [];
+         foreach ((array) config('prediction.rice_yield.training_envelope', []) as $feature => [$low, $high]) {
+@@ -55,7 +60,12 @@ public static function assess(?array $modelInput): array
+             }
+         }
+ 
+-        return ['compatible' => $outside === [], 'outside' => $outside];
++        return ['compatible' => $outside === [] && self::accuracyVerified(), 'outside' => $outside, 'within_range' => $outside === []];
++    }
++
++    public static function accuracyVerified(): bool
++    {
++        return (bool) config('prediction.rice_yield.accuracy_verified', false);
+     }
+ 
+     /** True when an estimate with this input may be shown as a number. */
+diff --git a/config/prediction.php b/config/prediction.php
+index 02aef6e7..bcffa0cf 100644
+--- a/config/prediction.php
++++ b/config/prediction.php
+@@ -9,6 +9,9 @@
+     'rice_yield' => [
+         // Safety gate (App\Services\Prediction\YieldModelGate): withhold | label | off. ACCURACY NOT VERIFIED.
+         'gate' => env('ICLIMATE_YIELD_GATE', 'withhold'),
++        // Under "withhold", an estimate is shown only when its input is inside the training envelope AND this is true.
++        // Set it only after the model has been validated against independent observed yields (owner decision).
++        'accuracy_verified' => (bool) env('ICLIMATE_YIELD_ACCURACY_VERIFIED', false),
+         // Input range the deployed model was trained on, read from the split thresholds of rice_yield_model_final.pkl
+         // (read-only audit 2026-11-12: 48 municipal monthly rows). Outside it the estimate is an extrapolation.
+         'training_envelope' => [
+diff --git a/tests/Concerns/PreparesPredictions.php b/tests/Concerns/PreparesPredictions.php
+index e3771e5f..78640d6d 100644
+--- a/tests/Concerns/PreparesPredictions.php
++++ b/tests/Concerns/PreparesPredictions.php
+@@ -59,14 +59,16 @@ protected function preparePredictions(int $months = 14, array $overrides = [], b
+ 
+     /**
+      * The yield model runs only when every input it needs is a real number, and its "previous month" and
+-     * 3/6-month trend inputs come from the last six recorded months. A test that expects a model-backed
+-     * yield records those months first (the numbers are fixed test values).
++     * 3/6-month trend inputs come from the six months before the target month (verification 2026-11-18). The
++     * default target is next month (the municipality forecast is for this month), so a test that expects a
++     * model-backed yield records this month and the six before it (fixed test values; the first day of this
++     * month is not a future date).
+      */
+     protected function recordRecentClimate(): void
+     {
+-        foreach (range(1, 6) as $monthsAgo) {
++        foreach (range(0, 6) as $monthsAgo) {
+             \App\Models\ClimateRecord::factory()->create([
+-                'record_date' => now()->subMonths($monthsAgo)->startOfMonth()->toDateString(),
++                'record_date' => now()->subMonthsNoOverflow($monthsAgo)->startOfMonth()->toDateString(),
+                 'rainfall' => 150 + $monthsAgo * 10, 'temperature' => 27 + $monthsAgo * 0.2, 'humidity' => 80,
+                 'wind_speed' => 10, 'season' => \App\Models\ClimateRecord::SEASON_WET,
+             ]);
+diff --git a/tests/Feature/AIHybridOrchestratorTest.php b/tests/Feature/AIHybridOrchestratorTest.php
+index 371fd91d..25a37f8e 100644
+--- a/tests/Feature/AIHybridOrchestratorTest.php
++++ b/tests/Feature/AIHybridOrchestratorTest.php
+@@ -323,7 +323,8 @@ private function seedClimateRecords(): void
+     {
+         foreach (range(1, 6) as $index) {
+             ClimateRecord::query()->create([
+-                'record_date' => now()->subMonths(7 - $index)->startOfMonth()->toDateString(),
++                // The six months before next month (the default target): five months ago .. this month.
++                'record_date' => now()->subMonthsNoOverflow(6 - $index)->startOfMonth()->toDateString(),
+                 'rainfall' => 110 + ($index * 12),
+                 'temperature' => 27 + $index,
+                 'humidity' => 76 + $index,
+diff --git a/tests/Feature/AiPredictionReadOnlyTest.php b/tests/Feature/AiPredictionReadOnlyTest.php
+index 4a5e2950..bcdb0226 100644
+--- a/tests/Feature/AiPredictionReadOnlyTest.php
++++ b/tests/Feature/AiPredictionReadOnlyTest.php
+@@ -63,14 +63,15 @@ protected function setUp(): void
+ 
+     /**
+      * The yield model runs only when every input it needs is a real number, and the "previous month" and
+-     * 3/6-month trend inputs come from the last six recorded months. Without those the engine reports the
+-     * missing inputs and does not run the model, so these tests record six months of climate first.
++     * 3/6-month trend inputs come from the six months before the target month (verification 2026-11-18). The
++     * default target is next month and the municipality forecast is for this month, so these tests record this
++     * month and the six before it first; without them the engine reports the missing inputs and does not run.
+      */
+     private function recentClimate(): void
+     {
+-        foreach (range(1, 6) as $monthsAgo) {
++        foreach (range(0, 6) as $monthsAgo) {
+             \App\Models\ClimateRecord::factory()->create([
+-                'record_date' => now()->subMonths($monthsAgo)->startOfMonth()->toDateString(),
++                'record_date' => now()->subMonthsNoOverflow($monthsAgo)->startOfMonth()->toDateString(),
+                 'rainfall' => 150 + $monthsAgo * 10, 'temperature' => 27 + $monthsAgo * 0.2, 'humidity' => 80,
+                 'wind_speed' => 10, 'season' => \App\Models\ClimateRecord::SEASON_WET,
+             ]);
+@@ -269,14 +270,15 @@ public function test_warming_prepares_the_forecasts_and_yield_results_and_marks_
+             });
+         });
+ 
+-        $this->artisan('iclimate:warm-prediction-cache', ['--wait' => 0, '--months' => 4])->assertExitCode(0);
++        // Six months: the whole-season inputs need the forecasts up to the end of the season (verification 2026-11-18).
++        $this->artisan('iclimate:warm-prediction-cache', ['--wait' => 0, '--months' => 6])->assertExitCode(0);
+ 
+-        $this->assertSame(4, MonthlyWeatherPrediction::where('status', 'ready')->count());
+-        $this->assertSame(4, $calls, 'each month is built exactly once');
++        $this->assertSame(6, MonthlyWeatherPrediction::where('status', 'ready')->count());
++        $this->assertSame(6, $calls, 'each month is built exactly once');
+ 
+         $state = Cache::get('predictions:cache_state');
+         $this->assertTrue($state['ready']);
+-        $this->assertSame(4, $state['months_ready']);
++        $this->assertSame(6, $state['months_ready']);
+         $this->assertSame([], $state['months_missing']);
+         $this->assertGreaterThan(0, $state['yield_results']);
+         $this->assertGreaterThan(0, $this->pythonRequests(), 'the yield engine was run on the prepared forecasts');
+@@ -288,7 +290,8 @@ public function test_warming_without_recorded_farm_areas_reports_no_yield_result
+         $this->fakePython();
+         $this->mockForest(fn (MockInterface $mock) => $mock->shouldReceive('predict')->andReturn($this->readyForest()));
+ 
+-        $this->artisan('iclimate:warm-prediction-cache', ['--wait' => 0, '--months' => 4])
++        $this->artisan('iclimate:warm-prediction-cache', ['--wait' => 0, '--months' => 6])
++            // One reason per warmed month (joined on one line); the month after next also lacks observed lag months.
+             ->expectsOutputToContain('Yield results not produced: Not enough verified input data to run the rice-yield model (missing: area).')
+             ->assertExitCode(0);
+ 
+diff --git a/tests/Feature/PredictionEngineClimateRecordPlausibilityTest.php b/tests/Feature/PredictionEngineClimateRecordPlausibilityTest.php
+index 7ea8db99..f10b362f 100644
+--- a/tests/Feature/PredictionEngineClimateRecordPlausibilityTest.php
++++ b/tests/Feature/PredictionEngineClimateRecordPlausibilityTest.php
+@@ -27,6 +27,10 @@ class PredictionEngineClimateRecordPlausibilityTest extends TestCase
+     protected function setUp(): void
+     {
+         parent::setUp();
++        // The climate inputs follow the target month (verification 2026-11-18): run inside the observed station
++        // record (2015-01 .. 2025-12) so the months before the default target (next month) are observed.
++        $this->travelTo('2025-02-10 09:00:00');
++        \App\Support\YieldModelClimateWindow::forget();
+ 
+         Config::set('services.groq.enabled', false);
+         Config::set('services.farming_ai.url', 'http://farming-ai.test');
+@@ -46,15 +50,15 @@ protected function setUp(): void
+ 
+     public function test_implausible_row_id_analog_of_row_6_does_not_influence_derived_features(): void
+     {
+-        // Five older plausible rows, so the entered records cover the full six-month window (with fewer, the
+-        // engine reads the Ambulong station record instead; see the last test).
+-        foreach (['2025-08-15', '2025-09-15', '2025-10-15', '2025-11-15', '2025-12-15'] as $date) {
++        // Target 2025-03 (now 2025-02-10 + 1 month). Five older plausible rows and the latest one cover the six
++        // months before it (T-6 .. T-1); an entered month takes the place of the station month it covers.
++        foreach (['2024-09-15', '2024-10-15', '2024-11-15', '2024-12-15', '2025-01-15'] as $date) {
+             ClimateRecord::query()->create(['record_date' => $date, 'rainfall' => 100.0, 'temperature' => 27.0, 'humidity' => 75.0, 'wind_speed' => 7.0, 'season' => ClimateRecord::SEASON_DRY, 'source' => 'test fixture']);
+         }
+ 
+         // The latest plausible historical row.
+         ClimateRecord::query()->create([
+-            'record_date' => '2026-01-15',
++            'record_date' => '2025-02-05',   // not after today (2025-02-10): a future date is implausible
+             'rainfall' => 120.0,
+             'temperature' => 28.0,
+             'humidity' => 75.0,
+@@ -88,13 +92,13 @@ public function test_implausible_row_id_analog_of_row_6_does_not_influence_deriv
+         $this->assertSame(120.0, $modelInput['previous_rainfall']);
+         $this->assertSame(28.0, $modelInput['previous_temp']);
+         $this->assertSame(8.0, $modelInput['previous_wind_speed']);
+-        $this->assertLessThan(1000, $modelInput['rainfall_6m']);
++        $this->assertSame(103.33, $modelInput['rainfall_6m'], 'mean of the six entered months, never the bad row');
+     }
+ 
+     public function test_a_different_implausible_row_not_id_6_is_also_excluded(): void
+     {
+         ClimateRecord::query()->create([
+-            'record_date' => '2026-02-10',
++            'record_date' => '2025-01-10',
+             'rainfall' => 90.0,
+             'temperature' => 27.0,
+             'humidity' => 70.0,
+@@ -108,7 +112,7 @@ public function test_a_different_implausible_row_not_id_6_is_also_excluded(): vo
+         // per the audited controller rules), so use an out-of-range
+         // temperature instead to prove no ID is special-cased.
+         $anotherBadRow = ClimateRecord::factory()->create([
+-            'record_date' => '2026-03-01',
++            'record_date' => '2025-02-01',
+             'rainfall' => 50.0,
+             'temperature' => 999.0,
+             'humidity' => 60.0,
+@@ -138,14 +142,15 @@ public function test_without_six_entered_records_the_station_record_supplies_the
+ 
+         $modelInput = $this->buildModelInputFor();
+ 
+-        // Fewer than six entered records: the history inputs are the latest six months of the verified
+-        // Ambulong station record (2026-10 fix: the yield forecast could never run on a new install). They
+-        // are real observations: not 0, not the forecast copied in their place, never the excluded row.
+-        $months = collect(app(\App\Services\Climate\AmbulongHistoricalClimateDataset::class)->load()['observations'])
+-            ->sortByDesc(fn (array $obs): int => $obs['year'] * 12 + $obs['month'])->take(6)->values();
++        // No entered month: the history inputs are the six Ambulong station months BEFORE the target month
++        // (2025-03 -> 2025-02 .. 2024-09; verification 2026-11-18, previously "the latest six on file"). They are
++        // real observations: not 0, not the forecast copied in their place, never the excluded row.
++        $byMonth = collect(app(\App\Services\Climate\AmbulongHistoricalClimateDataset::class)->load()['observations'])
++            ->keyBy(fn (array $obs): string => sprintf('%04d-%02d', $obs['year'], $obs['month']));
++        $months = collect(['2025-02', '2025-01', '2024-12', '2024-11', '2024-10', '2024-09'])->map(fn (string $m): array => $byMonth[$m]);
+ 
+-        $this->assertSame(round((float) $months->first()['rainfall'], 2), $modelInput['previous_rainfall']);
+-        $this->assertSame(round((float) $months->sum('rainfall'), 2), $modelInput['rainfall_6m']);
++        $this->assertSame(round((float) $months->first()['rainfall'], 2), $modelInput['previous_rainfall'], 'previous = T-1');
++        $this->assertSame(round((float) $months->avg('rainfall'), 2), $modelInput['rainfall_6m'], 'a six-month mean, as trained');
+         $this->assertSame(round((float) $months->avg('temperature'), 2), $modelInput['temp_6m']);
+         $this->assertLessThan(60, $modelInput['previous_temp']);
+         $this->assertLessThan(5000, $modelInput['rainfall_6m']);
+diff --git a/tests/Feature/PredictionParityTest.php b/tests/Feature/PredictionParityTest.php
+index e089fdf9..0617be3e 100644
+--- a/tests/Feature/PredictionParityTest.php
++++ b/tests/Feature/PredictionParityTest.php
+@@ -24,6 +24,10 @@ class PredictionParityTest extends TestCase
+     protected function setUp(): void
+     {
+         parent::setUp();
++        // The climate inputs follow the target month (verification 2026-11-18): run inside the observed station
++        // record (2015-01 .. 2025-12) so the months before the default target (next month) are observed.
++        $this->travelTo('2025-02-10 09:00:00');
++        \App\Support\YieldModelClimateWindow::forget();
+         // These tests check how a yield flows through the page/API; YieldModelGate (withholding estimates outside
+         // the model's training range) is tested on its own in YieldModelGateTest.
+         config(['prediction.rice_yield.gate' => 'off']);
+diff --git a/tests/Feature/YieldModelGateTest.php b/tests/Feature/YieldModelGateTest.php
+index 52aa6cc5..e83cc74b 100644
+--- a/tests/Feature/YieldModelGateTest.php
++++ b/tests/Feature/YieldModelGateTest.php
+@@ -42,8 +42,11 @@ private function estimate(float $yield = 4.13): array
+ 
+     public function test_todays_inputs_are_outside_the_training_range_and_in_range_inputs_are_not(): void
+     {
+-        $this->assertSame(['compatible' => false, 'outside' => ['area', 'rainfall_6m', 'temp_range']], YieldModelGate::assess(self::DEPLOYED_INPUT));
+-        $this->assertSame(['compatible' => true, 'outside' => []], YieldModelGate::assess(self::IN_RANGE_INPUT));
++        $this->assertSame(['compatible' => false, 'outside' => ['area', 'rainfall_6m', 'temp_range'], 'within_range' => false], YieldModelGate::assess(self::DEPLOYED_INPUT));
++        $this->assertSame(['compatible' => false, 'outside' => [], 'within_range' => true], YieldModelGate::assess(self::IN_RANGE_INPUT), 'in range, accuracy not verified');
++        config(['prediction.rice_yield.accuracy_verified' => true]);
++        $this->assertSame(['compatible' => true, 'outside' => [], 'within_range' => true], YieldModelGate::assess(self::IN_RANGE_INPUT));
++        config(['prediction.rice_yield.accuracy_verified' => false]);
+         $this->assertFalse(YieldModelGate::assess(null)['compatible'], 'an input that cannot be checked is not treated as validated');
+     }
+ 
+@@ -71,6 +74,12 @@ public function test_label_mode_keeps_the_number_marked_unvalidated_and_in_range
+         $this->assertSame('outside_training_range', $labelled['validation_status']);
+ 
+         config(['prediction.rice_yield.gate' => 'withhold']);
++        $held = $this->gate($this->estimate(4.05), self::IN_RANGE_INPUT);
++        $this->assertNull($held['predicted_yield'], 'in range but accuracy not verified: still withheld');
++        $this->assertSame('within_training_range', $held['validation_status']);
++        $this->assertSame('withheld', $held['availability']);
++
++        config(['prediction.rice_yield.accuracy_verified' => true]);
+         $inRange = $this->gate($this->estimate(4.05), self::IN_RANGE_INPUT);
+         $this->assertSame(4.05, $inRange['predicted_yield']);
+         $this->assertSame('within_training_range', $inRange['validation_status']);

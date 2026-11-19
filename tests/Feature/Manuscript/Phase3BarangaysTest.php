@@ -17,7 +17,7 @@ class Phase3BarangaysTest extends TestCase
 
     public function test_every_barangay_has_a_profile_with_its_official_coordinates(): void
     {
-        $this->assertSame(19, BarangayProfile::query()->count());
+        $this->assertSame(count(\App\Support\LianBarangays::all()), BarangayProfile::query()->count());
         $balibago = BarangayProfile::query()->where('barangay', 'Balibago')->sole();
         $this->assertEqualsWithDelta(LianBarangays::coordinateFor('Balibago')[0], (float) $balibago->latitude, 0.0000001);
     }
@@ -27,13 +27,13 @@ class Phase3BarangaysTest extends TestCase
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
         $this->actingAs($mao)->get(route('mao.barangays.index'))->assertOk()
-            ->assertSee('Barangay 1 / Bonbon (Poblacion)')->assertSee('data-manuscript-tabs="records"', false);
+            ->assertSee('Balibago')->assertSee('data-manuscript-tabs="records"', false);
 
-        $this->actingAs($mao)->put(route('mao.barangays.update', 'Lumaniag'), [
+        $this->actingAs($mao)->put(route('mao.barangays.update', 'Luyahan'), [
             'farm_area_hectares' => '210.5', 'risk_classification' => 'High', 'flood_prone' => '1', 'notes' => 'Low-lying near the river',
         ])->assertRedirect();
 
-        $profile = BarangayProfile::query()->where('barangay', 'Lumaniag')->sole();
+        $profile = BarangayProfile::query()->where('barangay', 'Luyahan')->sole();
         $this->assertTrue($profile->flood_prone);
         $this->assertFalse($profile->drought_prone);
         $this->assertSame('High', $profile->risk_classification);
@@ -44,7 +44,7 @@ class Phase3BarangaysTest extends TestCase
     {
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
-        $this->actingAs($mao)->put(route('mao.barangays.update', 'Lumaniag'), ['risk_classification' => 'Extreme'])->assertSessionHasErrors('risk_classification');
+        $this->actingAs($mao)->put(route('mao.barangays.update', 'Luyahan'), ['risk_classification' => 'Extreme'])->assertSessionHasErrors('risk_classification');
         $this->actingAs($mao)->put(route('mao.barangays.update', 'Atlantis'), [])->assertNotFound();
         $this->actingAs(User::factory()->create(['role' => User::ROLE_FARMER]))->get(route('mao.barangays.index'))->assertStatus(403);
     }
@@ -61,7 +61,7 @@ class Phase3BarangaysTest extends TestCase
         $today = now('Asia/Manila')->startOfDay();
         $records = [];
         foreach (LianBarangays::all() as $barangay) {
-            $rainfall = $barangay === 'Lumaniag' ? 60.0 : 4.0;
+            $rainfall = $barangay === 'Luyahan' ? 60.0 : 4.0;
             $records[$barangay] = [
                 'barangay' => $barangay,
                 'temperature_c' => 28.0,
@@ -72,7 +72,7 @@ class Phase3BarangaysTest extends TestCase
                     'humidity_percent' => 80.0,
                     'soil_moisture' => .25,
                     'evapotranspiration_mm' => 3.0,
-                    'runoff_mm' => $barangay === 'Lumaniag' ? 2.0 : 0.0,
+                    'runoff_mm' => $barangay === 'Luyahan' ? 2.0 : 0.0,
                 ], range(0, 15)),
             ];
         }
@@ -84,13 +84,13 @@ class Phase3BarangaysTest extends TestCase
 
         $ranges = $response->viewData('ranges');
         $this->assertSame('flood', $response->viewData('range'));
-        $this->assertCount(19, $ranges['flood']['barangays']);
-        $this->assertSame(19, array_sum($ranges['flood']['counts']));
-        $this->assertSame('high', $ranges['flood']['barangays']['Lumaniag']['level']);
+        $this->assertCount(count(\App\Support\LianBarangays::all()), $ranges['flood']['barangays']);
+        $this->assertSame(count(\App\Support\LianBarangays::all()), array_sum($ranges['flood']['counts']));
+        $this->assertSame('high', $ranges['flood']['barangays']['Luyahan']['level']);
         $this->assertSame('low', $ranges['flood']['barangays']['Balibago']['level']);
-        $this->assertCount(19, $ranges['drought']['barangays']);
-        $this->assertSame(19, array_sum($ranges['drought']['counts']));
-        $this->assertSame('low', $ranges['drought']['barangays']['Lumaniag']['level']);
+        $this->assertCount(count(\App\Support\LianBarangays::all()), $ranges['drought']['barangays']);
+        $this->assertSame(count(\App\Support\LianBarangays::all()), array_sum($ranges['drought']['counts']));
+        $this->assertSame('low', $ranges['drought']['barangays']['Luyahan']['level']);
         $this->assertSame('nodata', $ranges['yield']['barangays']['Balibago']['level']);
     }
 

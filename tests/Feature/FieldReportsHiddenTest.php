@@ -57,12 +57,7 @@ class FieldReportsHiddenTest extends TestCase
         $this->assertTrue(Schema::hasTable('field_reports'));
     }
 
-    public function test_it_is_sent_to_its_own_dashboard(): void
-    {
-        $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
 
-        $this->actingAs($it)->get(route('field-reports.index'))->assertRedirect(route('admin.dashboard'));
-    }
 
     public function test_no_menu_item_dashboard_item_or_link_points_to_it(): void
     {

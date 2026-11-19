@@ -173,7 +173,7 @@ class MaoMissingDataNotificationTest extends TestCase
     public function test_farmers_and_it_never_get_them(): void
     {
         $farmer = User::factory()->farmer()->create();
-        $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
+        $it = User::factory()->create(['role' => 'IT Expert']);
         $this->mao();
 
         app(MaoMissingDataNotifier::class)->syncAll();

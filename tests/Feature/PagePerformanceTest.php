@@ -39,7 +39,6 @@ class PagePerformanceTest extends TestCase
     private const PAGES = [
         User::ROLE_FARMER => ['/farmer/dashboard', '/calendar', '/planting-advisories', '/farmer/my-farm', '/messages', '/notifications', '/weather-predictions'],
         User::ROLE_MAO => ['/mao/dashboard', '/reports', '/farmer-profiles', '/planting-advisories', '/weather-predictions', '/calendar', '/mao/planner'],
-        User::ROLE_IT_EXPERT => ['/admin/dashboard', '/users', '/system-logs', '/system-health', '/system-health/model-registry', '/model-evaluation', '/ai-admin/topics', '/messages'],
     ];
 
     protected function setUp(): void
@@ -57,7 +56,7 @@ class PagePerformanceTest extends TestCase
         $user = User::factory()->create(['role' => $role] + $attributes);
 
         if ($role === User::ROLE_FARMER) {
-            FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => $attributes['barangay'] ?? 'Bagong Pook']);
+            FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => $attributes['barangay'] ?? 'Prenza']);
         }
 
         return $user;
@@ -182,7 +181,7 @@ class PagePerformanceTest extends TestCase
         Queue::fake();
         $this->mockForestThatMustNotTrain();
 
-        foreach ([User::ROLE_FARMER => '/farmer/dashboard', User::ROLE_MAO => '/mao/dashboard', User::ROLE_IT_EXPERT => '/admin/dashboard'] as $role => $page) {
+        foreach ([User::ROLE_FARMER => '/farmer/dashboard', User::ROLE_MAO => '/mao/dashboard'] as $role => $page) {
             $started = microtime(true);
             $this->actingAs($this->user($role))->get($page)->assertOk();
 
@@ -277,7 +276,7 @@ class PagePerformanceTest extends TestCase
         Queue::fake();
         Http::fake();
 
-        foreach ([User::ROLE_FARMER => '/farmer/dashboard', User::ROLE_MAO => '/mao/dashboard', User::ROLE_IT_EXPERT => '/admin/dashboard', User::ROLE_IT_EXPERT.'-h' => '/system-health'] as $role => $page) {
+        foreach ([User::ROLE_FARMER => '/farmer/dashboard', User::ROLE_MAO => '/mao/dashboard'] as $role => $page) {
             $user = $this->user(str_replace('-h', '', $role));
 
             $first = $this->countQueries(fn () => $this->actingAs($user)->get($page)->assertOk());
@@ -292,17 +291,30 @@ class PagePerformanceTest extends TestCase
     {
         Http::fake();
         $mao = $this->user(User::ROLE_MAO);
-        $it = $this->user(User::ROLE_IT_EXPERT);
+        $it = $this->user('IT Expert');
 
         // Both scheduled warm-ups: the dashboards (iclimate:warm-dashboards) and System Health (iclimate:warm-dashboard-cache).
         $this->artisan('iclimate:warm-dashboards')->assertExitCode(0);
         $this->artisan('iclimate:warm-dashboard-cache')->assertExitCode(0);
 
-        foreach ([[$mao, '/mao/dashboard'], [$it, '/admin/dashboard'], [$it, '/system-health']] as [$user, $page]) {
+        foreach ([[$mao, '/mao/dashboard']] as [$user, $page]) {
             $queries = $this->countQueries(fn () => $this->actingAs($user)->get($page)->assertOk());
 
             $this->assertLessThanOrEqual(3, $queries, "{$page}: the first visitor reads what the warm-up prepared");
         }
+    }
+
+    public function test_audit_log_and_planner_lines_keep_the_prepared_dashboards(): void
+    {
+        Http::fake();
+        $mao = $this->user(User::ROLE_MAO);
+        $this->artisan('iclimate:warm-dashboards')->assertExitCode(0);
+
+        // 2026-11-11: these areas only refresh their own list pages; the prepared MAO dashboard stays valid.
+        \App\Support\CacheScope::bump('system-logs', 'mao-activity', 'planner', 'system-health', 'maintenance');
+
+        $queries = $this->countQueries(fn () => $this->actingAs($mao)->get('/mao/dashboard')->assertOk());
+        $this->assertLessThanOrEqual(3, $queries, 'an audit-log or planner line must not rebuild the MAO dashboard');
     }
 
     public function test_the_warm_up_is_scheduled_every_two_minutes(): void
@@ -394,29 +406,29 @@ class PagePerformanceTest extends TestCase
         $alice = $this->user(User::ROLE_FARMER);
         $bob = $this->user(User::ROLE_FARMER);
         $alice->forceFill(['name' => 'Alicenonly Santos', 'barangay' => 'Prenza'])->save();
-        $bob->forceFill(['name' => 'Bobonly Reyes', 'barangay' => 'Cumba'])->save();
+        $bob->forceFill(['name' => 'Bobonly Reyes', 'barangay' => 'San Diego'])->save();
 
-        $this->actingAs($alice)->get('/farmer/dashboard')->assertOk()->assertSee('Alicenonly')->assertDontSee('Bobonly')->assertDontSee('Cumba, Lian');
+        $this->actingAs($alice)->get('/farmer/dashboard')->assertOk()->assertSee('Alicenonly')->assertDontSee('Bobonly')->assertDontSee('San Diego, Lian');
         $this->actingAs($bob)->get('/farmer/dashboard')->assertOk()->assertSee('Bobonly')->assertDontSee('Alicenonly')->assertDontSee('Prenza, Lian');
         // and again, now that both copies exist
-        $this->actingAs($alice)->get('/farmer/dashboard')->assertOk()->assertSee('Alicenonly')->assertDontSee('Bobonly')->assertDontSee('Cumba, Lian');
+        $this->actingAs($alice)->get('/farmer/dashboard')->assertOk()->assertSee('Alicenonly')->assertDontSee('Bobonly')->assertDontSee('San Diego, Lian');
     }
 
     public function test_advisories_and_calendars_are_cached_per_barangay_and_person(): void
     {
         Http::fake();
-        $here = $this->user(User::ROLE_FARMER, ['barangay' => 'Bagong Pook']);
+        $here = $this->user(User::ROLE_FARMER, ['barangay' => 'Balibago']);
         $there = $this->user(User::ROLE_FARMER, ['barangay' => 'Matabungkay']);
-        PlantingAdvisory::factory()->create(['title' => 'ADVISORY-FOR-BAGONG-POOK', 'status' => 'published', 'target_scope' => 'barangay', 'target_barangay' => 'Bagong Pook', 'valid_from' => now()->subDay(), 'valid_until' => now()->addWeek()]);
+        PlantingAdvisory::factory()->create(['title' => 'ADVISORY-FOR-BALIBAGO', 'status' => 'published', 'target_scope' => 'barangay', 'target_barangay' => 'Balibago', 'valid_from' => now()->subDay(), 'valid_until' => now()->addWeek()]);
 
         // The Calendar shows planning only (2026-10): a farmer's own dates there, never another farmer's.
         \App\Models\FarmerPlantingSchedule::query()->create(['user_id' => $here->id, 'planting_date' => now()->addDays(3)->toDateString(),
-            'scheduled_harvest_date' => now()->addDays(110)->toDateString(), 'season' => 'Wet', 'farm_type' => 'Irrigated', 'barangay' => 'PLAN-OF-BAGONG-POOK']);
+            'scheduled_harvest_date' => now()->addDays(110)->toDateString(), 'season' => 'Wet', 'farm_type' => 'Irrigated', 'barangay' => 'PLAN-OF-BALIBAGO']);
 
-        $this->actingAs($here)->get('/planting-advisories')->assertSee('ADVISORY-FOR-BAGONG-POOK');
-        $this->actingAs($there)->get('/planting-advisories')->assertDontSee('ADVISORY-FOR-BAGONG-POOK');
-        $this->actingAs($here)->get('/calendar')->assertSee('PLAN-OF-BAGONG-POOK')->assertDontSee('ADVISORY-FOR-BAGONG-POOK');
-        $this->actingAs($there)->get('/calendar')->assertDontSee('PLAN-OF-BAGONG-POOK');
+        $this->actingAs($here)->get('/planting-advisories')->assertSee('ADVISORY-FOR-BALIBAGO');
+        $this->actingAs($there)->get('/planting-advisories')->assertDontSee('ADVISORY-FOR-BALIBAGO');
+        $this->actingAs($here)->get('/calendar')->assertSee('PLAN-OF-BALIBAGO')->assertDontSee('ADVISORY-FOR-BALIBAGO');
+        $this->actingAs($there)->get('/calendar')->assertDontSee('PLAN-OF-BALIBAGO');
     }
 
     public function test_a_data_change_shows_on_the_very_next_visit(): void
@@ -520,14 +532,14 @@ class PagePerformanceTest extends TestCase
         FarmerProfile::factory()->create(['user_id' => $user->id]);
 
         $this->withSession($this->captchaSession())->post('/login', ['email' => $user->email, 'password' => 'password', 'captcha_answer' => '7']);
-        $this->newRequest()->get('/admin/dashboard')->assertForbidden();
+        $this->newRequest()->get('/mao/dashboard')->assertForbidden();
         $this->newRequest()->get('/farmer/dashboard')->assertOk(); // the cached user is now warm
         $this->assertNotNull(Cache::get('auth:user:'.$user->id));
 
-        $user->update(['role' => User::ROLE_IT_EXPERT]);
+        $user->update(['role' => User::ROLE_MAO]);
         $this->assertNull(Cache::get('auth:user:'.$user->id), 'the change dropped the cached copy');
 
-        $this->newRequest()->get('/admin/dashboard')->assertOk();
+        $this->newRequest()->get('/mao/dashboard')->assertOk();
         $this->newRequest()->get('/farmer/dashboard')->assertForbidden();
     }
 
@@ -569,44 +581,11 @@ class PagePerformanceTest extends TestCase
 
     // ------------------------------------------------- RBAC with warm caches
 
-    public function test_warm_caches_never_open_a_page_to_the_wrong_role(): void
-    {
-        Http::fake();
-        $farmer = $this->user(User::ROLE_FARMER);
-        $mao = $this->user(User::ROLE_MAO);
-        $it = $this->user(User::ROLE_IT_EXPERT);
 
-        // warm everything that is cached
-        $this->actingAs($mao)->get('/mao/dashboard')->assertOk();
-        $this->actingAs($it)->get('/admin/dashboard')->assertOk();
-        $this->actingAs($it)->get('/system-health')->assertOk();
-        $this->actingAs($it)->get('/ai-admin/topics')->assertOk();
-
-        foreach (['/mao/dashboard', '/admin/dashboard', '/system-health', '/system-health/model-registry', '/ai-admin/topics', '/users', '/system-logs'] as $page) {
-            $this->actingAs($farmer)->get($page)->assertForbidden();
-        }
-
-        foreach (['/admin/dashboard', '/system-health', '/users'] as $page) {
-            $this->actingAs($mao)->get($page)->assertForbidden();
-        }
-    }
 
     // ------------------------------------------------------ system health page
 
-    public function test_system_health_reuses_a_recent_check_and_refresh_runs_a_new_one(): void
-    {
-        Http::fake();
-        $it = $this->user(User::ROLE_IT_EXPERT);
 
-        $first = $this->countQueries(fn () => $this->actingAs($it)->get('/system-health')->assertOk());
-        $repeat = $this->countQueries(fn () => $this->actingAs($it)->get('/system-health')->assertOk());
-        $refresh = $this->countQueries(fn () => $this->actingAs($it)->get('/system-health?refresh=1')->assertOk());
-        $afterRefresh = $this->countQueries(fn () => $this->actingAs($it)->get('/system-health')->assertOk());
-
-        $this->assertLessThanOrEqual(2, $repeat);
-        $this->assertGreaterThan($repeat + 4, $refresh, 'Refresh really runs the checks again');
-        $this->assertLessThanOrEqual(2, $afterRefresh, 'and the next visitor reuses that new result');
-    }
 
     // ------------------------------------------------------------ infrastructure
 

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Farm;
 use App\Models\FarmerPlantingSchedule;
+use App\Models\HistoricalRiceProduction;
 use App\Models\User;
 use App\Services\Farmer\FarmerHomeKpis;
 use App\Support\ProjectYieldDataset;
@@ -175,6 +176,22 @@ class FarmerHomeKpisTest extends TestCase
         $this->assertSame(['Expected this season', 'Usual in Lian', 'My last harvest'], $all['labels']);
         // Without an estimate the usual yield is still this month's, beside the last harvest.
         $this->assertSame(['usual', 'last'], $compare(['state' => 'loading'])['keys']);
+    }
+
+    public function test_matching_season_uses_the_imported_barangay_benchmark_and_keeps_tan_ag_separate(): void
+    {
+        $farmer = $this->farmer();
+        $farm = $this->farm($farmer);
+        $this->plan($farmer, '2025-06-01', '2025-09-20', [
+            'farm_id' => $farm->id, 'actual_yield' => 3.5, 'harvested_on' => '2025-09-22',
+        ]);
+
+        $compare = app(FarmerHomeKpis::class)->for($farmer, $farm, null, ['state' => 'ok', 'yield' => 4.2], ['state' => 'nodata', 'days' => []], $this->now)['compare'];
+
+        $this->assertSame(['predicted', 'actual', 'historical'], $compare['keys']);
+        $this->assertSame(3.33, $compare['benchmark']);
+        $this->assertSame([6.3, 5.25, 5.0], $compare['totals']);
+        $this->assertSame('TAN-AG SAN DIEGO', HistoricalRiceProduction::query()->where('barangay', 'TAN-AG SAN DIEGO')->value('barangay'));
     }
 
     // ------------------------------------------------------------ on the page

@@ -27,6 +27,7 @@ class BackupRestoreTestService
 {
     public const REASONS = [
         'no_valid_backup' => 'No valid backup file was found to test.',
+        'mysql_backup' => 'The newest backup is a MySQL/MariaDB dump; this test only restores PostgreSQL archives. Restore it into a separate database with deploy/hostinger/restore-isolated-mariadb.sh (or the steps in docs/SUPABASE_DECOMMISSION_RUNBOOK_2026-11-10.md).',
         'docker_unavailable' => 'Docker is not available. Start Docker and try again.',
         'container_start_failed' => 'The temporary PostgreSQL container could not be started.',
         'startup_timeout' => 'The temporary PostgreSQL container did not become ready in time.',
@@ -79,6 +80,11 @@ class BackupRestoreTestService
             }
 
             $result['backup'] = $backup['name'];
+
+            // This test restores PostgreSQL (pg_dump) archives. Since the move to MariaDB the backups are SQL dumps.
+            if ($this->backups->isSqlDump($backup['path'])) {
+                throw new RestoreTestFailed('mysql_backup');
+            }
 
             $this->assertDockerAvailable();
 

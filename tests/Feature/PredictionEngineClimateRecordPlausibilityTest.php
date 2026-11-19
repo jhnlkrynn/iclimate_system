@@ -27,6 +27,10 @@ class PredictionEngineClimateRecordPlausibilityTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // The climate inputs follow the target month (verification 2026-11-18): run inside the observed station
+        // record (2015-01 .. 2025-12) so the months before the default target (next month) are observed.
+        $this->travelTo('2025-02-10 09:00:00');
+        \App\Support\YieldModelClimateWindow::forget();
 
         Config::set('services.groq.enabled', false);
         Config::set('services.farming_ai.url', 'http://farming-ai.test');
@@ -46,15 +50,15 @@ class PredictionEngineClimateRecordPlausibilityTest extends TestCase
 
     public function test_implausible_row_id_analog_of_row_6_does_not_influence_derived_features(): void
     {
-        // Five older plausible rows, so the entered records cover the full six-month window (with fewer, the
-        // engine reads the Ambulong station record instead; see the last test).
-        foreach (['2025-08-15', '2025-09-15', '2025-10-15', '2025-11-15', '2025-12-15'] as $date) {
+        // Target 2025-03 (now 2025-02-10 + 1 month). Five older plausible rows and the latest one cover the six
+        // months before it (T-6 .. T-1); an entered month takes the place of the station month it covers.
+        foreach (['2024-09-15', '2024-10-15', '2024-11-15', '2024-12-15', '2025-01-15'] as $date) {
             ClimateRecord::query()->create(['record_date' => $date, 'rainfall' => 100.0, 'temperature' => 27.0, 'humidity' => 75.0, 'wind_speed' => 7.0, 'season' => ClimateRecord::SEASON_DRY, 'source' => 'test fixture']);
         }
 
         // The latest plausible historical row.
         ClimateRecord::query()->create([
-            'record_date' => '2026-01-15',
+            'record_date' => '2025-02-05',   // not after today (2025-02-10): a future date is implausible
             'rainfall' => 120.0,
             'temperature' => 28.0,
             'humidity' => 75.0,
@@ -88,13 +92,13 @@ class PredictionEngineClimateRecordPlausibilityTest extends TestCase
         $this->assertSame(120.0, $modelInput['previous_rainfall']);
         $this->assertSame(28.0, $modelInput['previous_temp']);
         $this->assertSame(8.0, $modelInput['previous_wind_speed']);
-        $this->assertLessThan(1000, $modelInput['rainfall_6m']);
+        $this->assertSame(103.33, $modelInput['rainfall_6m'], 'mean of the six entered months, never the bad row');
     }
 
     public function test_a_different_implausible_row_not_id_6_is_also_excluded(): void
     {
         ClimateRecord::query()->create([
-            'record_date' => '2026-02-10',
+            'record_date' => '2025-01-10',
             'rainfall' => 90.0,
             'temperature' => 27.0,
             'humidity' => 70.0,
@@ -108,7 +112,7 @@ class PredictionEngineClimateRecordPlausibilityTest extends TestCase
         // per the audited controller rules), so use an out-of-range
         // temperature instead to prove no ID is special-cased.
         $anotherBadRow = ClimateRecord::factory()->create([
-            'record_date' => '2026-03-01',
+            'record_date' => '2025-02-01',
             'rainfall' => 50.0,
             'temperature' => 999.0,
             'humidity' => 60.0,
@@ -138,14 +142,15 @@ class PredictionEngineClimateRecordPlausibilityTest extends TestCase
 
         $modelInput = $this->buildModelInputFor();
 
-        // Fewer than six entered records: the history inputs are the latest six months of the verified
-        // Ambulong station record (2026-10 fix: the yield forecast could never run on a new install). They
-        // are real observations: not 0, not the forecast copied in their place, never the excluded row.
-        $months = collect(app(\App\Services\Climate\AmbulongHistoricalClimateDataset::class)->load()['observations'])
-            ->sortByDesc(fn (array $obs): int => $obs['year'] * 12 + $obs['month'])->take(6)->values();
+        // No entered month: the history inputs are the six Ambulong station months BEFORE the target month
+        // (2025-03 -> 2025-02 .. 2024-09; verification 2026-11-18, previously "the latest six on file"). They are
+        // real observations: not 0, not the forecast copied in their place, never the excluded row.
+        $byMonth = collect(app(\App\Services\Climate\AmbulongHistoricalClimateDataset::class)->load()['observations'])
+            ->keyBy(fn (array $obs): string => sprintf('%04d-%02d', $obs['year'], $obs['month']));
+        $months = collect(['2025-02', '2025-01', '2024-12', '2024-11', '2024-10', '2024-09'])->map(fn (string $m): array => $byMonth[$m]);
 
-        $this->assertSame(round((float) $months->first()['rainfall'], 2), $modelInput['previous_rainfall']);
-        $this->assertSame(round((float) $months->sum('rainfall'), 2), $modelInput['rainfall_6m']);
+        $this->assertSame(round((float) $months->first()['rainfall'], 2), $modelInput['previous_rainfall'], 'previous = T-1');
+        $this->assertSame(round((float) $months->avg('rainfall'), 2), $modelInput['rainfall_6m'], 'a six-month mean, as trained');
         $this->assertSame(round((float) $months->avg('temperature'), 2), $modelInput['temp_6m']);
         $this->assertLessThan(60, $modelInput['previous_temp']);
         $this->assertLessThan(5000, $modelInput['rainfall_6m']);

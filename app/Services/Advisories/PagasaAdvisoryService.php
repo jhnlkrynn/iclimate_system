@@ -223,11 +223,11 @@ class PagasaAdvisoryService
 
     private function systemUserId(): int
     {
-        return (int) (User::query()->whereIn('role', [User::ROLE_MAO, User::ROLE_IT_EXPERT])->orderBy('id')->value('id')
+        return (int) (User::query()->whereIn('role', [User::ROLE_MAO])->orderBy('id')->value('id')
             ?? User::query()->orderBy('id')->value('id')
             ?? User::query()->firstOrCreate(['email' => 'system@iclimate.local'], [
                 'name' => 'iClimate System', 'password' => Hash::make(Str::random(32)),
-                'role' => User::ROLE_IT_EXPERT, 'status' => User::STATUS_ACTIVE,
+                'role' => User::ROLE_FARMER, 'status' => User::STATUS_INACTIVE,
             ])->id);
     }
 }

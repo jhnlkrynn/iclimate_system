@@ -113,7 +113,7 @@ class LocalFarmGuidanceService
             ."For the next 24 hours, expected rainfall is {$weather['rainfall_24h_mm']} mm with up to {$weather['precip_probability_percent']}% rain probability. "
             .$guidance['message'];
         $existing = PlantingAdvisory::query()->where('generation_key', 'local-current:'.$barangay)->first();
-        $author = $existing?->posted_by ?? User::query()->whereIn('role', [User::ROLE_MAO, User::ROLE_IT_EXPERT])->value('id') ?? User::query()->value('id');
+        $author = $existing?->posted_by ?? User::query()->whereIn('role', [User::ROLE_MAO])->value('id') ?? User::query()->value('id');
         if (! $author) {
             return $weather;
         }

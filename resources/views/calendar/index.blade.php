@@ -49,7 +49,8 @@
             </form>
         @endunless
 
-        <div class="fcal-layout">
+        {{-- data-live-region: plans, advisories and MAO events appear without reloading (resources/js/live-page.js). --}}
+        <div class="fcal-layout" data-live-region="calendar" data-live-areas="planting,advisories,community-posts">
             {{-- Month --}}
             <section class="fcal-month" aria-labelledby="fcalMonthTitle">
                 <div class="fcal-toolbar">
@@ -175,8 +176,11 @@
                                 <div><dt>Barangay</dt><dd>{{ $schedule->barangay ?: 'Location not provided' }}</dd></div>
                                 <div><dt>Status</dt><dd>{{ $schedule->monitoringStatusLabel() }}</dd></div>
                             </dl>
-                            @if($schedule->predicted_yield !== null)
-                                <p class="fcal-record-estimate is-good">Estimated harvest: <strong>{{ number_format((float) $schedule->predicted_yield, 2) }} tons/hectare</strong></p>
+                            @if($schedule->predicted_yield !== null && ! \App\Services\Prediction\YieldModelGate::showsStoredEstimate())
+                                {{-- A saved model estimate stays hidden until its accuracy is verified (YieldModelGate). --}}
+                                <p class="fcal-record-estimate" data-ml-status="withheld">{{ __('farmer.home.harvest.unvalidated') }}</p>
+                            @elseif($schedule->predicted_yield !== null)
+                                <p class="fcal-record-estimate is-good">Estimated harvest: <strong>{{ number_format((float) $schedule->predicted_yield, 2) }} tons/hectare</strong> @include('components.unvalidated-estimate', ['compact' => true])</p>
                             @else
                                 <p class="fcal-record-estimate">Estimate not available yet.@if($schedule->prediction_unavailable_reason) <span>{{ $schedule->prediction_unavailable_reason }}</span>@endif</p>
                             @endif

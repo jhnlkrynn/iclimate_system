@@ -1640,6 +1640,8 @@ html[data-theme="dark"] .ic-skel-lines > span:not(.visually-hidden) { background
 
 /* Saved-data labels shared by every page: "Updated: <time>" beside a stored reading, "Walang datos pa" when none exists yet. */
 .ic-updated { display: inline-block; font-size: .78rem; font-weight: 600; color: #5f7569; }
+/* "5 seconds ago" beside a stored time (<x-live-time>): steady width so the ticking text does not jiggle the line. */
+.ic-ago { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ic-no-data { display: flex; flex-direction: column; gap: .2rem; padding: .9rem 1rem; border-radius: 12px; background: var(--sage-50); color: #4b5f55; }
 .ic-no-data strong { font-size: .95rem; color: var(--sage-700); }
 .ic-no-data span { font-size: .82rem; }

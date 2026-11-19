@@ -22,6 +22,22 @@ class User extends Authenticatable
         // password, profile) must be seen by their very next request.
         $forget = fn (self $user) => \App\Auth\CachedEloquentUserProvider::forget($user->getKey());
 
+        static::saving(function (self $user): void {
+            $connection = $user->getConnection();
+            if (! $user->isDirty('role') || $connection->getDriverName() !== 'mysql'
+                || ! in_array($user->role, self::ROLES, true)) {
+                return;
+            }
+
+            // Keep registration and staff creation working before the approved schema migration runs.
+            $version = \Illuminate\Support\Facades\Cache::get(\App\Support\SchemaCache::VERSION_KEY, 1);
+            $type = \Illuminate\Support\Facades\Cache::remember('users-role-type:'.$connection->getName().':'.$version, 3600,
+                fn () => $connection->getSchemaBuilder()->getColumnType('users', 'role'));
+            if ($type === 'enum') {
+                $user->attributes['role'] = $user->role === self::ROLE_MAO ? 'MAO Personnel' : 'Farmer';
+            }
+        });
+
         static::saved($forget);
         static::deleted($forget);
 
@@ -31,9 +47,9 @@ class User extends Authenticatable
         // "Your iClimate account is approved": whenever a waiting or rejected account becomes Active (Farmer Approvals,
         // or IT setting the status on the Users page). Restoring a deleted account sends its own email instead.
         static::saved(function (self $user): void {
-            if ($user->wasChanged('status') && $user->status === self::STATUS_ACTIVE
+            if ($user->wasChanged('status') && in_array($user->status, [self::STATUS_ACTIVE, self::STATUS_APPROVED], true)
                 && in_array($user->getOriginal('status'), [self::STATUS_PENDING, self::STATUS_REJECTED], true)) {
-                \App\Services\Accounts\AccountEmails::approved($user);
+                $user->getConnection()->afterCommit(fn () => rescue(fn () => \App\Services\Accounts\AccountEmails::approved($user), null, true));
             }
         });
         // Panel revision 4.4: a changed MAO account refreshes the cached coverage and "Your MAO personnel" cards.
@@ -44,17 +60,19 @@ class User extends Authenticatable
         });
     }
 
-    public const ROLE_FARMER = 'Farmer';
+    public const ROLE_FARMER = 'farmer';
 
-    public const ROLE_MAO = 'MAO Personnel';
+    public const ROLE_MAO = 'mao';
 
-    public const ROLE_IT_EXPERT = 'IT Expert';
+    public const ROLES = [self::ROLE_FARMER, self::ROLE_MAO];
 
     public const AI_LANGUAGE_EN = 'en';
 
     public const AI_LANGUAGE_TL = 'tl';
 
     public const STATUS_ACTIVE = 'Active';
+
+    public const STATUS_APPROVED = 'Approved';
 
     public const STATUS_INACTIVE = 'Inactive';
 
@@ -63,7 +81,7 @@ class User extends Authenticatable
 
     public const STATUS_REJECTED = 'Rejected';
 
-    public const STATUSES = [self::STATUS_ACTIVE, self::STATUS_INACTIVE, self::STATUS_PENDING, self::STATUS_REJECTED];
+    public const STATUSES = [self::STATUS_ACTIVE, self::STATUS_APPROVED, self::STATUS_INACTIVE, self::STATUS_PENDING, self::STATUS_REJECTED];
 
     /**
      * A closed account (App\Services\Accounts\AccountDeletion). Not one of STATUSES: it is never picked on the edit
@@ -157,9 +175,75 @@ class User extends Authenticatable
         return $this->hasMany(MaoUserBarangay::class)->orderBy('barangay');
     }
 
+    public static function canonicalRole(?string $role): ?string
+    {
+        return match ($role) {
+            'Farmer', 'Association Chairman', 'association_chairman' => self::ROLE_FARMER,
+            'MAO Personnel', 'MAO Staff' => self::ROLE_MAO,
+            default => $role,
+        };
+    }
+
+    public static function storedRoleValues(string $role): array
+    {
+        return match (self::canonicalRole($role)) {
+            self::ROLE_FARMER => ['farmer', 'Farmer', 'Association Chairman', 'association_chairman'],
+            self::ROLE_MAO => ['mao', 'MAO Personnel', 'MAO Staff'],
+            default => [$role],
+        };
+    }
+
+    public function getRoleAttribute(?string $value): ?string
+    {
+        return self::canonicalRole($value);
+    }
+
+    public function newEloquentBuilder($query): \App\Models\Builders\UserBuilder
+    {
+        return new \App\Models\Builders\UserBuilder($query);
+    }
+
+    public function hasApplicationAccess(): bool
+    {
+        return in_array($this->status, [self::STATUS_ACTIVE, self::STATUS_APPROVED], true) && in_array($this->role, self::ROLES, true);
+    }
+
+    public function accountReviews(): HasMany
+    {
+        return $this->hasMany(FarmerAccountReview::class)->latest('id');
+    }
+
+    public function accountReviewer(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(self::class, 'reviewed_by')->withoutGlobalScope(\App\Models\Scopes\HideDeletedUsers::class);
+    }
+
+    public function approver(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(self::class, 'approved_by')->withoutGlobalScope(\App\Models\Scopes\HideDeletedUsers::class);
+    }
+
+    public function applicationStatus(): string
+    {
+        return $this->role === self::ROLE_FARMER && $this->status === self::STATUS_ACTIVE ? self::STATUS_APPROVED : (string) $this->status;
+    }
+
     public function isMao(): bool
     {
         return $this->role === self::ROLE_MAO;
+    }
+
+    public function isAssociationChairman(): bool
+    {
+        // Before the association tables are migrated nobody can be a chairman (every Farmer page asks this in the sidebar).
+        return $this->role === self::ROLE_FARMER && $this->hasApplicationAccess()
+            && \App\Support\SchemaCache::hasTable('association_chairman_assignments')
+            && $this->associationChairmanAssignment()->exists();
+    }
+
+    public function associationChairmanAssignment(): HasOne
+    {
+        return $this->hasOne(AssociationChairmanAssignment::class)->where('status', AssociationChairmanAssignment::STATUS_ACTIVE);
     }
 
     /** The Municipal Agriculturist: municipality-wide data, MAO account management, every MAO user's activity log. */
@@ -184,7 +268,7 @@ class User extends Authenticatable
     {
         // Municipal MAO/IT views are intentionally unassigned: an empty
         // assignment list means municipality-wide coverage, not no coverage.
-        if ($this->isMaoHead() || ($this->isMao() && $this->coveredBarangays() === []) || $this->role === self::ROLE_IT_EXPERT) {
+        if ($this->isMaoHead() || ($this->isMao() && $this->coveredBarangays() === [])) {
             return 'All barangays (Lian)';
         }
         $labels = array_map(fn (array $a): string => $a['sitio'] ? $a['sitio'].' ('.$a['barangay'].')' : $a['barangay'], $this->maoAssignments());
@@ -420,10 +504,14 @@ class User extends Authenticatable
             ->whereRaw("NOT EXISTS (SELECT 1 FROM system_logs sl WHERE sl.user_id = users.id AND LOWER(sl.action) IN ('user login', 'login'))");
     }
 
-    /** The role as people read it. The stored value of the IT role stays "IT Expert"; every screen says "IT Personnel". */
+    /** Human-readable labels for the supported application roles. */
     public static function labelForRole(?string $role): string
     {
-        return $role === self::ROLE_IT_EXPERT ? 'IT Personnel' : (string) $role;
+        return match (self::canonicalRole($role)) {
+            self::ROLE_FARMER => 'Farmer',
+            self::ROLE_MAO => 'MAO Staff',
+            default => 'Closed legacy role',
+        };
     }
 
     public function roleLabel(): string
@@ -470,7 +558,6 @@ class User extends Authenticatable
     {
         return match ($this->role) {
             self::ROLE_MAO => 'mao.dashboard',
-            self::ROLE_IT_EXPERT => 'admin.dashboard',
             default => 'farmer.dashboard',
         };
     }
@@ -500,6 +587,8 @@ class User extends Authenticatable
             // Manuscript – Naicel
             'last_login_at' => 'datetime',
             'approved_at' => 'datetime',
+            'reviewed_at' => 'datetime',
+            'registration_revision' => 'integer',
             // Panel revision 4.4
             'area_covered_ha' => 'decimal:2',
             'is_mao_head' => 'boolean',

@@ -1,0 +1,19 @@
+# iClimate MariaDB network hardening (audit 2026-11-18, P0-4). Tested on a throwaway MariaDB 10.4.28 (XAMPP build):
+# with these lines the server listened only on 127.0.0.1, a connection to the machine's LAN address was refused, and
+# Laravel connected over 127.0.0.1 with an account granted to 'user'@'127.0.0.1'.
+#
+# Where it goes:
+#   Ubuntu VPS:   /etc/mysql/mariadb.conf.d/60-iclimate.cnf
+#   XAMPP (Mac):  append the [mysqld] lines to /Applications/XAMPP/xamppfiles/etc/my.cnf (needs admin rights)
+# Then restart MariaDB in an approved window and check:  netstat -an | grep 3306   ->  127.0.0.1.3306 only
+#
+# Before restarting with skip-name-resolve, every account the application uses must be granted to '127.0.0.1'
+# (not only 'localhost'):  SELECT user, host FROM mysql.user;   iclimate_app is already @'127.0.0.1'.
+# Anything that connects from another machine stops working. The app account cannot see other sessions, so this was
+# not checked: as admin, run SHOW PROCESSLIST and SELECT user, host FROM mysql.user before applying.
+
+[mysqld]
+bind-address = 127.0.0.1
+skip-name-resolve
+# Keep the error log from growing without bound (the XAMPP log had reached 2.1 GB): rotate it with logrotate/newsyslog.
+log_warnings = 2

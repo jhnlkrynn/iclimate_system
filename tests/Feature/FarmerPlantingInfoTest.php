@@ -173,7 +173,7 @@ class FarmerPlantingInfoTest extends TestCase
         $data = ['planting_date' => '2026-10-10', 'farm_area' => '1.5'];
 
         $this->postJson(route('farmer.dashboard.planting-info'), $data)->assertUnauthorized();
-        foreach ([User::ROLE_MAO, User::ROLE_IT_EXPERT] as $role) {
+        foreach ([User::ROLE_MAO] as $role) {
             $this->save(User::factory()->create(['role' => $role]), $data)->assertForbidden();
         }
 

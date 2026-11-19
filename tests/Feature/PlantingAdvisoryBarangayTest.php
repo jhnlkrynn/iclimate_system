@@ -18,7 +18,7 @@ class PlantingAdvisoryBarangayTest extends TestCase
             ->get(route('planting-advisories.create'))
             ->assertOk()
             ->assertSee('All Barangays')
-            ->assertSee('Bagong Pook')
+            ->assertSee('Balibago')
             ->assertSee('Matabungkay')
             ->assertSee('San Diego');
     }

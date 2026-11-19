@@ -45,7 +45,7 @@ class Phase1AccountsTest extends TestCase
         $this->assertSame(User::STATUS_PENDING, User::query()->where('email', 'new@example.com')->value('status'));
     }
 
-    public function test_sign_ups_are_active_at_once_when_approval_is_switched_off(): void
+    public function test_sign_ups_still_require_approval_with_legacy_setting_switched_off(): void
     {
         config(['iclimate.farmer_approval' => false]);
 
@@ -54,7 +54,7 @@ class Phase1AccountsTest extends TestCase
             'password_confirmation' => 'Password123!', 'barangay' => 'Balibago', 'captcha_answer' => '7',
         ]);
 
-        $this->assertSame(User::STATUS_ACTIVE, User::query()->where('email', 'new@example.com')->value('status'));
+        $this->assertSame(User::STATUS_PENDING, User::query()->where('email', 'new@example.com')->value('status'));
     }
 
     public function test_a_pending_farmer_cannot_log_in_and_is_told_why(): void
@@ -90,7 +90,7 @@ class Phase1AccountsTest extends TestCase
         $this->actingAs($mao)->post(route('mao.farmer-approvals.approve', $farmer))->assertRedirect();
 
         $farmer->refresh();
-        $this->assertSame(User::STATUS_ACTIVE, $farmer->status);
+        $this->assertSame(User::STATUS_APPROVED, $farmer->status);
         $this->assertSame($mao->id, $farmer->approved_by);
         $this->assertNotNull($farmer->approved_at);
         $this->assertTrue(Notification::query()->where('user_id', $farmer->id)->where('category', 'account')->exists());
@@ -114,13 +114,13 @@ class Phase1AccountsTest extends TestCase
     public function test_only_pending_farmer_sign_ups_can_be_decided_and_only_by_mao(): void
     {
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
-        $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
+        $it = User::factory()->create(['role' => User::ROLE_MAO, 'is_mao_head' => true]);
         $active = User::factory()->create(['role' => User::ROLE_FARMER]);
         $pending = $this->pendingFarmer();
 
-        $this->actingAs($mao)->post(route('mao.farmer-approvals.approve', $active))->assertNotFound();
+        $this->actingAs($mao)->post(route('mao.farmer-approvals.approve', $active))->assertConflict();
         $this->actingAs($mao)->post(route('mao.farmer-approvals.approve', $it))->assertNotFound();
-        $this->actingAs($it)->get(route('mao.farmer-approvals.index'))->assertStatus(403);
+        $this->actingAs($active)->get(route('mao.farmer-approvals.index'))->assertStatus(403);
         $this->actingAs($active)->post(route('mao.farmer-approvals.approve', $pending))->assertStatus(403);
     }
 
@@ -133,13 +133,13 @@ class Phase1AccountsTest extends TestCase
         ]);
 
         $this->assertNotNull($user->fresh()->last_login_at);
-        $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
+        $it = User::factory()->create(['role' => User::ROLE_MAO, 'is_mao_head' => true]);
         $this->actingAs($it)->get(route('users.index'))->assertOk()->assertSee('Last Login');
     }
 
     public function test_it_resets_a_users_password_to_a_one_time_temporary_password(): void
     {
-        $it = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
+        $it = User::factory()->create(['role' => User::ROLE_MAO, 'is_mao_head' => true]);
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER]);
 
         $response = $this->actingAs($it)->post(route('users.reset-password', $farmer));

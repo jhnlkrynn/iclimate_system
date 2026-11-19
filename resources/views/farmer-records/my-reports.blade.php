@@ -27,7 +27,8 @@
                 <a class="fad-btn is-quiet" href="{{ route('farmer.my-farm') }}">{{ __('my_reports.back') }}</a>
             </div>
         </header>
-        <div class="fad-card">
+        {{-- data-live-region: the report follows saved farm, planting, harvest and estimate changes while open (live-page.js). --}}
+        <div class="fad-card" @unless ($print) data-live-region="my-reports" data-live-areas="farmers,planting,rice,advisories,notifications,historical-rice,yield,yield-requests" @endunless>
             @include('farmer-records._my-reports-body')
         </div>
     </div>

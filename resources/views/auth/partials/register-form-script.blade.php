@@ -15,9 +15,6 @@
     const agreeTerms = document.getElementById('agreeTerms');
     const submit = document.getElementById('createAccountBtn');
     const organization = document.getElementById('farmer_organization_id');
-    const assignedBarangayGroup = document.getElementById('assignedBarangayGroup');
-    const assignedBarangay = document.getElementById('assignedBarangay');
-    const manualBarangayGroup = document.getElementById('manualBarangayGroup');
     const manualBarangay = document.getElementById('barangay');
     const strengthLabel = document.getElementById('passwordStrengthLabel');
     const strengthFill = document.getElementById('passwordStrengthFill');
@@ -78,7 +75,7 @@
         if (! value) return 'Please enter your email address.';
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? '' : 'Please enter a valid email address.';
       }],
-      [manualBarangay, () => organization.value || manualBarangay.value ? '' : 'Please select your barangay.'],
+      [manualBarangay, () => manualBarangay.value ? '' : 'Please select your barangay.'],
       [password, () => {
         if (! password.value) return 'Please create a password.';
         return Object.values(passwordRules(password.value)).every(Boolean) ? '' : 'Your password must meet all the requirements below.';
@@ -118,17 +115,20 @@
       });
     });
 
-    const syncFarmLocation = () => {
-      const selected = organization?.selectedOptions?.[0];
-      const barangay = selected?.dataset?.barangay || '';
-      const hasOrganization = Boolean(organization?.value);
+    const syncAssociationOptions = (reset = false) => {
+      const selected = organization?.value || '';
+      const barangay = manualBarangay?.value || '';
+      const choices = [...organization.options].filter((option) => option.dataset.barangay);
 
-      assignedBarangay.value = barangay;
-      assignedBarangayGroup.style.display = hasOrganization ? '' : 'none';
-      manualBarangayGroup.style.display = hasOrganization ? 'none' : '';
-      manualBarangay.disabled = hasOrganization;
-      manualBarangay.required = ! hasOrganization;
-      if (hasOrganization) setError(manualBarangay, '');
+      choices.forEach((option) => {
+        const matches = Boolean(barangay) && option.dataset.barangay === barangay;
+        option.hidden = ! matches;
+        option.disabled = ! matches;
+      });
+      organization.disabled = ! barangay;
+      if (reset || (selected && ! choices.some((option) => option.value === selected && ! option.disabled))) {
+        organization.value = '';
+      }
     };
 
     // Other organizations: the hidden native multi-select stays the source of truth (it is what gets submitted); this
@@ -352,9 +352,9 @@
     });
     confirmPassword.addEventListener('input', syncConfirmFeedback);
     organization.addEventListener('change', () => {
-      syncFarmLocation();
       syncOtherOrganizations();
     });
+    manualBarangay.addEventListener('change', () => syncAssociationOptions(true));
 
     // After a failed submission only the combined name comes back if the split fields were not posted.
     if (! firstName.value && ! lastName.value && name.value) {
@@ -364,7 +364,7 @@
     }
     syncName();
     checkStrength(password.value || '');
-    syncFarmLocation();
+    syncAssociationOptions();
     syncOtherOrganizations();
 
     form.addEventListener('submit', (event) => {

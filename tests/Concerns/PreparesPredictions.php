@@ -59,14 +59,16 @@ trait PreparesPredictions
 
     /**
      * The yield model runs only when every input it needs is a real number, and its "previous month" and
-     * 3/6-month trend inputs come from the last six recorded months. A test that expects a model-backed
-     * yield records those months first (the numbers are fixed test values).
+     * 3/6-month trend inputs come from the six months before the target month (verification 2026-11-18). The
+     * default target is next month (the municipality forecast is for this month), so a test that expects a
+     * model-backed yield records this month and the six before it (fixed test values; the first day of this
+     * month is not a future date).
      */
     protected function recordRecentClimate(): void
     {
-        foreach (range(1, 6) as $monthsAgo) {
+        foreach (range(0, 6) as $monthsAgo) {
             \App\Models\ClimateRecord::factory()->create([
-                'record_date' => now()->subMonths($monthsAgo)->startOfMonth()->toDateString(),
+                'record_date' => now()->subMonthsNoOverflow($monthsAgo)->startOfMonth()->toDateString(),
                 'rainfall' => 150 + $monthsAgo * 10, 'temperature' => 27 + $monthsAgo * 0.2, 'humidity' => 80,
                 'wind_speed' => 10, 'season' => \App\Models\ClimateRecord::SEASON_WET,
             ]);

@@ -52,13 +52,13 @@ class AnalyticsRunStatusPrivacyTest extends TestCase
         }
     }
 
-    public function test_it_expert_still_receives_the_raw_result_for_troubleshooting(): void
+    public function test_mao_result_remains_private_for_troubleshooting(): void
     {
-        $user = User::factory()->create(['role' => User::ROLE_IT_EXPERT]);
+        $user = User::factory()->create(['role' => User::ROLE_MAO]);
         $run = $this->completedRun($user);
 
         $this->actingAs($user)->getJson(route('analytics-runs.show', $run))
             ->assertOk()
-            ->assertJsonPath('result.ml_result.predicted_yield', 4.2);
+            ->assertJsonPath('result', null);
     }
 }

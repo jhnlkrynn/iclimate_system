@@ -1,5 +1,5 @@
 @php($questions = __('landing.questions'))
-@php($contactRoles = ['Rice Farmer' => 'Farmer', 'MAO Personnel' => 'MAO Staff', 'IT Personnel' => 'IT Personnel', 'Other' => 'Other'])
+@php($contactRoles = ['Rice Farmer' => 'Farmer', 'MAO Personnel' => 'MAO Staff', 'Other' => 'Other'])
 
 <section id="questions" data-section aria-labelledby="questions-title" class="lp-section bg-white">
     <div class="lp-wrap">
@@ -9,7 +9,7 @@
         </div>
         <div class="questions-accordion mx-auto mt-8 flex max-w-[760px] flex-col gap-3" data-accordion>
             @foreach($questions['items'] as $item)
-                <div class="border-t border-line">
+                <div>
                     <h4>
                         <button type="button" id="faq-q-{{ $loop->index }}" aria-controls="faq-a-{{ $loop->index }}" aria-expanded="{{ $loop->first ? 'true' : 'false' }}" class="group flex w-full items-center justify-between gap-4 rounded-md py-5 text-left text-[18px] font-semibold text-ink hover:bg-sage-50" data-accordion-trigger>
                             {{ $item['q'] }}
@@ -23,7 +23,7 @@
     </div>
 </section>
 
-<section id="contact" data-section aria-labelledby="contact-title" class="lp-section lp-section-surface">
+<section id="contact" data-section aria-labelledby="contact-title" class="lp-section lp-section-surface contact-section" style="background-image: url('{{ asset('images/landing/lian-rice-horizon.jpg') }}');">
     <div class="lp-wrap contact-container">
         <div class="questions-heading">
             <h2 id="contact-title" class="lp-h2 mt-0">{{ $questions['contact_title'] }}</h2>
@@ -31,7 +31,7 @@
         </div>
         <div class="contact-layout mx-auto mt-8">
             <div class="questions-office">
-                <div class="contact-map relative overflow-hidden rounded-lg bg-tint ring-brand ring-offset-2" data-office-map-box>
+                <div class="contact-map relative overflow-hidden rounded-lg bg-tint ring-brand ring-offset-2 focus-within:ring-2" data-office-map-box>
                     <iframe src="https://maps.google.com/maps?ll=13.992,120.648&amp;z=11&amp;output=embed" title="Map of the Municipal Agriculture Office, Lian Municipal Hall, Lian, Batangas" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen class="block h-full w-full border-0" data-office-map></iframe>
                     <span class="contact-map-marker" aria-hidden="true" data-map-marker><span></span></span>
                     <a href="{{ $directionsUrl }}" target="_blank" rel="noopener noreferrer" class="absolute left-3 top-3 rounded bg-white px-3 py-2 text-sm font-semibold text-brand" data-map-link>Open in Maps ↗</a>

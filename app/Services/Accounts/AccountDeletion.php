@@ -59,10 +59,10 @@ final class AccountDeletion
     public static function refusal(User $target, User $actor): ?string
     {
         return match (true) {
-            $actor->role !== User::ROLE_IT_EXPERT => 'Only IT Personnel can delete accounts.',
-            $target->is($actor) => 'You cannot delete your own account. Ask another IT Personnel to do it.',
+            ! $actor->isMaoHead() => 'Only MAO Head can delete accounts.',
+            $target->is($actor) => 'You cannot delete your own account. Ask another MAO Head to do it.',
             $target->isDeleted() => 'This account is already deleted.',
-            \App\Http\Controllers\UserManagementController::isLastActiveItExpert($target) => 'You cannot delete the last active IT Personnel account. Create another IT Personnel account first.',
+            \App\Http\Controllers\UserManagementController::isLastActiveMaoHead($target) => 'You cannot delete the last active MAO Head account. Create another MAO Head account first.',
             default => null,
         };
     }
@@ -120,9 +120,10 @@ final class AccountDeletion
     /** Brings the account back as it was (its farms stay archived until the farmer or MAO restores them). */
     public function restore(User $target, User $actor, ?Request $request = null): void
     {
-        if ($actor->role !== User::ROLE_IT_EXPERT) {
+        if (! $actor->isMaoHead()) {
             abort(403);
         }
+        abort_unless(in_array($target->role, User::ROLES, true), 403);
         if (! $target->canBeRestored()) {
             throw ValidationException::withMessages(['restore' => 'This account can no longer be restored: it was deleted more than '.(int) config('user_deletion.restore_days', 30).' days ago.']);
         }

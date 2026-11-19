@@ -9,14 +9,14 @@ use Throwable;
 
 class VerifyBackup extends Command
 {
-    protected $signature = 'iclimate:verify-backup';
+    protected $signature = 'iclimate:verify-backup {--no-record : Inspect the newest backup without writing a verification row}';
 
     protected $description = 'Check that the latest database backup is a readable PostgreSQL archive (pg_restore --list). Never restores anything.';
 
     public function handle(BackupVerificationService $verifier): int
     {
         try {
-            $result = $verifier->verify();
+            $result = $verifier->verify(! $this->option('no-record'));
         } catch (Throwable) {
             // Messages can carry paths or connection details, so none are printed.
             $this->error('Backup verification could not run. See the application log.');

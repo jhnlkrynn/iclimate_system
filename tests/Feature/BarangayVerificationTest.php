@@ -37,9 +37,9 @@ class BarangayVerificationTest extends TestCase
     public function test_a_generic_poblacion_is_not_an_official_barangay(): void
     {
         $this->assertNull(LianBarangays::canonicalName('Poblacion'));
-        $this->assertSame('Barangay 2 (Pob.)', LianBarangays::canonicalName('Barangay 2 (Pob.)'));
-        $this->assertCount(19, LianBarangays::all());
-        $this->assertCount(19, array_unique(LianBarangays::all()));
+        $this->assertNull(LianBarangays::canonicalName('Barangay 2 (Pob.)'));
+        $this->assertCount(9, LianBarangays::all());
+        $this->assertCount(9, array_unique(LianBarangays::all()));
     }
 
     public function test_the_farmer_is_asked_to_confirm_the_barangay_and_no_rating_is_invented(): void
@@ -67,10 +67,10 @@ class BarangayVerificationTest extends TestCase
         $this->actingAs($mao)->put(route('farmer-profiles.update', $profile), $fields + ['barangay' => 'Poblacion'])
             ->assertSessionHasErrors('barangay');
 
-        $this->actingAs($mao)->put(route('farmer-profiles.update', $profile), $fields + ['barangay' => 'Barangay 2 (Pob.)'])
+        $this->actingAs($mao)->put(route('farmer-profiles.update', $profile), $fields + ['barangay' => 'Balibago'])
             ->assertSessionHasNoErrors();
-        $this->assertSame('Barangay 2 (Pob.)', $profile->fresh()->barangay);
-        $this->assertSame('Barangay 2 (Pob.)', $farmer->fresh()->registeredBarangay());
+        $this->assertSame('Balibago', $profile->fresh()->barangay);
+        $this->assertSame('Balibago', $farmer->fresh()->registeredBarangay());
     }
 
     public function test_mao_can_filter_farmer_profiles_by_every_official_barangay(): void
@@ -78,7 +78,7 @@ class BarangayVerificationTest extends TestCase
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
         $html = $this->actingAs($mao)->get(route('farmer-profiles.index'))->assertOk()->getContent();
 
-        foreach (['Barangay 1 (Pob.)', 'Barangay 5 (Pob.)', 'Puting-Kahoy', 'Bagong Pook'] as $barangay) {
+        foreach (['Balibago', 'San Diego'] as $barangay) {
             $this->assertStringContainsString('value="'.e($barangay).'"', $html);
         }
     }

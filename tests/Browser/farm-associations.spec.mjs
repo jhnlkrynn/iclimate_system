@@ -22,12 +22,9 @@ function form(page) {
         box,
         barangay: page.locator('#barangay'),
         type: page.locator('#farm_type'),
-        yes: box.locator('[data-association-member]'),
-        answer: (value) => box.locator(`input[name="association_status"][value="${value}"]`),
-        checked: box.locator('input[name="association_status"]:checked'),
         pick: page.locator('#farmer_organization_id'),
         listed: page.locator('#farmer_organization_id option:not([value=""])'),
-        otherName: page.locator('#association_other_name'),
+        status: box.locator('input[name="association_status"]'),
         size: page.locator('#farm_size_value'),
         unit: page.locator('#farm_size_unit'),
         hint: box.locator('[data-association-hint]'),
@@ -43,7 +40,7 @@ function card(page, name) {
     return page.locator('[data-farm-card]', { hasText: name });
 }
 
-test('F1 Add Farm narrows the associations, asks again on a new barangay and sends "not listed" for review', async ({ page }, testInfo) => {
+test('F1 Add Farm narrows the associations, asks again on a new barangay and supports "not a member"', async ({ page }, testInfo) => {
     await logIn(page);
     await page.goto('/farmer/farms/create');
     const f = form(page);
@@ -51,56 +48,51 @@ test('F1 Add Farm narrows the associations, asks again on a new barangay and sen
     await page.locator('#farm_name').fill(name);
     await f.size.fill('1.5');
 
-    // No barangay yet: a hint, and no "Yes".
+    // No barangay yet: a hint, and the association dropdown is disabled.
     await expect(f.hint).toBeVisible();
-    await expect(f.yes).toBeHidden();
+    await expect(f.pick).toBeDisabled();
 
-    // The barangay narrows the list to its associations; the farm type narrows it further.
+    // The barangay narrows the list to its registered associations; farm type does not hide a valid barangay association.
     await f.barangay.selectOption('Kapito');
     await expect(f.hint).toBeHidden();
-    await expect(f.yes).toBeVisible();
+    await expect(f.pick).toBeEnabled();
     await expect(f.listed).toHaveText([KAPITO_RAINFED, KAPITO_IRRIGATED]);
     await f.type.selectOption('Irrigated');
-    await expect(f.listed).toHaveText([KAPITO_IRRIGATED]);
+    await expect(f.listed).toHaveText([KAPITO_RAINFED, KAPITO_IRRIGATED]);
     await f.type.selectOption('Rainfed');
-    await expect(f.listed).toHaveText([KAPITO_RAINFED]);
+    await expect(f.listed).toHaveText([KAPITO_RAINFED, KAPITO_IRRIGATED]);
 
     // No association of that type in the barangay: every association of the barangay.
     await f.barangay.selectOption('Prenza');
     await expect(f.listed).toHaveText([PRENZA]);
 
-    // "Yes" shows the list; a new barangay clears the answer.
-    await f.answer('member').check();
-    await expect(f.pick).toBeVisible();
+    // A new barangay clears the selected association and membership status.
+    await expect(f.pick).toBeEnabled();
     await f.pick.selectOption({ label: PRENZA });
     await f.barangay.selectOption('Kapito');
-    await expect(f.checked).toHaveCount(0);
-    await expect(f.pick).toBeHidden();
+    await expect(f.status).toHaveValue('');
     await expect(f.pick).toHaveValue('');
 
-    // A barangay with no associations: only "isn't listed" and "No".
+    // A barangay with no associations: only "Not a member" remains.
     await f.barangay.selectOption('Luyahan');
-    await expect(f.yes).toBeHidden();
-    await expect(f.answer('pending_other')).toBeVisible();
-    await expect(f.answer('not_member')).toBeVisible();
+    await expect(f.pick).toBeEnabled();
+    await expect(f.pick.locator('option', { hasText: 'Not a member' })).toHaveCount(1);
 
     // The answer is required.
     await f.save.click();
     await expect(f.errors).toContainText('Answer if this farm is part of a farmers\' association.');
     await expect(f.barangay).toHaveValue('Luyahan');
-    await expect(f.yes).toBeHidden();
+    await expect(f.pick).toBeEnabled();
 
-    // "My association isn't listed" asks for the name and goes to the MAO.
-    await expect(f.otherName).toBeHidden();
-    await f.answer('pending_other').check();
-    await expect(f.otherName).toBeVisible();
-    await f.otherName.fill('Samahang Magsasaka ng Luyahan');
+    // The only non-association choice is "Not a member".
+    await f.pick.selectOption({ label: 'Not a member' });
+    await expect(f.pick.locator('option', { hasText: 'My association isn\'t listed' })).toHaveCount(0);
     await f.save.click();
     await page.waitForURL('**/farmer/my-farm', { waitUntil: 'commit' });
-    await expect(card(page, name).locator('[data-farm-association]')).toHaveText('Waiting for MAO review');
+    await expect(card(page, name).locator('[data-farm-association]')).toHaveText('Not a member');
 });
 
-test('F2 Edit Farm keeps the answer, narrows by farm type and asks again when the barangay changes', async ({ page }, testInfo) => {
+test('F2 Edit Farm keeps the answer, filters by barangay and asks again when the barangay changes', async ({ page }, testInfo) => {
     await logIn(page);
     await page.goto('/farmer/farms/create');
     let f = form(page);
@@ -109,7 +101,6 @@ test('F2 Edit Farm keeps the answer, narrows by farm type and asks again when th
     await f.size.fill('1.5');
     await f.barangay.selectOption('Kapito');
     await f.type.selectOption('Irrigated');
-    await f.answer('member').check();
     await f.pick.selectOption({ label: KAPITO_IRRIGATED });
     await f.save.click();
     await page.waitForURL('**/farmer/my-farm', { waitUntil: 'commit' });
@@ -119,32 +110,31 @@ test('F2 Edit Farm keeps the answer, narrows by farm type and asks again when th
     await card(page, name).getByRole('link', { name: 'Edit' }).click();
     await page.waitForURL('**/farmer/farms/*/edit', { waitUntil: 'commit' });
     f = form(page);
-    await expect(f.answer('member')).toBeChecked();
+    await expect(f.status).toHaveValue('member');
     await expect(f.pick).toBeVisible();
     await expect(f.pick).toHaveValue(/\d+/);
-    await expect(f.listed).toHaveText([KAPITO_IRRIGATED]);
+    await expect(f.listed).toHaveText([KAPITO_RAINFED, KAPITO_IRRIGATED]);
     await expect(f.again).toBeHidden();
 
-    // Another farm type: that type's associations (the old choice is no longer one of them).
+    // Farm type changes do not invalidate a registered association in the same barangay.
     await f.type.selectOption('Rainfed');
-    await expect(f.listed).toHaveText([KAPITO_RAINFED]);
-    await expect(f.pick).toHaveValue('');
+    await expect(f.listed).toHaveText([KAPITO_RAINFED, KAPITO_IRRIGATED]);
+    await expect(f.pick).toHaveValue(/\d+/);
     await f.type.selectOption('Irrigated');
 
     // Another barangay: the answer is cleared and asked again; saving without one is refused.
     await f.barangay.selectOption('Prenza');
     await expect(f.again).toBeVisible();
-    await expect(f.checked).toHaveCount(0);
+    await expect(f.status).toHaveValue('');
     await expect(f.listed).toHaveText([PRENZA]);
     await f.save.click();
     await expect(f.errors).toContainText('Answer if this farm is part of a farmers\' association.');
     await expect(f.barangay).toHaveValue('Prenza');
 
-    // "Isn't listed" from the edit page goes to the MAO too.
-    await f.answer('pending_other').check();
-    await f.otherName.fill('Bagbag Irrigators');
+    // Farmers can choose a listed association or "Not a member" only.
+    await f.pick.selectOption({ label: 'Not a member' });
     await f.save.click();
     await page.waitForURL('**/farmer/my-farm', { waitUntil: 'commit' });
-    await expect(card(page, name).locator('[data-farm-association]')).toHaveText('Waiting for MAO review');
+    await expect(card(page, name).locator('[data-farm-association]')).toHaveText('Not a member');
     await expect(card(page, name)).toContainText('Prenza');
 });

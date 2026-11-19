@@ -1,0 +1,9 @@
+iClimate 2026.11.18-rc2
+
+Source fingerprint: 5587b145f0512c711e225c44dcb28f38b55659f23e413a10e5525b281c8604ab
+Archive SHA-256: d2b30450be1b223c1281b93c86e4f3e381750aa396181e9bb8e20f466a3d7034
+Base RC1: d43cd1aa1b3915b2b2e2928e21b207b3346f1170
+Model SHA-256: f3a54e12ecf85e66340475e2c49ce5c15d9c58efd82213435015a275734b777c (unchanged)
+
+Frozen ML inputs fixed; saved estimates withheld from Farmers; yield gate withhold; ICLIMATE_YIELD_ACCURACY_VERIFIED=false. ACCURACY NOT VERIFIED.
+Production VPS acceptance remains required.

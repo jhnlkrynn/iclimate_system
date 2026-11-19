@@ -7,6 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 /** One saved current-season rice-yield estimate for a farm or a barangay (App\Services\Prediction\YieldPredictionStore). */
 class YieldPrediction extends Model
 {
+    use Concerns\StoresInstantsInUtc;
+
+    /** Filled with Manila-zoned times by the yield services; stored as UTC like every other timestamp. */
+    public const UTC_INSTANT_COLUMNS = ['generated_at'];
+
     public const SCOPE_FARM = 'farm';
 
     public const SCOPE_BARANGAY = 'barangay';

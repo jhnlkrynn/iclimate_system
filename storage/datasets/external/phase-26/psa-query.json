@@ -1,0 +1,29 @@
+{
+  "source": "https://openstat.psa.gov.ph:443/PXWeb/api/v1/en/DB/2E/CS/0012E4EVCP0.px and https://openstat.psa.gov.ph:443/PXWeb/api/v1/en/DB/2E/CS/0022E4EAHC0.px",
+  "retrieved_at": "2026-11-13T23:59:10+08:00",
+  "query": [
+    {
+      "code": "Ecosystem/Croptype",
+      "selection": {"filter": "item", "values": ["2"]}
+    },
+    {
+      "code": "Geolocation",
+      "selection": {"filter": "item", "values": ["28"]}
+    },
+    {
+      "code": "Year",
+      "selection": {"filter": "item", "values": ["28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38"]}
+    },
+    {
+      "code": "Period",
+      "selection": {"filter": "item", "values": ["0", "1", "2", "3", "4", "5", "6"]}
+    }
+  ],
+  "response": {"format": "csv"},
+  "selection_meaning": {
+    "Ecosystem/Croptype": "Palay",
+    "Geolocation": "....Batangas",
+    "years": "2015 through 2025",
+    "periods": "Quarter 1, Quarter 2, Semester 1, Quarter 3, Quarter 4, Semester 2, Annual"
+  }
+}

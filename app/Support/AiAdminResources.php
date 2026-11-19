@@ -12,7 +12,7 @@ use App\Services\AI\TextNormalizer;
 use Closure;
 
 /**
- * Describes the chatbot data IT Experts and MAO officers can manage: which
+ * Describes the chatbot data server operators and MAO officers can manage: which
  * model backs each page, its editable fields, validation, and the columns
  * shown in the list. One generic controller and view are driven by this map,
  * so adding a field here is all it takes to make it editable.

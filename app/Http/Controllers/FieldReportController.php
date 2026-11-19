@@ -42,7 +42,7 @@ class FieldReportController extends CrudController
             ['name' => 'issue_type', 'label' => 'Issue Type', 'type' => 'select', 'options' => array_combine(FieldReport::ISSUE_TYPES, FieldReport::ISSUE_TYPES)],
             ['name' => 'description', 'label' => 'Description', 'type' => 'textarea'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => array_combine(FieldReport::STATUSES, FieldReport::STATUSES)],
-            ['name' => 'assigned_to', 'label' => 'Assigned Personnel', 'type' => 'select', 'options' => ['' => 'Unassigned'] + $this->userOptions([User::ROLE_MAO, User::ROLE_IT_EXPERT])],
+            ['name' => 'assigned_to', 'label' => 'Assigned Personnel', 'type' => 'select', 'options' => ['' => 'Unassigned'] + $this->userOptions([User::ROLE_MAO])],
         ];
     }
 

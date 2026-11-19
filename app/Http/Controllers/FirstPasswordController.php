@@ -19,22 +19,22 @@ class FirstPasswordController extends Controller
             return redirect()->route($request->user()->dashboardRoute());
         }
 
-        return view('auth.first-password', ['canSkip' => (bool) config('iclimate.mao_allow_skip_password_change', true)]);
+        return view('auth.first-password', ['canSkip' => (bool) config('iclimate.mao_allow_skip_password_change', false)]);
     }
 
     public function update(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'password' => ['required', 'confirmed', Password::defaults()],
+            'password' => ['required', 'confirmed', Password::defaults(), new \App\Rules\NotKnownDefaultPassword],
         ]);
         $user = $request->user();
         if (Hash::check($data['password'], $user->password)) {
             return back()->withErrors(['password' => 'Choose a password different from the default password.']);
         }
 
-        $user->forceFill(['password' => Hash::make($data['password']), 'must_change_password' => false])->save();
+        \App\Services\Accounts\PasswordChange::apply($user, $data['password'], $request, 'first sign-in');
         $request->session()->forget(EnsurePasswordChanged::SKIP_KEY);
-        SystemAuditLogger::record('Changed own password (first sign-in)', $request, ['record_type' => 'MAO account', 'record_id' => $user->id, 'record_label' => $user->name]);
+        $request->session()->regenerate();
 
         return redirect()->route($user->dashboardRoute())->with('success', 'Your new password is saved.');
     }
@@ -42,7 +42,7 @@ class FirstPasswordController extends Controller
     /** Testing / defense only: continue with the default password for this session. */
     public function skip(Request $request): RedirectResponse
     {
-        abort_unless((bool) config('iclimate.mao_allow_skip_password_change', true), 403);
+        abort_unless((bool) config('iclimate.mao_allow_skip_password_change', false), 403);
         $request->session()->put(EnsurePasswordChanged::SKIP_KEY, true);
 
         return redirect()->route($request->user()->dashboardRoute());

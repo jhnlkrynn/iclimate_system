@@ -4,7 +4,7 @@
     {{-- Farmer Home (2026-10): five plain parts in reading order, all from saved data (FarmerDashboardService).
          1 Mensahe Ngayon, 2 weather today, 3 barangay risk, 4 expected yield this season, 5 the next 7 days and the
          latest planting advice. The Typhoon Safety Check-In appears only while a typhoon advisory is in effect. --}}
-    <div class="mfd" data-farmer-dashboard data-live-url="{{ route('farmer.dashboard.live') }}" lang="{{ $f['locale'] ?? app()->getLocale() }}"
+    <div class="mfd" data-farmer-dashboard data-dashboard-realtime data-dashboard-user-id="{{ auth()->id() }}" data-dashboard-role="farmer" data-live-url="{{ route('farmer.dashboard.live') }}" lang="{{ $f['locale'] ?? app()->getLocale() }}"
         data-text-refreshing="{{ __('farmer.header.refreshing') }}" data-text-refresh="{{ __('farmer.header.refresh') }}"
         data-text-failed="{{ __('farmer.state.refresh_failed') }}" data-text-language-failed="{{ __('farmer.state.language_failed') }}">
 

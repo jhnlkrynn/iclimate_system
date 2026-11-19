@@ -51,7 +51,7 @@ final class PythonRuntime
     public static function environment(string $python): array
     {
         $binDir = dirname($python);
-        $venv = base_path('.venv');
+        $venv = self::projectVenvOf($python);
 
         $environment = [
             'PYTHONHOME' => false,
@@ -67,18 +67,22 @@ final class PythonRuntime
             'NUMEXPR_NUM_THREADS' => '1',
         ];
 
-        // Only an interpreter inside the project's virtualenv is isolated from user site-packages. Compared with one
-        // separator: base_path('.venv/Scripts/python.exe') is "C:\...\.venv/Scripts/python.exe" on Windows.
-        $slashes = fn (string $path): string => str_replace('\\', '/', $path);
-        if (str_starts_with($slashes($python), $slashes($venv).'/')) {
+        // Only an interpreter inside one of the project's virtualenvs is isolated from user site-packages. Any other
+        // interpreter has both variables explicitly removed (false): Symfony Process merges these overrides over the
+        // inherited environment, so leaving them out would pass on a VIRTUAL_ENV / PYTHONNOUSERSITE from an
+        // activated shell (e.g. `source .venv-ml/bin/activate`) to a Python that is not in that virtualenv.
+        if ($venv !== null) {
             $environment['VIRTUAL_ENV'] = $venv;
             $environment['PYTHONNOUSERSITE'] = '1';
+        } else {
+            $environment['VIRTUAL_ENV'] = false;
+            $environment['PYTHONNOUSERSITE'] = false;
         }
 
         if (self::isWindows()) {
             // A short, explicit PATH avoids the XAMPP DLL clashes (WinError 10106) an inherited PATH causes.
             $windowsRoot = getenv('SystemRoot') ?: 'C:\Windows';
-            $home = self::venvHome($venv);
+            $home = self::venvHome($venv ?? base_path('.venv'));
             $path = implode(PATH_SEPARATOR, array_filter([
                 $binDir,
                 $home,
@@ -97,6 +101,23 @@ final class PythonRuntime
         }
 
         return $environment + ['PATH' => $binDir.PATH_SEPARATOR.(getenv('PATH') ?: '/usr/local/bin:/usr/bin:/bin')];
+    }
+
+    /**
+     * The project virtualenv (.venv or .venv-ml, the two executable() looks for) that holds $python, or null.
+     * Compared with one separator: base_path('.venv/Scripts/python.exe') is "C:\...\.venv/Scripts/python.exe" on Windows.
+     */
+    private static function projectVenvOf(string $python): ?string
+    {
+        $slashes = fn (string $path): string => str_replace('\\', '/', $path);
+
+        foreach ([base_path('.venv'), base_path('.venv-ml')] as $venv) {
+            if (str_starts_with($slashes($python), $slashes($venv).'/')) {
+                return $venv;
+            }
+        }
+
+        return null;
     }
 
     /** Overridable in tests through the "iclimate.python_os_family" config key. */

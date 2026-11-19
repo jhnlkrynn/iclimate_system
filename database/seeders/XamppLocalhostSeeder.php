@@ -23,7 +23,7 @@ class XamppLocalhostSeeder extends Seeder
             throw new RuntimeException('XamppLocalhostSeeder only seeds a localhost XAMPP database.');
         }
 
-        $expectedDatabase = env('DB_DATABASE', 'iclimate_db');
+        $expectedDatabase = env('DB_DATABASE', 'iclimate');
 
         if (($mysql['database'] ?? null) !== $expectedDatabase) {
             throw new RuntimeException("XamppLocalhostSeeder expects DB_DATABASE={$expectedDatabase}.");

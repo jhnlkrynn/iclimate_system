@@ -3,7 +3,7 @@
          Activity form, and the farmers' planting and harvest dates as a second, read-only list. Staff design system
          (.mfd / .itd / .itp, it-pages.css). The page name follows the MAO's saved language (lang/*/mao.php). --}}
     <div class="mfd itd itp mpl">
-        <x-it.page-header kicker="Municipal Agriculture Office" :title="__('mao.planner.title', [], $locale)" lede="Plan MAO activities by date and barangay, and see what farmers planted and harvested." />
+        <x-shared.page-header kicker="Municipal Agriculture Office" :title="__('mao.planner.title', [], $locale)" lede="Plan MAO activities by date and barangay, and see what farmers planted and harvested." />
 
         <details class="ic-collapse" @if ($errors->any()) open @endif>
             <summary><span class="ic-collapse-title">+ Add Activity</span></summary>
@@ -38,6 +38,8 @@
                 <noscript><button class="btn btn-primary btn-sm" type="submit">Apply</button></noscript>
             </form>
 
+            {{-- data-live-region: updates while open when this data changes (resources/js/live-page.js). --}}
+            <div data-live-region="planner-activities" data-live-areas="planner">
             @forelse ($activities as $activity)
                 <article class="mfd-card mpl-item" data-mao-activity="{{ $activity->id }}">
                     <div class="mpl-date" aria-hidden="true"><strong>{{ $activity->starts_on->format('j') }}</strong><span>{{ $activity->starts_on->format('M Y') }}</span></div>
@@ -64,6 +66,7 @@
                 <x-no-data note="No MAO activity matches. Use Add Activity to plan one." />
             @endforelse
             @if ($activities->hasPages())<div>{{ $activities->links() }}</div>@endif
+            </div>
             @endif
         </section>
 
@@ -83,6 +86,7 @@
                 <noscript><button class="btn btn-primary btn-sm" type="submit">Apply</button></noscript>
             </form>
 
+            <div data-live-region="planner-farmers" data-live-areas="planting,farmers">
             @if ($farmerActivities->isEmpty())
                 <x-no-data note="No farmer has saved a planting or harvest date for this barangay yet." />
             @else
@@ -106,6 +110,7 @@
                     </table>
                 </div>
             @endif
+            </div>
         </section>
     </div>
 

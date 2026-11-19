@@ -5,12 +5,12 @@
     {{-- Staff accounts (IT and MAO) get the IT dashboard design system: .mfd / .itd parts plus it-pages.css. --}}
     <div @class(['feed-wrap', 'mfd itd itp' => $isStaffFeed])>
         @if($isStaffFeed)
-            <x-it.page-header kicker="Community and Updates" title="Announcements" lede="MAO news and activities for farmers. Farmers read these on their Advisories page.">
+            <x-shared.page-header kicker="Community and Updates" title="Announcements" lede="MAO news and activities for farmers. Farmers read these on their Advisories page.">
                 <span class="mfd-pill is-good">@include('dashboards.mao.icon', ['name' => 'check'])<span>MAO Updates</span></span>
                 <div class="itd-header-actions">
                     <a href="{{ route('messages.index') }}" class="mfd-btn is-quiet">@include('dashboards.mao.icon', ['name' => 'message'])Open Messages</a>
                 </div>
-            </x-it.page-header>
+            </x-shared.page-header>
         @else
             {{-- Farmers get the same header as the other farmer pages (.fad-hero, farmer-advisories.css). --}}
             <div class="fad is-header-only">
@@ -122,6 +122,8 @@
                     </details>
                 @endif
 
+                {{-- data-live-region: new posts, comments and reactions appear while the feed is open (resources/js/live-page.js). --}}
+                <div data-live-region="feed-posts" data-live-areas="community-posts,community-activity">
                 @forelse($posts as $post)
                     @php
                         $userReaction = $post->reactions->firstWhere('user_id', auth()->id());
@@ -140,7 +142,7 @@
                                     <div class="avatar">{{ str($post->author?->name ?? 'M')->substr(0, 1)->upper() }}</div>
                                     <div>
                                         <h2 class="feed-title h5">{{ $post->author?->name ?? 'MAO' }}</h2>
-                                        <div class="feed-meta">{{ $post->created_at?->diffForHumans() }} @if($post->event_date) | Event: {{ $post->event_date->shortDateTime('M d, Y') }} @endif @if($post->show_on_calendar) | Calendar @endif</div>
+                                        <div class="feed-meta"><x-live-time :at="$post->created_at" /> @if($post->event_date) | Event: {{ $post->event_date->shortDateTime('M d, Y') }} @endif @if($post->show_on_calendar) | Calendar @endif</div>
                                     </div>
                                 </div>
                                 <div class="post-actions">
@@ -227,7 +229,7 @@
                         @endunless
 
                         @if($counts->isNotEmpty())
-                            <div id="reactionViewer{{ $post->id }}" class="reaction-viewer" role="dialog" aria-modal="true" aria-labelledby="reactionViewerTitle{{ $post->id }}">
+                            <div id="reactionViewer{{ $post->id }}" class="reaction-viewer" data-live-keep role="dialog" aria-modal="true" aria-labelledby="reactionViewerTitle{{ $post->id }}">
                                 <div class="reaction-viewer-card">
                                     <div class="reaction-viewer-head">
                                         <div id="reactionViewerTitle{{ $post->id }}" class="reaction-viewer-title">Reactions</div>
@@ -328,7 +330,7 @@
                                 <div class="comment">
                                     <div class="avatar" style="width:34px;height:34px;font-size:.8rem;">{{ str($comment->user?->name ?? 'U')->substr(0, 1)->upper() }}</div>
                                     <div class="comment-bubble">
-                                        <div class="fw-bold">{{ $comment->user?->name ?? 'User' }} <span class="feed-meta fw-normal">{{ $comment->created_at?->diffForHumans() }}</span></div>
+                                        <div class="fw-bold">{{ $comment->user?->name ?? 'User' }} <span class="feed-meta fw-normal"><x-live-time :at="$comment->created_at" /></span></div>
                                         <div>{{ $comment->body }}</div>
                                     </div>
                                 </div>
@@ -359,6 +361,7 @@
                 @endforelse
 
                 {{ $posts->links() }}
+                </div>
             </main>
 
             <aside class="side-panel">
@@ -447,44 +450,40 @@
                 viewer.querySelector('.reaction-viewer-card')?.style.setProperty('--reaction-caret-left', `${Math.max(18, buttonRect.left - rowRect.left - left + (buttonRect.width / 2) - 7)}px`);
             };
 
-            document.querySelectorAll('[data-reaction-viewer-open]').forEach((button) => {
-                button.addEventListener('click', (event) => {
-                    event.stopPropagation();
-                    const viewer = document.getElementById(button.dataset.reactionViewerOpen);
-                    if (!viewer) return;
+            // Delegated (2026-11-11): posts are replaced in place when the feed updates while open (data-live-region),
+            // so the reaction buttons are read at click time instead of being bound once at load.
+            const openViewer = (button) => {
+                const viewer = document.getElementById(button.dataset.reactionViewerOpen);
+                if (!viewer) return;
 
-                    const alreadyOpen = viewer.classList.contains('show');
-                    closeAllViewers(viewer);
-                    if (alreadyOpen && viewer.dataset.activeReactionType === button.dataset.reactionType) {
-                        closeViewer(viewer);
-                        return;
-                    }
+                const alreadyOpen = viewer.classList.contains('show');
+                closeAllViewers(viewer);
+                if (alreadyOpen && viewer.dataset.activeReactionType === button.dataset.reactionType) {
+                    closeViewer(viewer);
+                    return;
+                }
 
-                    const selectedType = button.dataset.reactionType;
-                    viewer.dataset.activeReactionType = selectedType;
-                    viewer.querySelectorAll('[data-reaction-group]').forEach((group) => {
-                        group.hidden = group.dataset.reactionGroup !== selectedType;
-                    });
-
-                    const title = viewer.querySelector('.reaction-viewer-title');
-                    if (title) title.textContent = `${selectedType} reactions`;
-
-                    viewer.classList.add('show');
-                    positionViewer(viewer, button);
+                const selectedType = button.dataset.reactionType;
+                viewer.dataset.activeReactionType = selectedType;
+                viewer.querySelectorAll('[data-reaction-group]').forEach((group) => {
+                    group.hidden = group.dataset.reactionGroup !== selectedType;
                 });
-            });
 
-            document.querySelectorAll('[data-reaction-viewer-close]').forEach((button) => {
-                button.addEventListener('click', () => closeViewer(button.closest('.reaction-viewer')));
-            });
+                const title = viewer.querySelector('.reaction-viewer-title');
+                if (title) title.textContent = `${selectedType} reactions`;
 
-            document.querySelectorAll('.reaction-viewer').forEach((viewer) => {
-                viewer.addEventListener('click', (event) => {
-                    event.stopPropagation();
-                });
-            });
+                viewer.classList.add('show');
+                positionViewer(viewer, button);
+            };
 
-            document.addEventListener('click', () => closeAllViewers());
+            document.addEventListener('click', (event) => {
+                const open = event.target.closest('[data-reaction-viewer-open]');
+                if (open) { openViewer(open); return; }
+                const close = event.target.closest('[data-reaction-viewer-close]');
+                if (close) { closeViewer(close.closest('.reaction-viewer')); return; }
+                if (event.target.closest('.reaction-viewer')) return;
+                closeAllViewers();
+            });
             window.addEventListener('resize', () => closeAllViewers());
 
             document.addEventListener('keydown', (event) => {

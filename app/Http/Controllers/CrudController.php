@@ -34,7 +34,7 @@ abstract class CrudController extends Controller
     /** Filters whose options are keyed by their stored value (e.g. is_read => [0 => 'Unread', 1 => 'Read']). */
     protected array $indexedFilters = [];
 
-    protected array $manageableRoles = [User::ROLE_MAO, User::ROLE_IT_EXPERT];
+    protected array $manageableRoles = [User::ROLE_MAO];
 
     /** Rows per page on every record list. */
     public const PER_PAGE = 25;
@@ -139,6 +139,7 @@ abstract class CrudController extends Controller
             'sort' => $this->currentSort($request),
             // Panel revision 4.4 B: "Showing your barangays: …" above a list limited to the MAO user's coverage.
             'coverageBarangays' => $this->barangayColumn !== null ? \App\Support\MaoScope::barangays($request->user()) : null,
+            'liveAreas' => $this->liveAreas(),
         ];
 
         if ($this->usesFarmerPages($request)) {
@@ -192,11 +193,21 @@ abstract class CrudController extends Controller
             'viewOnly' => $this->viewOnly,
             'printable' => $this->printable,
             'coverageBarangays' => $this->barangayColumn !== null ? \App\Support\MaoScope::barangays($request->user()) : null,
+            'liveAreas' => $this->liveAreas(),
             'records' => new LengthAwarePaginator($filtered->forPage($page, $perPage)->values(), $filtered->count(), $perPage, $page, [
                 'path' => $request->url(),
                 'query' => $request->query(),
             ]),
         ]);
+    }
+
+    /**
+     * The data areas (CacheScope) this module's list shows, comma-separated: the open list refreshes its rows when
+     * one of them changes (data-live-region, resources/js/live-page.js). Empty for a model no area tracks.
+     */
+    protected function liveAreas(): string
+    {
+        return implode(',', \App\Support\CacheScope::modelAreas($this->model));
     }
 
     /** Staff only, and only for a module that opted in: farmers print their own records from My Farm. */
@@ -474,7 +485,7 @@ abstract class CrudController extends Controller
         // Built in three controllers' constructors, i.e. on EVERY request to those routes, and it lists
         // every user. Kept for ten minutes, and dropped at once when any user is added or changed.
         return \App\Support\PageCache::shared('crud-user-options', 600, function () use ($roles): array {
-            $query = User::query()->orderBy('name');
+            $query = User::query()->whereIn('role', User::ROLES)->orderBy('name');
 
             if ($roles !== []) {
                 $query->whereIn('role', $roles);
@@ -489,8 +500,8 @@ abstract class CrudController extends Controller
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($id)],
-            'password' => [$id ? 'nullable' : 'required', 'string', \Illuminate\Validation\Rules\Password::defaults()],
-            'role' => ['required', Rule::in([User::ROLE_FARMER, User::ROLE_MAO, User::ROLE_IT_EXPERT])],
+            'password' => [$id ? 'nullable' : 'required', 'string', \Illuminate\Validation\Rules\Password::defaults(), new \App\Rules\NotKnownDefaultPassword],
+            'role' => ['required', Rule::in([User::ROLE_FARMER, User::ROLE_MAO])],
             'contact_number' => ['nullable', 'string', 'max:50'],
             'address' => ['nullable', 'string'],
             'barangay' => ['nullable', 'string', 'max:255', Rule::in(\App\Support\LianBarangays::all())],

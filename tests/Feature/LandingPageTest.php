@@ -55,11 +55,11 @@ class LandingPageTest extends TestCase
         return [
             'farmer' => [User::ROLE_FARMER, 'farmer.dashboard'],
             'MAO personnel' => [User::ROLE_MAO, 'mao.dashboard'],
-            'IT personnel' => [User::ROLE_IT_EXPERT, 'admin.dashboard'],
+
         ];
     }
 
-    /** @dataProvider roles */
+    #[\PHPUnit\Framework\Attributes\DataProvider('roles')]
     public function test_valid_login_from_the_landing_card_goes_to_the_role_dashboard(string $role, string $dashboard): void
     {
         $user = User::factory()->create(['role' => $role]);
@@ -70,7 +70,7 @@ class LandingPageTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
-    /** @dataProvider roles */
+    #[\PHPUnit\Framework\Attributes\DataProvider('roles')]
     public function test_a_page_remembered_before_login_is_ignored_and_the_landing_login_goes_to_the_role_dashboard(string $role, string $dashboard): void
     {
         $user = User::factory()->create(['role' => $role]);
@@ -85,7 +85,7 @@ class LandingPageTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
-    /** @dataProvider roles */
+    #[\PHPUnit\Framework\Attributes\DataProvider('roles')]
     public function test_signed_in_users_who_open_a_guest_only_page_go_to_their_dashboard(string $role, string $dashboard): void
     {
         $this->actingAs(User::factory()->create(['role' => $role]))
@@ -127,7 +127,7 @@ class LandingPageTest extends TestCase
             ->assertSee(route('captcha.image', ['context' => 'login']), false);
     }
 
-    /** @dataProvider roles */
+    #[\PHPUnit\Framework\Attributes\DataProvider('roles')]
     public function test_logged_in_users_see_go_to_dashboard_instead_of_the_form(string $role, string $dashboard): void
     {
         $user = User::factory()->create(['role' => $role]);
@@ -173,21 +173,32 @@ class LandingPageTest extends TestCase
         $this->assertStringNotContainsString(route('login.weather'), $html);
     }
 
-    public function test_the_hero_is_one_screen_and_every_other_section_shares_the_section_rhythm(): void
+    public function test_landing_page_has_the_interactive_features_showcase_without_decorative_section_photos(): void
     {
-        $this->markTestSkipped('Landing sections now use varied layouts and no CTA band.');
+        $this->get('/')->assertOk()
+            ->assertSee('farmer-dashboard.jpg', false)
+            ->assertSee('alt="iClimate farmer dashboard showing harvest, advisories and wet-season status"', false)
+            ->assertSee('data-feature-select="0"', false)
+            ->assertSee('data-feature-select="5"', false)
+            ->assertDontSee('lian-rice-dawn-960.webp', false)
+            ->assertDontSee('lian-rice-horizon.webp', false)
+            ->assertDontSee('alt="Ripening rice at dawn in Lian"', false)
+            ->assertDontSee('alt="Rice fields stretching to the hills of Lian"', false);
+    }
+
+    public function test_current_landing_sections_use_the_design_system(): void
+    {
         $html = $this->get('/')->assertOk()->getContent();
 
-        $this->assertMatchesRegularExpression('/<section id="hero"[^>]*class="lp-hero /', $html);
-        foreach (['about', 'features', 'numbers', 'how', 'roles', 'faq', 'contact', 'get-started'] as $id) {
-            $this->assertMatchesRegularExpression('/<section id="'.$id.'"[^>]*class="lp-section[ "]/', $html, "#{$id} does not use .lp-section");
+        $this->assertMatchesRegularExpression('/<section id="hero"[^>]*class="[^\"]*lp-hero/', $html);
+        foreach (['about', 'features', 'numbers', 'how', 'roles', 'questions', 'contact'] as $id) {
+            $this->assertMatchesRegularExpression('/<section id="'.$id.'"[^>]*data-section/', $html, "#{$id} is missing its current section marker");
         }
-        // White, surface and the two dark bands, in this order.
-        preg_match_all('/<section id="([a-z-]+)"[^>]*class="([^"]*)"/', $html, $sections, PREG_SET_ORDER);
-        $backgrounds = collect($sections)->mapWithKeys(fn (array $m): array => [$m[1] => str_contains($m[2], 'lp-band') ? 'dark'
-            : (str_contains($m[2], 'lp-section-surface') ? 'surface' : 'white')])->except('hero')->all();
-        $this->assertSame(['about' => 'white', 'features' => 'surface', 'numbers' => 'dark', 'how' => 'white', 'roles' => 'surface',
-            'faq' => 'white', 'contact' => 'surface', 'get-started' => 'dark'], $backgrounds);
+        $this->assertSame(8, preg_match_all('/<section id="[a-z-]+"[^>]*data-section/', $html));
+        $this->assertStringNotContainsString('id="faq"', $html);
+        $this->assertStringNotContainsString('id="get-started"', $html);
+        $this->assertStringContainsString('data-feature-select="0"', $html);
+        $this->assertStringContainsString('data-steps', $html);
     }
 
     public function test_how_it_works_uses_four_ordered_columns_and_static_ui_fragments(): void
@@ -204,7 +215,7 @@ class LandingPageTest extends TestCase
         $this->assertStringNotContainsString('data-season-month', $html);
         $this->assertStringNotContainsString('data-step-number', $html);
         $this->assertStringNotContainsString('data-dashboard-shot', $html);
-        $this->assertStringNotContainsString('farmer-dashboard.jpg', $html);
+        $this->assertStringContainsString('farmer-dashboard.jpg', $html);
     }
 
     public function test_the_hero_card_holds_both_the_login_and_the_create_account_form(): void
@@ -223,7 +234,7 @@ class LandingPageTest extends TestCase
         $this->assertStringNotContainsString('New to iClimate?', $html);
         $this->assertStringNotContainsString('Already have an account?', $html);
         // The sign-up fields are the shared /register ones.
-        foreach (['name="first_name"', 'name="last_name"', 'name="farmer_organization_id"', 'name="barangay"', 'name="password_confirmation"', 'name="captcha_answer"', 'id="pwdToggle"', 'id="passwordStrengthLabel"', 'data-password-rule="symbol"', 'id="agreeTerms"', 'Register as a rice farmer in Lian, Batangas.', 'MAO Staff and IT Personnel accounts are set up by the system administrators.'] as $needle) {
+        foreach (['name="first_name"', 'name="last_name"', 'name="farmer_organization_id"', 'name="barangay"', 'name="password_confirmation"', 'name="captcha_answer"', 'id="pwdToggle"', 'id="passwordStrengthLabel"', 'data-password-rule="symbol"', 'id="agreeTerms"', 'Register as a rice farmer in Lian, Batangas.', 'MAO Staff accounts are set up by the system administrators.'] as $needle) {
             $this->assertStringContainsString($needle, $html);
         }
         // The sign-up captcha picture waits until that form is shown (one captcha per session).
@@ -287,7 +298,7 @@ class LandingPageTest extends TestCase
             ->assertJsonValidationErrors(['name', 'email', 'message']);
 
         // Every role the landing form offers is one the controller accepts.
-        foreach (['Rice Farmer', 'MAO Personnel', 'IT Personnel', 'Other'] as $role) {
+        foreach (['Rice Farmer', 'MAO Personnel', 'Other'] as $role) {
             $this->get('/')->assertSee('<option value="'.$role.'">', false);
         }
 

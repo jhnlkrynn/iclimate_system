@@ -57,11 +57,25 @@
 
     <div class="form-row-2col" data-reg-row="farm">
       <div class="form-group">
-        <label for="farmer_organization_id">Farmer's organization</label>
+        <label for="barangay">Farm location / barangay</label>
+        <div class="input-wrap">
+          <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 14s5-3.8 5-8A5 5 0 0 0 3 6c0 4.2 5 8 5 8Z" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="6" r="1.7" stroke="currentColor" stroke-width="1.4"/></svg>
+          <select id="barangay" name="barangay" class="form-input has-icon @if($formErrors->has('barangay')) is-invalid @endif" aria-describedby="barangay-error" required @if($formErrors->has('barangay')) aria-invalid="true" @endif>
+            <option value="">Select barangay</option>
+            @foreach($manualBarangays as $barangay)
+              <option value="{{ $barangay }}" @selected($old('barangay') === $barangay)>{{ $barangay }}</option>
+            @endforeach
+          </select>
+        </div>
+        <p class="field-error" id="barangay-error" @unless($formErrors->has('barangay')) hidden @endunless>{{ $formErrors->first('barangay') }}</p>
+      </div>
+
+      <div class="form-group">
+        <label for="farmer_organization_id">Farmer's organization / Association</label>
         <div class="input-wrap">
           <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 13V6l6-3 6 3v7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 13V8h6v5M1.5 13.2h13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <select id="farmer_organization_id" name="farmer_organization_id" class="form-input has-icon @if($formErrors->has('farmer_organization_id')) is-invalid @endif" aria-describedby="farmer_organization_id-error">
-            <option value="">None</option>
+          <select id="farmer_organization_id" name="farmer_organization_id" class="form-input has-icon @if($formErrors->has('farmer_organization_id')) is-invalid @endif" aria-describedby="farmer_organization_id-error" disabled>
+            <option value="">{{ __('farms.association.dropdown_choose_short') }}</option>
             @foreach($farmerOrganizations as $organization)
               <option
                 value="{{ $organization->id }}"
@@ -71,32 +85,11 @@
                 {{ $organization->name }}
               </option>
             @endforeach
+            <option value="" data-association-status="not_member">{{ __('farms.association.dropdown_not_member') }}</option>
           </select>
         </div>
+        <p class="field-hint">Choose an association registered in your selected barangay, or choose “Not a member”.</p>
         <p class="field-error" id="farmer_organization_id-error" @unless($formErrors->has('farmer_organization_id')) hidden @endunless>{{ $formErrors->first('farmer_organization_id') }}</p>
-      </div>
-
-      <div class="form-group" id="assignedBarangayGroup" style="display:none;">
-        <label for="assignedBarangay">Farm location / barangay</label>
-        <div class="input-wrap">
-          <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 14s5-3.8 5-8A5 5 0 0 0 3 6c0 4.2 5 8 5 8Z" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="6" r="1.7" stroke="currentColor" stroke-width="1.4"/></svg>
-          <input type="text" id="assignedBarangay" class="form-input has-icon" value="" aria-describedby="assignedBarangay-hint" disabled>
-        </div>
-        <p class="field-hint" id="assignedBarangay-hint">Set by your selected organization.</p>
-      </div>
-
-      <div class="form-group" id="manualBarangayGroup">
-        <label for="barangay">Farm location / barangay</label>
-        <div class="input-wrap">
-          <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 14s5-3.8 5-8A5 5 0 0 0 3 6c0 4.2 5 8 5 8Z" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="6" r="1.7" stroke="currentColor" stroke-width="1.4"/></svg>
-          <select id="barangay" name="barangay" class="form-input has-icon @if($formErrors->has('barangay')) is-invalid @endif" aria-describedby="barangay-error" @if($formErrors->has('barangay')) aria-invalid="true" @endif>
-            <option value="">Select barangay</option>
-            @foreach($manualBarangays as $barangay)
-              <option value="{{ $barangay }}" @selected($old('barangay') === $barangay)>{{ $barangay }}</option>
-            @endforeach
-          </select>
-        </div>
-        <p class="field-error" id="barangay-error" @unless($formErrors->has('barangay')) hidden @endunless>{{ $formErrors->first('barangay') }}</p>
       </div>
     </div>
 

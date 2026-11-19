@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             StaffLoginAccountSeeder::class,
             MaoPersonnelSeeder::class,   // panel revision 4.4: the real MAO personnel of Lian
             FarmerOrganizationSeeder::class,
+            FarmersAssociationDirectorySeeder::class,
             KnowledgeBaseSeeder::class,
             AdvisoryRuleSeeder::class,
         ]);

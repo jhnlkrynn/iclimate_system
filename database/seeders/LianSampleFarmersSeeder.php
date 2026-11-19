@@ -41,9 +41,8 @@ class LianSampleFarmersSeeder extends Seeder
 
     /** Rough share of Lian's rice farmers by barangay (more in the big farming barangays). */
     private const WEIGHTS = [
-        'Bagong Pook' => 5, 'Balibago' => 8, 'Barangay 1 (Pob.)' => 2, 'Barangay 2 (Pob.)' => 1, 'Barangay 3 (Pob.)' => 1,
-        'Barangay 4 (Pob.)' => 1, 'Barangay 5 (Pob.)' => 2, 'Binubusan' => 9, 'Bungahan' => 7, 'Cumba' => 6, 'Humayingan' => 6,
-        'Kapito' => 8, 'Lumaniag' => 6, 'Luyahan' => 7, 'Malaruhatan' => 8, 'Matabungkay' => 5, 'Prenza' => 10, 'Puting-Kahoy' => 5,
+        'Balibago' => 8, 'Binubusan' => 9, 'Bungahan' => 7,
+        'Kapito' => 8, 'Luyahan' => 7, 'Malaruhatan' => 8, 'Matabungkay' => 5, 'Prenza' => 10,
         'San Diego' => 8,
     ];
 
