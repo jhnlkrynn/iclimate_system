@@ -90,7 +90,9 @@ class CalendarPageTest extends TestCase
         $this->assertStringContainsString('My Planting', $this->upcoming($html));
         $this->assertStringContainsString('Oct 20, 2026 planting', $html);
         $this->assertStringContainsString('Feb 15, 2027', $html);
-        $this->assertStringContainsString('3.50 tons/hectare', $html);
+        // The saved estimate is withheld until accuracy is verified (FarmerStoredEstimateGateTest, 2026-11-18).
+        $this->assertStringNotContainsString('3.50 tons/hectare', $html);
+        $this->assertStringContainsString(__('farmer.home.harvest.unvalidated'), $html);
         $this->assertStringContainsString(route('farmer.planting-schedules.edit', $schedule), $html);
         $this->assertStringContainsString(route('farmer.planting-schedules.destroy', $schedule), $html);
         $this->assertStringNotContainsString('No farm schedule yet.', $html);

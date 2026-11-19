@@ -169,7 +169,8 @@ def _feature(features: dict, key: str, default=None, *, required: bool = False):
 
 # Physically possible values (inclusive), NOT the training ranges: a value outside these is a data error (wrong unit,
 # sign or sentinel) and is refused instead of producing a normal-looking prediction. Farm area must be positive.
-# Rainfall_6M / Seasonal_Rainfall allow a multi-month SUM, which is what the application sends today.
+# Rainfall_6M is the six-month MEAN (T-1..T-6) and Seasonal_Rainfall the whole-season SUM the application sends
+# (YieldModelClimateWindow, 2026-11-18); the wide upper bounds only reject impossible values, not unusual ones.
 PLAUSIBLE_RANGES = {
     "rainfall": (0.0, 3000.0), "previous_rainfall": (0.0, 3000.0),
     "rainfall_6m": (0.0, 20000.0), "seasonal_rainfall": (0.0, 20000.0),
@@ -185,6 +186,8 @@ PLAUSIBLE_RANGES = {
 def _numeric_feature(features: dict, key: str) -> float:
     """Return a finite, physically possible model input; never pass sentinels or NaN to sklearn."""
     value = _feature(features, key, required=True)
+    if isinstance(value, bool):
+        raise ValueError(f"Invalid numeric feature: {key}")
     try:
         number = float(value)
     except (TypeError, ValueError) as exc:
@@ -198,6 +201,13 @@ def _numeric_feature(features: dict, key: str) -> float:
         raise ValueError(f"Out-of-range numeric feature: {key} must be between {low:g} and {high:g}")
 
     return number
+
+
+def validate_supplied_features(features: dict) -> None:
+    """Validate known numeric inputs even when used only by advisory rules."""
+    for key in PLAUSIBLE_RANGES:
+        if key in features and features[key] is not None:
+            _numeric_feature(features, key)
 
 
 def _season_feature(features: dict) -> str:

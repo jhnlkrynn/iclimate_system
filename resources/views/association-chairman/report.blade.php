@@ -8,6 +8,8 @@
         <dt>Submitted</dt><dd>{{ $report->submitted_at?->timezone('Asia/Manila')->format('M d, Y H:i') ?? 'Draft' }}</dd>
         <dt>Remarks</dt><dd>{{ $report->remarks ?: 'None' }}</dd>
     </dl>
+    @if ($report->supporting_document_path)<p><a href="{{ route('association-reports.document', $report) }}">Download supporting document</a></p>@endif
+    @include('association-chairman._submissions')
     @include('association-chairman._reviews', ['reviews' => $report->reviews])
     @if (in_array($report->status, ['draft', 'needs_revision'], true))
         <a class="btn btn-primary" href="{{ route('association-chairman.reports.create', $report->reportingPeriod) }}">Revise report</a>

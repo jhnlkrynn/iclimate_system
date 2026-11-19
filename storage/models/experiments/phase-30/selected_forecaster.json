@@ -1,0 +1,12 @@
+{
+  "method": "ML + Seasonal Naive Ensemble",
+  "params": {
+    "blend": 0.75,
+    "n_estimators": 200,
+    "max_depth": 5,
+    "min_samples_leaf": 4,
+    "max_features": 1.0
+  },
+  "selection_rule": "lowest mean RMSE across 2015-2020 outer folds; no 2021-2026 outcomes used",
+  "operational_note": "The simple seasonal-naive baseline remains the conservative fallback because no complex method won consistently across years."
+}

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 set -Eeuo pipefail
 cd "$(dirname "$0")/.."
 
@@ -33,6 +33,10 @@ export REVERB_APP_ID=isolated-test-app REVERB_APP_KEY=isolated-test-key REVERB_A
 export VITE_REVERB_APP_KEY=isolated-test-key VITE_REVERB_HOST=127.0.0.1 VITE_REVERB_PORT="$WS_PORT" VITE_REVERB_SCHEME=http
 export FARMING_AI_API_URL=http://127.0.0.1:19999 OPEN_METEO_TIMEOUT=1 WEATHERAPI_TIMEOUT=1 WEATHER_API_TIMEOUT=1 PAGASA_ADVISORIES_ENABLED=false GROQ_ENABLED=false
 
+if [ "${REVERB_PROBE_BUILD_ASSETS:-0}" = 1 ]; then
+    npm run build >"$RUN_DIR/build.log" 2>&1 || { cat "$RUN_DIR/build.log" >&2; exit 1; }
+fi
+export PROBE_REQUIRE_UI="${REVERB_PROBE_REQUIRE_UI:-0}"
 php artisan config:clear >/dev/null
 php artisan migrate:fresh --force >/dev/null
 php tests/Browser/seed-landing.php >/dev/null

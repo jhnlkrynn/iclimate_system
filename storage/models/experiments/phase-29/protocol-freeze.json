@@ -1,0 +1,28 @@
+{
+  "phase": 29,
+  "frozen_at": "2026-11-14",
+  "status": "FROZEN_BEFORE_2026_TARGET_INSPECTION",
+  "scope": "Batangas province PSA aggregate; not Lian farm-level",
+  "forecast_origin": "end of 2025 Q4, before reading 2026 target values",
+  "target": "production metric tons divided by harvested area hectares",
+  "target_unit": "metric tons per hectare",
+  "historical_training_data": "1987-2025 PSA quarterly records; 2021-2025 may be used for final pre-2026 refit but not for model selection",
+  "selection_data": "pre-2021 only",
+  "selection_method": "Phase 28 expanding walk-forward validation and TimeSeriesSplit hyperparameter search on 1987-2016; 2017-2020 validation; no 2026 tuning",
+  "evaluation_period": "2026 Q1-Q3",
+  "evaluation_metrics": ["mae", "rmse", "bias", "mape"],
+  "r2_policy": "reported only as descriptive context because the evaluation has three observations",
+  "lag_availability_rule": "all 2026 predictions use only records through 2025 Q4; no 2026 target is used to construct any feature, including Q2/Q3 previous-quarter values",
+  "models": {
+    "lagged_random_forest": {
+      "features": ["year", "quarter", "lag_1_yield_t_ha", "lag_4_yield_t_ha", "rolling_4_mean_prior", "rolling_8_mean_prior", "expanding_mean_prior", "trend_4_prior"],
+      "hyperparameters": {"n_estimators": 200, "min_samples_leaf": 4, "max_features": 1.0, "max_depth": 5, "random_state": 42, "n_jobs": 1}
+    },
+    "calendar_random_forest": {
+      "features": ["year", "quarter"],
+      "hyperparameters": {"n_estimators": 200, "min_samples_leaf": 2, "max_features": 1.0, "max_depth": 10, "random_state": 42, "n_jobs": 1}
+    },
+    "baselines": ["previous_quarter_naive", "previous_year_same_quarter_naive", "seasonal_historical_mean"]
+  },
+  "decision_rule": "Do not select or retune using 2026 outcomes. Report candidate errors individually and assess consistency qualitatively; three rows cannot establish reliable deployment accuracy."
+}

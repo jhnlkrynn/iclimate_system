@@ -1,0 +1,54 @@
+{
+  "phase": 27,
+  "status": "AUTHENTIC_PROVINCIAL_TARGET_WITHOUT_HISTORICAL_CLIMATE_INPUTS",
+  "accuracy_status": "ACCURACY NOT VERIFIED",
+  "production_use": false,
+  "artifacts": [
+    {
+      "path": "psa-batangas/palay-production-batangas-quarterly-1987-2025.csv",
+      "source": "Philippine Statistics Authority OpenSTAT",
+      "source_url": "https://openstat.psa.gov.ph:443/PXWeb/api/v1/en/DB/2E/CS/0012E4EVCP0.px",
+      "coverage": "1987-2025, four quarters per year",
+      "geographic_level": "province",
+      "geography": "Batangas",
+      "ecosystem": "Palay",
+      "unit": "metric tons",
+      "rows": 1,
+      "quarterly_cells": 156,
+      "sha256": "7e19ede312e36fe85f33a8e1e7efc011185b89b563864a4b5c68a0d4254154ce"
+    },
+    {
+      "path": "psa-batangas/palay-area-harvested-batangas-quarterly-1987-2025.csv",
+      "source": "Philippine Statistics Authority OpenSTAT",
+      "source_url": "https://openstat.psa.gov.ph:443/PXWeb/api/v1/en/DB/2E/CS/0022E4EAHC0.px",
+      "coverage": "1987-2025, four quarters per year",
+      "geographic_level": "province",
+      "geography": "Batangas",
+      "ecosystem": "Palay",
+      "unit": "hectares",
+      "rows": 1,
+      "quarterly_cells": 156,
+      "sha256": "9af24e55521c5b9dbda03187b14945d3b300a8e0b04f3c28ea4822c5c6bf5c2d"
+    },
+    {
+      "path": "psa-query.json",
+      "purpose": "Exact reproducible API selector and response specification"
+    }
+  ],
+  "validation": {
+    "paired_periods": 156,
+    "missing_pairs": 0,
+    "nonfinite_pairs": 0,
+    "invalid_sign_pairs": 0,
+    "duplicate_period_labels": 0,
+    "ecosystem_consistent": true,
+    "geography_consistent": true,
+    "target": "production metric tons / area harvested hectares",
+    "target_unit": "metric tons per hectare",
+    "target_scope": "Batangas province aggregate, not Lian farm or municipal"
+  },
+  "climate_evidence": {
+    "status": "NOT ACQUIRED",
+    "reason": "PAGASA historical raw or CliMap downloads require a request/registration and terms acceptance; climatological normals were not substituted for observations."
+  }
+}

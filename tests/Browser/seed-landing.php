@@ -80,3 +80,27 @@ foreach (['desktop-1280' => 'Delia Desktop', 'mobile-375' => 'Mona Mobile'] as $
         'role' => User::ROLE_FARMER, 'contact_number' => '09170000002', 'barangay' => 'Prenza', 'status' => User::STATUS_ACTIVE,
     ]);
 }
+
+// RC2 workflow fixtures: isolated only, per project so state cannot leak between viewports.
+foreach (['desktop-1280', 'mobile-375', 'tablet-768'] as $project) {
+    foreach (['chairman' => User::STATUS_APPROVED, 'pending' => User::STATUS_PENDING, 'rejected' => User::STATUS_REJECTED, 'recovery' => User::STATUS_APPROVED] as $kind => $status) {
+        User::create(['name' => ucfirst($kind).' '.$project, 'email' => $kind.'-'.$project.'@browser.test',
+            'password' => Hash::make(ucfirst($kind).'-'.$project.'!23'), 'role' => User::ROLE_FARMER,
+            'status' => $status, 'barangay' => 'Prenza', 'contact_number' => '09170000003',
+            'email_verified_at' => now()]);
+    }
+    \App\Models\FarmerOrganization::create(['name' => 'Workflow '.$project, 'barangay' => 'Balibago', 'farm_type' => 'Rainfed']);
+}
+
+if (getenv('API_ML_ACCEPTANCE') === '1') {
+    // Explicit diagnostic fixtures, not operational weather observations or accuracy evidence.
+    for ($i=1;$i<=6;$i++) \App\Models\ClimateRecord::create(['record_date'=>now()->subMonthsNoOverflow($i)->startOfMonth()->toDateString(),
+        'rainfall'=>150+$i*10,'temperature'=>27+$i*.2,'humidity'=>78,'wind_speed'=>8,'season'=>'Wet','source'=>'API ML ACCEPTANCE FIXTURE']);
+    foreach (['Wet','Dry'] as $season) {
+        $month=\App\Models\YieldPredictionRequest::targetMonthFor($season);
+        \App\Models\MonthlyWeatherPrediction::create(['prediction_year'=>$month->year,'prediction_month'=>$month->month,
+            'weather_model'=>\App\Services\MachineLearning\MonthlyWeatherRandomForest::MODEL_VERSION,'status'=>'ready',
+            'rainfall'=>180,'tmax'=>33,'tmin'=>25,'temperature_average'=>29,'humidity'=>78,'wind_speed'=>8,
+            'generated_at'=>now(),'expires_at'=>now()->addDay(),'metadata'=>['source_name'=>'API ML ACCEPTANCE FIXTURE']]);
+    }
+}

@@ -54,6 +54,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->shouldRenderJsonWhen(fn (Request $request, Throwable $exception): bool => $request->is('api/*') || $request->expectsJson());
         // Every reported error says where it happened and for which role (a fatal timeout otherwise logs only the
         // user id). No input, headers, cookies or tokens: only the request line and the route.
         $exceptions->context(function (): array {
@@ -103,7 +104,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     'message' => $exception->getMessage(),
                 ]);
 
-                if ($request->expectsJson()) {
+                if ($request->is('api/*') || $request->expectsJson()) {
                     return response()->json([
                         'message' => 'The data service is temporarily unavailable. Please try again shortly.',
                     ], 503);
@@ -128,7 +129,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 'message' => $exception->getMessage(),
             ]);
 
-            if ($request->expectsJson()) {
+            if ($request->is('api/*') || $request->expectsJson()) {
                 return response()->json([
                     'message' => 'The request could not be processed because of an unsupported HTTP version.',
                 ], 400);

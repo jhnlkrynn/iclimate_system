@@ -110,7 +110,11 @@ class Phase7ReportsTest extends TestCase
         Notification::query()->create(['user_id' => $farmer->id, 'title' => 'New advisory', 'message' => 'm', 'type' => 'Advisory', 'is_read' => true]);
 
         $this->actingAs($farmer)->get(route('farmer.reports.index'))->assertOk()
-            ->assertSee('My Reports')->assertSee('9 t')->assertSee('Plant after the first heavy rains')->assertSee('Alerts you received: 1 (read: 1)');
+            ->assertSee('My Reports')->assertDontSee('9 t')->assertSee(__('farmer.home.harvest.unvalidated'))   // saved estimate withheld
+            ->assertSee('Plant after the first heavy rains')->assertSee('Alerts you received: 1 (read: 1)');
+        config(['prediction.rice_yield.accuracy_verified' => true]);
+        $this->actingAs($farmer)->get(route('farmer.reports.index'))->assertSee('9 t');
+        config(['prediction.rice_yield.accuracy_verified' => false]);
         $pdf = $this->actingAs($farmer)->get(route('farmer.reports.pdf'));
         $pdf->assertOk()->assertHeader('Content-Type', 'application/pdf');
         $this->actingAs($farmer)->get(route('farmer.my-farm'))->assertSee('data-my-reports-link', false);

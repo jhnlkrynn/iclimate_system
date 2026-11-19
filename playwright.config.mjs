@@ -8,6 +8,7 @@ const baseURL = 'http://127.0.0.1:' + port;
 // headless browser for minutes at a time, which shows up as random scroll and timeout failures.
 export default defineConfig({
     testDir: 'tests/Browser',
+    outputDir: `test-results/port-${port}`,
     fullyParallel: false,
     workers: 1,
     timeout: 30_000,
@@ -24,7 +25,7 @@ export default defineConfig({
         { name: 'mobile-375', use: { browserName: 'chromium', viewport: { width: 375, height: 740 }, isMobile: true, hasTouch: true } },
     ],
     webServer: {
-        command: 'PLAYWRIGHT_PORT=' + port + ' sh tests/Browser/serve.sh',
+        command: 'PLAYWRIGHT_PORT=' + port + ' bash tests/Browser/serve.sh',
         url: baseURL + '/login',
         timeout: 180_000,
         reuseExistingServer: false,

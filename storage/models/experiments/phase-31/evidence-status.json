@@ -1,0 +1,26 @@
+{
+  "phase": 31,
+  "status": "BLOCKED_BEFORE_TRAINING",
+  "accuracy_status": "ACCURACY NOT VERIFIED",
+  "new_authenticated_lian_dataset_found": false,
+  "new_authenticated_pagasa_lian_observations_found": false,
+  "training_performed": false,
+  "experimental_artifacts_written": false,
+  "available_but_inadmissible": [
+    "PSA Batangas province aggregates from Phases 27-30: authentic but not Lian-specific",
+    "database/seeders/data/mao-planting-summary-2020-2025.csv: source-shaped and previously unverified",
+    "database/data/Ambulong Monthly Data.csv: Tanauan station proxy, not Lian observations",
+    "storage/datasets/generated/*: generated/prediction or candidate artifacts",
+    "storage/datasets/candidate_2026_full_predictions.csv: prediction-only Open-Meteo weather, no observed yield target",
+    "demo and derived rice production records: not independent observations"
+  ],
+  "required_external_evidence": [
+    "MAO-custodied Lian farm or approved municipal rice production records with source document, stable observation IDs, planting dates, harvest dates, harvested area, production, yield unit, rice variety/ecosystem, and correction history",
+    "Written MAO/researcher approval of geographic target scope and farm-versus-municipal aggregation",
+    "PAGASA-approved Lian or explicitly approved proxy historical observations matched to each crop season, with station/grid metadata, units, missingness, revisions, and release dates",
+    "Researcher-approved season boundaries, forecast horizon, weather exposure window, and publication-delay policy",
+    "Enough independent seasons/groups for chronological or season-grouped validation, with no demo, allocation, replication, or prediction-derived rows",
+    "Feature dictionary and preprocessing definitions if compatibility with the deployed 12-feature model is requested"
+  ],
+  "production_model_unchanged": true
+}

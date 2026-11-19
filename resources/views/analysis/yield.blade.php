@@ -67,7 +67,12 @@
                                     <td><strong>{{ $Y(strtolower($r->season)) }}</strong>
                                         <div class="small text-muted">{{ \App\Services\Risk\HeatMapPanel::displayName((string) $r->barangay) }} · {{ $Y(strtolower($r->farm_type)) }} · {{ $num($r->area_hectares) }} ha · {{ $Y('requested') }} {{ $r->created_at?->timezone(\App\Support\BusinessClock::timezone())->format('M j, Y') }} <span class="badge text-bg-secondary" data-prediction-live-status>{{ $r->status === 'done' ? 'Completed' : ($r->status === 'failed' ? $Y('failed') : $Y('preparing')) }}</span></div>
                                     </td>
-                                    @if ($r->status === 'done')
+                                    @if ($r->status === 'done' && ! \App\Services\Prediction\YieldModelGate::showsStoredEstimate())
+                                        {{-- A saved model estimate stays hidden until its accuracy is verified (YieldModelGate). --}}
+                                        <td colspan="2" data-ml-status="withheld">{{ __('farmer.home.harvest.unvalidated') }}</td>
+                                        <td>{{ $r->historical_average !== null ? $Y('t_ha', ['value' => $num($r->historical_average)]) : '—' }}</td>
+                                        <td>—</td>
+                                    @elseif ($r->status === 'done')
                                         {{-- Farmer Survey – Naicel (2026-10-09): the survey about this prediction. --}}
                                         <td>{{ $Y('t_ha', ['value' => $num($r->predicted_yield)]) }} @include('components.unvalidated-estimate', ['compact' => true])<div><a class="small" href="{{ route('farmer.survey.show', ['prediction' => $r->id]) }}" data-survey-link>{{ __('farmer.survey.rate_prediction') }}</a></div></td>
                                         <td>{{ $r->total_tons !== null ? $Y('tons', ['value' => $num($r->total_tons)]) : '—' }}</td>

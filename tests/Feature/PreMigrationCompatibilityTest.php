@@ -25,6 +25,9 @@ class PreMigrationCompatibilityTest extends TestCase
     use RefreshDatabase;
 
     private const PENDING = [
+        // Rolled back first: its submissions table references association_yield_reports, and MySQL/MariaDB refuse to
+        // drop a referenced table (SQLite does not check). A pre-migration database has neither table.
+        '2026_11_18_000001_create_association_report_submissions',
         '2026_11_17_000002_add_farmer_account_review_history',
         '2026_11_16_000004_create_association_chairman_invitations_table',
         '2026_11_16_000002_create_association_reporting_tables',

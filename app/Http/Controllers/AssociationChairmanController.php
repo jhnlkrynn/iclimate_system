@@ -31,7 +31,7 @@ class AssociationChairmanController extends Controller
     {
         $assignment = $this->assignment();
         $report = AssociationYieldReport::query()->where('farmer_organization_id', $assignment->farmer_organization_id)
-            ->with(['reportingPeriod', 'reviews.reviewer'])->findOrFail($report);
+            ->with(['reportingPeriod', 'reviews.reviewer', 'submissions.submitter'])->findOrFail($report);
 
         return view('association-chairman.report', compact('assignment', 'report'));
     }
@@ -59,16 +59,48 @@ class AssociationChairmanController extends Controller
         if (($data['production_tons'] ?? null) !== null && ($data['area_harvested_hectares'] ?? null) === null) {
             return back()->withErrors(['area_harvested_hectares' => 'Harvested area is required when production is reported.'])->withInput();
         }
-        $report = AssociationYieldReport::firstOrNew(['farmer_organization_id' => $assignment->farmer_organization_id, 'reporting_period_id' => $period->id]);
-        abort_if($report->exists && ! in_array($report->status, [AssociationYieldReport::DRAFT, AssociationYieldReport::NEEDS_REVISION], true), 403);
-        unset($data['action'], $data['supporting_document']);
-        if ($request->hasFile('supporting_document')) $data['supporting_document_path'] = $request->file('supporting_document')->store('association-reports');
-        if (($data['production_tons'] ?? null) !== null && ($data['area_harvested_hectares'] ?? 0) > 0) $data['average_yield_t_per_hectare'] = round($data['production_tons'] / $data['area_harvested_hectares'], 4);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($request, $assignment, $period, $data): void {
+            // Lock the association as well as an existing report: a first submission has no report row to lock yet.
+            $assignment->association()->lockForUpdate()->firstOrFail();
+            $report = AssociationYieldReport::query()->where('farmer_organization_id', $assignment->farmer_organization_id)
+                ->where('reporting_period_id', $period->id)->lockForUpdate()->firstOrNew();
+            abort_if($report->exists && ! in_array($report->status, [AssociationYieldReport::DRAFT, AssociationYieldReport::NEEDS_REVISION], true), 403);
+            $report->farmer_organization_id = $assignment->farmer_organization_id;
+            $report->reporting_period_id = $period->id;
+            unset($data['action'], $data['supporting_document']);
+            if ($request->hasFile('supporting_document')) {
+                $path = $request->file('supporting_document')->store('association-reports', 'local');
+                abort_unless($path, 503, 'Supporting document could not be stored. Please retry.');
+                $data['supporting_document_path'] = $path;
+            }
+            $report->fill($data);
+            $report->average_yield_t_per_hectare = $report->production_tons !== null && $report->area_harvested_hectares > 0
+                ? round($report->production_tons / $report->area_harvested_hectares, 4) : null;
+            $submit = $request->input('action') === 'submit';
+            $report->status = $submit ? AssociationYieldReport::SUBMITTED : AssociationYieldReport::DRAFT;
+            if ($submit) {
+                $report->submitted_by = Auth::id();
+                $report->submitted_at = now();
+                $report->reviewed_by = null;
+                $report->reviewed_at = null;
+            }
+            $report->save();
+            if ($submit) {
+                $report->submissions()->create([
+                    'submitted_by' => Auth::id(), 'submitted_at' => $report->submitted_at,
+                    'version' => ((int) $report->submissions()->max('version')) + 1,
+                    'snapshot' => $report->only(['planting_date', 'harvest_date', 'rice_variety', 'irrigation_type', 'area_planted_hectares',
+                        'area_harvested_hectares', 'production_tons', 'average_yield_t_per_hectare', 'participating_farmers',
+                        'crop_losses', 'remarks', 'supporting_document_path']),
+                ]);
+                User::query()->where('role', User::ROLE_MAO)->where('status', User::STATUS_ACTIVE)->get()->each(fn (User $mao) => Notification::query()->create([
+                    'user_id' => $mao->id, 'title' => 'Association report submitted',
+                    'message' => $assignment->association->name.' submitted a rice-yield report for '.$period->label.'.',
+                    'type' => 'Announcement', 'category' => 'association_reporting',
+                ]));
+            }
+        });
         $submit = $request->input('action') === 'submit';
-        $data['status'] = $submit ? AssociationYieldReport::SUBMITTED : AssociationYieldReport::DRAFT;
-        if ($submit) $data += ['submitted_by' => Auth::id(), 'submitted_at' => now()];
-        $report->fill($data)->save();
-        if ($submit) User::query()->where('role', User::ROLE_MAO)->where('status', User::STATUS_ACTIVE)->get()->each(fn (User $mao) => Notification::query()->create(['user_id' => $mao->id, 'title' => 'Association report submitted', 'message' => $assignment->association->name.' submitted a rice-yield report for '.$period->label.'.', 'type' => 'Announcement', 'category' => 'association_reporting']));
 
         return redirect()->route('association-chairman.dashboard')->with('status', $submit ? 'Report submitted to MAO.' : 'Draft saved.');
     }

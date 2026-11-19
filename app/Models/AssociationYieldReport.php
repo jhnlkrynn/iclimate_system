@@ -35,5 +35,6 @@ class AssociationYieldReport extends Model
     public function submitter(): BelongsTo { return $this->belongsTo(User::class, 'submitted_by'); }
     public function reviewer(): BelongsTo { return $this->belongsTo(User::class, 'reviewed_by'); }
     public function reviews(): HasMany { return $this->hasMany(AssociationYieldReportReview::class, 'association_yield_report_id'); }
+    public function submissions(): HasMany { return $this->hasMany(AssociationYieldReportSubmission::class, 'association_yield_report_id'); }
     public function isFormal(): bool { return $this->status !== self::DRAFT; }
 }

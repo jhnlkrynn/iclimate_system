@@ -74,6 +74,10 @@ class RunYieldPredictionRequest implements ShouldQueue
             $yield = $result['yield_tons_per_hectare'] ?? $result['predicted_yield'] ?? null;
 
             if (! ($result['success'] ?? false) || ! is_numeric($yield)) {
+                if (($result['availability'] ?? null) === 'withheld') {
+                    $this->markFailed($request, \App\Services\Prediction\YieldModelGate::REASON);
+                    return;
+                }
                 $missing = $result['missing_inputs'] ?? [];
                 $this->markFailed($request, $missing !== []
                     ? 'Not enough data to predict yet (missing: '.implode(', ', $missing).').'

@@ -9,6 +9,9 @@ return [
     'rice_yield' => [
         // Safety gate (App\Services\Prediction\YieldModelGate): withhold | label | off. ACCURACY NOT VERIFIED.
         'gate' => env('ICLIMATE_YIELD_GATE', 'withhold'),
+        // Under "withhold", an estimate is shown only when its input is inside the training envelope AND this is true.
+        // Set it only after the model has been validated against independent observed yields (owner decision).
+        'accuracy_verified' => filter_var(env('ICLIMATE_YIELD_ACCURACY_VERIFIED', false), FILTER_VALIDATE_BOOL),   // only true/1/yes/on
         // Input range the deployed model was trained on, read from the split thresholds of rice_yield_model_final.pkl
         // (read-only audit 2026-11-12: 48 municipal monthly rows). Outside it the estimate is an extrapolation.
         'training_envelope' => [

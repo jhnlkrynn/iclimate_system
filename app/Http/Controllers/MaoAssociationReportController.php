@@ -31,9 +31,14 @@ class MaoAssociationReportController extends Controller
 
     public function storePeriod(Request $request)
     {
-        $data = $request->validate(['period_key' => ['required', 'string', 'max:80'], 'label' => ['required', 'string', 'max:160'], 'reporting_year' => ['required', 'integer', 'min:2000', 'max:2200'], 'season' => ['nullable', 'string', 'max:32'], 'opens_at' => ['nullable', 'date'], 'due_at' => ['required', 'date'], 'required' => ['boolean']]);
+        $data = $request->validate(['period_key' => ['required', 'string', 'max:80', 'unique:association_reporting_periods,period_key'], 'label' => ['required', 'string', 'max:160'], 'reporting_year' => ['required', 'integer', 'min:2000', 'max:2200'], 'season' => ['nullable', 'string', 'max:32'], 'opens_at' => ['nullable', 'date'], 'due_at' => ['required', 'date'], 'required' => ['boolean']]);
         $data['created_by'] = Auth::id();
-        AssociationReportingPeriod::query()->create($data);
+        try {
+            AssociationReportingPeriod::query()->create($data);
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $exception) {
+            // A concurrent submission can win after the validation query.
+            throw \Illuminate\Validation\ValidationException::withMessages(['period_key' => 'This reporting period already exists.']);
+        }
         return back()->with('status', 'Reporting period created.');
     }
 
@@ -73,7 +78,7 @@ class MaoAssociationReportController extends Controller
 
     public function show(AssociationYieldReport $report)
     {
-        return view('mao.association-reports.show', ['report' => $report->load(['association', 'reportingPeriod', 'reviews.reviewer'])]);
+        return view('mao.association-reports.show', ['report' => $report->load(['association', 'reportingPeriod', 'reviews.reviewer', 'submissions.submitter'])]);
     }
 
     public function review(Request $request, AssociationYieldReport $report)
@@ -82,9 +87,18 @@ class MaoAssociationReportController extends Controller
         $data = $request->validate(['action' => ['required', 'in:under_review,accept,needs_revision'], 'notes' => ['nullable', 'string', 'max:5000']]);
         $status = $data['action'] === 'accept' ? AssociationYieldReport::ACCEPTED : ($data['action'] === 'needs_revision' ? AssociationYieldReport::NEEDS_REVISION : AssociationYieldReport::UNDER_REVIEW);
         if ($status === AssociationYieldReport::NEEDS_REVISION && trim((string) ($data['notes'] ?? '')) === '') return back()->withErrors(['notes' => 'Revision notes are required.']);
-        $report->update(['status' => $status, 'reviewed_by' => Auth::id(), 'reviewed_at' => now()]);
-        AssociationYieldReportReview::query()->create(['association_yield_report_id' => $report->id, 'reviewer_id' => Auth::id(), 'action' => $data['action'], 'notes' => $data['notes'] ?? null]);
-        if ($report->submitter) Notification::query()->create(['user_id' => $report->submitter->id, 'title' => 'Rice-yield report update', 'message' => 'Your '.$report->reportingPeriod->label.' report is '.$status.'.', 'type' => 'Announcement', 'category' => 'association_reporting']);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($report, $status, $data): void {
+            $current = AssociationYieldReport::query()->lockForUpdate()->findOrFail($report->id);
+            $last = $current->reviews()->latest('id')->first();
+            if ($current->status === $status && $last?->action === $data['action']
+                && (string) $last->notes === (string) ($data['notes'] ?? '')) {
+                return; // A retried identical review creates no second review or notification.
+            }
+            abort_unless(in_array($current->status, [AssociationYieldReport::SUBMITTED, AssociationYieldReport::UNDER_REVIEW], true), 409, 'This report is not awaiting this review. Refresh its status.');
+            $current->update(['status' => $status, 'reviewed_by' => Auth::id(), 'reviewed_at' => now()]);
+            $current->reviews()->create(['reviewer_id' => Auth::id(), 'action' => $data['action'], 'notes' => $data['notes'] ?? null]);
+            if ($current->submitter) Notification::query()->create(['user_id' => $current->submitter->id, 'title' => 'Rice-yield report update', 'message' => 'Your '.$current->reportingPeriod->label.' report is '.$status.'.', 'type' => 'Announcement', 'category' => 'association_reporting']);
+        });
         return back()->with('status', 'Review recorded.');
     }
 

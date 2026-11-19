@@ -16,6 +16,10 @@ namespace App\Services\Prediction;
  *   label     the number is shown, marked "unvalidated estimate, not a recommendation".
  *   off       no gate (only for a model that has passed validation).
  *
+ * Under "withhold" an in-range estimate is also withheld until prediction.rice_yield.accuracy_verified is true
+ * (verification 2026-11-18: once the climate inputs follow the target month, in-range inputs occur, and an
+ * in-range estimate is still not a verified one).
+ *
  * Nothing is deleted or rewritten: stored predictions stay in yield_predictions as history.
  */
 final class YieldModelGate
@@ -40,12 +44,13 @@ final class YieldModelGate
 
     /**
      * @param  array<string, mixed>|null  $modelInput  application input names (area, rainfall_6m, temp_range, ...)
-     * @return array{compatible: bool, outside: list<string>}
+     * @return array{compatible: bool, outside: list<string>, within_range?: bool}
+     *                compatible = may be shown as a number; within_range = inside the training envelope
      */
     public static function assess(?array $modelInput): array
     {
         if (! is_array($modelInput) || $modelInput === []) {
-            return ['compatible' => false, 'outside' => ['model_input']];   // cannot be checked: not shown as validated
+            return ['compatible' => false, 'outside' => ['model_input'], 'within_range' => false];   // cannot be checked: not shown as validated
         }
         $outside = [];
         foreach ((array) config('prediction.rice_yield.training_envelope', []) as $feature => [$low, $high]) {
@@ -55,7 +60,23 @@ final class YieldModelGate
             }
         }
 
-        return ['compatible' => $outside === [], 'outside' => $outside];
+        return ['compatible' => $outside === [] && self::accuracyVerified(), 'outside' => $outside, 'within_range' => $outside === []];
+    }
+
+    /**
+     * True when a STORED model estimate may be shown as a number: a planting schedule's estimated harvest, a finished
+     * yield request (its total and outlook too) or the survey about it. Such rows were saved without a checkable model
+     * input, many before this gate existed, so under "withhold" they stay hidden until accuracy is verified
+     * (verification 2026-11-18: 6,606 schedules of 715 Farmers still showed a saved estimate on the calendar).
+     */
+    public static function showsStoredEstimate(): bool
+    {
+        return self::mode() !== self::WITHHOLD || self::accuracyVerified();
+    }
+
+    public static function accuracyVerified(): bool
+    {
+        return (bool) config('prediction.rice_yield.accuracy_verified', false);
     }
 
     /** True when an estimate with this input may be shown as a number. */

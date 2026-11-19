@@ -29,15 +29,18 @@ Route::middleware(\App\Http\Middleware\RequireSchema::class.':association_chairm
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('association-reports/{report}/document/{submission?}', \App\Http\Controllers\AssociationReportDocumentController::class)
+        ->whereNumber(['report', 'submission'])->middleware(\App\Http\Middleware\RequireSchema::class.':association_yield_report_submissions')
+        ->name('association-reports.document');
 
-    Route::middleware(['role:'.User::ROLE_FARMER, \App\Http\Middleware\RequireSchema::class.':association_chairman_assignments,association_reporting_periods,association_yield_reports'])->prefix('association-chairman')->name('association-chairman.')->group(function () {
+    Route::middleware(['role:'.User::ROLE_FARMER, \App\Http\Middleware\RequireSchema::class.':association_chairman_assignments,association_reporting_periods,association_yield_reports,association_yield_report_submissions'])->prefix('association-chairman')->name('association-chairman.')->group(function () {
         Route::get('/', [\App\Http\Controllers\AssociationChairmanController::class, 'dashboard'])->name('dashboard');
         Route::get('reports/{report}', [\App\Http\Controllers\AssociationChairmanController::class, 'show'])->whereNumber('report')->name('reports.show');
         Route::get('reports/{period}/create', [\App\Http\Controllers\AssociationChairmanController::class, 'create'])->whereNumber('period')->name('reports.create');
         Route::post('reports/{period}', [\App\Http\Controllers\AssociationChairmanController::class, 'store'])->whereNumber('period')->middleware('throttle:20,1,association-report')->name('reports.store');
     });
 
-    Route::middleware(['role:'.User::ROLE_MAO, \App\Http\Middleware\RequireSchema::class.':association_chairman_assignments,association_chairman_invitations,association_reporting_periods,association_yield_reports,association_yield_report_reviews,association_reminder_deliveries'])->prefix('mao/association-reports')->name('mao.association-reports.')->group(function () {
+    Route::middleware(['role:'.User::ROLE_MAO, \App\Http\Middleware\RequireSchema::class.':association_chairman_assignments,association_chairman_invitations,association_reporting_periods,association_yield_reports,association_yield_report_reviews,association_reminder_deliveries,association_yield_report_submissions'])->prefix('mao/association-reports')->name('mao.association-reports.')->group(function () {
         Route::get('/', [\App\Http\Controllers\MaoAssociationReportController::class, 'index'])->name('index');
         Route::post('periods', [\App\Http\Controllers\MaoAssociationReportController::class, 'storePeriod'])->middleware('throttle:20,1,association-period')->name('periods.store');
         Route::post('associations/{association}/assign', [\App\Http\Controllers\MaoAssociationReportController::class, 'assign'])->whereNumber('association')->middleware('throttle:20,1,association-assign')->name('associations.assign');

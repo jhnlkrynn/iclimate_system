@@ -147,7 +147,7 @@ class RiceYieldPredictionService
             return $result;
         }
         $assessment = YieldModelGate::assess(is_array($modelInput) ? $modelInput : null);
-        $result['validation_status'] = $assessment['compatible'] ? 'within_training_range' : 'outside_training_range';
+        $result['validation_status'] = ($assessment['within_range'] ?? $assessment['compatible']) ? 'within_training_range' : 'outside_training_range';
         $result['outside_training_range'] = $assessment['outside'];
         $result['accuracy_verified'] = false;
         if ($assessment['compatible'] || YieldModelGate::mode() === YieldModelGate::LABEL) {

@@ -59,7 +59,7 @@ class LandingPageTest extends TestCase
         ];
     }
 
-    /** @dataProvider roles */
+    #[\PHPUnit\Framework\Attributes\DataProvider('roles')]
     public function test_valid_login_from_the_landing_card_goes_to_the_role_dashboard(string $role, string $dashboard): void
     {
         $user = User::factory()->create(['role' => $role]);
@@ -70,7 +70,7 @@ class LandingPageTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
-    /** @dataProvider roles */
+    #[\PHPUnit\Framework\Attributes\DataProvider('roles')]
     public function test_a_page_remembered_before_login_is_ignored_and_the_landing_login_goes_to_the_role_dashboard(string $role, string $dashboard): void
     {
         $user = User::factory()->create(['role' => $role]);
@@ -85,7 +85,7 @@ class LandingPageTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
-    /** @dataProvider roles */
+    #[\PHPUnit\Framework\Attributes\DataProvider('roles')]
     public function test_signed_in_users_who_open_a_guest_only_page_go_to_their_dashboard(string $role, string $dashboard): void
     {
         $this->actingAs(User::factory()->create(['role' => $role]))
@@ -127,7 +127,7 @@ class LandingPageTest extends TestCase
             ->assertSee(route('captcha.image', ['context' => 'login']), false);
     }
 
-    /** @dataProvider roles */
+    #[\PHPUnit\Framework\Attributes\DataProvider('roles')]
     public function test_logged_in_users_see_go_to_dashboard_instead_of_the_form(string $role, string $dashboard): void
     {
         $user = User::factory()->create(['role' => $role]);

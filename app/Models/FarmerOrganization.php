@@ -9,6 +9,16 @@ class FarmerOrganization extends Model
 {
     use \App\Models\Concerns\RecordsAuthor;   // panel revision 4.4: created_by / updated_by
 
+    protected static function booted(): void
+    {
+        static::deleting(function (self $record): void {
+            if (\App\Support\SchemaCache::hasTable('association_yield_report_submissions')
+                && $record->yieldReports()->whereHas('submissions')->exists()) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['association' => 'This record has formal submission history and must be retained.']);
+            }
+        });
+    }
+
     protected $fillable = [
         'name',
         'barangay',

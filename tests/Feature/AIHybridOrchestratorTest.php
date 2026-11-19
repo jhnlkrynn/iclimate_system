@@ -323,7 +323,8 @@ class AIHybridOrchestratorTest extends TestCase
     {
         foreach (range(1, 6) as $index) {
             ClimateRecord::query()->create([
-                'record_date' => now()->subMonths(7 - $index)->startOfMonth()->toDateString(),
+                // The six months before next month (the default target): five months ago .. this month.
+                'record_date' => now()->subMonthsNoOverflow(6 - $index)->startOfMonth()->toDateString(),
                 'rainfall' => 110 + ($index * 12),
                 'temperature' => 27 + $index,
                 'humidity' => 76 + $index,

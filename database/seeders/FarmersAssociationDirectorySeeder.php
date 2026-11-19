@@ -29,9 +29,12 @@ class FarmersAssociationDirectorySeeder extends Seeder
         ];
 
         foreach ($rows as [$barangay, $name, $chairman]) {
+            // Official barangay spelling ("Sandiego" -> "San Diego"), and the name matched the way the unique index
+            // compares it (MariaDB utf8mb4_unicode_ci ignores case): "Tan-Ag" is the existing "Tan-ag" association.
+            $barangay = \App\Support\LianBarangays::canonicalName($barangay) ?? $barangay;
             $key = strtolower(trim(preg_replace('/[^a-z0-9]+/i', '-', $name), '-'));
-            $association = FarmerOrganization::query()->where(function ($query) use ($name, $barangay, $key): void {
-                $query->where('directory_key', $key)->orWhere(fn ($q) => $q->where('name', $name)->where('barangay', $barangay));
+            $association = FarmerOrganization::query()->where(function ($query) use ($name, $key): void {
+                $query->where('directory_key', $key)->orWhereRaw('LOWER(name) = ?', [mb_strtolower($name)]);
             })->first();
 
             if (! $association) {

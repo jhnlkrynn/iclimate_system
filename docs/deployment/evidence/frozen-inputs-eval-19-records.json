@@ -1,0 +1,135 @@
+[
+ {
+  "barangay": "KAPITO",
+  "season": "WS",
+  "year": 2024,
+  "observed": 3.07212334,
+  "predicted": 3.386
+ },
+ {
+  "barangay": "MALARUHATAN",
+  "season": "WS",
+  "year": 2024,
+  "observed": 2.4862069,
+  "predicted": 3.372
+ },
+ {
+  "barangay": "BUNGAHAN",
+  "season": "WS",
+  "year": 2024,
+  "observed": 3.47807018,
+  "predicted": 3.382
+ },
+ {
+  "barangay": "SAN DIEGO",
+  "season": "WS",
+  "year": 2024,
+  "observed": 2.90580357,
+  "predicted": 3.374
+ },
+ {
+  "barangay": "MATABUNGKAY",
+  "season": "WS",
+  "year": 2024,
+  "observed": 2.57619915,
+  "predicted": 3.374
+ },
+ {
+  "barangay": "BALIBAGO",
+  "season": "WS",
+  "year": 2024,
+  "observed": 2.57996485,
+  "predicted": 3.375
+ },
+ {
+  "barangay": "LUYAHAN",
+  "season": "WS",
+  "year": 2024,
+  "observed": 2.99707088,
+  "predicted": 3.374
+ },
+ {
+  "barangay": "BINUBUSAN",
+  "season": "WS",
+  "year": 2024,
+  "observed": 3.48795086,
+  "predicted": 3.386
+ },
+ {
+  "barangay": "TAN-AG SAN DIEGO",
+  "season": "WS",
+  "year": 2024,
+  "observed": 3.77013575,
+  "predicted": 3.386
+ },
+ {
+  "barangay": "PRENZA",
+  "season": "WS",
+  "year": 2024,
+  "observed": 3.77504118,
+  "predicted": 3.358
+ },
+ {
+  "barangay": "KAPITO",
+  "season": "DS",
+  "year": 2024,
+  "observed": 4.41172045,
+  "predicted": 4.003
+ },
+ {
+  "barangay": "MALARUHATAN",
+  "season": "DS",
+  "year": 2024,
+  "observed": 4.0779661,
+  "predicted": 3.978
+ },
+ {
+  "barangay": "BUNGAHAN",
+  "season": "DS",
+  "year": 2024,
+  "observed": 4.29906767,
+  "predicted": 4.011
+ },
+ {
+  "barangay": "SAN DIEGO",
+  "season": "DS",
+  "year": 2024,
+  "observed": 4.3,
+  "predicted": 3.981
+ },
+ {
+  "barangay": "BALIBAGO",
+  "season": "DS",
+  "year": 2024,
+  "observed": 4.04110429,
+  "predicted": 3.983
+ },
+ {
+  "barangay": "LUYAHAN",
+  "season": "DS",
+  "year": 2024,
+  "observed": 2.38030303,
+  "predicted": 3.978
+ },
+ {
+  "barangay": "BINUBUSAN",
+  "season": "DS",
+  "year": 2024,
+  "observed": 3.49922094,
+  "predicted": 4.006
+ },
+ {
+  "barangay": "TAN-AG SAN DIEGO",
+  "season": "DS",
+  "year": 2024,
+  "observed": 2.56764706,
+  "predicted": 3.989
+ },
+ {
+  "barangay": "PRENZA",
+  "season": "DS",
+  "year": 2024,
+  "observed": 4.68001942,
+  "predicted": 3.936
+ }
+]

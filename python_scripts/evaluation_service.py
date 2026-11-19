@@ -61,6 +61,10 @@ def _pipeline(estimator) -> Pipeline:
 
 def _not_ready(sample_count: int, message: str) -> dict:
     return {
+        "accuracy_status": "ACCURACY NOT VERIFIED",
+        "evaluation_scope": "candidate_schema_cross_validation",
+        "deployed_model_evaluated": False,
+        "independent_validation": False,
         "ready": False,
         "message": message,
         "sample_count": sample_count,
@@ -119,6 +123,10 @@ def evaluate(csv_path: str | None = None) -> dict:
     best = max(rows, key=lambda row: row["r2"])
 
     result = {
+        "accuracy_status": "ACCURACY NOT VERIFIED",
+        "evaluation_scope": "candidate_schema_cross_validation",
+        "deployed_model_evaluated": False,
+        "independent_validation": False,
         "ready": True,
         "message": "Evaluation metrics computed live from the current exported training data.",
         "sample_count": len(df),

@@ -124,12 +124,10 @@ class PredictionEngine
         array $manualOverrides,
     ): array {
         $predictions = $weatherResult['predictions'] ?? [];
-        // The recent real climate behind the "previous" and trailing-window inputs: the latest six months of
-        // App\Support\ClimateHistory (entered records when they cover six months, otherwise the Ambulong
-        // station record; never impossible rows, never seeded sample rows). The on-demand prediction run by
-        // the Python service reads the same history, so both give the same inputs.
-        $recent = \App\Support\ClimateHistory::months()->take(\App\Support\ClimateHistory::WINDOW)->values();
-        $latest = $recent->first();
+        // The climate inputs of THIS target month: lags and trailing windows end at the month before it (never the
+        // latest months on file, which gave every prediction the same eight inputs), Rainfall_6M is a six-month mean
+        // and TEMP_RANGE the month's TMAX - TMIN, as the model was trained. Unobserved months stay missing.
+        $climate = \App\Support\YieldModelClimateWindow::features($targetDate, $predictions);
 
         $num = static fn ($v): ?float => is_numeric($v) ? (float) $v : null;
         $round = static fn (?float $v): ?float => $v === null ? null : round($v, 2);
@@ -141,13 +139,6 @@ class PredictionEngine
         // The deployed model's "season" input and its same-season months use the encoding it was trained with,
         // worked out from the month (never a stored label), so the iClimate calendar can differ (App\Support\RiceSeason).
         $season = \App\Support\RiceSeason::forTrainedYieldModel((int) $targetDate->format('n'));
-        $modelSeasonOf = static fn (object $row): ?string => ! empty($row->record_date) ? \App\Support\RiceSeason::forTrainedYieldModel((int) substr((string) $row->record_date, 5, 2)) : null;
-
-        // Trailing windows are only valid when the whole window is present.
-        $has6 = $recent->count() >= 6;
-        $has3 = $recent->count() >= 3;
-        $inSeason = $recent->filter(fn (object $row): bool => $modelSeasonOf($row) === $season);
-        $temps = $recent->pluck('temperature')->filter(fn ($v) => $v !== null);
 
         $activeFarm = $user && $user->role === User::ROLE_FARMER ? ActiveFarm::current($user) : null;
         $farmArea = $activeFarm?->modelArea();
@@ -161,17 +152,17 @@ class PredictionEngine
         $modelInput = [
             'rainfall' => $round($rainfall),
             'temp_avg' => $round($temperature),
-            'temp_range' => $temps->isNotEmpty() ? round((float) $temps->max() - (float) $temps->min(), 2) : null,
+            'temp_range' => $climate['features']['temp_range'],
             'area' => $round($area),
-            'previous_rainfall' => $round($num($latest?->rainfall)),
-            'previous_temp' => $round($num($latest?->temperature)),
-            'previous_humidity' => $round($num($latest?->humidity)),
-            'previous_wind_speed' => $round($num($latest?->wind_speed)),
-            'rainfall_6m' => $has6 ? round((float) $recent->sum('rainfall'), 2) : null,
-            'temp_3m' => $has3 ? $round($num($recent->take(3)->avg('temperature'))) : null,
-            'temp_6m' => $has6 ? $round($num($recent->avg('temperature'))) : null,
-            'seasonal_rainfall' => $inSeason->isNotEmpty() ? round((float) $inSeason->sum('rainfall'), 2) : null,
-            'seasonal_temp' => $inSeason->isNotEmpty() ? $round($num($inSeason->avg('temperature'))) : null,
+            'previous_rainfall' => $climate['features']['previous_rainfall'],
+            'previous_temp' => $climate['features']['previous_temp'],
+            'previous_humidity' => $climate['features']['previous_humidity'],
+            'previous_wind_speed' => $climate['features']['previous_wind_speed'],
+            'rainfall_6m' => $climate['features']['rainfall_6m'],
+            'temp_3m' => $climate['features']['temp_3m'],
+            'temp_6m' => $climate['features']['temp_6m'],
+            'seasonal_rainfall' => $climate['features']['seasonal_rainfall'],
+            'seasonal_temp' => $climate['features']['seasonal_temp'],
             'humidity' => $round($humidity),
             'wind_speed' => $round($windSpeed),
             'season' => $season,
@@ -259,7 +250,9 @@ class PredictionEngine
                     'unit' => data_get($yield, 'unit', 'tons/hectare'),
                     'uncertainty' => data_get($yield, 'uncertainty'),
                     'fallback' => false,
-                    'source_type' => 'Trained Model API',
+                    'source_type' => data_get($yield, 'source_type', data_get($apiResult, 'source_type', 'Trained Model API')),
+                    'inference_transport' => data_get($apiResult, 'inference_transport', 'http'),
+                    'api_fallback_used' => (bool) data_get($apiResult, 'api_fallback_used', false),
                     'source_name' => 'iClimate Rice Harvest Estimate',
                     'source_credit' => 'Estimate produced by the iClimate rice-yield system.',
                 ], null];

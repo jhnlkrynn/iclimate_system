@@ -1319,6 +1319,7 @@ return [
         ],
         'about_advisory' => 'About the advisory: :title',
         'about_prediction' => 'About your yield prediction: :season, :yield t/ha',
+        'about_prediction_withheld' => 'About your yield prediction: :season',
         'questions' => [
             'useful' => 'Was it useful for your farm work?',
             'accurate' => 'Was it correct compared with what really happened?',

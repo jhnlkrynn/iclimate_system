@@ -29,7 +29,12 @@ class SystemHealthCommandTest extends TestCase
             if (in_array($c['name'], ['id', 'created_at', 'updated_at'], true) || $c['nullable'] || $c['default'] !== null) {
                 continue;
             }
-            $row[$c['name']] = str_contains($c['type_name'], 'int') || str_contains($c['type_name'], 'dec') ? 0 : 'test';
+            $type = strtolower($c['type_name']);
+            $row[$c['name']] = match (true) {
+                str_contains($type, 'int') || str_contains($type, 'dec') || str_contains($type, 'float') || str_contains($type, 'double') => 0,
+                str_contains($type, 'date') || str_contains($type, 'time') => now(),   // MariaDB strict mode rejects text here
+                default => 'test',
+            };
         }
 
         return $row;

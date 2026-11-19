@@ -1,0 +1,127 @@
+{
+  "status": "EVALUATED_FROZEN_MODELS",
+  "protocol_status": "FROZEN_BEFORE_2026_TARGET_INSPECTION",
+  "observations": 3,
+  "periods": [
+    "2026 Q1",
+    "2026 Q2",
+    "2026 Q3"
+  ],
+  "provenance": "PSA OpenSTAT Batangas Palay production and area harvested; province aggregate",
+  "prediction_origin": "end of 2025 Q4, before reading 2026 target values",
+  "models": {
+    "lagged_random_forest": {
+      "r2": -0.8569026579035648,
+      "mae": 0.3583873578664664,
+      "rmse": 0.49172638152418047,
+      "mape": 9.39346782485572,
+      "bias": -0.3515823498841903,
+      "n": 3
+    },
+    "calendar_random_forest": {
+      "r2": -0.8465519439605278,
+      "mae": 0.43076791215646953,
+      "rmse": 0.4903539800995388,
+      "mape": 12.06931616541939,
+      "bias": -0.18599377656693328,
+      "n": 3
+    },
+    "previous_quarter_naive": {
+      "r2": -6.099494561118244,
+      "mae": 0.89120140895912,
+      "rmse": 0.9614853152418629,
+      "mape": 24.588865731975325,
+      "bias": -0.89120140895912,
+      "n": 3
+    },
+    "previous_year_same_quarter_naive": {
+      "r2": -0.08668278039914235,
+      "mae": 0.2981270028820943,
+      "rmse": 0.37616668761484084,
+      "mape": 7.995852090634904,
+      "bias": -0.11354127188111729,
+      "n": 3
+    },
+    "seasonal_historical_mean": {
+      "r2": -0.48696057742579635,
+      "mae": 0.41521402731828577,
+      "rmse": 0.44002633328910407,
+      "mape": 11.809001234634863,
+      "bias": -0.41521402731828577,
+      "n": 3
+    }
+  },
+  "individual_predictions": [
+    {
+      "observation_id": "batangas-2026-q1",
+      "record_date": "2026-03-01",
+      "quarter": 1,
+      "actual_yield_t_ha": 3.907493670886076,
+      "production_mt": 3086.92,
+      "area_harvested_ha": 790.0,
+      "pred_lagged_random_forest": 3.0937547677390835,
+      "pred_calendar_random_forest": 3.1633292804340396,
+      "pred_previous_quarter_naive": 2.615244347191831,
+      "pred_previous_year_same_quarter_naive": 3.2899912587412588,
+      "pred_seasonal_historical_mean": 3.3082605831504224,
+      "error_lagged_random_forest": -0.8137389031469926,
+      "error_calendar_random_forest": -0.7441643904520365,
+      "error_previous_quarter_naive": -1.2922493236942452,
+      "error_previous_year_same_quarter_naive": -0.6175024121448174,
+      "error_seasonal_historical_mean": -0.5992330877356538
+    },
+    {
+      "observation_id": "batangas-2026-q2",
+      "record_date": "2026-06-01",
+      "quarter": 2,
+      "actual_yield_t_ha": 3.579219288174512,
+      "production_mt": 6235.0,
+      "area_harvested_ha": 1742.0,
+      "pred_lagged_random_forest": 3.3280036296955195,
+      "pred_calendar_random_forest": 3.3982411455414443,
+      "pred_previous_quarter_naive": 2.615244347191831,
+      "pred_previous_year_same_quarter_naive": 3.7669740150880133,
+      "pred_seasonal_historical_mean": 3.3362236890208545,
+      "error_lagged_random_forest": -0.2512156584789924,
+      "error_calendar_random_forest": -0.18097814263306766,
+      "error_previous_quarter_naive": -0.963974940982681,
+      "error_previous_year_same_quarter_naive": 0.18775472691350137,
+      "error_seasonal_historical_mean": -0.24299559915365743
+    },
+    {
+      "observation_id": "batangas-2026-q3",
+      "record_date": "2026-09-01",
+      "quarter": 3,
+      "actual_yield_t_ha": 3.032624309392265,
+      "production_mt": 2195.62,
+      "area_harvested_ha": 724.0,
+      "pred_lagged_random_forest": 3.042831821365679,
+      "pred_calendar_random_forest": 3.3997855127765693,
+      "pred_previous_quarter_naive": 2.615244347191831,
+      "pred_previous_year_same_quarter_naive": 3.121748178980229,
+      "pred_seasonal_historical_mean": 2.629210914326719,
+      "error_lagged_random_forest": 0.010207511973414185,
+      "error_calendar_random_forest": 0.36716120338430436,
+      "error_previous_quarter_naive": -0.41737996220043394,
+      "error_previous_year_same_quarter_naive": 0.08912386958796414,
+      "error_seasonal_historical_mean": -0.4034133950655461
+    }
+  ],
+  "small_sample_warning": "Only three quarterly observations; MAE/RMSE/bias/MAPE are descriptive and R\u00b2 is not a reliable standalone conclusion.",
+  "model_selection_uses_2026": false,
+  "production_model_unchanged": true,
+  "accuracy_status": "NOT DEPLOYMENT EVIDENCE",
+  "source_checksums": {
+    "storage/datasets/external/phase-29/psa-batangas/palay-production-batangas-2026-q1-q3.csv": "620e2522b3aa62815e05666951285867dbd7d4acd5c52a7a9ae8efe032062a8c",
+    "storage/datasets/external/phase-29/psa-batangas/palay-area-harvested-batangas-2026-q1-q3.csv": "7e604e7bf5cbd6d524ee45ab9e19ceb994eb94966903e6f1e67101e43a2693ee",
+    "storage/models/experiments/phase-29/protocol-freeze.json": "0210d85c3c05df5bd3c7e6680f67bbd400b080c992201a42e171ed96283135a8"
+  },
+  "artifacts": [
+    "2026_q1_q3_actual_vs_predicted.svg",
+    "2026_q1_q3_predictions_and_errors.csv",
+    "frozen_calendar_random_forest.joblib",
+    "frozen_lagged_random_forest.joblib",
+    "metrics.json",
+    "protocol-freeze.json"
+  ]
+}

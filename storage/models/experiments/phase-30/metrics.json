@@ -1,0 +1,773 @@
+{
+  "status": "ROBUSTNESS RESULTS AVAILABLE",
+  "dataset_scope": "Batangas province aggregate PSA yield; not Lian farm-level",
+  "selection_period": "2015-2020 outer walk-forward folds; inner folds contained within each training history",
+  "diagnostic_period": "2021-2025 and 2026 Q1-Q3; not used for selection",
+  "methods": [
+    "Seasonal Naive",
+    "Weighted Seasonal Average",
+    "Exponential Seasonal Smoothing",
+    "Regularized Ridge",
+    "Random Forest",
+    "Gradient Boosting",
+    "ML + Seasonal Naive Ensemble"
+  ],
+  "outer_summary": [
+    {
+      "method": "Exponential Seasonal Smoothing",
+      "mean_rmse": 0.505635565621028,
+      "mean_mae": 0.4276401059547304,
+      "mean_mape": 14.635235601662254,
+      "mean_bias": 0.021491780481581808,
+      "years": 6,
+      "years_won": 0
+    },
+    {
+      "method": "Gradient Boosting",
+      "mean_rmse": 0.5012013857949015,
+      "mean_mae": 0.4273242686046217,
+      "mean_mape": 14.513567534078502,
+      "mean_bias": -0.028099910821481482,
+      "years": 6,
+      "years_won": 1
+    },
+    {
+      "method": "ML + Seasonal Naive Ensemble",
+      "mean_rmse": 0.46018857720071943,
+      "mean_mae": 0.3896202062631769,
+      "mean_mape": 13.437496608508944,
+      "mean_bias": -0.014538003045609945,
+      "years": 6,
+      "years_won": 1
+    },
+    {
+      "method": "Random Forest",
+      "mean_rmse": 0.4718118953843211,
+      "mean_mae": 0.3791413048411125,
+      "mean_mape": 12.991326905822499,
+      "mean_bias": 0.0014974358832429147,
+      "years": 6,
+      "years_won": 0
+    },
+    {
+      "method": "Regularized Ridge",
+      "mean_rmse": 0.468545262217885,
+      "mean_mae": 0.4111653911460382,
+      "mean_mape": 14.149792084712749,
+      "mean_bias": 0.019610728294402597,
+      "years": 6,
+      "years_won": 1
+    },
+    {
+      "method": "Seasonal Naive",
+      "mean_rmse": 0.46576580562944486,
+      "mean_mae": 0.40488938193239626,
+      "mean_mape": 13.773178414248642,
+      "mean_bias": -0.0017362385049216795,
+      "years": 6,
+      "years_won": 2
+    },
+    {
+      "method": "Weighted Seasonal Average",
+      "mean_rmse": 0.48145833681175704,
+      "mean_mae": 0.40691802685027695,
+      "mean_mape": 14.389086834779645,
+      "mean_bias": 0.10506639606810875,
+      "years": 6,
+      "years_won": 1
+    }
+  ],
+  "outer_fold_results": [
+    {
+      "year": 2015,
+      "method": "Seasonal Naive",
+      "inner_rmse": 0.6669483796725773,
+      "r2": -0.013086961884061665,
+      "mae": 0.36768324529469876,
+      "rmse": 0.3743827653958168,
+      "mape": 12.589819882498476,
+      "bias": 0.0035821426903623887,
+      "n": 4
+    },
+    {
+      "year": 2015,
+      "method": "Weighted Seasonal Average",
+      "inner_rmse": 0.685450578107561,
+      "r2": -1.0296724794936165,
+      "mae": 0.40581305871658646,
+      "rmse": 0.5299140889866375,
+      "mape": 14.747241579814109,
+      "bias": 0.40581305871658646,
+      "n": 4
+    },
+    {
+      "year": 2015,
+      "method": "Exponential Seasonal Smoothing",
+      "inner_rmse": 0.6838656699683421,
+      "r2": -1.0380180148403597,
+      "mae": 0.40503047955285765,
+      "rmse": 0.5310024123843669,
+      "mape": 14.719047489498225,
+      "bias": 0.40503047955285765,
+      "n": 4
+    },
+    {
+      "year": 2015,
+      "method": "Regularized Ridge",
+      "inner_rmse": 0.47319713648271944,
+      "r2": 0.09346526505210673,
+      "mae": 0.3420971133743669,
+      "rmse": 0.35414793144287426,
+      "mape": 11.778156094643364,
+      "bias": 0.016647020308699023,
+      "n": 4
+    },
+    {
+      "year": 2015,
+      "method": "Random Forest",
+      "inner_rmse": 0.5600416887604338,
+      "r2": -0.14974520071544384,
+      "mae": 0.3205526650840571,
+      "rmse": 0.3988350224549435,
+      "mape": 11.246432240624722,
+      "bias": 0.17564967055487313,
+      "n": 4
+    },
+    {
+      "year": 2015,
+      "method": "Gradient Boosting",
+      "inner_rmse": 0.5908602346660685,
+      "r2": -0.2839456669966334,
+      "mae": 0.3805474322202864,
+      "rmse": 0.4214691659772178,
+      "mape": 13.135361671908411,
+      "bias": 0.16255186227219287,
+      "n": 4
+    },
+    {
+      "year": 2015,
+      "method": "ML + Seasonal Naive Ensemble",
+      "inner_rmse": 0.5778608541649789,
+      "r2": 0.02445863438064122,
+      "mae": 0.35214200889815017,
+      "rmse": 0.36737984748249986,
+      "mape": 12.227754121908605,
+      "bias": 0.07590610514283469,
+      "n": 4
+    },
+    {
+      "year": 2016,
+      "method": "Seasonal Naive",
+      "inner_rmse": 0.6418214687067205,
+      "r2": 0.6300987745500364,
+      "mae": 0.31245885170491416,
+      "rmse": 0.4204231359024376,
+      "mape": 13.800501581675817,
+      "bias": 0.17221179858216218,
+      "n": 4
+    },
+    {
+      "year": 2016,
+      "method": "Weighted Seasonal Average",
+      "inner_rmse": 0.7094031002857812,
+      "r2": 0.02686004937989961,
+      "mae": 0.5950610118722424,
+      "rmse": 0.681916773682231,
+      "mape": 24.8810062837044,
+      "bias": 0.443290490102088,
+      "n": 4
+    },
+    {
+      "year": 2016,
+      "method": "Exponential Seasonal Smoothing",
+      "inner_rmse": 0.6675391142294781,
+      "r2": 0.6248744425498188,
+      "mae": 0.3663712132645396,
+      "rmse": 0.4233816675489112,
+      "mape": 15.327355265495484,
+      "bias": 0.2047918166485283,
+      "n": 4
+    },
+    {
+      "year": 2016,
+      "method": "Regularized Ridge",
+      "inner_rmse": 0.42381538320830414,
+      "r2": 0.4926600689659344,
+      "mae": 0.468913025950628,
+      "rmse": 0.49237188355039124,
+      "mape": 18.595359895145894,
+      "bias": 0.12147979625576855,
+      "n": 4
+    },
+    {
+      "year": 2016,
+      "method": "Random Forest",
+      "inner_rmse": 0.4524364718859448,
+      "r2": 0.2494271017894084,
+      "mae": 0.5125718611800015,
+      "rmse": 0.5988804851720474,
+      "mape": 19.861704633350033,
+      "bias": 0.11309716782997825,
+      "n": 4
+    },
+    {
+      "year": 2016,
+      "method": "Gradient Boosting",
+      "inner_rmse": 0.49536111999467325,
+      "r2": 0.09304687761454145,
+      "mae": 0.5351120314092869,
+      "rmse": 0.658318625197448,
+      "mape": 21.109319089249247,
+      "bias": 0.12210391551633337,
+      "n": 4
+    },
+    {
+      "year": 2016,
+      "method": "ML + Seasonal Naive Ensemble",
+      "inner_rmse": 0.5164934020430683,
+      "r2": 0.2963695086387145,
+      "mae": 0.49315296452625934,
+      "rmse": 0.5798505156885225,
+      "mape": 19.82010734329631,
+      "bias": 0.13902812461859448,
+      "n": 4
+    },
+    {
+      "year": 2017,
+      "method": "Seasonal Naive",
+      "inner_rmse": 0.659156615575446,
+      "r2": -7.31900588174857,
+      "mae": 0.6429523269660009,
+      "rmse": 0.7242251752662535,
+      "mape": 19.993576254595034,
+      "bias": -0.4477863151131354,
+      "n": 4
+    },
+    {
+      "year": 2017,
+      "method": "Weighted Seasonal Average",
+      "inner_rmse": 0.7247446137927367,
+      "r2": 0.782406070276316,
+      "mae": 0.1081853408945267,
+      "rmse": 0.1171281515750558,
+      "mape": 3.3621804570166365,
+      "bias": -0.0494118381831371,
+      "n": 4
+    },
+    {
+      "year": 2017,
+      "method": "Exponential Seasonal Smoothing",
+      "inner_rmse": 0.6673591592061696,
+      "r2": -4.822458514187397,
+      "mae": 0.533040962986639,
+      "rmse": 0.6058862591371894,
+      "mape": 16.51675820677785,
+      "bias": -0.3863487701185768,
+      "n": 4
+    },
+    {
+      "year": 2017,
+      "method": "Regularized Ridge",
+      "inner_rmse": 0.43024435921928905,
+      "r2": -2.5542769962679492,
+      "mae": 0.375073757601076,
+      "rmse": 0.47338395880271394,
+      "mape": 11.715343489580034,
+      "bias": -0.3649329641334035,
+      "n": 4
+    },
+    {
+      "year": 2017,
+      "method": "Random Forest",
+      "inner_rmse": 0.49518249838121564,
+      "r2": -2.437707178335911,
+      "mae": 0.3289711044800121,
+      "rmse": 0.46555644405372226,
+      "mape": 10.051668260468881,
+      "bias": -0.32213807484767965,
+      "n": 4
+    },
+    {
+      "year": 2017,
+      "method": "Gradient Boosting",
+      "inner_rmse": 0.5265685603345417,
+      "r2": -3.166121057290578,
+      "mae": 0.4301690249759714,
+      "rmse": 0.512511771144514,
+      "mape": 13.342041377007865,
+      "bias": -0.38750406013797856,
+      "n": 4
+    },
+    {
+      "year": 2017,
+      "method": "ML + Seasonal Naive Ensemble",
+      "inner_rmse": 0.5293833551353679,
+      "r2": -4.15998567324212,
+      "mae": 0.4402290983712468,
+      "rmse": 0.5703771906282565,
+      "mape": 13.703490354043355,
+      "bias": -0.4402290983712468,
+      "n": 4
+    },
+    {
+      "year": 2018,
+      "method": "Seasonal Naive",
+      "inner_rmse": 0.5120349627144194,
+      "r2": -6.033525073422108,
+      "mae": 0.3737078892392356,
+      "rmse": 0.42859701114393484,
+      "mape": 10.451266484885457,
+      "bias": -0.29517130796945046,
+      "n": 4
+    },
+    {
+      "year": 2018,
+      "method": "Weighted Seasonal Average",
+      "inner_rmse": 0.6638665592348272,
+      "r2": -11.078541489124445,
+      "mae": 0.44019618751990053,
+      "rmse": 0.5616553057320213,
+      "mape": 12.349342509676765,
+      "bias": -0.44019618751990053,
+      "n": 4
+    },
+    {
+      "year": 2018,
+      "method": "Exponential Seasonal Smoothing",
+      "inner_rmse": 0.5576747207101376,
+      "r2": -9.523628703277957,
+      "mae": 0.41107593900502337,
+      "rmse": 0.5242583744206685,
+      "mape": 11.497770146174942,
+      "bias": -0.41107593900502337,
+      "n": 4
+    },
+    {
+      "year": 2018,
+      "method": "Regularized Ridge",
+      "inner_rmse": 0.430584542173688,
+      "r2": -5.4855447521963185,
+      "mae": 0.3378685054466515,
+      "rmse": 0.41156254900573414,
+      "mape": 9.420876832134173,
+      "bias": -0.2390445216888235,
+      "n": 4
+    },
+    {
+      "year": 2018,
+      "method": "Random Forest",
+      "inner_rmse": 0.4515507167665628,
+      "r2": -8.431979735472158,
+      "mae": 0.38245948047265355,
+      "rmse": 0.49632259592626327,
+      "mape": 10.556555762162223,
+      "bias": -0.33286156363915653,
+      "n": 4
+    },
+    {
+      "year": 2018,
+      "method": "Gradient Boosting",
+      "inner_rmse": 0.47290296135125287,
+      "r2": -12.402117488025509,
+      "mae": 0.48362867278945465,
+      "rmse": 0.5916288294274479,
+      "mape": 13.404394839925713,
+      "bias": -0.4216887739056473,
+      "n": 4
+    },
+    {
+      "year": 2018,
+      "method": "ML + Seasonal Naive Ensemble",
+      "inner_rmse": 0.4652271544287701,
+      "r2": -5.377271048098302,
+      "mae": 0.3404386390099472,
+      "rmse": 0.4081126495655628,
+      "mape": 9.431770497951538,
+      "bias": -0.2806021050185321,
+      "n": 4
+    },
+    {
+      "year": 2019,
+      "method": "Seasonal Naive",
+      "inner_rmse": 0.6360186237479659,
+      "r2": -1.1737841359988344,
+      "mae": 0.2684669911269332,
+      "rmse": 0.32098565090600256,
+      "mape": 8.496916448476357,
+      "bias": 0.25360683223640035,
+      "n": 4
+    },
+    {
+      "year": 2019,
+      "method": "Weighted Seasonal Average",
+      "inner_rmse": 0.5992794066921974,
+      "r2": -0.7926599495091,
+      "mae": 0.2733754147860432,
+      "rmse": 0.2914918180125928,
+      "mape": 8.358784485476486,
+      "bias": -0.013385598799599663,
+      "n": 4
+    },
+    {
+      "year": 2019,
+      "method": "Exponential Seasonal Smoothing",
+      "inner_rmse": 0.5794929598775269,
+      "r2": -0.4519454127589564,
+      "mae": 0.2512998031551291,
+      "rmse": 0.26233277629340485,
+      "mape": 7.749383882530343,
+      "bias": 0.028452984933885372,
+      "n": 4
+    },
+    {
+      "year": 2019,
+      "method": "Regularized Ridge",
+      "inner_rmse": 0.4534753727243983,
+      "r2": -1.242131044119942,
+      "mae": 0.2787617009108797,
+      "rmse": 0.3259927239840471,
+      "mape": 8.78779384715279,
+      "bias": 0.2308277103345725,
+      "n": 4
+    },
+    {
+      "year": 2019,
+      "method": "Random Forest",
+      "inner_rmse": 0.45638266427400764,
+      "r2": -0.5187126130553985,
+      "mae": 0.18633688356779554,
+      "rmse": 0.2682966258172286,
+      "mape": 6.086767325750121,
+      "bias": 0.1753769271863418,
+      "n": 4
+    },
+    {
+      "year": 2019,
+      "method": "Gradient Boosting",
+      "inner_rmse": 0.49838921051688057,
+      "r2": -0.23479487834943003,
+      "mae": 0.189969932322143,
+      "rmse": 0.2419216972446309,
+      "mape": 6.0856093054740965,
+      "bias": 0.189969932322143,
+      "n": 4
+    },
+    {
+      "year": 2019,
+      "method": "ML + Seasonal Naive Ensemble",
+      "inner_rmse": 0.48241490392725783,
+      "r2": -0.714622652097151,
+      "mae": 0.20885723587584937,
+      "rmse": 0.28507667808415027,
+      "mape": 6.777410756588237,
+      "bias": 0.20885723587584937,
+      "n": 4
+    },
+    {
+      "year": 2020,
+      "method": "Seasonal Naive",
+      "inner_rmse": 0.7264171539849249,
+      "r2": 0.11989245780055824,
+      "mae": 0.4640669872625952,
+      "rmse": 0.5259810951622238,
+      "mape": 17.306989833360724,
+      "bias": 0.30313941854413085,
+      "n": 4
+    },
+    {
+      "year": 2020,
+      "method": "Weighted Seasonal Average",
+      "inner_rmse": 0.6349777739884819,
+      "r2": -0.5885346061935055,
+      "mae": 0.6188771473123625,
+      "rmse": 0.7066438828820039,
+      "mape": 22.635965692989473,
+      "bias": 0.28428845209261533,
+      "n": 4
+    },
+    {
+      "year": 2020,
+      "method": "Exponential Seasonal Smoothing",
+      "inner_rmse": 0.6337255955560951,
+      "r2": -0.5012331153726577,
+      "mae": 0.5990222377641935,
+      "rmse": 0.6869519039416264,
+      "mape": 22.00109861949669,
+      "bias": 0.2881001108778197,
+      "n": 4
+    },
+    {
+      "year": 2020,
+      "method": "Regularized Ridge",
+      "inner_rmse": 0.43887359001771903,
+      "r2": -0.8076825800956715,
+      "mae": 0.6642782435926268,
+      "rmse": 0.7538125265215494,
+      "mape": 24.60122234962024,
+      "bias": 0.3526873286896025,
+      "n": 4
+    },
+    {
+      "year": 2020,
+      "method": "Random Forest",
+      "inner_rmse": 0.4656988798531151,
+      "r2": -0.15664896648432247,
+      "mae": 0.5439558342621551,
+      "rmse": 0.6029801988817219,
+      "mape": 20.144833212579023,
+      "bias": 0.1998604882151005,
+      "n": 4
+    },
+    {
+      "year": 2020,
+      "method": "Gradient Boosting",
+      "inner_rmse": 0.5016740332654821,
+      "r2": -0.07518480056790144,
+      "mae": 0.544518517910588,
+      "rmse": 0.5813582257781504,
+      "mape": 20.00467892090568,
+      "bias": 0.16596765900406774,
+      "n": 4
+    },
+    {
+      "year": 2020,
+      "method": "ML + Seasonal Naive Ensemble",
+      "inner_rmse": 0.5096927886713112,
+      "r2": 0.036505854217531386,
+      "mae": 0.5029012908976087,
+      "rmse": 0.5503345817553246,
+      "mape": 18.66444657726562,
+      "bias": 0.2098117194788407,
+      "n": 4
+    }
+  ],
+  "selected_method": "ML + Seasonal Naive Ensemble",
+  "selected_params": {
+    "blend": 0.75,
+    "n_estimators": 200,
+    "max_depth": 5,
+    "min_samples_leaf": 4,
+    "max_features": 1.0
+  },
+  "selected_inner_rmse": 0.5485889774208039,
+  "selected_diagnostic": [
+    {
+      "observation_id": "batangas-2021-q1",
+      "record_date": "2021-03-01",
+      "year": 2021,
+      "quarter": 1,
+      "actual": 3.2344632768361583,
+      "prediction": 2.662404187583543,
+      "error": -0.5720590892526154
+    },
+    {
+      "observation_id": "batangas-2021-q2",
+      "record_date": "2021-06-01",
+      "year": 2021,
+      "quarter": 2,
+      "actual": 3.0471236230110157,
+      "prediction": 3.355690896503436,
+      "error": 0.3085672734924203
+    },
+    {
+      "observation_id": "batangas-2021-q3",
+      "record_date": "2021-09-01",
+      "year": 2021,
+      "quarter": 3,
+      "actual": 3.7212967492328906,
+      "prediction": 3.3830398357382547,
+      "error": -0.3382569134946358
+    },
+    {
+      "observation_id": "batangas-2021-q4",
+      "record_date": "2021-12-01",
+      "year": 2021,
+      "quarter": 4,
+      "actual": 2.3906513194834362,
+      "prediction": 2.549546947860987,
+      "error": 0.15889562837755067
+    },
+    {
+      "observation_id": "batangas-2022-q1",
+      "record_date": "2022-03-01",
+      "year": 2022,
+      "quarter": 1,
+      "actual": 3.1,
+      "prediction": 3.1116718653431485,
+      "error": 0.011671865343148458
+    },
+    {
+      "observation_id": "batangas-2022-q2",
+      "record_date": "2022-06-01",
+      "year": 2022,
+      "quarter": 2,
+      "actual": 3.3429349518711926,
+      "prediction": 3.228145058082824,
+      "error": -0.11478989378836868
+    },
+    {
+      "observation_id": "batangas-2022-q3",
+      "record_date": "2022-09-01",
+      "year": 2022,
+      "quarter": 3,
+      "actual": 3.546767786204406,
+      "prediction": 3.494532987730447,
+      "error": -0.05223479847395884
+    },
+    {
+      "observation_id": "batangas-2022-q4",
+      "record_date": "2022-12-01",
+      "year": 2022,
+      "quarter": 4,
+      "actual": 2.358749027183553,
+      "prediction": 2.5648814309879358,
+      "error": 0.20613240380438258
+    },
+    {
+      "observation_id": "batangas-2023-q1",
+      "record_date": "2023-03-01",
+      "year": 2023,
+      "quarter": 1,
+      "actual": 3.1923622906563605,
+      "prediction": 3.09162464863007,
+      "error": -0.10073764202629043
+    },
+    {
+      "observation_id": "batangas-2023-q2",
+      "record_date": "2023-06-01",
+      "year": 2023,
+      "quarter": 2,
+      "actual": 3.3241212121212125,
+      "prediction": 3.3606158656354674,
+      "error": 0.03649465351425496
+    },
+    {
+      "observation_id": "batangas-2023-q3",
+      "record_date": "2023-09-01",
+      "year": 2023,
+      "quarter": 3,
+      "actual": 3.4314809311540366,
+      "prediction": 3.490668903762818,
+      "error": 0.05918797260878117
+    },
+    {
+      "observation_id": "batangas-2023-q4",
+      "record_date": "2023-12-01",
+      "year": 2023,
+      "quarter": 4,
+      "actual": 3.2445603096108364,
+      "prediction": 2.5360855988795863,
+      "error": -0.7084747107312501
+    },
+    {
+      "observation_id": "batangas-2024-q1",
+      "record_date": "2024-03-01",
+      "year": 2024,
+      "quarter": 1,
+      "actual": 2.8793349168646083,
+      "prediction": 3.301416312538766,
+      "error": 0.4220813956741578
+    },
+    {
+      "observation_id": "batangas-2024-q2",
+      "record_date": "2024-06-01",
+      "year": 2024,
+      "quarter": 2,
+      "actual": 3.2326023577132714,
+      "prediction": 3.139696391921711,
+      "error": -0.09290596579156052
+    },
+    {
+      "observation_id": "batangas-2024-q3",
+      "record_date": "2024-09-01",
+      "year": 2024,
+      "quarter": 3,
+      "actual": 3.4794600938967135,
+      "prediction": 3.3723619463033176,
+      "error": -0.10709814759339586
+    },
+    {
+      "observation_id": "batangas-2024-q4",
+      "record_date": "2024-12-01",
+      "year": 2024,
+      "quarter": 4,
+      "actual": 2.422736288362083,
+      "prediction": 3.271666296394174,
+      "error": 0.8489300080320907
+    },
+    {
+      "observation_id": "batangas-2025-q1",
+      "record_date": "2025-03-01",
+      "year": 2025,
+      "quarter": 1,
+      "actual": 3.2899912587412588,
+      "prediction": 2.9302338049215413,
+      "error": -0.35975745381971747
+    },
+    {
+      "observation_id": "batangas-2025-q2",
+      "record_date": "2025-06-01",
+      "year": 2025,
+      "quarter": 2,
+      "actual": 3.7669740150880133,
+      "prediction": 3.20232824930064,
+      "error": -0.5646457657873731
+    },
+    {
+      "observation_id": "batangas-2025-q3",
+      "record_date": "2025-09-01",
+      "year": 2025,
+      "quarter": 3,
+      "actual": 3.121748178980229,
+      "prediction": 3.3710587441447215,
+      "error": 0.24931056516449246
+    },
+    {
+      "observation_id": "batangas-2025-q4",
+      "record_date": "2025-12-01",
+      "year": 2025,
+      "quarter": 4,
+      "actual": 2.615244347191831,
+      "prediction": 2.7054239963480424,
+      "error": 0.09017964915621146
+    },
+    {
+      "observation_id": "batangas-2026-q1",
+      "record_date": "2026-03-01",
+      "year": 2026,
+      "quarter": 1,
+      "actual": 3.907493670886076,
+      "prediction": 3.1205156536136602,
+      "error": -0.7869780172724159
+    },
+    {
+      "observation_id": "batangas-2026-q2",
+      "record_date": "2026-06-01",
+      "year": 2026,
+      "quarter": 2,
+      "actual": 3.579219288174512,
+      "prediction": 3.528550465346304,
+      "error": -0.05066882282820817
+    },
+    {
+      "observation_id": "batangas-2026-q3",
+      "record_date": "2026-09-01",
+      "year": 2026,
+      "quarter": 3,
+      "actual": 3.032624309392265,
+      "prediction": 3.126644748830146,
+      "error": 0.09402043943788119
+    }
+  ],
+  "selection_rule": "lowest mean RMSE across pre-2021 outer folds, tie-broken by mean MAE",
+  "future_test_ready": true,
+  "deployed_model_unchanged": true,
+  "accuracy_status": "NOT DEPLOYMENT EVIDENCE",
+  "artifacts": [
+    "metrics.json",
+    "nested_walk_forward_predictions.csv",
+    "selected_forecaster.json",
+    "selected_forecaster_2021_2026_diagnostics.svg",
+    "selected_forecaster_diagnostic_predictions.csv"
+  ]
+}

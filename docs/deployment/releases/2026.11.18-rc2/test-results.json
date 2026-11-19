@@ -1,0 +1,61 @@
+{
+  "source_fingerprint": "c9070a44452b0263134b5e712e03e77dd5762743687ca4cee221413f0615065b",
+  "archive_sha256": "95ccd276db95a328f72aae250aca72b1bb2dbccddf51116314b6e275e9142844",
+  "php": {
+    "total": 1684,
+    "passed": 1679,
+    "failed": 0,
+    "skipped": 5,
+    "assertions": 12520,
+    "deprecations": 0
+  },
+  "mariadb": {
+    "passed": 65,
+    "failed": 0,
+    "skipped": 0,
+    "assertions": 493
+  },
+  "python": {
+    "passed": 53,
+    "failed": 0,
+    "skipped": 0,
+    "warnings": 2
+  },
+  "javascript": {
+    "passed": 26,
+    "failed": 0,
+    "skipped": 0,
+    "runtime": "Node22.23.5"
+  },
+  "browser": {
+    "passed": 178,
+    "failed": 0,
+    "skipped": 16
+  },
+  "browser_three_widths": {
+    "passed": 18,
+    "failed": 0,
+    "skipped": 0
+  },
+  "deployment": {
+    "passed": 22,
+    "failed": 0,
+    "skipped": 0
+  },
+  "restored_tables_matching": 78,
+  "health": {
+    "ok": 7,
+    "warn": 1,
+    "fail": 0
+  },
+  "dependency_audits": {
+    "composer_advisories": 0,
+    "python_pinned_packages": 26,
+    "python_advisories": 0,
+    "npm_raw_high_entries": 12,
+    "npm_unique_advisories": [
+      "GHSA-fc5q-39xc-vjpf"
+    ],
+    "npm_mitigation": "Hash-verified source guard; adversarial tests pass"
+  }
+}

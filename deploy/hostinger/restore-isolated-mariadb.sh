@@ -12,7 +12,7 @@ set -Eeuo pipefail
 
 [[ "$RESTORE_DATABASE" =~ ^iclimate_restore_[0-9]{8}_[0-9]{6}$ ]] || { echo 'RESTORE_DATABASE must be a unique iclimate_restore_ timestamp name.' >&2; exit 2; }
 test -f "$DUMP_FILE"
-sha256sum -c "$DUMP_FILE.sha256"
+(cd "$(dirname "$DUMP_FILE")" && sha256sum -c "$(basename "$DUMP_FILE").sha256")
 
 MYSQL_PWD="$MYSQL_ADMIN_PASSWORD" mysql --host="$MYSQL_HOST" --port="$MYSQL_PORT" --user="$MYSQL_ADMIN_USER" \
   --batch --skip-column-names \

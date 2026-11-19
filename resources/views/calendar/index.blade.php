@@ -176,7 +176,10 @@
                                 <div><dt>Barangay</dt><dd>{{ $schedule->barangay ?: 'Location not provided' }}</dd></div>
                                 <div><dt>Status</dt><dd>{{ $schedule->monitoringStatusLabel() }}</dd></div>
                             </dl>
-                            @if($schedule->predicted_yield !== null)
+                            @if($schedule->predicted_yield !== null && ! \App\Services\Prediction\YieldModelGate::showsStoredEstimate())
+                                {{-- A saved model estimate stays hidden until its accuracy is verified (YieldModelGate). --}}
+                                <p class="fcal-record-estimate" data-ml-status="withheld">{{ __('farmer.home.harvest.unvalidated') }}</p>
+                            @elseif($schedule->predicted_yield !== null)
                                 <p class="fcal-record-estimate is-good">Estimated harvest: <strong>{{ number_format((float) $schedule->predicted_yield, 2) }} tons/hectare</strong> @include('components.unvalidated-estimate', ['compact' => true])</p>
                             @else
                                 <p class="fcal-record-estimate">Estimate not available yet.@if($schedule->prediction_unavailable_reason) <span>{{ $schedule->prediction_unavailable_reason }}</span>@endif</p>

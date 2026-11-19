@@ -43,6 +43,9 @@ class Phase5YieldTest extends TestCase
         $this->assertSame('Favorable', $request->impact_level);   // far above Lian's usual September yield
         $this->assertSame(9, $request->target_month->month);
 
+        // The saved estimate is withheld from the Farmer until accuracy is verified (FarmerStoredEstimateGateTest).
+        $this->actingAs($farmer)->get(route('analysis.yield'))->assertDontSee('19 t')->assertSee(__('farmer.home.harvest.unvalidated'));
+        config(['prediction.rice_yield.accuracy_verified' => true]);
         $this->actingAs($farmer)->get(route('analysis.yield'))->assertSee('19 t')->assertSee('Favorable');
     }
 

@@ -1,0 +1,36 @@
+{
+  "phase": 29,
+  "retrieved_at": "2026-11-14",
+  "source": "Philippine Statistics Authority OpenSTAT",
+  "geographic_level": "province",
+  "geography": "Batangas",
+  "ecosystem": "Palay",
+  "coverage": "2026 Q1-Q3",
+  "production": {
+    "path": "psa-batangas/palay-production-batangas-2026-q1-q3.csv",
+    "unit": "metric tons",
+    "sha256": "620e2522b3aa62815e05666951285867dbd7d4acd5c52a7a9ae8efe032062a8c",
+    "official_table_update": "2026-10-29",
+    "quality_note": "Q3 2026 marked preliminary by PSA"
+  },
+  "area_harvested": {
+    "path": "psa-batangas/palay-area-harvested-batangas-2026-q1-q3.csv",
+    "unit": "hectares",
+    "sha256": "7e604e7bf5cbd6d524ee45ab9e19ceb994eb94966903e6f1e67101e43a2693ee",
+    "official_table_update": "2026-07-29",
+    "quality_note": "Q2 2026 marked preliminary by PSA"
+  },
+  "validation": {
+    "matching_periods": ["2026 Quarter 1", "2026 Quarter 2", "2026 Quarter 3"],
+    "row_count": 3,
+    "missing_values": 0,
+    "duplicate_periods": 0,
+    "units_compatible": true,
+    "target": "production metric tons / harvested area hectares",
+    "target_scope": "Batangas province aggregate; not municipal or farm-level"
+  },
+  "protocol": {
+    "path": "../../models/experiments/phase-29/protocol-freeze.json",
+    "sha256": "0210d85c3c05df5bd3c7e6680f67bbd400b080c992201a42e171ed96283135a8"
+  }
+}

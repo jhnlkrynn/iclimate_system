@@ -47,12 +47,17 @@ class FarmerReportController extends Controller
     private function data(User $user): array
     {
         $farms = rescue(fn () => ActiveFarm::available() ? Farm::query()->ownedBy($user)->active()->orderByDesc('is_primary')->get() : collect(), collect(), false);
-        $estimates = $farms->map(fn (Farm $farm) => [
-            'farm' => $farm->farm_name,
-            'barangay' => $farm->barangay,
-            'yield' => data_get(FarmerDashboardService::storedEstimate($user->id, $farm->getKey()), 'yield_tons_per_hectare')
-                ?? data_get(FarmerDashboardService::storedEstimate($user->id, $farm->getKey()), 'predicted_yield'),
-        ]);
+        $estimates = $farms->map(function (Farm $farm) use ($user): array {
+            $stored = FarmerDashboardService::storedEstimate($user->id, $farm->getKey());
+            // The same gate as the Farmer dashboard card: no unverified model number on the page or in the PDF.
+            $shown = $stored !== null && \App\Services\Prediction\YieldModelGate::shows(is_array($stored['model_input'] ?? null) ? $stored['model_input'] : null);
+
+            return [
+                'farm' => $farm->farm_name,
+                'barangay' => $farm->barangay,
+                'yield' => $shown ? (data_get($stored, 'yield_tons_per_hectare') ?? data_get($stored, 'predicted_yield')) : null,
+            ];
+        });
         $barangay = $user->registeredBarangay();
         $since = now()->subDays(90);
 
@@ -62,6 +67,7 @@ class FarmerReportController extends Controller
             'office' => ReportExtrasController::office(),
             'printedAt' => now(BusinessClock::timezone()),
             'estimates' => $estimates,
+            'showStoredEstimates' => \App\Services\Prediction\YieldModelGate::showsStoredEstimate(),
             'requests' => SchemaCache::hasTable('yield_prediction_requests')
                 ? YieldPredictionRequest::query()->where('user_id', $user->id)->where('status', YieldPredictionRequest::DONE)->latest()->limit(20)->get()
                 : collect(),

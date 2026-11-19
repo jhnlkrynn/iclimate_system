@@ -1,0 +1,188 @@
+{
+  "status": "EXPERIMENTAL RESULTS AVAILABLE",
+  "experiment_scope": "Batangas province aggregate; calendar-only predictors",
+  "train_rows": 120,
+  "validation_rows": 16,
+  "test_rows": 20,
+  "usable_observations": 156,
+  "predictors": [
+    "year",
+    "quarter"
+  ],
+  "target": "official PSA palay production metric tons / area harvested hectares",
+  "model_selection": "RandomizedSearchCV with TimeSeriesSplit on 1987-2016 only; validation 2017-2020; untouched test 2021-2025",
+  "results": [
+    {
+      "algorithm": "Random Forest",
+      "best_params": {
+        "model__n_estimators": 400,
+        "model__min_samples_leaf": 1,
+        "model__max_features": 1.0,
+        "model__max_depth": 5
+      },
+      "validation": {
+        "r2": -2.7076427454673904,
+        "mae": 0.6070135321032207,
+        "rmse": 0.7499474838353231,
+        "mape": 18.567217162454778,
+        "bias": -0.4238202141402152,
+        "n": 16
+      },
+      "test": {
+        "r2": 0.473061733504452,
+        "mae": 0.2545681228539206,
+        "rmse": 0.29331703114046215,
+        "mape": 8.325196368211026,
+        "bias": -0.07967542405450515,
+        "n": 20
+      }
+    },
+    {
+      "algorithm": "Gradient Boosting",
+      "best_params": {
+        "model__n_estimators": 200,
+        "model__min_samples_leaf": 3,
+        "model__max_depth": 3,
+        "model__learning_rate": 0.03
+      },
+      "validation": {
+        "r2": -2.714058597682863,
+        "mae": 0.5987095585669239,
+        "rmse": 0.7505960728215882,
+        "mape": 18.32178054181319,
+        "bias": -0.41909672023423994,
+        "n": 16
+      },
+      "test": {
+        "r2": 0.36950591746528405,
+        "mae": 0.26626030246302346,
+        "rmse": 0.320846952663617,
+        "mape": 8.633406696102691,
+        "bias": -0.08285392041300602,
+        "n": 20
+      }
+    },
+    {
+      "algorithm": "Extra Trees",
+      "best_params": {
+        "model__n_estimators": 200,
+        "model__min_samples_leaf": 1,
+        "model__max_features": "sqrt",
+        "model__max_depth": 10
+      },
+      "validation": {
+        "r2": -5.004763936272609,
+        "mae": 0.8022610029241695,
+        "rmse": 0.9543987931369773,
+        "mape": 24.548494819906544,
+        "bias": -0.4650642202485381,
+        "n": 16
+      },
+      "test": {
+        "r2": 0.011969652559272181,
+        "mae": 0.3148040882262341,
+        "rmse": 0.401645174398839,
+        "mape": 9.882101653755916,
+        "bias": -0.14760474549100724,
+        "n": 20
+      }
+    },
+    {
+      "algorithm": "HistGradientBoosting",
+      "best_params": {
+        "model__max_leaf_nodes": 7,
+        "model__max_iter": 100,
+        "model__learning_rate": 0.03,
+        "model__l2_regularization": 0.0
+      },
+      "validation": {
+        "r2": -0.7555953345947692,
+        "mae": 0.4023304836607946,
+        "rmse": 0.5160527790176345,
+        "mape": 12.374238352635562,
+        "bias": -0.2513762492226663,
+        "n": 16
+      },
+      "test": {
+        "r2": -0.12897173660886008,
+        "mae": 0.3509295025692533,
+        "rmse": 0.42933762169467,
+        "mape": 11.491704280372852,
+        "bias": -0.03849945246151878,
+        "n": 20
+      }
+    }
+  ],
+  "baselines": {
+    "Historical mean": {
+      "validation": {
+        "r2": -0.8187024021544012,
+        "mae": 0.46346827570970506,
+        "rmse": 0.5252459740947976,
+        "mape": 13.950575209116248,
+        "bias": -0.3524073392171778,
+        "n": 16
+      },
+      "test": {
+        "r2": -0.3121247836476695,
+        "mae": 0.4147668667351244,
+        "rmse": 0.462855022491726,
+        "mape": 13.239964118443417,
+        "bias": -0.22574676657719578,
+        "n": 20
+      }
+    },
+    "Seasonal mean": {
+      "validation": {
+        "r2": -1.7425062957497066,
+        "mae": 0.4878317261337165,
+        "rmse": 0.6449940802650371,
+        "mape": 14.841324839087033,
+        "bias": -0.3524073392171778,
+        "n": 16
+      },
+      "test": {
+        "r2": -1.1778403739963847,
+        "mae": 0.42409616816338164,
+        "rmse": 0.5963077225143059,
+        "mape": 12.889869793161093,
+        "bias": -0.22574676657719578,
+        "n": 20
+      }
+    }
+  },
+  "best_selected_on_validation": {
+    "algorithm": "HistGradientBoosting",
+    "best_params": {
+      "model__max_leaf_nodes": 7,
+      "model__max_iter": 100,
+      "model__learning_rate": 0.03,
+      "model__l2_regularization": 0.0
+    },
+    "validation": {
+      "r2": -0.7555953345947692,
+      "mae": 0.4023304836607946,
+      "rmse": 0.5160527790176345,
+      "mape": 12.374238352635562,
+      "bias": -0.2513762492226663,
+      "n": 16
+    },
+    "test": {
+      "r2": -0.12897173660886008,
+      "mae": 0.3509295025692533,
+      "rmse": 0.42933762169467,
+      "mape": 11.491704280372852,
+      "bias": -0.03849945246151878,
+      "n": 20
+    }
+  },
+  "artifacts": [
+    "actual-vs-predicted-test.svg",
+    "best_calendar_only_candidate.joblib",
+    "best_candidate_test_predictions.csv",
+    "metrics.json",
+    "provincial_calendar_experiment_dataset.csv"
+  ],
+  "deployed_model_unchanged": true,
+  "accuracy_status": "NOT DEPLOYMENT EVIDENCE"
+}

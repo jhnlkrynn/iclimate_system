@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # Starts the site for the Playwright browser tests on its own throwaway SQLite database, so they never touch the
 # shared database in .env. Each invocation owns a unique port, database, session namespace, server PID, and log.
 set -Eeuo pipefail
@@ -38,7 +38,7 @@ export ICLIMATE_EXCLUDE_SAMPLE_DATA=true
 # Dashboards opened by the login tests call outside services; keep those calls short (or off) and run several
 # workers, so a slow call cannot hold up the landing page requests. The ML service gets an unroutable port, as in phpunit.xml.
 export PHP_CLI_SERVER_WORKERS=1
-export FARMING_AI_API_URL=http://127.0.0.1:19999
+export FARMING_AI_API_URL="${PLAYWRIGHT_ML_URL:-http://127.0.0.1:19999}"
 export OPEN_METEO_TIMEOUT=4
 export WEATHERAPI_TIMEOUT=4
 export WEATHER_API_TIMEOUT=4

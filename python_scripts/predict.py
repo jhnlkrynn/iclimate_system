@@ -6,6 +6,7 @@ import warnings
 
 import joblib
 import pandas as pd
+from rice_yield_service import rice_features, validate_supplied_features
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -58,30 +59,9 @@ def parse_payload():
 
 
 def build_features(payload):
-    missing = [field for field in FEATURE_MAP if field not in payload]
-
-    if missing:
-        raise ValueError("Missing required fields: " + ", ".join(missing))
-
-    row = {}
-
-    for input_name, model_name in FEATURE_MAP.items():
-        value = payload[input_name]
-        if input_name == "season":
-            season = str(value).strip()
-            if season.lower() not in {"wet", "dry"}:
-                raise ValueError("Invalid season field.")
-            row[model_name] = season.title()
-            continue
-        try:
-            number = float(value)
-        except (TypeError, ValueError) as exc:
-            raise ValueError(f"Invalid numeric field: {input_name}") from exc
-        if not math.isfinite(number) or number == -999.0:
-            raise ValueError(f"Invalid numeric field: {input_name}")
-        row[model_name] = number
-
-    return pd.DataFrame([row], columns=list(FEATURE_MAP.values()))
+    # The HTTP service and degraded-mode CLI must enforce the same feature contract.
+    validate_supplied_features(payload)
+    return rice_features(payload)
 
 
 def planting_advisory(payload, predicted_yield):

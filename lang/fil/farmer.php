@@ -1330,6 +1330,7 @@ return [
         ],
         'about_advisory' => 'Tungkol sa advisory: :title',
         'about_prediction' => 'Tungkol sa taya ng ani mo: :season, :yield t/ha',
+        'about_prediction_withheld' => 'Tungkol sa taya ng ani mo: :season',
         'questions' => [
             'useful' => 'Nakatulong ba ito sa gawain mo sa bukid?',
             'accurate' => 'Tama ba ito kumpara sa totoong nangyari?',

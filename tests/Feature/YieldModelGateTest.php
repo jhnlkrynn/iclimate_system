@@ -42,8 +42,11 @@ class YieldModelGateTest extends TestCase
 
     public function test_todays_inputs_are_outside_the_training_range_and_in_range_inputs_are_not(): void
     {
-        $this->assertSame(['compatible' => false, 'outside' => ['area', 'rainfall_6m', 'temp_range']], YieldModelGate::assess(self::DEPLOYED_INPUT));
-        $this->assertSame(['compatible' => true, 'outside' => []], YieldModelGate::assess(self::IN_RANGE_INPUT));
+        $this->assertSame(['compatible' => false, 'outside' => ['area', 'rainfall_6m', 'temp_range'], 'within_range' => false], YieldModelGate::assess(self::DEPLOYED_INPUT));
+        $this->assertSame(['compatible' => false, 'outside' => [], 'within_range' => true], YieldModelGate::assess(self::IN_RANGE_INPUT), 'in range, accuracy not verified');
+        config(['prediction.rice_yield.accuracy_verified' => true]);
+        $this->assertSame(['compatible' => true, 'outside' => [], 'within_range' => true], YieldModelGate::assess(self::IN_RANGE_INPUT));
+        config(['prediction.rice_yield.accuracy_verified' => false]);
         $this->assertFalse(YieldModelGate::assess(null)['compatible'], 'an input that cannot be checked is not treated as validated');
     }
 
@@ -71,6 +74,12 @@ class YieldModelGateTest extends TestCase
         $this->assertSame('outside_training_range', $labelled['validation_status']);
 
         config(['prediction.rice_yield.gate' => 'withhold']);
+        $held = $this->gate($this->estimate(4.05), self::IN_RANGE_INPUT);
+        $this->assertNull($held['predicted_yield'], 'in range but accuracy not verified: still withheld');
+        $this->assertSame('within_training_range', $held['validation_status']);
+        $this->assertSame('withheld', $held['availability']);
+
+        config(['prediction.rice_yield.accuracy_verified' => true]);
         $inRange = $this->gate($this->estimate(4.05), self::IN_RANGE_INPUT);
         $this->assertSame(4.05, $inRange['predicted_yield']);
         $this->assertSame('within_training_range', $inRange['validation_status']);

@@ -24,6 +24,10 @@ class PredictionParityTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // The climate inputs follow the target month (verification 2026-11-18): run inside the observed station
+        // record (2015-01 .. 2025-12) so the months before the default target (next month) are observed.
+        $this->travelTo('2025-02-10 09:00:00');
+        \App\Support\YieldModelClimateWindow::forget();
         // These tests check how a yield flows through the page/API; YieldModelGate (withholding estimates outside
         // the model's training range) is tested on its own in YieldModelGateTest.
         config(['prediction.rice_yield.gate' => 'off']);

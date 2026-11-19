@@ -1,0 +1,7 @@
+{
+  "advisory": "GHSA-fc5q-39xc-vjpf",
+  "originals": {
+    "2.3.2": "3a91656f440069aa8f8e15c9d695b9f6b2209df1eab2be8127c72cbcca45ff5f",
+    "4.0.7": "4e1e05447668aa1e94366c5516a2bcd8f5fff800cc92b1d0cd7d77703b8618c4"
+  }
+}

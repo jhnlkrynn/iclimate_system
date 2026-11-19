@@ -20,6 +20,12 @@ m() { mysql -h"${HOST:-127.0.0.1}" -P"${PORT:-3306}" -u"$USER_NAME" --batch --sk
 ALTERED="users notifications farmer_organizations"
 UNTOUCHED="farmer_profiles farms rice_productions yield_predictions account_emails"
 NEW_TABLES="association_chairman_assignments association_reporting_periods association_yield_reports association_yield_report_reviews association_reminder_deliveries association_messages association_chairman_invitations farmer_account_reviews"
+CHECK_RELEASE="${CHECK_RELEASE:-rc2}"
+case "$CHECK_RELEASE" in
+    rc1) ;;
+    rc2) NEW_TABLES="$NEW_TABLES association_yield_report_submissions" ;;
+    *) echo 'CHECK_RELEASE must be rc1 or rc2' >&2; exit 2 ;;
+esac
 
 snapshot() {
     local dir="$1"; mkdir -p "$dir"
@@ -66,10 +72,11 @@ compare() {
         n=$(awk -v t="$t" '$1==t {print $2}' "$after/row-counts.txt")
         if [ "$n" != "0" ]; then echo "FAIL  new table $t missing or not empty (${n:-missing})"; failed=1; new_ok=0; fi
     done
-    if [ $new_ok = 1 ]; then echo "OK    all 8 new tables exist and are empty"; fi
+    if [ $new_ok = 1 ]; then echo "OK    all new tables exist and are empty ($CHECK_RELEASE)"; fi
     added=$(comm -13 "$before/migrations.txt" "$after/migrations.txt")
     expected=$'2026_11_16_000001_add_association_directory_fields\n2026_11_16_000002_create_association_reporting_tables\n2026_11_16_000003_allow_unknown_association_farm_type\n2026_11_16_000004_create_association_chairman_invitations_table\n2026_11_17_000001_allow_canonical_application_roles\n2026_11_17_000002_add_farmer_account_review_history'
-    if [ "$added" = "$expected" ]; then echo "OK    exactly the 6 approved migrations were recorded"; else echo "FAIL  migrations recorded differ from the approved six:"; echo "$added"; failed=1; fi
+    if [ "$CHECK_RELEASE" = rc2 ]; then expected="$expected"$'\n2026_11_18_000001_create_association_report_submissions'; fi
+    if [ "$added" = "$expected" ]; then echo "OK    exactly the approved migrations were recorded ($CHECK_RELEASE)"; else echo "FAIL  migrations recorded differ from the selected approved release:"; echo "$added"; failed=1; fi
     comm -23 <(sort "$before/schema-foreign-keys.tsv") <(sort "$after/schema-foreign-keys.tsv") > "$after/foreign-keys-lost.txt"
     if [ -s "$after/foreign-keys-lost.txt" ]; then echo "FAIL  foreign keys lost:"; cat "$after/foreign-keys-lost.txt"; failed=1; else echo "OK    no existing foreign key lost ($(comm -13 <(sort "$before/schema-foreign-keys.tsv") <(sort "$after/schema-foreign-keys.tsv") | wc -l | tr -d ' ') added)"; fi
     exit $failed
