@@ -13,15 +13,15 @@ class LianBarangaysNormalizeTest extends TestCase
     public static function names(): array
     {
         return [
-            'poblacion without dot' => ['BARANGAY 1 POB', null],
-            'poblacion 4' => ['BARANGAY 4 POB', null],
-            'brgy dot space' => ['BRGY. 1', null],
-            'brgy dot' => ['BRGY.1', null],
-            'removed official name' => ['Barangay 3 (Pob.)', null],
+            'poblacion without dot' => ['BARANGAY 1 POB', 'Barangay 1 (Pob.)'],
+            'poblacion 4' => ['BARANGAY 4 POB', 'Barangay 4 (Pob.)'],
+            'brgy dot space' => ['BRGY. 1', 'Barangay 1 (Pob.)'],
+            'brgy dot' => ['BRGY.1', 'Barangay 1 (Pob.)'],
+            'official' => ['Barangay 3 (Pob.)', 'Barangay 3 (Pob.)'],
             'typo luyahan' => ['LUYAHN', 'Luyahan'],
             'typo balibago' => ['BALIBGO', 'Balibago'],
             'typo matabungkay' => ['Matabunkay', 'Matabungkay'],
-            'removed non-rice barangay' => ['PUTINGKAHOY', null],
+            'spacing' => ['PUTINGKAHOY', 'Puting-Kahoy'],
             'no number guess' => ['Barangay 6', null],
             'not in Lian' => ['Calatagan', null],
             'dash' => ['—', null],

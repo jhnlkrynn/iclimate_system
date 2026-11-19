@@ -51,8 +51,8 @@ class Phase7ReportsTest extends TestCase
         YieldPredictionRequest::query()->create(['user_id' => $mao->id, 'scope' => 'municipal', 'season' => 'Wet', 'farm_type' => 'Irrigated', 'area_hectares' => 100, 'target_month' => '2026-09-01', 'status' => 'done', 'predicted_yield' => 4.2, 'total_tons' => 420, 'historical_average' => 4.0, 'impact_level' => 'Normal']);
 
         // The application’s current verified geography source (LianBarangays plus
-        // the GeoJSON boundary) contains nine supported barangays.
-        foreach (['yield_prediction' => 1, 'climate_trend' => null, 'barangay_risk' => 9] as $type => $rows) {
+        // the GeoJSON boundary) contains all 19 barangays of Lian.
+        foreach (['yield_prediction' => 1, 'climate_trend' => null, 'barangay_risk' => 19] as $type => $rows) {
             $this->actingAs($mao)->post(route('reports.generate'), ['report_type' => $type])->assertRedirect();
             $report = Report::query()->latest('id')->first();
             $this->assertSame($type, $report->typeKey());

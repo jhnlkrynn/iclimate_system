@@ -95,7 +95,7 @@ class LianBarangaysCoordinatesTest extends TestCase
         $this->fail("Unsupported geometry type in test: {$type}");
     }
 
-    public function test_all_9_canonical_barangays_have_a_geojson_polygon(): void
+    public function test_all_19_canonical_barangays_have_a_geojson_polygon(): void
     {
         $polygons = $this->geojsonPolygons();
 
@@ -103,8 +103,8 @@ class LianBarangaysCoordinatesTest extends TestCase
             $this->assertArrayHasKey($barangay, $polygons, "Missing GeoJSON polygon for '{$barangay}'.");
         }
 
-        $this->assertCount(9, LianBarangays::all());
-        $this->assertCount(9, $polygons, 'GeoJSON must not carry non-rice barangays.');
+        $this->assertCount(19, LianBarangays::all());
+        $this->assertCount(19, $polygons, 'GeoJSON must not carry barangays outside the canonical 19.');
     }
 
     public function test_every_barangay_coordinate_falls_inside_its_own_polygon(): void

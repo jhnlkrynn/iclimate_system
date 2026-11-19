@@ -81,9 +81,12 @@ dupes=$(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$ENV_FILE" | cut -d= -f1 | sort | un
 val() { grep -E "^$1=" "$ENV_FILE" | head -1 | cut -d= -f2- | tr -d '"'; }
 [ "$(val APP_ENV)" = production ] && [ "$(val APP_DEBUG)" = false ] && ok "APP_ENV=production, APP_DEBUG=false" || die "set APP_ENV=production and APP_DEBUG=false"
 [ "$(val ICLIMATE_PASSWORD_LOCKDOWN)" = true ] && ok "password lockdown on" || die "ICLIMATE_PASSWORD_LOCKDOWN must be true in production"
-[ "$(val ICLIMATE_YIELD_GATE)" = withhold ] && ok "yield gate withhold" || die "ICLIMATE_YIELD_GATE must be withhold (ACCURACY NOT VERIFIED)"
+case "$(val ICLIMATE_YIELD_GATE)" in
+    withhold|label) ok "yield gate $(val ICLIMATE_YIELD_GATE)" ;;
+    *) die "ICLIMATE_YIELD_GATE must be withhold or label (ACCURACY NOT VERIFIED; off only after validation)" ;;
+esac
 case "$(val ICLIMATE_YIELD_ACCURACY_VERIFIED)" in
-    ''|false|0) ok "yield accuracy not verified: estimates stay withheld" ;;
+    ''|false|0) ok "yield accuracy not verified: estimates are withheld or labelled unvalidated" ;;
     *) die "ICLIMATE_YIELD_ACCURACY_VERIFIED must be false until the owner approves an independent validation" ;;
 esac
 [ "$(val DB_CONNECTION)" = mysql ] && ok "database driver mysql (MariaDB 10.11)" || die "DB_CONNECTION must be mysql: migration steps guarded for MySQL/MariaDB are skipped under the mariadb driver"

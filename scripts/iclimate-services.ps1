@@ -154,6 +154,16 @@ switch ($Action) {
         $log = if ($Services[$Name].Log -eq 'NUL') { 'NUL' } else { Join-Path $Logs $Services[$Name].Log }
         # php-cgi ends itself after this many requests (500 by default); the supervisor starts a fresh one.
         $env:PHP_FCGI_MAX_REQUESTS = '5000'
+        # Audit 2026-11-14 (OPS-01): when Windows sleeps, the scheduler and queue stop and missed runs are never made
+        # up (weather, risk, alerts, backups). While the scheduler is supervised, keep the computer awake; the screen
+        # may still turn off. The request ends by itself when this supervisor ends. ICLIMATE_KEEP_AWAKE=false turns it off.
+        if ($Name -eq 'scheduler' -and (Get-EnvSetting 'ICLIMATE_KEEP_AWAKE' 'true').ToLower() -ne 'false') {
+            try {
+                Add-Type -Namespace IClimate -Name Power -MemberDefinition '[DllImport("kernel32.dll")] public static extern uint SetThreadExecutionState(uint esFlags);'
+                # ES_CONTINUOUS (0x80000000) | ES_SYSTEM_REQUIRED (0x00000001)
+                [void] [IClimate.Power]::SetThreadExecutionState([uint32] 2147483649)
+            } catch { }
+        }
         while ($true) {
             # Keep the service log small: past 5 MB it becomes <name>.1 (replacing the previous .1) before the next start.
             if ($log -ne 'NUL' -and (Test-Path $log) -and (Get-Item $log).Length -gt 5MB) { Move-Item -Force $log "$log.1" -ErrorAction SilentlyContinue }

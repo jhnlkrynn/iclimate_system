@@ -31,6 +31,7 @@
             ['analysis.yield', ['Yield Prediction', 'Taya ng Ani'], ['analysis.yield*'], [$farmerRole]],
             ['analysis.impact', 'Impact Analysis', ['analysis.impact*'], [$mao]],
             ['analysis.forecast', 'Yield Forecast', ['analysis.forecast*'], [$mao]],
+            ['model-evaluation.index', 'Model Evaluation', ['model-evaluation.*'], [$mao]],
         ],
     ];
     $tabs = array_values(array_filter($groups[$group] ?? [], fn (array $tab): bool => \Illuminate\Support\Facades\Route::has($tab[0]) && in_array($role, $tab[3], true)));

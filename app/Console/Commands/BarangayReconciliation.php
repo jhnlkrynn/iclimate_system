@@ -82,12 +82,14 @@ class BarangayReconciliation extends Command
         }
 
         if (str_contains($needle, 'poblacion')) {
-            return [null, 'none', 'Poblacion barangays are no longer part of the supported Lian geography.'];
+            return [null, 'none', 'Poblacion covers Barangays 1-5 (Pob.); the specific one cannot be inferred.'];
         }
 
-        // Removed poblacion formats are intentionally not mapped to an official barangay.
+        // "Barangay 1 Pob" style: same number as a canonical poblacion barangay.
         if (preg_match('/(?:barangay|brgy)?\s*([1-5])\s*(?:pob)/i', $value, $m)) {
-            return [null, 'none', 'Poblacion barangays are no longer part of the supported Lian geography.'];
+            $name = "Barangay {$m[1]} (Pob.)";
+
+            return [$name, 'high', "Format variant: number {$m[1]} matches {$name}."];
         }
 
         $best = null;

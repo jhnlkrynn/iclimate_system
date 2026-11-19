@@ -13,6 +13,7 @@
 @endphp
 
 <x-app-layout>
+    @include('partials.manuscript-tabs', ['group' => 'analysis', 'label' => 'Predictions and analysis'])
     @if (($analyticsRun ?? null) && in_array($analyticsRun->status, ['pending', 'processing'], true))
         <div class="alert alert-info border" data-analytics-run="{{ route('analytics-runs.show', $analyticsRun) }}" data-prediction-realtime data-prediction-labels='{"requested":"Dataset requested","processing":"Dataset processing","completed":"Dataset completed","failed":"Dataset failed"}'>
             <strong data-prediction-status-text>Python is processing the dataset and model metrics.</strong> <span data-prediction-status-detail>This page will update automatically.</span>
@@ -460,6 +461,8 @@
         </div>
     </details>
     @endif
+
+    @include('model-evaluation._breakdown')
 
     <details class="ic-collapse">
         <summary><span class="ic-collapse-title">Methodology &amp; Sources</span></summary>

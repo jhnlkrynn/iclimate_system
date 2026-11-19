@@ -47,6 +47,31 @@ ALGORITHMS = {
 
 RELIABILITY_FLOOR = 30
 
+# Conditions the objective compares the algorithms under: wet/dry season and irrigated/rainfed farming.
+BREAKDOWN_COLUMNS = ["season", "irrigation_type"]
+
+
+def _group_metrics(groups: pd.Series, y: np.ndarray, predictions: np.ndarray) -> dict:
+    """RMSE/MAE/R² of existing predictions within each value of one condition column.
+
+    R² needs at least two rows with different actual yields; otherwise it is None (not invented).
+    """
+    result = {}
+    labels = groups.astype(str).to_numpy()
+    for value in sorted(set(labels)):
+        mask = labels == value
+        actual, predicted = y[mask], predictions[mask]
+        if len(actual) == 0:
+            continue
+        r2 = round(float(r2_score(actual, predicted)), 4) if len(actual) >= 2 and np.ptp(actual) > 0 else None
+        result[value] = {
+            "n": int(len(actual)),
+            "rmse": round(float(np.sqrt(mean_squared_error(actual, predicted))), 4),
+            "mae": round(float(mean_absolute_error(actual, predicted)), 4),
+            "r2": r2,
+        }
+    return result
+
 
 def _pipeline(estimator) -> Pipeline:
     preprocessor = ColumnTransformer(
@@ -110,6 +135,7 @@ def evaluate(csv_path: str | None = None) -> dict:
     cv = KFold(n_splits=folds, shuffle=True, random_state=42)
 
     rows = []
+    breakdown = {column: {} for column in BREAKDOWN_COLUMNS}
     for name, make_estimator in ALGORITHMS.items():
         predictions = cross_val_predict(_pipeline(make_estimator()), x, y, cv=cv)
 
@@ -119,6 +145,12 @@ def evaluate(csv_path: str | None = None) -> dict:
             "mae": round(float(mean_absolute_error(y, predictions)), 4),
             "r2": round(float(r2_score(y, predictions)), 4),
         })
+
+        # Thesis objective 2: the same out-of-fold predictions, scored per condition (wet/dry season,
+        # irrigated/rainfed). Nothing is refitted for this; it only splits the existing predictions.
+        for column in BREAKDOWN_COLUMNS:
+            for value, metrics in _group_metrics(df[column], y, predictions).items():
+                breakdown[column].setdefault(value, []).append({"algorithm": name, **metrics})
 
     best = max(rows, key=lambda row: row["r2"])
 
@@ -133,6 +165,7 @@ def evaluate(csv_path: str | None = None) -> dict:
         "cv_folds": folds,
         "features": NUMERIC_FEATURES + CATEGORICAL_FEATURES,
         "rows": rows,
+        "breakdown": breakdown,
         "best_algorithm": best["algorithm"],
         "source": {
             "dataset_path": path,

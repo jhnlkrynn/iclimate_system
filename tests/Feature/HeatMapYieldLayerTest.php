@@ -129,11 +129,11 @@ class HeatMapYieldLayerTest extends TestCase
         $week = $service->preparePeriod('week');
         $service->preparePeriod('2weeks');
 
-        // Two farms (same weather, different sizes) and the 8 barangays without farms; one call per distinct input.
+        // Two farms (same weather, different sizes) and the 18 barangays without farms; one call per distinct input.
         $this->assertSame(2, $week['farm_runs']);
-        $this->assertSame(2 + 8, $week['model_calls']);
+        $this->assertSame(2 + 18, $week['model_calls']);
         foreach (['season', 'week', '2weeks'] as $period) {
-            $this->assertSame(9, YieldPrediction::query()->where('scope', YieldPrediction::SCOPE_BARANGAY)->where('period', $period)->count(), $period);
+            $this->assertSame(19, YieldPrediction::query()->where('scope', YieldPrediction::SCOPE_BARANGAY)->where('period', $period)->count(), $period);
         }
 
         $rows = $this->api('week');
@@ -176,7 +176,7 @@ class HeatMapYieldLayerTest extends TestCase
     {
         foreach (['week', '2weeks'] as $period) {
             $rows = $this->api($period);
-            $this->assertCount(9, $rows);
+            $this->assertCount(19, $rows);
             foreach ($rows as $row) {
                 $this->assertSame('unavailable', $row['level']);
                 $this->assertSame('No estimate yet', $row['label']);
@@ -185,13 +185,13 @@ class HeatMapYieldLayerTest extends TestCase
         }
     }
 
-    public function test_removed_poblacion_names_are_unplaceable_and_unmatched_farms_are_listed(): void
+    public function test_farm_barangay_names_are_normalized_and_unplaceable_farms_are_listed(): void
     {
         $poblacion = $this->farmWithEstimate('BARANGAY 1 POB', 1.0, 4.0);
         $blank = $this->farmWithEstimate('—', 1.0, 4.0);
 
-        $this->assertNull(YieldPrediction::query()->where('farm_id', $poblacion->id)->value('barangay'));
+        $this->assertSame('Barangay 1 (Pob.)', YieldPrediction::query()->where('farm_id', $poblacion->id)->value('barangay'));
         $this->assertNull(YieldPrediction::query()->where('farm_id', $blank->id)->value('barangay'));
-        $this->assertSame([$poblacion->id, $blank->id], app(BarangayYieldForecastService::class)->unmatchedFarms()->pluck('id')->all());
+        $this->assertSame([$blank->id], app(BarangayYieldForecastService::class)->unmatchedFarms()->pluck('id')->all());
     }
 }

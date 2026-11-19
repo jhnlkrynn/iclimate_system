@@ -10,10 +10,10 @@ const RISK_COLORS = { Low: '#2e7d32', Moderate: '#f2b134', High: '#e05a2b', Seve
 const EXPECTED_BARANGAYS = 19;
 // The page asks Laravel for the prepared map again this often (one request; Laravel refreshes the provider data).
 const AUTO_REFRESH_MS = 5 * 60 * 1000;
-const DISPLAY_NAMES = {};
-const OFFICIAL_NAMES = ['Balibago', 'Binubusan', 'Bungahan', 'Kapito', 'Luyahan', 'Malaruhatan', 'Matabungkay', 'Prenza', 'San Diego'];
+const DISPLAY_NAMES = { 'Barangay 1 (Pob.)': 'Barangay 1 / Bonbon (Poblacion)', 'Barangay 5 (Pob.)': 'Barangay 5 / Tabok City (Poblacion)' };
+const OFFICIAL_NAMES = ['Bagong Pook', 'Balibago', 'Barangay 1 (Pob.)', 'Barangay 2 (Pob.)', 'Barangay 3 (Pob.)', 'Barangay 4 (Pob.)', 'Barangay 5 (Pob.)', 'Binubusan', 'Bungahan', 'Cumba', 'Humayingan', 'Kapito', 'Lumaniag', 'Luyahan', 'Malaruhatan', 'Matabungkay', 'Prenza', 'Puting-Kahoy', 'San Diego'];
 const nameKey = (name) => String(name || '').toLowerCase().replace(/[().,/-]/g, ' ').replace(/barangay|brgy|poblacion|\bpob\b/g, ' ').replace(/([a-z])(\d)/g, '$1 $2').replace(/\s+/g, ' ').trim();
-const nameAliases = {};
+const nameAliases = { '1 bonbon': 'Barangay 1 (Pob.)', 'bonbon': 'Barangay 1 (Pob.)', '5 tabok city': 'Barangay 5 (Pob.)', 'tabok city': 'Barangay 5 (Pob.)', 'puting kahoy': 'Puting-Kahoy', '1 poblacion': 'Barangay 1 (Pob.)', '2 poblacion': 'Barangay 2 (Pob.)', '3 poblacion': 'Barangay 3 (Pob.)', '4 poblacion': 'Barangay 4 (Pob.)', '5 poblacion': 'Barangay 5 (Pob.)' };
 export const canonicalName = (name) => {
     const raw = String(name || '').trim();
     const key = nameKey(raw);

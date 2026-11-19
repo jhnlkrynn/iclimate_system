@@ -13,40 +13,41 @@ class LianBarangays
      * tests/Unit/LianBarangaysCoordinatesTest.php), NOT hand-guessed.
      *
      * These values are recomputed directly from the shipped GeoJSON polygons,
-     * not re-guessed. The supported geography is limited to barangays present
-     * in the verified rice-production source.
+     * not re-guessed.
+     *
+     * All 19 barangays of Lian are supported for weather, the Heat Map and risk
+     * ratings (thesis objective 3.5; owner decision 2026-11-20, which restores
+     * the 10 barangays the 2026-11-18 release had removed). Ten of them have no
+     * MAO rice-production rows: their weather and risk are shown, and any
+     * production-based figure says "no data" instead of being invented.
      */
     private const COORDINATES = [
+        'Bagong Pook' => [14.0320331, 120.6807593],
         'Balibago' => [13.9413816, 120.6489014],
+        'Barangay 1 (Pob.)' => [14.0354539, 120.6510264],
+        'Barangay 2 (Pob.)' => [14.0381382, 120.6513488],
+        'Barangay 3 (Pob.)' => [14.0405819, 120.6507332],
+        'Barangay 4 (Pob.)' => [14.0379401, 120.6536591],
+        'Barangay 5 (Pob.)' => [14.0413525, 120.6528515],
         'Binubusan' => [13.9694821, 120.6384280],
         'Bungahan' => [14.0470903, 120.6379867],
+        'Cumba' => [13.9718581, 120.6609465],
+        'Humayingan' => [13.9967494, 120.6724865],
         'Kapito' => [14.0162390, 120.6689030],
+        'Lumaniag' => [13.9946196, 120.6343614],
         'Luyahan' => [13.9641912, 120.6176801],
         'Malaruhatan' => [14.0383984, 120.6654801],
         'Matabungkay' => [13.9467451, 120.6249676],
         'Prenza' => [14.0128685, 120.6398701],
+        'Puting-Kahoy' => [13.9894782, 120.6534129],
         'San Diego' => [14.0336258, 120.6335108],
     ];
 
     /**
-     * Lian barangays outside the verified rice-production source. They are not
-     * supported for weather, maps or ratings, but a question that names one
-     * must still be recognised as being about that place, so Climora answers
-     * "no rating" for it instead of silently answering for the asker's own
-     * barangay (or for Lian as a whole).
+     * Lian barangays that are named in questions but not supported. Empty since all 19 are supported again; kept so
+     * namedIn() and withoutNames() still work if a barangay is ever taken out of COORDINATES.
      */
-    private const UNSUPPORTED_LIAN_BARANGAYS = [
-        'Bagong Pook',
-        'Barangay 1 (Pob.)',
-        'Barangay 2 (Pob.)',
-        'Barangay 3 (Pob.)',
-        'Barangay 4 (Pob.)',
-        'Barangay 5 (Pob.)',
-        'Cumba',
-        'Humayingan',
-        'Lumaniag',
-        'Puting-Kahoy',
-    ];
+    private const UNSUPPORTED_LIAN_BARANGAYS = [];
 
     /**
      * The Lian barangay a free-text question names, supported or not, or null
@@ -96,17 +97,7 @@ class LianBarangays
 
     public static function all(): array
     {
-        return [
-            'Balibago',
-            'Binubusan',
-            'Bungahan',
-            'Kapito',
-            'Luyahan',
-            'Malaruhatan',
-            'Matabungkay',
-            'Prenza',
-            'San Diego',
-        ];
+        return array_keys(self::COORDINATES);
     }
 
     public static function options(bool $includeAll = true): array
@@ -180,10 +171,19 @@ class LianBarangays
             }
         }
 
-        // Keep all map and risk logic on one stable canonical name.
+        // Keep local Poblacion aliases at the system boundary while all map
+        // and risk logic uses one stable canonical name.
         return match ($needle) {
+            '1 bonbon', 'bonbon', '1 bonbon poblacion' => 'Barangay 1 (Pob.)',
+            '5 tabok city', 'tabok city', '5 tabok city poblacion' => 'Barangay 5 (Pob.)',
             // Boundary files and local government exports use these shorter
             // spellings; keep the stored/application name canonical.
+            'puting kahoy' => 'Puting-Kahoy',
+            '1 poblacion', 'poblacion 1' => 'Barangay 1 (Pob.)',
+            '2 poblacion', 'poblacion 2' => 'Barangay 2 (Pob.)',
+            '3 poblacion', 'poblacion 3' => 'Barangay 3 (Pob.)',
+            '4 poblacion', 'poblacion 4' => 'Barangay 4 (Pob.)',
+            '5 poblacion', 'poblacion 5' => 'Barangay 5 (Pob.)',
             default => self::closestName($needle),
         };
     }

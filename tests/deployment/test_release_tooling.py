@@ -112,6 +112,8 @@ class DeploymentSafety(unittest.TestCase):
 
     def test_enabled_accuracy_flag_refused(self):
         self.refused_with('ICLIMATE_YIELD_ACCURACY_VERIFIED=false','ICLIMATE_YIELD_ACCURACY_VERIFIED=true','ICLIMATE_YIELD_ACCURACY_VERIFIED')
+        # label (number shown, marked unvalidated) is allowed; off (no gate) is not, while accuracy is not verified.
+        self.refused_with('ICLIMATE_YIELD_GATE=withhold','ICLIMATE_YIELD_GATE=off','ICLIMATE_YIELD_GATE must be withhold or label')
 
     def test_mariadb_driver_refused(self):
         self.refused_with('DB_CONNECTION=mysql','DB_CONNECTION=mariadb','DB_CONNECTION must be mysql')

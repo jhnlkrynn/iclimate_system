@@ -148,7 +148,7 @@ class HeatMapDataFlowTest extends TestCase
         $this->assertSame('low', $levels['week']['Kapito']);
         $this->assertSame('high', $levels['2weeks']['Kapito']);
         $this->assertStringNotContainsString('data-heat-map-updating', $second);
-        $this->assertStringStartsWith('Lian this week 1 barangay is at high risk 1 barangay is at moderate risk 7 barangays are at low risk', $this->summary($second));
+        $this->assertStringStartsWith('Lian this week 1 barangay is at high risk 1 barangay is at moderate risk 17 barangays are at low risk', $this->summary($second));
         $this->assertStringContainsString('Updated: 9:00 AM', $this->summary($second));
         $this->assertCount(1, Http::recorded());
     }
