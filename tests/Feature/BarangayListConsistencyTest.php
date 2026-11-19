@@ -8,17 +8,17 @@ use App\Support\LianFarmTypes;
 use Tests\TestCase;
 
 /**
- * App\Support\LianBarangays::all() is the one official list of Lian's supported barangays. The places that must keep their own
+ * App\Support\LianBarangays::all() is the one official list of Lian's 19 barangays. The places that must keep their own
  * copy or key data by name (the browser map script, the risk scorer's exposure ratings, the farmer-association records)
  * may not drift from it.
  */
 class BarangayListConsistencyTest extends TestCase
 {
-    public function test_the_official_list_has_unique_names(): void
+    public function test_the_official_list_has_nineteen_unique_names(): void
     {
         $all = LianBarangays::all();
 
-        $this->assertCount(9, $all);
+        $this->assertCount(19, $all);
         $this->assertSame($all, array_values(array_unique($all)));
         $this->assertSame(array_keys(LianBarangays::coordinates()), $all);
     }

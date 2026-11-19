@@ -53,7 +53,7 @@ class MaoRiskCountsPlaceholderTest extends TestCase
 
         $this->assertCount(count(LianBarangays::all()) - 4, $seeded);
         $this->assertTrue($seeded->every->isSeedPlaceholder());
-        $this->assertSame(['High', 'Moderate'], $seeded->pluck('risk_level')->unique()->sort()->values()->all());
+        $this->assertSame(['High', 'Low', 'Moderate'], $seeded->pluck('risk_level')->unique()->sort()->values()->all());
         $this->assertSame(4, HeatmapArea::query()->computed()->count());
         $this->assertFalse(HeatmapArea::query()->where('barangay', 'Balibago')->first()->isSeedPlaceholder());
     }

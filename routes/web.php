@@ -802,6 +802,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
             );
 
 
+        // Thesis objective 2 (owner decision 2026-11-20): MLR, Random Forest and Gradient Boosting compared on RMSE,
+        // MAE and R², for MAO staff. Reports metrics only; the deployed model is never changed here.
+        // "?refresh=1" queues one recomputation, so it is throttled.
+        Route::get(
+            'analysis/model-evaluation',
+            [\App\Http\Controllers\ModelEvaluationController::class, 'index']
+        )
+            ->middleware(['role:'.User::ROLE_MAO, 'throttle:20,1,get-model-evaluation'])
+            ->name('model-evaluation.index');
+
+
         Route::post(
             'rice-yield-predictions/predict',
             fn () => redirect()->to(route('weather-predictions.index').'#yield', 303)

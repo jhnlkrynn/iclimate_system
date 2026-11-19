@@ -226,6 +226,24 @@ Schedule::command('associations:send-reminders')
     ->withoutOverlapping(5)
     ->appendOutputTo($automationLog('associations:send-reminders'));
 
+// Audit 2026-11-14 (OPS-02, OPS-03, OPS-06, DATA-06): data that otherwise only grows. Scheduled-task history is kept
+// 14 days and expired file-cache entries are removed; failed queue jobs are kept 30 days; expired password-reset
+// tokens are removed. After the 03:15 backup and 03:25 verification, so the backup still holds what is removed.
+Schedule::command('iclimate:housekeeping')
+    ->dailyAt('03:40')
+    ->withoutOverlapping(30)
+    ->appendOutputTo($automationLog('iclimate:housekeeping'));
+
+Schedule::command('queue:prune-failed --hours=720')
+    ->dailyAt('03:45')
+    ->withoutOverlapping(10)
+    ->appendOutputTo($automationLog('queue:prune-failed --hours=720'));
+
+Schedule::command('auth:clear-resets')
+    ->dailyAt('03:50')
+    ->withoutOverlapping(10)
+    ->appendOutputTo($automationLog('auth:clear-resets'));
+
 // Audit 2026-11-18: one health check every 5 minutes; every FAIL (database down, ML or Reverb unreachable,
 // stalled queue, stopped scheduler, low disk) lands in the application log with what to do.
 Schedule::command('iclimate:health --log')

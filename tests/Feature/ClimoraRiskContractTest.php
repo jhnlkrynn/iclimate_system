@@ -131,9 +131,9 @@ class ClimoraRiskContractTest extends TestCase
 
     public function test_lian_wide_question_without_ratings_uses_the_shared_no_data_wording(): void
     {
-        // Lumaniag does not resolve to a supported barangay, so an unnamed
-        // question falls to the Lian-wide branch.
-        $user = $this->farmer('Lumaniag');
+        // A barangay outside Lian (Nasugbu) does not resolve, so an unnamed question falls to the Lian-wide branch.
+        // (Lumaniag was used here while only 9 barangays were supported; all 19 are supported since 2026-11-20.)
+        $user = $this->farmer('Nasugbu');
 
         $english = $this->ask($user, 'What is the climate risk right now?');
         $english->assertOk()->assertJsonPath('chat.prediction_result.status', 'no_data');
@@ -147,7 +147,7 @@ class ClimoraRiskContractTest extends TestCase
     public function test_lian_wide_rating_is_attributed_to_its_barangay_not_the_askers_area(): void
     {
         $this->computeRating('Matabungkay', 'High', 'Typhoon');
-        $user = $this->farmer('Lumaniag');
+        $user = $this->farmer('Nasugbu');
 
         $response = $this->ask($user, 'What is the climate risk right now?');
 

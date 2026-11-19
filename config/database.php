@@ -68,7 +68,8 @@ return [
             'url' => env('BACKUP_DB_URL'),
             'host' => env('BACKUP_DB_HOST', '127.0.0.1'),
             'port' => env('BACKUP_DB_PORT', '3306'),
-            'database' => env('BACKUP_DB_DATABASE', 'iclimate_staging_20261103_fix3'),
+            // No hard-coded default: a backup must name the database it dumps (audit 2026-11-14, OPS-05).
+            'database' => env('BACKUP_DB_DATABASE', env('DB_DATABASE')),
             'username' => env('BACKUP_DB_USERNAME', 'iclimate_backup'),
             'password' => env('BACKUP_DB_PASSWORD', ''),
             'unix_socket' => env('BACKUP_DB_SOCKET', ''),
