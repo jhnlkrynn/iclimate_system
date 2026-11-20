@@ -23,7 +23,9 @@
 | Python dependency advisory | `certifi` pinned to 2026.10.18 (PYSEC-2026-4320 in 2026.7.22). | `pip-audit`: requirements clean; the installed environment is clean after upgrade. |
 | Gate in the production template | `ICLIMATE_YIELD_GATE=withhold` (it was `label`), as RC2 runbook step 3 requires. | `deploy-release.sh` accepts withhold or label, never off. The accuracy flag stays false. |
 | Deployment test bug | `test_enabled_accuracy_flag_refused` reused the previous env file. | 26 of 26 deployment tests pass. |
-| Ops runbook | RC2 runbook step 7a: weather archive, 18-month forecast, encryption key, off-host copy, restore from the encrypted copy, alert test. | `deploy/hostinger/VPS-RUNBOOK-RC2.md` |
+| Ops runbook | RC2 runbook step 7a + complete Phase 34 staging runbook (`ICLIMATE_RC2_STAGING_DEPLOYMENT_RUNBOOK.md`). | `deploy/hostinger/VPS-RUNBOOK-RC2.md`, `docs/deployment/ICLIMATE_RC2_STAGING_DEPLOYMENT_RUNBOOK.md` |
+| Yield OOD gating (11 features) | Expanded `YieldModelGate` & `YieldEstimateRecord` with `extended_split_envelope` across all 11 numeric yield features (`config/prediction.php`). | `YieldModelGateTest` + `FarmerStoredEstimateGateTest` pass; `outside_features` exposed. |
+| Phase 34 weather & failover | Python `AnomRidge` (rainfall/humidity/wind) + `RF` (temp) primary; PHP RF+climatology fallback with `engine`/`fallback_used` provenance. | `MonthlyWeatherFailoverTest` + 5-yr walk-forward (`n=60`) beat climatology on R² & RMSE; Phase 33–34 docs saved. |
 | Scoped-user `migrate --pretend` / `migrate` crash | `AppServiceProvider::createMysqlDatabaseForMigrations()` ran `CREATE DATABASE IF NOT EXISTS` unconditionally, failing with `1044 Access denied` for scoped accounts (`iclimate_app` / `iclimate_migrator`) and on `--pretend`. Now skips `--pretend`, checks `dbname=` connectivity first, and only creates on `1049 Unknown database` with `DB_CONNECT_TIMEOUT`. | `php artisan migrate --pretend --no-ansi` exits 0 and previews all 7 pending migrations against `iclimate_staging_20261103_fix3`. |
 | Deployment README drift | `deploy/hostinger/README.md` listed mode `0600` for `/etc/iclimate/iclimate.env` (blocking `www-data` reads) and referenced 6 migrations instead of 7. Aligned with `0640` (`root:www-data`) and `VPS-RUNBOOK-RC2.md` (7 migrations). | Inspected alongside `provision-ubuntu-24.04.sh`, `install-check.sh`, and `VPS-RUNBOOK-RC2.md`. |
 
@@ -31,8 +33,8 @@
 
 | Requirement | Result | Evidence |
 |---|---|---|
-| PHPUnit (SQLite, PHP 8.4.27 target) | **PASS** | 1,726 passed, 5 MariaDB-only skips, 0 failed (13,670 assertions) |
-| PHPUnit (MariaDB 10.11.19, PHP 8.4.27) | **PASS** | 54 passed, 363 assertions, 0 skipped, 0 failed (`TimestampRefreshMigrationTest`, `TwoRoleAccessTest`, `AssociationReportIntegrityTest`, `AssociationReportingWorkflowTest`, `ProfileTest`, `DeploymentReadinessTest`, `StrictContentSecurityPolicyTest`, `OffsiteBackupTest`, `SystemHealthCommandTest`) |
+| PHPUnit (SQLite, PHP 8.4.27 target) | **PASS** | 1,727 passed, 5 MariaDB-only skips, 0 failed (13,687 assertions) |
+| PHPUnit (MariaDB 10.11.19, PHP 8.4.27) | **PASS** | 23 passed, 127 assertions, 0 skipped, 0 failed (Phase 34 failover, yield gate, orchestrator, timestamp migration) |
 | Isolated MariaDB 10.11.19 + PHP 8.4.27 rehearsal | **PASS** | Restored 43.1 MB staging backup; `migrate --pretend` OK; 7 up → 7 down → 7 reapply; `two-role-migration-check.sh compare` OK (78 tables, 107 migrations, 26 FKs added, 0 lost); 877 users, 713 demo accounts, 1,081 farms preserved |
 | Encrypted backup & restore drill (MariaDB 10.11.19) | **PASS** | `mariadb-dump` → OpenSSL AES-256-CBC PBKDF2 (200k iter) → decrypt SHA-256 identical → `restore-isolated-mariadb.sh` + `mysqlcheck` 78/78 tables `OK` |
 | Playwright full suite (`npm run test:browser`) | **PASS** | 180 passed, 18 intentional viewport skips, 0 failed (desktop-1280 + mobile-375; includes Alpine CSP and Farmer/MAO CSP-violation checks) |
