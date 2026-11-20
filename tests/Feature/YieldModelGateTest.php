@@ -37,7 +37,8 @@ class YieldModelGateTest extends TestCase
     private function estimate(float $yield = 4.13): array
     {
         return ['success' => true, 'predicted_yield' => $yield, 'yield_tons_per_hectare' => $yield, 'predicted_yield_raw' => $yield,
-            'predicted_yield_tons_per_hectare' => $yield, 'estimated_total_production_tons' => $yield * 1.4, 'planting_advisory' => 'Plant after the first heavy rain.'];
+            'predicted_yield_tons_per_hectare' => $yield, 'estimated_total_production_tons' => $yield * 1.4, 'confidence' => 85,
+            'planting_advisory' => 'Plant after the first heavy rain.'];
     }
 
     public function test_todays_inputs_are_outside_the_training_range_and_in_range_inputs_are_not(): void
@@ -66,6 +67,7 @@ class YieldModelGateTest extends TestCase
         $this->assertNull($result['predicted_yield']);
         $this->assertNull($result['yield_tons_per_hectare']);
         $this->assertNull($result['estimated_total_production_tons']);
+        $this->assertNull($result['confidence']);
         $this->assertSame(4.13, $result['predicted_yield_unvalidated'], 'kept for audit, never displayed');
         $this->assertStringContainsString('accuracy not verified', $result['unavailable_reason']);
         $this->assertSame('Plant after the first heavy rain.', $result['planting_advisory'], 'weather-based advice is not the yield model');
@@ -127,5 +129,47 @@ class YieldModelGateTest extends TestCase
 
         $this->assertStringContainsString(__('farmer.home.harvest.unvalidated'), html_entity_decode($html));
         $this->assertStringNotContainsString('4.13 t/ha', $html);
+    }
+
+    public function test_all_eleven_numeric_ood_checks_and_schedule_unavailable_reason(): void
+    {
+        $allOod = [
+            'area' => 0.5, 'rainfall_6m' => 10.0, 'temp_range' => 2.0,
+            'rainfall' => 0.5, 'temp_avg' => 36.0, 'previous_rainfall' => 1.0,
+            'previous_temp' => 35.0, 'temp_3m' => 35.0, 'temp_6m' => 35.0,
+            'seasonal_rainfall' => 50.0, 'seasonal_temp' => 35.0, 'season' => 'Dry',
+        ];
+        $assessed = YieldModelGate::assess($allOod);
+        $this->assertFalse($assessed['within_range']);
+        $this->assertCount(11, $assessed['outside']);
+
+        $farmer = User::factory()->farmer()->create(['barangay' => 'Prenza']);
+        $farm = Farm::query()->create(['user_id' => $farmer->id, 'farm_name' => 'South', 'barangay' => 'Prenza', 'farm_size_hectares' => 1.2, 'is_primary' => true]);
+        $schedule = \App\Models\FarmerPlantingSchedule::query()->create([
+            'user_id' => $farmer->id,
+            'farm_id' => $farm->id,
+            'planting_date' => now('Asia/Manila')->toDateString(),
+            'scheduled_harvest_date' => now('Asia/Manila')->addDays(110)->toDateString(),
+            'harvest_month' => now('Asia/Manila')->addDays(110)->format('Y-m'),
+            'season' => 'Dry',
+            'farm_type' => 'Irrigated',
+            'barangay' => 'Prenza',
+            'farm_area_hectares' => 1.2,
+            'progress_status' => 'planted',
+        ]);
+
+        $this->mock(RiceYieldPredictionService::class, fn ($mock) => $mock->shouldReceive('predictForUser')->andReturn([
+            'success' => false,
+            'availability' => 'withheld',
+            'predicted_yield' => null,
+            'confidence' => null,
+            'api_error' => null,
+            'unavailable_reason' => YieldModelGate::REASON,
+        ]));
+
+        $updated = app(\App\Services\PlantingSchedulePredictionService::class)->refresh($schedule);
+        $this->assertNull($updated->predicted_yield);
+        $this->assertNull($updated->prediction_confidence);
+        $this->assertSame(YieldModelGate::REASON, $updated->prediction_unavailable_reason);
     }
 }

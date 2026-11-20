@@ -42,7 +42,7 @@ class PlantingSchedulePredictionService
             if ($prediction === null) {
                 return $this->keepLastOrUnavailable(
                     $schedule,
-                    (string) data_get($result, 'api_error') ?: 'The yield prediction service did not return a result.',
+                    (string) (data_get($result, 'api_error') ?: data_get($result, 'unavailable_reason') ?: 'The yield prediction service did not return a result.'),
                 );
             }
 

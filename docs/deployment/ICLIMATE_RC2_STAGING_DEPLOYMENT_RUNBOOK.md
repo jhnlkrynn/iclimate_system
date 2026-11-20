@@ -1,6 +1,7 @@
 # iClimate RC2 Private Staging & VPS Deployment Runbook
 
-**Branch:** `feature/2026-11-20-yield-monitoring-security` (base commit `0cadbc74`)  
+**Branch:** `feature/2026-11-20-yield-monitoring-security` (verified RC2 commit `8cfe5be2`, source fingerprint `773e6f7ef51cb7450af3613dbc1a9d670bda0dcf5747283eee586b973bf9430b`)  
+**Target Host / DNS:** `iclimate-lian.tech` / `www.iclimate-lian.tech` -> `201.18.218.74` (HTTPS `200 OK` via Nginx; SSH access not configured locally in `~/.ssh/config`)  
 **Target OS / Stack:** Ubuntu 24.04 LTS KVM VPS, PHP-FPM 8.4, MariaDB 10.11, Python 3.12 (`scikit-learn 1.6.1`), Node 22, Nginx, systemd  
 **Production Yield Gate:** `ICLIMATE_YIELD_GATE=withhold`, `ICLIMATE_YIELD_ACCURACY_VERIFIED=false` (keep withheld until independent scientific validation and owner approval)  
 **Launch Status:** **NO-GO for public launch** until all external infrastructure, credentials, and post-deploy acceptance checks below are completed and signed off.
@@ -18,17 +19,21 @@
 | JavaScript & Vite Build (`npm run test:js && npm run build`) | **PASS** (26 passed; `picomatch` mitigation verified) | **NOT VERIFIED** |
 | Composer / npm Security Audits | **PASS** (0 advisories / 0 vulnerabilities) | — |
 | 7 Pending Migrations + Rollback + Encrypted Restore | **PASS** on disposable MariaDB 10.11.19 (78/78 tables `OK`, 877 users, 713 demo accounts, 1,081 farms preserved) | **NOT VERIFIED** |
-| Systemd Units (`systemd-analyze verify`) | **NOT VERIFIED** (macOS host) | **NOT VERIFIED** (requires Ubuntu 24.04) |
-| DNS + Live Let's Encrypt TLS (`iclimate-lian.tech`) | **NOT VERIFIED** (external) | **NOT VERIFIED** |
-| Live SMTP Delivery (reset + health alert) | **NOT VERIFIED** (external credentials) | **NOT VERIFIED** |
-| Off-Host Encrypted Backup Target (`BACKUP_OFFSITE_TARGET`) | **NOT VERIFIED** (external destination) | **NOT VERIFIED** |
+| Systemd Units (`systemd-analyze verify`) | **NOT VERIFIED** (macOS host) | **PASS (syntax)** on `iclimate-queue`, `iclimate-reverb`, `iclimate-scheduler.*`; `iclimate-python.service` awaits `.venv-ml` creation |
+| VPS SSH Access (`201.18.218.74` / `srv2043342`) | **PASS** (`ssh iclimate-vps` in `~/.ssh/config` via `~/.ssh/id_ed25519`) | **PASS** (`root@201.18.218.74`, Ubuntu 24.04.5 LTS, 7.8 GiB RAM, 62G free) |
+| VPS Stack & Live Site Audit | — | **PARTIAL**: PHP 8.4.27, MariaDB 10.11.14, Nginx 1.24.0, Python 3.12.3 (`sklearn 1.6.1`), UFW active; **Node `v20.20.2` (< 22)**; live site runs `fb25846` (`pgsql`/Supabase, `BROADCAST=log`, no `/etc/iclimate`, no `deploy` user) |
+| DNS + Live Let's Encrypt TLS (`iclimate-lian.tech`) | **PASS (External)** (`201.18.218.74`, PTR `srv2043342.hstgr.cloud`, LE `YE1` valid `2026-10-07`..`2027-01-05`, `301`→HTTPS, `/.env` `403`, HSTS) | **LIVE PUBLIC VHOST**: `/` & `/up` are public because `/etc/nginx/sites-available/iclimate` serves live `fb25846` without `snippets/iclimate-private.conf` |
+| Live SMTP Delivery (reset + health alert) | **NOT VERIFIED** (external credentials) | **NOT VERIFIED** (RC2 `/etc/iclimate/iclimate.env` not yet installed) |
+| Off-Host Encrypted Backup Target (`BACKUP_OFFSITE_TARGET`) | **NOT VERIFIED** (external destination) | **NOT VERIFIED** (`/var/backups/iclimate` not yet created) |
+
+> **VPS Cutover & Staging Isolation Note:** `201.18.218.74` (`srv2043342`) is actively serving the pre-RC1 production app (`fb25846`, Supabase `pgsql`) on `iclimate-lian.tech`. Do **not** overwrite `/var/www/iclimate_system` or add `snippets/iclimate-private.conf` to `/etc/nginx/sites-available/iclimate` while live traffic is served unless an approved maintenance/cutover window is scheduled. For non-disruptive RC2 staging, use an isolated staging directory/vhost with `include snippets/iclimate-private.conf;` (`allow <ADMIN_IP>; deny all;`), upgrade Node `v20.20.2` → `22.x`, and provision `deploy`, `/etc/iclimate/iclimate.env`, and `iclimate-*` systemd units.
 
 ---
 
 ## 2. Step-by-Step Ubuntu 24.04 VPS Staging Deployment Procedure
 
 ### Step 1 — Generate Approved Release Bundle & Manifest (On Mac, After Owner Approval)
-> Do **not** tag, push, or deploy until the owner reviews and approves commit `0cadbc74`.
+> Do **not** tag, push, or deploy until the owner reviews and approves commit `8cfe5be2`.
 
 ```sh
 # 1. Create annotated release tag (only after approval)
@@ -40,7 +45,7 @@ mkdir -p "$OUT"
 python3 scripts/deploy/prepare-release.py create --output "$OUT" --version 2026.11.20-rc2
 git bundle create "$OUT/iclimate-v2026.11.20-rc2.bundle" v2026.11.20-rc2
 ```
-**Success criteria:** `prepare-release.py verify-tree` and `verify-archive` report `1529` files verified, `git bundle verify` exits `0`.
+**Success criteria:** `prepare-release.py verify-tree` and `verify-archive` report `1533` files verified, `git bundle verify` exits `0`.
 
 ---
 
@@ -88,6 +93,7 @@ Install `/etc/iclimate/iclimate.env` owned by `root:www-data` with mode `0640` (
 - `ICLIMATE_PASSWORD_LOCKDOWN=true`, `SECURITY_CSP_STRICT=true`, `SESSION_SECURE_COOKIE=true`, `SESSION_ENCRYPT=true`
 - Real `MAIL_MAILER=smtp`, `MAIL_HOST`, `MAIL_PORT=587`, `MAIL_SCHEME=smtp`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`, `HEALTH_ALERT_EMAIL`
 - Real `REVERB_APP_ID`, `REVERB_APP_KEY`, `REVERB_APP_SECRET`, and matching `VITE_REVERB_APP_KEY`
+- Optional AI/CLI overrides: `PYTHON_BINARY=/var/www/iclimate_system/.venv-ml/bin/python`, and `GROQ_ENABLED=false` (or `GROQ_ENABLED=true` with `GROQ_API_KEY` and `GROQ_MODEL`)
 
 Generate the backup encryption key and store a copy off-server (password manager):
 ```sh

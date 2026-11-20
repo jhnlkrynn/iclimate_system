@@ -156,7 +156,7 @@ class RiceYieldPredictionService
         }
 
         $result['predicted_yield_unvalidated'] = $result['predicted_yield'];
-        foreach (['yield_tons_per_hectare', 'predicted_yield_raw', 'predicted_yield', 'predicted_yield_tons_per_hectare', 'estimated_total_production_tons'] as $key) {
+        foreach (['yield_tons_per_hectare', 'predicted_yield_raw', 'predicted_yield', 'predicted_yield_tons_per_hectare', 'estimated_total_production_tons', 'confidence'] as $key) {
             $result[$key] = null;
         }
         $result['success'] = false;
