@@ -166,9 +166,29 @@
         box-shadow: 0 16px 36px rgb(var(--sage-950-rgb) / 0.1);
     }
 
+    /* About and Contact carry a rice-field photo (inline style). Text sits on a light veil over it, never on the raw
+       photo: white at 90% keeps ink at 14:1 and muted at 5.5:1+ over the brightest and darkest parts of the image. */
     .about-section,
     .contact-section {
+        isolation: isolate;
         background-color: #fff;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+
+    .about-section::before,
+    .contact-section::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        background: rgb(255 255 255 / .9);
+    }
+
+    .contact-section::before {
+        background: rgb(var(--sage-50-rgb) / .92);
     }
 
     .about-photo picture,
@@ -328,8 +348,8 @@
     .feature-description {
         display: block;
         margin-top: .35rem;
-        color: var(--text-muted, #66756f);
-        font-size: .88rem;
+        color: theme('colors.muted');
+        font-size: .9375rem;
         line-height: 1.45;
     }
 
@@ -342,7 +362,7 @@
         display: inline-flex;
         margin: .55rem 0 0 1.55rem;
         color: var(--sage-700);
-        font-size: .78rem;
+        font-size: .875rem;
         font-weight: 700;
         text-decoration: none;
     }
@@ -486,7 +506,7 @@
     }
 
     .lp-input {
-        @apply block w-full rounded-lg border border-line bg-white px-4 py-3 text-base leading-none text-ink placeholder:text-muted/60 focus:border-sage-500 focus:ring-sage-500;
+        @apply block w-full rounded-lg border border-line bg-white px-4 py-3 text-base leading-none text-ink placeholder:text-muted/80 focus:border-sage-500 focus:ring-sage-500;
     }
 
     .lp-input-lg {
