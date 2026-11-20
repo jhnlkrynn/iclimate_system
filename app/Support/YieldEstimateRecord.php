@@ -86,6 +86,7 @@ final class YieldEstimateRecord
                 ? $weather['training_period']['from'].' – '.$weather['training_period']['to'] : null,
             'forecast_at' => $forecastAt,
             'within_range' => ($estimate['validation_status'] ?? null) === 'within_training_range',
+            'outside_features' => \App\Services\Prediction\YieldModelGate::assess($input)['outside'],
             'checked' => (bool) ($estimate['accuracy_verified'] ?? false),
             'fallback' => (bool) ($estimate['fallback'] ?? false) || (bool) ($estimate['api_fallback_used'] ?? false),
         ];

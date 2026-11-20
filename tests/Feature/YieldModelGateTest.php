@@ -48,6 +48,12 @@ class YieldModelGateTest extends TestCase
         $this->assertSame(['compatible' => true, 'outside' => [], 'within_range' => true], YieldModelGate::assess(self::IN_RANGE_INPUT));
         config(['prediction.rice_yield.accuracy_verified' => false]);
         $this->assertFalse(YieldModelGate::assess(null)['compatible'], 'an input that cannot be checked is not treated as validated');
+
+        $extremeWeather = array_merge(self::IN_RANGE_INPUT, ['seasonal_rainfall' => 2400.0, 'temp_avg' => 35.0]);
+        $assessed = YieldModelGate::assess($extremeWeather);
+        $this->assertFalse($assessed['within_range']);
+        $this->assertContains('temp_avg', $assessed['outside']);
+        $this->assertContains('seasonal_rainfall', $assessed['outside']);
     }
 
     public function test_withhold_is_the_default_and_removes_the_number_but_keeps_the_rest(): void
