@@ -47,7 +47,7 @@ class RefreshLianBoundaries extends Command
 
         // Kept two days so one failed daily run never drops the official boundaries back to the bundled file.
         Cache::put(self::CACHE_KEY, [$geojson, 'GeoRisk ArcGIS PSA Barangay Boundary API'], now()->addDays(2));
-        Cache::forget(\App\Http\Controllers\Api\LianBoundaryController::RESPONSE_CACHE_KEY);
+        Cache::forget(\App\Http\Controllers\Api\LianBoundaryController::responseCacheKey());
 
         $this->info('Cached '.count($geojson['features']).' official Lian barangay boundary feature(s).');
 

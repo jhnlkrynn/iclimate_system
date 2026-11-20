@@ -598,7 +598,7 @@ class BarangayRiskMapTest extends TestCase
         // Heat Map page (2026-10): its own map element with the panel beside it; the same 19 boundaries for every role.
         $response->assertSee('id="heatMapCanvas"', false);
         $response->assertSee('class="hmx-legend"', false);
-        $response->assertSee('data-boundary-url="'.url('/api/boundaries/lian-barangays').'"', false);
+        $response->assertSee('data-boundary-url="'.url('/api/boundaries/lian-barangays').'?v=19"', false);
         // All 19 barangays remain in the compact map dataset; detail panels are loaded on demand.
         preg_match('#<script type="application/json" data-heat-map-levels>(.*?)</script>#s', (string) $response->getContent(), $levels);
         $this->assertCount(count(\App\Support\LianBarangays::all()), json_decode($levels[1], true)['levels']['week']);
@@ -711,7 +711,7 @@ class BarangayRiskMapTest extends TestCase
         foreach ([$farmer, User::factory()->create(['role' => User::ROLE_MAO])] as $user) {
             $response = $this->actingAs($user)->get(route('heat-map.index'))->assertOk();
             $response->assertSee('id="heatMapCanvas"', false);
-            $response->assertSee('data-boundary-url="'.url('/api/boundaries/lian-barangays').'"', false);
+            $response->assertSee('data-boundary-url="'.url('/api/boundaries/lian-barangays').'?v=19"', false);
             $response->assertSee('Low');
             $response->assertSee('Moderate');
             $response->assertSee('High');

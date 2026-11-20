@@ -16,8 +16,15 @@ class LianBoundaryController extends Controller
 
     private const GEORISK_QUERY_URL = 'https://portal.georisk.gov.ph/arcgis/rest/services/PSA/Barangay/MapServer/4/query';
 
-    /** The finished 19-feature response, cached so the GeoJSON is not re-normalized on every request. */
-    public const RESPONSE_CACHE_KEY = 'geo:lian-boundaries-api:response:v1';
+    /**
+     * The finished 19-feature response, cached so the GeoJSON is not re-normalized on every request. The key carries
+     * the number of supported barangays: when that list changes (9 -> 19 on 2026-11-20), a response cached for the
+     * old list is never served again (it drew only the old barangays on the Heat Map for up to a day).
+     */
+    public static function responseCacheKey(): string
+    {
+        return 'geo:lian-boundaries-api:response:v2:'.count(LianBarangays::all());
+    }
 
     /**
      * Never calls GeoRisk: a request serves what iclimate:refresh-lian-boundaries stored (daily), or the bundled
@@ -33,10 +40,10 @@ class LianBoundaryController extends Controller
         }
 
         if ($request->boolean('refresh')) {
-            Cache::forget(self::RESPONSE_CACHE_KEY);
+            Cache::forget(self::responseCacheKey());
         }
 
-        $body = Cache::remember(self::RESPONSE_CACHE_KEY, now()->addDay(), fn (): string => json_encode($this->buildGeojson(), JSON_UNESCAPED_SLASHES));
+        $body = Cache::remember(self::responseCacheKey(), now()->addDay(), fn (): string => json_encode($this->buildGeojson(), JSON_UNESCAPED_SLASHES));
         $etag = '"'.sha1($body).'"';
         $headers = ['ETag' => $etag, 'Cache-Control' => 'public, max-age=86400, stale-while-revalidate=604800'];
 
