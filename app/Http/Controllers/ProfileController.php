@@ -33,6 +33,15 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
+        // farmer_profiles.barangay is required (NOT NULL). A farmer without a profile row gets one from the chosen
+        // barangay or the account's; with neither, the form asks for it instead of failing (500, found 2026-11-20).
+        $user = $request->user();
+        $barangay = $request->validated('barangay') ?: $user->barangay;
+        if ($user->role === User::ROLE_FARMER && $user->farmerProfile === null && blank($barangay)
+            && ($request->hasAny(['barangay', 'farm_area', 'farm_type']) || $request->has('farmer_organization_ids_present'))) {
+            return Redirect::route('profile.edit')->withInput()->withErrors(['barangay' => __('validation.required', ['attribute' => __('barangay')])]);
+        }
+
         // Farm size and type belong to the farmer profile (saved below), not to the account.
         $request->user()->fill($request->safe()->except(['farm_area', 'farm_type', 'farmer_organization_ids']));
 
@@ -46,11 +55,13 @@ class ProfileController extends Controller
             $profile = $request->user()->farmerProfile()->firstOrCreate([], [
                 'full_name' => $request->user()->name,
                 'contact_number' => $request->user()->contact_number,
+                'barangay' => $barangay,
                 'farm_type' => FarmerProfile::FARM_TYPE_RAINFED,
             ]);
             $changes = [];
-            if ($request->has('barangay')) {
-                $changes['barangay'] = $request->validated('barangay') ?: null;
+            // A blank choice keeps the saved barangay: the column cannot be empty.
+            if ($request->filled('barangay')) {
+                $changes['barangay'] = $request->validated('barangay');
             }
             if ($request->filled('farm_area')) {
                 $changes['farm_area'] = $request->validated('farm_area');
@@ -65,6 +76,7 @@ class ProfileController extends Controller
         if ($request->user()->role === User::ROLE_FARMER && $request->has('farmer_organization_ids_present')) {
             $profile = $request->user()->farmerProfile()->firstOrCreate([], [
                 'full_name' => $request->user()->name,
+                'barangay' => $barangay,
                 'farm_type' => FarmerProfile::FARM_TYPE_RAINFED,
             ]);
             $profile->syncOrganizations((array) ($request->validated('farmer_organization_ids') ?? []));

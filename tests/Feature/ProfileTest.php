@@ -96,4 +96,37 @@ class ProfileTest extends TestCase
 
         $this->assertNotNull($user->fresh());
     }
+
+    // 2026-11-20: a farmer without a profile row got HTTP 500 (farmer_profiles.barangay is NOT NULL).
+    public function test_a_farmer_without_a_profile_gets_one_from_their_account_barangay(): void
+    {
+        $user = User::factory()->create(['role' => User::ROLE_FARMER, 'barangay' => 'Cumba']);
+        $this->assertNull($user->farmerProfile);
+
+        $this->actingAs($user)->patch('/profile', ['name' => 'Juan Dela Cruz', 'email' => $user->email, 'barangay' => '', 'farm_type' => 'Irrigated'])
+            ->assertSessionHasNoErrors()->assertRedirect('/profile');
+
+        $profile = $user->fresh()->farmerProfile;
+        $this->assertSame('Cumba', $profile->barangay);
+        $this->assertSame('Irrigated', $profile->farm_type);
+    }
+
+    public function test_a_farmer_without_any_barangay_is_asked_for_one_instead_of_an_error(): void
+    {
+        $user = User::factory()->create(['role' => User::ROLE_FARMER, 'barangay' => null]);
+
+        $this->actingAs($user)->patch('/profile', ['name' => 'Juan Dela Cruz', 'email' => $user->email, 'farm_type' => 'Rainfed'])
+            ->assertRedirect('/profile')->assertSessionHasErrors('barangay');
+        $this->assertNull($user->fresh()->farmerProfile);
+    }
+
+    public function test_a_blank_barangay_keeps_the_saved_one(): void
+    {
+        $user = User::factory()->create(['role' => User::ROLE_FARMER, 'barangay' => 'Cumba']);
+        \App\Models\FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => 'Bagong Pook']);
+
+        $this->actingAs($user)->patch('/profile', ['name' => 'Juan Dela Cruz', 'email' => $user->email, 'barangay' => '', 'farm_type' => 'Rainfed'])
+            ->assertSessionHasNoErrors();
+        $this->assertSame('Bagong Pook', $user->fresh()->farmerProfile->barangay);
+    }
 }
