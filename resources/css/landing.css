@@ -14,7 +14,9 @@
     }
 
     body {
-        @apply bg-white font-inter text-[17px] text-ink antialiased;
+        @apply bg-white text-[17px] leading-[1.6] text-ink antialiased;
+        font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+        text-rendering: optimizeLegibility;
     }
 
     /* Height of the top nav (components/public-nav.blade.php), its bottom line included. */
@@ -95,7 +97,8 @@
     }
 
     .lp-lead {
-        @apply mt-4 max-w-[36rem] text-base leading-relaxed text-muted sm:text-lg;
+        @apply mt-3 max-w-[36rem] text-base leading-[1.65] text-muted sm:text-[1.0625rem];
+        text-wrap: balance;
     }
 
     .lp-band .lp-lead {
@@ -108,11 +111,11 @@
     }
 
     .lp-card-title {
-        @apply text-xl font-semibold leading-snug text-ink;
+        @apply text-lg font-semibold leading-snug tracking-[-0.01em] text-sage-900;
     }
 
     .lp-btn {
-        @apply inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-lg border px-4 py-2 text-base leading-none transition-colors;
+        @apply inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-full border px-5 py-2 text-base font-medium leading-none transition-colors;
     }
 
     /* Hero and login card: 52px tall. */
@@ -137,7 +140,7 @@
     }
 
     .lp-h2 {
-        @apply mt-4 text-[1.875rem] font-bold leading-[1.15] tracking-[-0.02em] text-ink sm:text-[2.5rem];
+        @apply mt-4 text-[1.875rem] font-semibold leading-[1.2] tracking-[-0.02em] text-sage-900 sm:text-[2.25rem];
     }
 
     .questions-heading {
@@ -163,7 +166,6 @@
         aspect-ratio: 16 / 9;
         overflow: hidden;
         border-radius: 0.75rem;
-        box-shadow: 0 16px 36px rgb(var(--sage-950-rgb) / 0.1);
     }
 
     /* About and Contact carry a rice-field photo (inline style). Text sits on a light veil over it, never on the raw
@@ -208,7 +210,6 @@
         aspect-ratio: 16 / 9;
         overflow: hidden;
         border-radius: 0.75rem;
-        box-shadow: 0 12px 28px rgb(var(--sage-950-rgb) / 0.08);
     }
 
     .features-main {
@@ -217,19 +218,16 @@
         min-width: 0;
     }
 
+    /* The selected feature: a compact white card (or the dashboard screenshot), only as tall as its content. */
     .features-preview {
         position: relative;
-        min-height: 22rem;
         overflow: hidden;
-        border-radius: 0.75rem;
-        background: var(--sage-950);
-        box-shadow: 0 18px 36px rgb(var(--sage-950-rgb) / 0.14);
+        border-radius: .5rem;
+        background: #fff;
     }
 
     .feature-preview-panel {
         height: 100%;
-        min-height: 22rem;
-        transition: opacity .2s ease, transform .2s ease;
     }
 
     .feature-preview-panel[hidden] {
@@ -239,8 +237,8 @@
     .feature-preview-panel > img {
         display: block;
         width: 100%;
-        height: 100%;
-        min-height: 22rem;
+        height: auto;
+        aspect-ratio: 16 / 10;
         object-fit: cover;
         object-position: top left;
     }
@@ -252,97 +250,112 @@
         margin: 0;
         padding: .45rem .65rem;
         border-radius: .35rem;
-        background: rgb(15 31 22 / .88);
-        color: white;
-        font-size: .75rem;
+        border: 1px solid var(--sage-200);
+        background: #fff;
+        color: theme('colors.ink');
+        font-size: .875rem;
     }
 
     .feature-preview-placeholder {
         display: flex;
-        min-height: 22rem;
-        height: 100%;
-        padding: clamp(1.5rem, 5vw, 3rem);
+        padding: 1.75rem;
         flex-direction: column;
-        justify-content: center;
-        gap: .65rem;
-        color: white;
-        background: radial-gradient(circle at 90% 10%, rgb(119 184 132 / .25), transparent 38%), var(--sage-950);
+        align-items: center;
+        gap: .5rem;
+        text-align: center;
+        color: theme('colors.ink');
+        background: #fff;
     }
 
     .feature-preview-placeholder strong {
-        max-width: 18rem;
-        font-size: clamp(1.5rem, 3vw, 2.25rem);
-        line-height: 1.1;
+        font-size: 1.375rem;
+        line-height: 1.3;
     }
 
-    .feature-preview-placeholder > span:not(.feature-preview-kicker):not(.feature-preview-line) {
-        max-width: 24rem;
-        color: rgb(255 255 255 / .7);
-        font-size: .95rem;
+    .feature-preview-placeholder > span {
+        max-width: 32rem;
+        color: theme('colors.muted');
+        font-size: 1rem;
     }
 
-    .feature-preview-kicker {
-        color: var(--sage-300);
-        font-size: .72rem;
-        font-weight: 800;
-        letter-spacing: .12em;
-        text-transform: uppercase;
-    }
 
-    .feature-preview-line {
-        display: block;
-        width: 4rem;
-        height: .2rem;
-        margin-top: 1rem;
-        border-radius: 999px;
-        background: var(--sage-400);
-    }
 
     .features-list {
         display: grid;
         min-width: 0;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: .25rem 1.5rem;
+        gap: .75rem;
         margin: 0;
         padding: 0;
         list-style: none;
     }
 
+    /* Each feature: a plain white tile on the light green section, no lines. The selected one turns light green. */
     .feature-item {
         min-width: 0;
-        padding: .85rem 0 .9rem;
-        border-top: 1px solid var(--sage-200);
-        transition: border-color .2s ease, transform .2s ease;
+        text-align: center;
+        padding: 1rem 1.25rem;
+        border-radius: .5rem;
+        background: #fff;
+        transition: background-color .15s ease;
+    }
+
+    .feature-item:hover {
+        background: var(--sage-100);
     }
 
     .feature-item.is-active {
-        border-top-color: var(--sage-600);
-        transform: translateY(-2px);
+        background: var(--sage-200);
+    }
+
+    /* Roles and data sources: the same plain tiles. */
+    .roles-grid {
+        gap: 1rem;
+    }
+
+    .roles-grid > article {
+        padding: 1.5rem;
+        border-radius: .5rem;
+        background: #fff;
+    }
+
+    .about-sources {
+        gap: .75rem;
+    }
+
+    .about-source {
+        padding: 1rem 1.25rem;
+        border-radius: .5rem;
+        background: var(--sage-100);
+    }
+
+    /* Numbers from Lian: centred under the centred heading, in light tiles. */
+    .lp-stat {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem 1rem;
+        border-radius: .5rem;
+        background: var(--sage-50);
+        text-align: center;
     }
 
     .feature-select {
-        display: grid;
+        display: block;
         width: 100%;
-        grid-template-columns: auto minmax(0, 1fr);
-        gap: .75rem;
         padding: 0;
         border: 0;
         background: transparent;
         color: inherit;
-        text-align: left;
+        text-align: center;
         cursor: pointer;
     }
 
-    .feature-index {
-        color: var(--sage-600);
-        font-size: .75rem;
-        font-weight: 800;
-        letter-spacing: .08em;
-    }
 
     .feature-select .lp-card-title {
         display: block;
-        font-size: 1.05rem;
+        font-size: 1.0625rem;
     }
 
     .feature-description {
@@ -360,7 +373,7 @@
 
     .feature-open {
         display: inline-flex;
-        margin: .55rem 0 0 1.55rem;
+        margin: .5rem 0 0;
         color: var(--sage-700);
         font-size: .875rem;
         font-weight: 700;
@@ -375,7 +388,6 @@
         height: 120px;
         overflow: hidden;
         border-radius: 0.75rem;
-        box-shadow: 0 12px 28px rgb(var(--sage-950-rgb) / 0.08);
     }
 
     .contact-photo {
@@ -383,7 +395,6 @@
         aspect-ratio: 21 / 9;
         overflow: hidden;
         border-radius: 0.75rem;
-        box-shadow: 0 16px 36px rgb(var(--sage-950-rgb) / 0.1);
     }
 
     .questions-accordion {
@@ -391,12 +402,11 @@
     }
 
     .contact-container {
-        max-width: calc(1100px + 4rem);
+        max-width: none;
     }
 
     .contact-layout {
         @apply grid items-start gap-12;
-        max-width: 1100px;
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
@@ -436,8 +446,7 @@
 
     .contact-form {
         container-type: inline-size;
-        box-shadow: 0 12px 28px rgb(var(--sage-950-rgb) / 0.04);
-        border: 0;
+                border: 0;
     }
 
     .lp-hero > .lp-wrap > div:first-child,
@@ -461,7 +470,7 @@
     }
 
     .how-step {
-        @apply flex min-w-0 flex-col;
+        @apply flex min-w-0 flex-col text-center;
     }
 
     .how-step-copy {
@@ -469,7 +478,7 @@
     }
 
     .how-step h3 {
-        @apply mt-2 text-lg font-semibold leading-snug text-ink;
+        @apply mt-2 text-lg font-semibold leading-snug tracking-[-0.01em] text-sage-900;
     }
 
     .how-step-copy p {
@@ -477,7 +486,7 @@
     }
 
     .how-fragment {
-        @apply mt-5 flex h-[120px] min-h-[120px] flex-col justify-center rounded-lg bg-sage-50 px-4 py-3 text-sm leading-snug text-muted;
+        @apply mt-5 flex min-h-[120px] flex-col items-center justify-start rounded-lg bg-sage-50 px-4 py-4 text-sm leading-snug text-muted;
     }
 
     .how-fragment strong {
@@ -485,7 +494,7 @@
     }
 
     .fragment-label {
-        @apply text-xs font-semibold uppercase tracking-[0.08em] text-brand;
+        @apply text-sm font-semibold text-brand;
     }
 
     .lp-band .lp-h2 {
@@ -518,20 +527,15 @@
     }
 
     .lp-link {
-        @apply font-semibold text-brand underline decoration-from-font underline-offset-2 hover:text-brand-dark;
+        @apply font-semibold text-brand underline decoration-1 underline-offset-[3px] hover:text-brand-dark;
     }
 
-    /* Top nav (components/public-nav.blade.php). Solid: white with a thin bottom line, ink text, brand accents.
-       Over the hero (data-nav-state="hero"): a flat dark scrim on the photo with white text, at least 4.5:1 even on the
-       pale sky. Only colours change between the two, in a short transition. */
+    /* Top nav (components/public-nav.blade.php): always a plain white bar with a thin bottom line, ink text and
+       brand accents, over the hero too (data-nav-state still tracks the scroll position but looks the same). */
     .lp-header {
-        @apply h-[var(--nav-h)] border-transparent bg-white;
-        transition: background-color .2s ease, border-color .2s ease, box-shadow .2s ease;
+        @apply h-[var(--nav-h)] bg-white;
     }
 
-    .lp-header[data-nav-state='hero'] {
-        @apply border-transparent bg-ink/65;
-    }
 
     .lp-header[data-nav-state='solid'] {
         box-shadow: none;
@@ -541,13 +545,8 @@
         @apply bg-sage-500;
     }
 
-    .lp-header .lp-logo-on-dark,
-    .lp-header[data-nav-state='hero'] .lp-logo-on-light {
+    .lp-header .lp-logo-on-dark {
         @apply hidden;
-    }
-
-    .lp-header[data-nav-state='hero'] .lp-logo-on-dark {
-        @apply block;
     }
 
     .lp-header-title {
@@ -559,7 +558,7 @@
     }
 
     .lp-nav-link {
-        @apply relative inline-flex min-h-11 items-center rounded-md px-3 text-[0.9375rem] font-medium leading-none text-ink transition-colors hover:text-brand;
+        @apply relative inline-flex min-h-11 items-center rounded-md px-3 text-[0.9375rem] font-normal leading-none text-muted transition-colors hover:text-ink;
     }
 
     /* The active section: a 2px underline (brand on white, white over the hero). */
@@ -568,11 +567,11 @@
     }
 
     .lp-nav-link.is-active {
-        @apply text-brand;
+        @apply font-medium text-ink;
     }
 
     .lp-nav-link.is-active::after {
-        @apply absolute bottom-0 left-3 right-3 block h-0.5 bg-brand content-[''];
+        @apply absolute bottom-2.5 left-3 right-3 block h-px bg-ink content-[''];
     }
 
     .lp-weather-chip {
@@ -593,48 +592,6 @@
 
     .lp-header-icon-btn {
         @apply inline-flex h-11 w-11 items-center justify-center rounded-md text-ink transition-colors hover:bg-tint;
-    }
-
-    .lp-header[data-nav-state='hero'] :is(.lp-header-title, .lp-header-sub, .lp-nav-link, .lp-nav-link.is-active, .lp-weather-icon, .lp-header-icon-btn) {
-        @apply text-white;
-    }
-
-    .lp-header[data-nav-state='hero'] .lp-header-divider {
-        @apply bg-white/60;
-    }
-
-    .lp-header[data-nav-state='hero'] .lp-nav-link:hover::after {
-        display: none;
-    }
-
-    .lp-header[data-nav-state='hero'] .lp-nav-link.is-active::after {
-        display: none;
-    }
-
-    .lp-header[data-nav-state='hero'] :is(.lp-weather-chip, .lp-header-btn) {
-        @apply border-transparent bg-transparent text-white hover:bg-white hover:text-ink;
-    }
-
-    .lp-header[data-nav-state='hero'] [data-nav-login] {
-        @apply border-white/80;
-    }
-
-    .lp-header[data-nav-state='hero'] .lp-weather-chip:hover .lp-weather-icon {
-        @apply text-brand;
-    }
-
-    .lp-header[data-nav-state='hero'] .lp-weather-skeleton {
-        @apply bg-white/40;
-    }
-
-    .lp-header[data-nav-state='hero'] .lp-header-icon-btn {
-        @apply hover:bg-white/15;
-    }
-
-    /* Focus over the hero: a white ring, since the brand ring would disappear into the scrim. */
-    .lp-header[data-nav-state='hero'] [data-nav-row] :focus-visible {
-        --tw-ring-color: #fff;
-        --tw-ring-offset-color: transparent;
     }
 
     .lp-drawer-link {
@@ -687,14 +644,8 @@ html[data-theme="dark"] #roles .text-brand { color: var(--sage-200); }
     .features-list { grid-column: 2; grid-row: 1; }
     .features-preview { grid-column: 2; grid-row: 2; }
 
-    .features-photo { aspect-ratio: 1; }
-
-    .features-preview,
-    .feature-preview-panel,
-    .feature-preview-panel > img,
-    .feature-preview-placeholder {
-        min-height: 30rem;
-    }
+    /* The photo fills its column next to the list and the card, so no empty space is left under it. */
+    .features-photo { aspect-ratio: auto; align-self: stretch; min-height: 24rem; }
 }
 
 .contact-map:focus-within {
@@ -728,10 +679,19 @@ html[data-theme="dark"] #roles .text-brand { color: var(--sage-200); }
         grid-template-columns: minmax(0, 1fr);
     }
 
+    /* Phones: the feature list first, then the selected feature's card right under it. */
+    .features-main {
+        gap: 1rem;
+    }
+
+    .features-main .features-list {
+        order: -1;
+    }
+
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .lp-header, .features-layout > ul > li, .feature-item, .feature-preview-panel { transition: none; }
+    .features-layout > ul > li, .feature-item { transition: none; }
 }
 
 /* Hero card: the sign-up form (auth/partials/register-form*) keeps its /register look; only its button and checkbox
@@ -777,5 +737,50 @@ html[data-theme="dark"] #roles .text-brand { color: var(--sage-200); }
 [data-auth-panel].is-entering { opacity: 0; }
 @media (prefers-reduced-motion: reduce) {
     [data-auth-panel], [data-auth-card] { transition: none; }
+}
+
+
+/* Create account guide (landing/hero.blade.php): the headline card turns into a step-by-step guide while the card on the
+   right is in Create account mode. Plain numbered list, left-aligned; on wide screens it stays in view while the form
+   scrolls. */
+.lp-reg-guide { display: none; width: 100%; max-width: 36rem; text-align: left; }
+.lp-reg-guide ol { margin: 0; padding: 0; list-style: none; }
+.lp-reg-guide li { display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: .875rem; align-items: start; }
+.lp-reg-guide li strong { display: block; font-size: 1.0625rem; font-weight: 600; line-height: 1.35; color: theme('colors.ink'); }
+.lp-reg-guide li p { margin-top: .25rem; font-size: 1rem; line-height: 1.5; color: theme('colors.muted'); }
+.lp-reg-step {
+    display: inline-flex; width: 2rem; height: 2rem; align-items: center; justify-content: center;
+    border-radius: 999px; background: var(--sage-100); color: var(--sage-800); font-size: .9375rem; font-weight: 700;
+}
+
+.lp-hero-row:has([data-auth-mode='register']) .lp-hero-intro { justify-content: flex-start; align-items: stretch; text-align: left; }
+.lp-hero-row:has([data-auth-mode='register']) .lp-hero-intro-inner { align-items: flex-start; gap: 1rem; }
+.lp-hero-row:has([data-auth-mode='register']) .lp-hero-title { font-size: clamp(1.625rem, 2.6vw, 2rem); }
+.lp-hero-row:has([data-auth-mode='register']) .lp-hero-more { display: none; }
+.lp-hero-row:has([data-auth-mode='register']) .lp-reg-guide { display: block; margin-top: .5rem; padding-top: 1.5rem; border-top: 1px solid var(--sage-100); }
+@media (min-width: 1024px) {
+    .lp-hero-row:has([data-auth-mode='register']) .lp-hero-intro-inner { position: sticky; top: calc(var(--nav-h) + 1.5rem); }
+}
+
+/* The sign-up card's subtitle lines up with its heading, on the left. */
+.lp-reg .reg-head { justify-content: flex-start; text-align: left; }
+
+/* Hero card: three things farmers get, as plain light green tiles. */
+.lp-hero-offers { display: grid; width: 100%; max-width: 40rem; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; margin: .25rem 0 0; padding: 0; list-style: none; }
+.lp-hero-offers li { display: flex; flex-direction: column; align-items: center; gap: .375rem; padding: 1rem .75rem; border-radius: .5rem; background: var(--sage-50); text-align: center; }
+.lp-hero-offers strong { font-size: 1rem; font-weight: 600; line-height: 1.3; color: theme('colors.ink'); }
+.lp-hero-offers span { font-size: .875rem; line-height: 1.4; color: theme('colors.muted'); }
+@media (max-width: 639.98px) {
+    .lp-hero-offers { grid-template-columns: minmax(0, 1fr); }
+    .lp-hero-offers li { align-items: flex-start; text-align: left; }
+}
+
+/* Create account mode: the guide replaces the tiles, buttons and counts. */
+.lp-hero-row:has([data-auth-mode='register']) :is(.lp-hero-offers, .lp-hero-stats) { display: none; }
+
+/* Sign in mode: the card matches the taller headline card, so its content sits in the middle rather than leaving
+   empty space at the bottom. */
+@media (min-width: 1024px) {
+    [data-auth-card][data-auth-mode='login'] { display: flex; flex-direction: column; justify-content: center; }
 }
 
