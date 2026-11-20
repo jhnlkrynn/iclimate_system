@@ -91,6 +91,12 @@ case "$(val ICLIMATE_YIELD_ACCURACY_VERIFIED)" in
 esac
 [ "$(val DB_CONNECTION)" = mysql ] && ok "database driver mysql (MariaDB 10.11)" || die "DB_CONNECTION must be mysql: migration steps guarded for MySQL/MariaDB are skipped under the mariadb driver"
 [ "$(val SESSION_SECURE_COOKIE)" = true ] && ok "secure cookies" || die "SESSION_SECURE_COOKIE must be true"
+# Password recovery and health alerts are e-mail: the log/array mailers would silently send nothing.
+case "$(val MAIL_MAILER)" in
+    smtp|ses|postmark|resend|mailgun|sendmail) ok "mailer $(val MAIL_MAILER)" ;;
+    *) die "MAIL_MAILER must be a real transport (smtp with MAIL_HOST/MAIL_PORT/MAIL_USERNAME/MAIL_PASSWORD): password recovery would not send" ;;
+esac
+[ "$(val SECURITY_CSP_STRICT)" = false ] && echo "WARN  SECURITY_CSP_STRICT=false: the loose content policy is on (rollback switch only)" || ok "strict content security policy"
 [ "$(val BROADCAST_CONNECTION)" = reverb ] || die "BROADCAST_CONNECTION must be reverb"
 [ -n "$(val REVERB_APP_KEY)" ] && [ "$(val VITE_REVERB_APP_KEY)" = "$(val REVERB_APP_KEY)" ] || die "VITE_REVERB_APP_KEY must match REVERB_APP_KEY before building"
 [ -n "$(val APP_KEY)" ] && ok "APP_KEY set" || die "APP_KEY missing (php artisan key:generate --show, then store it in the env file)"
