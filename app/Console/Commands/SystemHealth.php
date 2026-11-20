@@ -11,7 +11,7 @@ use Throwable;
 
 /**
  * One health check for monitoring (systemd timer, cron, uptime monitor): database, migrations, ML service, Reverb,
- * queue, scheduler and disk. Prints one line per check with what to do; exits 1 when anything FAILs, so a monitor
+ * queue, scheduler, backups (on and off this host), the yield model's weather inputs and disk. Prints one line per check with what to do; exits 1 when anything FAILs, so a monitor
  * can alert. With --log every FAIL is also written to the application log (the scheduler runs it that way).
  * Never prints credentials, hosts' passwords or personal data.
  */
@@ -26,6 +26,7 @@ class SystemHealth extends Command
 
     public function handle(): int
     {
+        $this->results = [];   // one report per run, also when the same command object is run again in one process
         $this->check('database', function (): array {
             $started = microtime(true);
             DB::select('select 1');
@@ -99,6 +100,59 @@ class SystemHealth extends Command
                 .($copied > 0 ? '; '.$copied.' password hash(es) are copied across accounts' : '').' — see the release handoff, step 6'];
         });
 
+        // Monitoring added 2026-11-20 (deployment audit): backups on this host and off it, and the weather inputs every
+        // yield estimate needs, so a stopped job is reported before a farmer sees "Not enough weather records".
+        $this->check('backup', function (): array {
+            $status = app(\App\Services\DatabaseBackupService::class)->status();
+
+            return match ($status['state']) {
+                'ok' => ['OK', $status['count'].' backup(s); newest '.$status['last']->diffForHumans()],
+                'stale' => ['FAIL', 'newest backup is '.$status['last']->diffForHumans().' — iclimate:backup-database is not running (scheduler) or failing; see storage/logs/automation-backup-database.log'],
+                default => ['FAIL', 'no valid backup in the backup directory — run php artisan iclimate:backup-database and check its log'],
+            };
+        }, 'backup directory could not be read — check BACKUP_DIRECTORY and its permissions');
+
+        $this->check('backup-offsite', function (): array {
+            if (! \App\Services\OffsiteBackupService::configured()) {
+                return ['WARN', 'off-host backups are not configured (BACKUP_OFFSITE_TARGET, BACKUP_ENCRYPTION_KEY_FILE) — a disk failure would lose every backup'];
+            }
+            $last = \App\Services\OffsiteBackupService::lastCopy();
+            $maxAge = (int) config('backup.max_age_hours', 36);
+            if ($last === null) {
+                return ['FAIL', 'no encrypted off-host copy recorded yet — run php artisan iclimate:backup-offsite'];
+            }
+
+            return $last['at']->lt(now()->subHours($maxAge))
+                ? ['FAIL', 'last off-host copy '.$last['at']->diffForHumans().' — iclimate:backup-offsite is not running or failing']
+                : ['OK', 'encrypted copy '.$last['file'].' sent '.$last['at']->diffForHumans()];
+        }, 'off-host backup status could not be read');
+
+        $this->check('yield-inputs', function (): array {
+            $now = \Carbon\CarbonImmutable::now('Asia/Manila')->startOfMonth();
+            $issues = [];
+            $archive = array_keys(\App\Services\Climate\OpenMeteoArchiveMonthly::months());
+            $newest = $archive === [] ? null : max($archive);
+            $expected = $now->subMonthNoOverflow()->format('Y-m');
+            // The archive lags a few days after a month ends, so last month may still be missing early in a month.
+            if ($newest === null) {
+                $issues[] = 'no past-weather archive — run php artisan iclimate:fetch-climate-archive';
+            } elseif ($newest < $now->subMonthsNoOverflow(2)->format('Y-m')) {
+                $issues[] = 'past-weather archive ends '.$newest.' (expected '.$expected.') — iclimate:fetch-climate-archive is not running';
+            }
+            $ready = \App\Models\MonthlyWeatherPrediction::query()->where('status', 'ready')
+                ->get(['prediction_year', 'prediction_month'])->map(fn ($r) => sprintf('%04d-%02d', $r->prediction_year, $r->prediction_month))->unique()->all();
+            $missing = collect(range(0, 17))->map(fn (int $i): string => $now->addMonthsNoOverflow($i)->format('Y-m'))->diff($ready)->values();
+            if ($missing->isNotEmpty()) {
+                $issues[] = $missing->count().' of 18 forecast months missing (first '.$missing->first().') — run php artisan iclimate:refresh-predictions';
+            }
+            $harvest = \App\Support\RiceSeason::harvestMonth($now)->format('Y-m');
+            $critical = $newest === null || $missing->contains($now->format('Y-m')) || $missing->contains($harvest);
+
+            return $issues === []
+                ? ['OK', 'archive to '.$newest.'; 18 forecast months ready (this season\'s harvest month '.$harvest.')']
+                : [$critical ? 'FAIL' : 'WARN', implode('; ', $issues)];
+        }, 'yield input check failed — check the monthly_weather_predictions table and storage/app/climate');
+
         $this->check('disk', function (): array {
             $free = @disk_free_space(storage_path());
             if ($free === false) {
@@ -122,6 +176,33 @@ class SystemHealth extends Command
         $this->results[] = ['check' => $name, 'status' => $status, 'detail' => $detail];
     }
 
+    /**
+     * E-mail the operator when a check FAILs (HEALTH_ALERT_EMAIL), at most once an hour for the same set of failures.
+     * Without that setting the FAIL lines only reach the application log. A mail error never fails the health check.
+     *
+     * @param  list<array{check: string, status: string, detail: string}>  $failures
+     */
+    private function notifyOperator(array $failures): void
+    {
+        $to = (string) config('services.health.alert_email', '');
+        if ($to === '' || ! filter_var($to, FILTER_VALIDATE_EMAIL)) {
+            return;
+        }
+        $key = 'health-alert:'.md5(implode('|', array_column($failures, 'check')));
+        try {
+            if (! \Illuminate\Support\Facades\Cache::add($key, true, now()->addHour())) {
+                return;
+            }
+            $body = "iClimate health check FAILED on ".config('app.url')." at ".now('Asia/Manila')->toDayDateTimeString().":\n\n"
+                .collect($failures)->map(fn (array $r): string => '- '.$r['check'].': '.$r['detail'])->implode("\n")
+                ."\n\nRun php artisan iclimate:health on the server for the full report.";
+            \Illuminate\Support\Facades\Mail::raw($body, fn ($m) => $m->to($to)->subject('[iClimate] Health check FAILED: '.implode(', ', array_column($failures, 'check'))));
+            $this->line('alert sent to the operator address');
+        } catch (Throwable $e) {
+            Log::warning('iClimate health alert e-mail could not be sent.', ['exception' => $e::class]);
+        }
+    }
+
     private function report(): int
     {
         $failed = collect($this->results)->contains('status', 'FAIL');
@@ -132,6 +213,9 @@ class SystemHealth extends Command
                     Log::log('error', 'iClimate health FAIL '.$r['check'].': '.$r['detail']);
                 }
             }
+        }
+        if ($failed && $this->option('log')) {
+            $this->notifyOperator(collect($this->results)->where('status', 'FAIL')->values()->all());
         }
         if ($this->option('json')) {
             $this->line(json_encode(['ok' => ! $failed, 'checks' => $this->results], JSON_UNESCAPED_SLASHES));

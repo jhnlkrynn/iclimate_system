@@ -216,6 +216,13 @@ Schedule::command('iclimate:backup-database')
 
 // Ten minutes after the backup: prove the newest archive is readable
 // (read or listed only; nothing is restored).
+// Daily at 03:30, after the backup and its check: an encrypted copy of the newest backup leaves this host
+// (no-op until BACKUP_OFFSITE_TARGET and BACKUP_ENCRYPTION_KEY_FILE are set; iclimate:health warns meanwhile).
+Schedule::command('iclimate:backup-offsite')
+    ->dailyAt('03:30')
+    ->withoutOverlapping(60)
+    ->appendOutputTo($automationLog('iclimate:backup-offsite'));
+
 Schedule::command('iclimate:verify-backup')
     ->dailyAt('03:25')
     ->withoutOverlapping()

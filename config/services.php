@@ -65,6 +65,11 @@ return [
     ],
 
 
+    // Monitoring (iclimate:health --log): where FAIL alerts are e-mailed; empty = application log only.
+    'health' => [
+        'alert_email' => env('HEALTH_ALERT_EMAIL'),
+    ],
+
     'open_meteo' => [
         'base_url' => env('OPEN_METEO_BASE_URL', 'https://api.open-meteo.com/v1'),
         'latitude' => env('ICLIMATE_LATITUDE', \App\Support\LianLocation::LATITUDE),

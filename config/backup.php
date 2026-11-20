@@ -69,4 +69,20 @@ return [
 
     /* Give pg_dump this long (seconds) before it is stopped. */
     'timeout_seconds' => (int) env('BACKUP_TIMEOUT_SECONDS', 900),
+
+    /*
+    | Encrypted off-host copies (iclimate:backup-offsite, App\Services\OffsiteBackupService). target is a mounted
+    | directory on another disk/share or an rsync/SSH target "user@host:/path". The key file holds at least 32 bytes
+    | of random data (openssl rand -base64 48 > /etc/iclimate/backup.key; chmod 600) and is kept off this host too:
+    | without it no copy can be restored. Both empty = off-host copies off (iclimate:health warns).
+    */
+    'offsite' => [
+        'target' => env('BACKUP_OFFSITE_TARGET', ''),
+        'key_file' => env('BACKUP_ENCRYPTION_KEY_FILE', ''),
+        'retention_days' => (int) env('BACKUP_OFFSITE_RETENTION_DAYS', 30),
+        'openssl_binary' => env('OPENSSL_BINARY', 'openssl'),
+        'rsync_binary' => env('RSYNC_BINARY', 'rsync'),
+        'ssh_command' => env('BACKUP_OFFSITE_SSH', 'ssh -o BatchMode=yes'),
+        'status_file' => env('BACKUP_OFFSITE_STATUS_FILE'),
+    ],
 ];

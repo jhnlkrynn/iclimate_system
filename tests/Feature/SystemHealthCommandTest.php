@@ -19,6 +19,62 @@ class SystemHealthCommandTest extends TestCase
             '*/up' => Http::response('', 200),
         ]);
         DB::table('weather_fetch_logs')->insert(['created_at' => now()->subMinutes(10), 'updated_at' => now()->subMinutes(10)] + $this->fetchLogDefaults());
+        // A fresh backup, the past-weather archive and the 18-month forecast (checks added 2026-11-20).
+        $dir = storage_path('framework/testing/health-backups');
+        @mkdir($dir, 0700, true);
+        array_map('unlink', glob($dir.'/*') ?: []);
+        file_put_contents($dir.'/iclimate_'.now()->format('Y-m-d_Hi').'.backup', "PGDMP\x01-body");
+        config(['backup.directory' => $dir]);
+        $this->yieldInputs();
+    }
+
+    private function yieldInputs(int $forecastMonths = 18): void
+    {
+        $now = \Carbon\CarbonImmutable::now('Asia/Manila')->startOfMonth();
+        @unlink(\App\Services\Climate\OpenMeteoArchiveMonthly::path());
+        \App\Services\Climate\OpenMeteoArchiveMonthly::forget();
+        app(\App\Services\Climate\OpenMeteoArchiveMonthly::class)->store([$now->subMonthNoOverflow()->format('Y-m') => ['rainfall' => 100.0, 'temperature' => 27.0, 'humidity' => 80.0, 'wind_speed' => 2.0]]);
+        foreach (range(0, $forecastMonths - 1) as $i) {
+            $m = $now->addMonthsNoOverflow($i);
+            \App\Models\MonthlyWeatherPrediction::query()->create(['prediction_year' => $m->year, 'prediction_month' => $m->month, 'rainfall' => 100.0, 'temperature_average' => 27.0,
+                'weather_model' => 'test', 'status' => 'ready', 'generated_at' => now()]);
+        }
+    }
+
+    protected function tearDown(): void
+    {
+        @unlink(\App\Services\Climate\OpenMeteoArchiveMonthly::path());
+        \App\Services\Climate\OpenMeteoArchiveMonthly::forget();
+        parent::tearDown();
+    }
+
+    public function test_a_stale_backup_or_missing_forecasts_fail_and_the_operator_is_emailed_once(): void
+    {
+        $this->healthyServices();
+        $dir = (string) config('backup.directory');
+        $file = glob($dir.'/*.backup')[0];
+        touch($file, now()->subDays(3)->getTimestamp());
+        \App\Models\MonthlyWeatherPrediction::query()->delete();
+        config(['services.health.alert_email' => 'ops@example.test', 'mail.default' => 'array']);
+
+        $this->artisan('iclimate:health', ['--log' => true])
+            ->expectsOutputToContain('FAIL  backup')
+            ->expectsOutputToContain('FAIL  yield-inputs 18 of 18 forecast months missing')
+            ->expectsOutputToContain('WARN  backup-offsite off-host backups are not configured')
+            ->assertFailed();
+        $this->artisan('iclimate:health', ['--log' => true])->assertFailed();
+        $sent = app('mail.manager')->mailer('array')->getSymfonyTransport()->messages();
+        $this->assertCount(1, $sent, 'the same failures alert once an hour');
+        $this->assertStringContainsString('[iClimate] Health check FAILED: backup, yield-inputs', $sent->first()->getOriginalMessage()->getSubject());
+    }
+
+    public function test_a_partly_missing_forecast_horizon_only_warns(): void
+    {
+        $this->healthyServices();
+        \App\Models\MonthlyWeatherPrediction::query()->where('prediction_month', \Carbon\CarbonImmutable::now('Asia/Manila')->startOfMonth()->addMonthsNoOverflow(17)->month)
+            ->where('prediction_year', \Carbon\CarbonImmutable::now('Asia/Manila')->startOfMonth()->addMonthsNoOverflow(17)->year)->delete();
+
+        $this->artisan('iclimate:health')->expectsOutputToContain('WARN  yield-inputs 1 of 18 forecast months missing')->assertSuccessful();
     }
 
     private function fetchLogDefaults(): array
