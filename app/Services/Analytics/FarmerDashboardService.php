@@ -595,7 +595,8 @@ final class FarmerDashboardService
         try {
             $prediction = $farm !== null && $area === null
                 ? ['success' => false, 'missing_inputs' => ['area']]
-                : $this->riceYield->predictForUser(\App\Support\BusinessClock::now()->toImmutable(), $farmType, $area, $user, [], PredictionType::RICE_YIELD->value);
+                // For this season's harvest month (RiceSeason::harvestMonth), as a season request on /analysis/yield is.
+                : $this->riceYield->predictForUser(\App\Support\RiceSeason::harvestMonth(\App\Support\BusinessClock::now()->toImmutable()), $farmType, $area, $user, [], PredictionType::RICE_YIELD->value);
 
             if (($prediction['success'] ?? false) && is_numeric($prediction['yield_tons_per_hectare'] ?? $prediction['predicted_yield'] ?? null)) {
                 $prediction['ran_at'] = CarbonImmutable::now(self::TIMEZONE)->toIso8601String();
@@ -642,7 +643,7 @@ final class FarmerDashboardService
         $month = (string) ($estimate['target_month'] ?? '');
 
         return $ranAt === null || $ranAt->lt(CarbonImmutable::now()->subHours(self::REFRESH_AFTER_HOURS))
-            || ($month !== '' && $month !== CarbonImmutable::now(self::TIMEZONE)->format('Y-m'));
+            || ($month !== '' && $month !== \App\Support\RiceSeason::harvestMonth(CarbonImmutable::now(self::TIMEZONE))->format('Y-m'));
     }
 
     /**
@@ -693,6 +694,14 @@ final class FarmerDashboardService
                 'ran_at' => ! empty($result['ran_at']) ? CarbonImmutable::parse($result['ran_at'])->timezone(self::TIMEZONE) : null,
                 // An estimate made from an estimated farm size says so, with the range the farmer picked.
                 'size_note' => $range !== null ? __('farms.yield.estimated_size', ['range' => \App\Support\FarmSize::rangeLabel((string) $result['farm_size_range'])]) : null,
+                // The farm, size and type the model was given (not the profile's), so the card names what it estimated.
+                'farm' => [
+                    'name' => trim(collect([$farm?->farm_name, $farm?->barangay])->filter()->implode(' · ')) ?: null,
+                    'area' => is_numeric($result['farm_area_hectares'] ?? null) ? (float) $result['farm_area_hectares'] : (is_numeric($result['model_input']['area'] ?? null) ? (float) $result['model_input']['area'] : null),
+                    'type' => ($t = strtolower((string) ($result['farm_type'] ?? $result['model_input']['farm_type'] ?? ''))) !== '' ? __('farmer.my_farm.water.'.$t) : null,
+                ],
+                // Transparency record: the model, the farm details and every input with its source (owner request 2026-11-20).
+                'record' => \App\Support\YieldEstimateRecord::from($result),
             ];
     }
 

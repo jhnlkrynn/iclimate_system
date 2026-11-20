@@ -34,7 +34,7 @@ final class MunicipalYieldForecastService
     /** @return array<string, mixed> */
     public function current(CarbonImmutable $now): array
     {
-        $target = $now->startOfMonth();
+        $target = \App\Support\RiceSeason::harvestMonth($now);   // this season's harvest month, as the farm estimates
         $key = self::cacheKey($target);
         $base = ['season' => $this->seasonYield->seasonLabel($now), 'source' => 'municipal_model'];
         $cached = Cache::get($key);
@@ -160,7 +160,7 @@ final class MunicipalYieldForecastService
     /** Read-only response for the lightweight card endpoint. Never queues or runs inference. */
     public function status(CarbonImmutable $now): array
     {
-        $target = $now->startOfMonth();
+        $target = \App\Support\RiceSeason::harvestMonth($now);
         $cached = Cache::get(self::cacheKey($target));
         if (is_array($cached) && is_numeric($cached['yield'] ?? null)) {
             $ranAt = isset($cached['ran_at']) ? CarbonImmutable::parse((string) $cached['ran_at']) : null;

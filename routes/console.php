@@ -192,6 +192,13 @@ Schedule::command('iclimate:warm-prediction-cache')
     ->appendOutputTo($automationLog('iclimate:warm-prediction-cache'));
 
 // Each farmer's expected rice yield (the Python model) is made here and stored, so the Farmer dashboard only reads it.
+// Daily at 01:10: complete past months from the Open-Meteo historical archive, the last fallback for the rice-yield
+// model's observed-month inputs (station file and MAO Climate Records come first). Before the 02:00 prediction refresh.
+Schedule::command('iclimate:fetch-climate-archive')
+    ->dailyAt('01:10')
+    ->withoutOverlapping(30)
+    ->appendOutputTo($automationLog('iclimate:fetch-climate-archive'));
+
 // Every 3 hours at :40 (after the 02:15 forecast warm-up on the 02:40 run); a profile or schedule edit queues that
 // farmer's estimate at once (PrepareFarmerYieldEstimate).
 Schedule::command('iclimate:warm-farmer-yields')

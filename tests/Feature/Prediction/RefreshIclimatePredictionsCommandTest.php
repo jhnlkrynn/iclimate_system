@@ -39,10 +39,10 @@ class RefreshIclimatePredictionsCommandTest extends TestCase
 
     /**
      * The default (no options) invocation must queue background generation
-     * for the full 12-month operational horizon without ever training the
+     * for the full 18-month operational horizon without ever training the
      * model inline in the CLI process itself.
      */
-    public function test_default_invocation_queues_the_12_month_horizon_without_computing_inline(): void
+    public function test_default_invocation_queues_the_18_month_horizon_without_computing_inline(): void
     {
         Queue::fake();
         Cache::flush();
@@ -53,7 +53,7 @@ class RefreshIclimatePredictionsCommandTest extends TestCase
 
         $this->artisan('iclimate:refresh-predictions')->assertSuccessful();
 
-        Queue::assertPushed(GenerateMonthlyWeatherForecast::class, 12);
+        Queue::assertPushed(GenerateMonthlyWeatherForecast::class, 18);
         $this->assertSame(0, MonthlyWeatherPrediction::query()->count());
     }
 
@@ -73,7 +73,7 @@ class RefreshIclimatePredictionsCommandTest extends TestCase
         $this->artisan('iclimate:refresh-predictions')->assertSuccessful();
         $this->artisan('iclimate:refresh-predictions')->assertSuccessful();
 
-        Queue::assertPushed(GenerateMonthlyWeatherForecast::class, 12);
+        Queue::assertPushed(GenerateMonthlyWeatherForecast::class, 18);
     }
 
     public function test_year_and_month_option_force_refreshes_synchronously(): void
@@ -102,12 +102,12 @@ class RefreshIclimatePredictionsCommandTest extends TestCase
         Cache::flush();
 
         $this->mock(MonthlyWeatherRandomForest::class, function ($mock) {
-            $mock->shouldReceive('predict')->times(12)->andReturn($this->fakePrediction(100.0));
+            $mock->shouldReceive('predict')->times(18)->andReturn($this->fakePrediction(100.0));
             $mock->shouldReceive('datasetVersion')->andReturn('test-dataset-v1');
         });
 
         $this->artisan('iclimate:refresh-predictions', ['--all' => true])->assertSuccessful();
 
-        $this->assertSame(12, MonthlyWeatherPrediction::query()->count());
+        $this->assertSame(18, MonthlyWeatherPrediction::query()->count());
     }
 }

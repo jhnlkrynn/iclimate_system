@@ -20,11 +20,9 @@
     <p class="fh-muted">{{ $h['season'] }}</p>
     @if ($h['state'] === 'ok')
         <p class="fh-big">{{ number_format($h['yield'], 2) }} <small>t/ha</small></p>
+        {{-- The "Unvalidated estimate" disclosure stays until the model has validation evidence; no Normal/Higher/Lower badge
+             on the farmer card (owner decision 2026-11-20). --}}
         <p class="fh-muted">@include('components.unvalidated-estimate')</p>
-        @if ($h['compare_label'])
-            <p class="fh-badge is-{{ ['typical' => 'info', 'above' => 'good', 'below' => 'watch'][$h['compare']] }}">{{ $h['compare_label'] }}</p>
-            <p class="fh-muted">{{ __('farmer.home.harvest.compare_note') }}</p>
-        @endif
         @if (! empty($h['size_note']))<p class="fh-muted">{{ $h['size_note'] }}</p>@endif
         <x-updated-at :at="$h['ran_at']" :label="__('farmer.home.updated')" />
     @elseif ($h['state'] === 'loading')

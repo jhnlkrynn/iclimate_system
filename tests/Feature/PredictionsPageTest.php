@@ -99,7 +99,7 @@ class PredictionsPageTest extends TestCase
 
     private function storeEstimate(User $farmer, float $yield): void
     {
-        Cache::put(FarmerDashboardService::predictionCacheKey($farmer->id), ['success' => true, 'yield_tons_per_hectare' => $yield, 'target_month' => now()->format('Y-m'),
+        Cache::put(FarmerDashboardService::predictionCacheKey($farmer->id), ['success' => true, 'yield_tons_per_hectare' => $yield, 'target_month' => \App\Support\RiceSeason::harvestMonth(now('Asia/Manila'))->format('Y-m'),
             'ran_at' => now('Asia/Manila')->toIso8601String()], now()->addHours(6));
     }
 
@@ -281,9 +281,10 @@ class PredictionsPageTest extends TestCase
         $text = $this->text($this->actingAs($farmer)->get(route('weather-predictions.index'))->getContent());
 
         $this->assertStringContainsString('4.60 t/ha', $text);
+        // The disclosure stays; the farmer card has no Normal / Higher / Lower badge (owner decision 2026-11-20).
         $this->assertStringContainsString('Unvalidated estimate', $text);
         $this->assertStringContainsString('Accuracy not verified', $text);
-        $this->assertStringContainsString('Higher', $text);
+        $this->assertStringNotContainsString('Compared with the usual Lian yield', $text);
         $this->assertStringContainsString('From your farm size (1.50 ha) and farm type (Irrigated', $text);
         $this->assertStringContainsString(\App\Support\RiceSeason::current() === 'Wet' ? 'Wet season' : 'Dry season', $text);
     }
@@ -322,7 +323,7 @@ class PredictionsPageTest extends TestCase
         $this->assertStringContainsString('Preparing the latest yield forecast...', $all);
         $this->assertStringNotContainsString("Average of 3 farmers' saved estimates.", $all);
         $this->assertSame(1, $calls, 'the first page starts exactly one after-response inference');
-        $this->assertIsArray(Cache::get('predictions:municipal-yield:'.now('Asia/Manila')->format('Y-m')));
+        $this->assertIsArray(Cache::get('predictions:municipal-yield:'.\App\Support\RiceSeason::harvestMonth(now('Asia/Manila'))->format('Y-m')));
         Queue::assertNotPushed(\App\Jobs\PrepareMunicipalYieldForecast::class);
 
         $one = $this->text($this->actingAs($mao)->get(route('weather-predictions.index', ['barangay' => 'Binubusan']))->getContent());
@@ -333,10 +334,41 @@ class PredictionsPageTest extends TestCase
         $this->assertStringContainsString('No saved farmer estimates yet for this area.', $none);
     }
 
+    public function test_the_farmer_can_open_how_the_estimate_was_made(): void
+    {
+        config(['prediction.rice_yield.gate' => 'label']);
+        $this->lianYields(4.0);
+        $farmer = $this->farmer(area: 1.5);
+        $month = now('Asia/Manila')->startOfMonth();
+        $previous = $month->copy()->subMonthNoOverflow()->format('Y-m');
+        Cache::put(FarmerDashboardService::predictionCacheKey($farmer->id), [
+            'success' => true, 'yield_tons_per_hectare' => 3.86, 'uncertainty' => 0.35, 'target_month' => $month->format('Y-m'),
+            'ran_at' => now('Asia/Manila')->toIso8601String(), 'model' => 'Random Forest', 'model_version' => 'rice_yield_model_final:687394f77677',
+            'validation_status' => 'within_training_range', 'accuracy_verified' => false, 'fallback' => false, 'farm_type' => 'Rainfed',
+            'inputs_used' => ['rainfall' => 136.77, 'temp_avg' => 27.61, 'temp_range' => 7.64, 'area' => 1.5, 'previous_rainfall' => 127.25,
+                'previous_temp' => 28.64, 'rainfall_6m' => 197.1, 'temp_3m' => 28.23, 'temp_6m' => 29.03, 'seasonal_rainfall' => 708.34,
+                'seasonal_temp' => 27.48, 'season' => 'Dry', 'farm_type' => 'Rainfed'],
+            'climate_sources' => ['reanalysis_months' => [$previous], 'forecast_months' => [], 'missing_months' => []],
+        ], now()->addHours(6));
+
+        $html = $this->actingAs($farmer)->get(route('weather-predictions.index'))->assertOk()->getContent();
+        $text = $this->text($html);
+
+        $this->assertStringContainsString('data-yield-record', $html);
+        $this->assertStringContainsString('How this estimate was made', $text);
+        $this->assertStringContainsString('rice_yield_model_final:687394f77677', $text);
+        $this->assertStringContainsString('3.51 – 4.21 t/ha', $text);
+        $this->assertStringContainsString('Average monthly rain, last 6 months', $text);
+        $this->assertStringContainsString('197.10 mm', $text);
+        $this->assertStringContainsString('past weather from Open-Meteo, adjusted to PAGASA Ambulong station', $text);
+        $this->assertStringNotContainsString('Compared with real harvests', $text, 'owner removed this line 2026-11-20');
+        $this->assertStringContainsString('Unvalidated estimate', $text, 'the disclosure stays on the card');
+    }
+
     public function test_all_lian_renders_a_cached_model_result_without_farmer_estimates(): void
     {
         $this->storeLianForecast(16);
-        Cache::forever('predictions:municipal-yield:'.now('Asia/Manila')->format('Y-m'), [
+        Cache::forever('predictions:municipal-yield:'.\App\Support\RiceSeason::harvestMonth(now('Asia/Manila'))->format('Y-m'), [
             'state' => 'ok', 'yield' => 4.25, 'usual' => 4.0, 'compare' => 'above', 'compare_label' => 'Higher',
             'ran_at' => now('Asia/Manila')->subHour()->toIso8601String(), 'model' => 'Random Forest',
         ]);
@@ -353,7 +385,7 @@ class PredictionsPageTest extends TestCase
 
     public function test_municipality_status_endpoint_returns_only_the_cached_result(): void
     {
-        Cache::forever('predictions:municipal-yield:'.now('Asia/Manila')->format('Y-m'), [
+        Cache::forever('predictions:municipal-yield:'.\App\Support\RiceSeason::harvestMonth(now('Asia/Manila'))->format('Y-m'), [
             'state' => 'ok', 'yield' => 4.13, 'ran_at' => now('Asia/Manila')->toIso8601String(),
         ]);
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
@@ -366,7 +398,7 @@ class PredictionsPageTest extends TestCase
 
     public function test_municipality_failure_cooldown_returns_unavailable_without_restarting_inference(): void
     {
-        Cache::put('predictions:municipal-yield-failure:'.now('Asia/Manila')->format('Y-m'), ['at' => now()->toIso8601String()], now()->addMinutes(30));
+        Cache::put('predictions:municipal-yield-failure:'.\App\Support\RiceSeason::harvestMonth(now('Asia/Manila'))->format('Y-m'), ['at' => now()->toIso8601String()], now()->addMinutes(30));
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
         $this->actingAs($mao)->get(route('weather-predictions.municipality-yield-status'))

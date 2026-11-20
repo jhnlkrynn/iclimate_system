@@ -122,6 +122,7 @@ class RiceYieldPredictionService
             'decision_support' => $decision,
             'api_error' => $engineResult['api_error'] ?? null,
             'missing_inputs' => $engineResult['missing_inputs'] ?? [],
+            'climate_sources' => $engineResult['climate_sources'] ?? [],
             'engine_result' => $engineResult,
         ];
 

@@ -163,12 +163,16 @@
             <p class="fad-support">{{ $y['season'] }}@if ($staff) · {{ $barangay ? $barangay.', Lian' : __('farmer.predictions.all_lian') }}@endif</p>
             @if ($y['state'] === 'ok')
                 <p class="wpx-big">{{ number_format($y['yield'], 2) }} <small>t/ha</small></p>
+                {{-- The "Unvalidated estimate" disclosure stays for everyone until the model has validation evidence. Farmers
+                     do not get the Normal / Higher / Lower badge (owner decision 2026-11-20); staff keep it. --}}
                 <p class="fad-support">@include('components.unvalidated-estimate')</p>
-                @if ($y['compare_label'])
+                @if ($y['compare_label'] && ! $isFarmer)
                     <p class="wpx-compare is-{{ ['typical' => 'info', 'above' => 'good', 'below' => 'watch'][$y['compare']] }}">{{ $y['compare_label'] }}</p>
                     <p class="fad-support">{{ __('farmer.home.harvest.compare_note') }}@if ($staff && $y['usual'] !== null) ({{ number_format($y['usual'], 2) }} t/ha)@endif</p>
                 @endif
-                @if ($isFarmer && $profileFarm && $profileFarm['area'])
+                @if ($isFarmer && ! empty($y['farm']['area']))
+                    <p class="fad-support" data-yield-farm>{{ __('farmer.predictions.yield_farm', ['farm' => $y['farm']['name'] ?? __('farmer.predictions.yield_farm_default'), 'area' => number_format($y['farm']['area'], 2), 'type' => $y['farm']['type'] ?? '—']) }}</p>
+                @elseif ($isFarmer && $profileFarm && $profileFarm['area'])
                     <p class="fad-support">{{ __('farmer.predictions.yield_profile', ['area' => number_format($profileFarm['area'], 2), 'type' => $profileFarm['type'] ?? '—']) }}
                         <a href="{{ route('profile.edit') }}">{{ __('farmer.predictions.edit_profile') }}</a></p>
                 @endif
@@ -179,6 +183,7 @@
                     @if (($y['stale'] ?? false))<p class="fad-support">{{ __('farmer.predictions.yield_model_stale') }}</p>@endif
                 @endif
                 <x-updated-at :at="$y['ran_at']" :label="__('farmer.home.updated')" />
+                @if (! empty($y['record']))@include('components.yield-record', ['record' => $y['record']])@endif
             @elseif ($y['state'] === 'loading')
                 <div class="ic-skel-lines" role="status"><span></span><span></span><span class="visually-hidden">{{ __('farmer.home.harvest.preparing') }}</span></div>
                 <p class="fad-support" data-municipal-yield-message>{{ ($municipal ? __('farmer.predictions.yield_model_preparing') : ($y['reason'] ?? __('farmer.home.harvest.preparing'))) }}</p>
