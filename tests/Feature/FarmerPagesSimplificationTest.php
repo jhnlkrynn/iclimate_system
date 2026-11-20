@@ -91,7 +91,7 @@ class FarmerPagesSimplificationTest extends TestCase
     {
         $html = $this->actingAs($this->farmer())->get(route('farmer.my-farm'))->assertOk()->getContent();
 
-        $this->assertStringContainsString('window.print()', $html);
+        $this->assertStringContainsString('data-print', $html);   // print button (strict CSP: no inline handler)
         $this->assertStringContainsString('Municipal Agricultural Office – Lian, Batangas', $html);
         $this->assertStringContainsString('Printed: ', $html);
         $css = (string) file_get_contents(resource_path('css/farmer-records.css'));

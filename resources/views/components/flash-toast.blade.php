@@ -49,7 +49,7 @@
             .flash-toast-stack { top: .6rem; right: .6rem; left: .6rem; max-width: none; }
         }
     </style>
-    <script>
+    <script @nonce>
         document.addEventListener('DOMContentLoaded', () => {
             const toast = document.getElementById('flashToast');
             if (!toast) return;

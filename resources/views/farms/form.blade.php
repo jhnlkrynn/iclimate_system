@@ -117,7 +117,7 @@
         </form>
     </div>
 
-    <script>
+    <script @nonce>
         // The association question: only the associations of the chosen barangay (of the farm type first, as on the
         // server), the field for the chosen answer, and the question asked again when the barangay changes.
         document.addEventListener('DOMContentLoaded', () => {

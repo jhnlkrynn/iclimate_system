@@ -310,7 +310,7 @@
              shows that conversation page inside the pop-up. ponytail: an iframe of the Messages page (?embed=1 hides the
              menus), so sending, attachments and live updates are the real feature; build a native thread only if the
              frame proves too slow on phones. --}}
-        <script>
+        <script @nonce>
             document.addEventListener('click', async (event) => {
                 const button = event.target.closest('[data-mensahe]');
                 if (!button || button.disabled) return;

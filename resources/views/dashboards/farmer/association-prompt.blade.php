@@ -68,7 +68,7 @@
     .fh-assoc [hidden] { display: none !important; }
     @media (max-width: 480px) { .fh-assoc-actions .mfd-btn { flex: 1 1 100%; } }
 </style>
-<script>
+<script @nonce>
     (() => {
         // Only the field for the chosen answer is shown (all of them stay usable without scripts).
         const form = document.querySelector('[data-assoc-form]');

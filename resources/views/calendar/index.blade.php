@@ -39,7 +39,7 @@
                 <input type="hidden" name="month" value="{{ $current->month }}">
                 <input type="hidden" name="year" value="{{ $current->year }}">
                 <label class="fad-label" for="fcalBarangay">Barangay</label>
-                <select class="fad-input" id="fcalBarangay" name="barangay" onchange="this.form.submit()">
+                <select class="fad-input" id="fcalBarangay" name="barangay" data-autosubmit>
                     <option value="">All barangays</option>
                     @foreach ($barangays as $name)
                         <option value="{{ $name }}" @selected($barangay === $name)>{{ $name }}</option>
@@ -257,7 +257,7 @@
             @media (min-width: 641px) { #plantingPlanModal .fad-modal-dialog { width: min(640px, calc(100vw - 64px)); } }
             @media (max-width: 640px) { #plantingPlanModal .fcal-plan-grid { grid-template-columns: minmax(0, 1fr); } }
         </style>
-        <script>
+        <script @nonce>
             // Opens and closes the same way as the Advisories pop-up (resources/js/farmer-advisories.js).
             (() => {
                 const FOCUSABLE = 'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';

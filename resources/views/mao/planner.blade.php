@@ -23,13 +23,13 @@
             @else
             <form class="itd-filters" method="GET" action="{{ route('mao.planner.index') }}">
                 <label>Barangay
-                    <select name="barangay" onchange="this.form.submit()">
+                    <select name="barangay" data-autosubmit>
                         <option value="">All</option>
                         @foreach ($barangays as $barangay)<option value="{{ $barangay }}" @selected(($filters['barangay'] ?? '') === $barangay)>{{ $barangay }}</option>@endforeach
                     </select>
                 </label>
                 <label>Activity type
-                    <select name="type" onchange="this.form.submit()">
+                    <select name="type" data-autosubmit>
                         <option value="">All</option>
                         @foreach ($types as $type)<option value="{{ $type }}" @selected(($filters['type'] ?? '') === $type)>{{ $type }}</option>@endforeach
                     </select>
@@ -77,7 +77,7 @@
             </div>
             <form class="itd-filters" method="GET" action="{{ route('mao.planner.index') }}#mplFarmerTitle">
                 <label>Barangay
-                    <select name="farmer_barangay" onchange="this.form.submit()">
+                    <select name="farmer_barangay" data-autosubmit>
                         <option value="">All</option>
                         @foreach ($barangays as $barangay)<option value="{{ $barangay }}" @selected(($filters['farmer_barangay'] ?? '') === $barangay)>{{ $barangay }}</option>@endforeach
                     </select>

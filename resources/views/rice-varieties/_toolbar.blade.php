@@ -41,7 +41,7 @@
             <input type="search" id="rvSearch" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="{{ __('rice_varieties.catalog.search_placeholder') }}" class="rv-input" data-rv-search>
         </span>
         <label class="visually-hidden" for="rvSort">{{ __('rice_varieties.catalog.sort') }}</label>
-        <select id="rvSort" name="sort" class="rv-input rv-sort" onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
+        <select id="rvSort" name="sort" class="rv-input rv-sort" data-autosubmit>
             @foreach (__('rice_varieties.catalog.sorts') as $value => $label)
                 <option value="{{ $value }}" @selected(($filters['sort'] ?? 'newest') === $value)>{{ $label }}</option>
             @endforeach

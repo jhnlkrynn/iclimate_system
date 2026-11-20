@@ -492,7 +492,7 @@
 
     {{-- The charts' words in the page's language. --}}
     <script type="application/json" id="mhdChartText">@json($text)</script>
-    <script>
+    <script @nonce>
         (() => {
             let dashboardRoot = document.querySelector('[data-mao-dashboard]');
             if (!dashboardRoot) return;
@@ -511,6 +511,7 @@
                 dashboardRoot.querySelectorAll('script:not([type="application/json"])').forEach((script) => {
                     // Execute only the fetched page's inline dashboard initializer; CSP can still refuse inline scripts.
                     const runner = document.createElement('script');
+                    runner.nonce = document.querySelector('script[nonce]')?.nonce || '';   // strict CSP: this page's nonce
                     runner.textContent = script.textContent;
                     document.body.appendChild(runner);
                     runner.remove();

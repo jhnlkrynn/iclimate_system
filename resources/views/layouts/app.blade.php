@@ -13,7 +13,7 @@
              (resources/js/theme.js keeps it). The dark-only stylesheet (theme-dark-pages.css) is no longer loaded. --}}
         <meta name="color-scheme" content="light">
         <meta name="theme-color" content="{{ config('palette.sage.700') }}">
-        <script>(function(){var d=document.documentElement;d.setAttribute('data-theme','light');d.setAttribute('data-bs-theme','light');d.style.colorScheme='light';})();</script>
+        <script @nonce>(function(){var d=document.documentElement;d.setAttribute('data-theme','light');d.setAttribute('data-bs-theme','light');d.style.colorScheme='light';})();</script>
         @vite(['resources/css/app.css', 'resources/css/ui-refresh.css', 'resources/css/glass-system.css', 'resources/css/sidebar.css', 'resources/css/theme.css', 'resources/css/app-shell.css', 'resources/css/app-magic.css', 'resources/js/app.js'])
         <style>
             :root {
@@ -355,7 +355,7 @@
             </main>
         </div>
         <x-flash-toast />
-        <script>
+        <script @nonce>
             // A success message is good news, not something to keep on screen: it closes itself after 5 seconds.
             document.querySelectorAll('[data-auto-dismiss]').forEach((el) => {
                 setTimeout(() => {

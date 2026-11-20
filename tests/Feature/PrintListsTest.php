@@ -187,7 +187,7 @@ class PrintListsTest extends TestCase
         // My Farm: the farmer's harvest records, with the same office header and the print date, sidebar and buttons hidden on paper.
         $html = $this->actingAs($farmer)->get(route('farmer.my-farm'))->assertOk()->getContent();
         $this->assertStringContainsString(self::HEADER, $html);
-        $this->assertStringContainsString('onclick="window.print()"', $html);
+        $this->assertStringContainsString('data-print', $html);
         $this->assertStringContainsString('Printed: Oct 7, 2026', $this->text($html));
         $css = (string) file_get_contents(resource_path('css/farmer-records.css'));
         $this->assertMatchesRegularExpression('#@media print \{\s*\.ic-sidebar, nav\.topbar[^{]*\.fmf-no-print[^{]*\{ display: none !important; \}#', $css);

@@ -46,6 +46,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // CSP nonce for inline <script> blocks (App\Http\Middleware\SecurityHeaders): <script @nonce>. Empty when
+        // no nonce was made for this response (console, mail views, the loose fallback policy).
+        \Illuminate\Support\Facades\Blade::directive('nonce', fn (): string => '<?php if ($__icNonce = \Illuminate\Support\Facades\Vite::cspNonce()): ?>nonce="<?php echo e($__icNonce); ?>"<?php endif; ?>');
+
         // Local and production databases stay apart; Supabase is never a runtime database. Checked from
         // configuration only (no connection is opened). iclimate:environment-check reports instead of stopping.
         if (! $this->app->runningUnitTests() && ! in_array('iclimate:environment-check', (array) ($_SERVER['argv'] ?? []), true)) {

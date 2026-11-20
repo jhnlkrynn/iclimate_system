@@ -2,7 +2,7 @@
     <div class="alert alert-info border" data-analytics-run="{{ route('analytics-runs.show', $analyticsRun) }}" data-prediction-realtime data-prediction-labels='{"requested":"Advisories requested","processing":"Preparing your advisories…","completed":"Advisories ready","failed":"Advisories failed"}'>
         <strong data-prediction-status-text>Preparing your advisories&hellip;</strong> <span data-prediction-status-detail>Your saved advisories are still available below.</span>
     </div>
-    <script>
+    <script @nonce>
         (() => {
             const banner = document.querySelector('[data-analytics-run]');
             if (!banner) return;

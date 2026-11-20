@@ -123,7 +123,7 @@
     </div>
 </header>
 @once
-    <script>
+    <script @nonce>
         document.addEventListener('DOMContentLoaded', () => {
             const nav = document.querySelector('[data-public-nav]');
             if (!nav) return;

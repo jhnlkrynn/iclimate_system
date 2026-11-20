@@ -33,7 +33,7 @@
 
         <form class="itd-filters my-3" method="GET" action="{{ route('mao.farm-associations.undeclared') }}">
             <label>Barangay
-                <select name="barangay" onchange="this.form.submit()">
+                <select name="barangay" data-autosubmit>
                     <option value="">All</option>
                     @foreach ($barangays as $name)<option value="{{ $name }}" @selected($barangay === $name)>{{ $name }}</option>@endforeach
                 </select>
@@ -91,7 +91,7 @@
             @endif
         </section>
     </div>
-    <script>
+    <script @nonce>
         (() => {
             const all = document.querySelector('[data-undeclared-all]');
             if (!all) return;

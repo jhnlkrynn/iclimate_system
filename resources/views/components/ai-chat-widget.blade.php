@@ -732,7 +732,7 @@
     </button>
 </div>
 
-<script>
+<script @nonce>
     // Runs at once when the widget is added after the page loaded (it is fetched on the launcher's first click).
     (() => { const icAiInit = () => {
         if (window.iClimateAiWidgetInitialized) return;

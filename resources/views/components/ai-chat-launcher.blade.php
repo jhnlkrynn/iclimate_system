@@ -20,7 +20,7 @@
         <img src="{{ asset('images/climora-ai-icon.png') }}" alt="Climora AI">
     </button>
 </div>
-<script>
+<script @nonce>
     (() => {
         const launcher = document.getElementById('icAiLauncher');
         if (!launcher || window.iClimateAi) return;
@@ -34,6 +34,7 @@
             [...box.childNodes].forEach((node) => {
                 if (node.nodeName !== 'SCRIPT') return document.body.appendChild(node);
                 const script = document.createElement('script');
+                script.nonce = document.querySelector('script[nonce]')?.nonce || '';   // strict CSP: this page's nonce
                 if (node.type) script.type = node.type;
                 if (node.id) script.id = node.id;
                 script.textContent = node.textContent;

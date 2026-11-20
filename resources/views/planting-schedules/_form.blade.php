@@ -165,7 +165,7 @@
         </div>
     @endif
 </form>
-<script>
+<script @nonce>
     (() => {
         const planting = document.getElementById('planting_date');
         const harvestDate = document.getElementById('scheduled_harvest_date');

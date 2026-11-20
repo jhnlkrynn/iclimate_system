@@ -23,7 +23,7 @@
             </div>
             <div class="fad-hero-actions mr-no-print">
                 <a class="fad-btn is-light" href="{{ route('farmer.reports.pdf') }}" data-fast-nav-bound="true" data-my-reports-pdf>{{ __('my_reports.download') }}</a>
-                <button type="button" class="fad-btn is-light" onclick="window.print()">{{ __('my_reports.print') }}</button>
+                <button type="button" class="fad-btn is-light" data-print>{{ __('my_reports.print') }}</button>
                 <a class="fad-btn is-quiet" href="{{ route('farmer.my-farm') }}">{{ __('my_reports.back') }}</a>
             </div>
         </header>
@@ -33,6 +33,6 @@
         </div>
     </div>
     @if ($print)
-        <script>window.addEventListener('load', () => window.print());</script>
+        <script @nonce>window.addEventListener('load', () => window.print());</script>
     @endif
 </x-app-layout>

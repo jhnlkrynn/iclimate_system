@@ -580,7 +580,7 @@
         </div>
     </section>
 
-    <script>
+    <script @nonce>
         document.addEventListener('DOMContentLoaded', () => {
             const modelRows = @json($rows->values());
             const closeOthers = (current) => {
@@ -740,7 +740,7 @@
         });
     </script>
     @if (($analyticsRun ?? null) && in_array($analyticsRun->status, ['pending', 'processing'], true))
-        <script>
+        <script @nonce>
             (() => {
                 const banner = document.querySelector('[data-analytics-run]');
                 if (!banner) return;

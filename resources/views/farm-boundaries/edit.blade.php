@@ -77,7 +77,7 @@
         </div>
     </div>
 
-    <script>
+    <script @nonce>
         document.addEventListener('DOMContentLoaded', async () => {
             // app.js loads Leaflet lazily; wait for it instead of racing it.
             try { await window.iClimateVisualsReady; } catch (e) { /* handled below */ }

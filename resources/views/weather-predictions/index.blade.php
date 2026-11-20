@@ -219,7 +219,7 @@
 </x-app-layout>
 
 @if ($municipal && ($y['state'] === 'loading' || ($y['stale'] ?? false)))
-<script>
+<script @nonce>
 (() => {
     const card = document.querySelector('[data-municipal-yield-poll]');
     if (!card) return;

@@ -110,7 +110,7 @@
     @if ($suggestions)
         {{-- Choosing another barangay fills in its recommendation, unless the text was already changed by hand. --}}
         <script type="application/json" data-adv-suggestions>@json($suggestions)</script>
-        <script>
+        <script @nonce>
             (() => {
                 const form = document.querySelector('[data-adv-form]');
                 const data = JSON.parse(document.querySelector('[data-adv-suggestions]').textContent || '{}');

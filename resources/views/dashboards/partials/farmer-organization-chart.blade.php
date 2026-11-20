@@ -6,7 +6,7 @@
     'compact' => (bool) ($compact ?? false),
     'chartData' => $chartData,
 ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
-<script>
+<script @nonce>
 (() => {
     // Each include reads the config block right before it; the IIFE keeps several charts on one page from clashing.
     const chartConfig = JSON.parse(document.currentScript.previousElementSibling.textContent);

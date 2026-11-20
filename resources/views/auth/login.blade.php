@@ -266,7 +266,7 @@
   </div>
 
 
-<script>
+<script @nonce>
   document.addEventListener('DOMContentLoaded', () => {
     const form = document.querySelector('.login-form');
     const email = document.getElementById('email');
