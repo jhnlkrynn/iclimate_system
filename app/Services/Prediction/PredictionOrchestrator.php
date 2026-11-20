@@ -318,6 +318,8 @@ class PredictionOrchestrator
                 'expires_at' => $ready ? now()->addMinutes($this->ttlMinutes()) : now()->addMinutes(5),
                 'status' => $ready ? MonthlyWeatherPrediction::STATUS_READY : MonthlyWeatherPrediction::STATUS_UNREADY,
                 'metadata' => [
+                    'engine' => $result['engine'] ?? 'php_fallback_rf',
+                    'fallback_used' => (bool) ($result['fallback_used'] ?? false),
                     'source_name' => $result['source_name'] ?? null,
                     'source_note' => $result['source_note'] ?? null,
                     'message' => $result['message'] ?? null,
@@ -354,6 +356,8 @@ class PredictionOrchestrator
 
         return [
             'ready' => true,
+            'engine' => data_get($row->metadata, 'engine', 'php_fallback_rf'),
+            'fallback_used' => (bool) data_get($row->metadata, 'fallback_used', false),
             'message' => data_get($row->metadata, 'message') ?? 'This forecast was made using years of past weather records for this area.',
             'source_type' => 'Trained Model',
             'source_name' => data_get($row->metadata, 'source_name') ?? 'iClimate Weather System',

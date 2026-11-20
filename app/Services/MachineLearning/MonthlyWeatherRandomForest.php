@@ -257,15 +257,42 @@ class MonthlyWeatherRandomForest
         |--------------------------------------------------------------------------
         */
 
+        $pythonForecast = app(\App\Services\PythonService::class)->monthlyWeatherForecast(
+            $targetMonth,
+            $monthly->map(fn (array $row): array => [
+                'record_date' => $row['month'] instanceof \Carbon\CarbonInterface
+                    ? $row['month']->format('Y-m-01')
+                    : sprintf('%04d-%02d-01', (int) $row['year'], (int) $row['month']),
+                'rainfall' => (float) $row['rainfall'],
+                'temperature' => (float) $row['temperature'],
+                'humidity' => (float) $row['humidity'],
+                'wind_speed' => (float) $row['wind_speed'],
+            ])->all()
+        );
+
+        $rainfallEstimate = $pythonForecast !== null
+            ? (float) $pythonForecast['predictions']['rainfall']
+            : (0.25 * (float) $rawPredictions['rainfall'])
+                + (0.75 * (float) ($features['month_clim_rainfall'] ?? $rawPredictions['rainfall']));
+
+        $humidityEstimate = $pythonForecast !== null
+            ? (float) $pythonForecast['predictions']['humidity']
+            : (float) $rawPredictions['humidity'];
+
+        $windEstimate = $pythonForecast !== null
+            ? (float) $pythonForecast['predictions']['wind_speed']
+            : (float) $rawPredictions['wind_speed'];
+
+        $temperatureEstimate = $pythonForecast !== null
+            ? (float) $pythonForecast['predictions']['temperature']
+            : round((((float) $rawPredictions['tmax']) + ((float) $rawPredictions['tmin'])) / 2, 2);
+
         $predictions = [
             'rainfall' =>
                 round(
                     max(
                         0,
-                        (float)
-                        $rawPredictions[
-                            'rainfall'
-                        ]
+                        $rainfallEstimate
                     ),
                     2
                 ),
@@ -294,10 +321,7 @@ class MonthlyWeatherRandomForest
                         0,
                         min(
                             100,
-                            (float)
-                            $rawPredictions[
-                                'humidity'
-                            ]
+                            $humidityEstimate
                         )
                     ),
                     2
@@ -307,10 +331,7 @@ class MonthlyWeatherRandomForest
                 round(
                     max(
                         0,
-                        (float)
-                        $rawPredictions[
-                            'wind_speed'
-                        ]
+                        $windEstimate
                     ),
                     2
                 ),
@@ -356,8 +377,9 @@ class MonthlyWeatherRandomForest
         |--------------------------------------------------------------------------
         */
 
-        $predictions['temperature'] =
-            round(
+        $predictions['temperature'] = $pythonForecast !== null
+            ? round($temperatureEstimate, 2)
+            : round(
                 (
                     $predictions['tmax']
                     +
@@ -378,9 +400,17 @@ class MonthlyWeatherRandomForest
                 $training
             );
 
+        $usedPython = $pythonForecast !== null;
+
         return [
             'ready' =>
                 true,
+
+            'engine' =>
+                $usedPython ? 'python_fastapi_phase34' : 'php_fallback_rf',
+
+            'fallback_used' =>
+                ! $usedPython,
 
             'message' =>
                 'This forecast was made using years of past weather records for this area.',
@@ -389,7 +419,9 @@ class MonthlyWeatherRandomForest
                 'Trained Model',
 
             'source_name' =>
-                'iClimate Weather System',
+                $usedPython
+                    ? 'iClimate Weather System (Python FastAPI Phase 34)'
+                    : 'iClimate Weather System (PHP Fallback)',
 
             'source_note' =>
                 'Uses only real, recorded weather history from the Ambulong weather station and never guesses using future data.',
@@ -432,7 +464,9 @@ class MonthlyWeatherRandomForest
                 $predictions,
 
             'training' =>
-                $training,
+                $usedPython && is_array($pythonForecast['training'] ?? null)
+                    ? $pythonForecast['training']
+                    : $training,
 
             'confidence' =>
                 $confidence,

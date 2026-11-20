@@ -17,6 +17,51 @@ use Throwable;
 class PythonService
 {
     /**
+     * Call FastAPI POST /forecast/monthly-weather with strict cutoff-filtered monthly records.
+     * Returns null on connection/service error so callers can fall back to local PHP inference.
+     *
+     * @param  list<array{record_date: string, rainfall: float, temperature: float, humidity: float, wind_speed: float}>  $climateRecords
+     * @return array<string, mixed>|null
+     */
+    public function monthlyWeatherForecast(\Carbon\CarbonInterface $targetMonth, array $climateRecords): ?array
+    {
+        $baseUrl = rtrim((string) config('services.farming_ai.url'), '/');
+        if ($baseUrl === '' || $climateRecords === []) {
+            return null;
+        }
+
+        try {
+            $response = Http::connectTimeout(min(2, (int) config('services.farming_ai.connect_timeout', 3)))
+                ->timeout(min(5, (int) config('services.farming_ai.timeout', 5)))
+                ->acceptJson()
+                ->post($baseUrl.'/forecast/monthly-weather', [
+                    'target_month' => $targetMonth->startOfMonth()->format('Y-m-d'),
+                    'climate_records' => $climateRecords,
+                ]);
+        } catch (Throwable) {
+            return null;
+        }
+
+        if (! $response->successful()) {
+            return null;
+        }
+
+        $data = $response->json();
+        $preds = is_array($data['predictions'] ?? null) ? $data['predictions'] : null;
+        if (! ($data['ready'] ?? false) || $preds === null) {
+            return null;
+        }
+
+        foreach (['rainfall', 'temperature', 'humidity', 'wind_speed'] as $key) {
+            if (! is_numeric($preds[$key] ?? null)) {
+                return null;
+            }
+        }
+
+        return $data;
+    }
+
+    /**
      * Rolling daily attempt/failure counters (Cache, not a table) feeding the
      * IT dashboard's "prediction-service success rate" pipeline-health
      * metric — this call has no other instrumentation anywhere.
