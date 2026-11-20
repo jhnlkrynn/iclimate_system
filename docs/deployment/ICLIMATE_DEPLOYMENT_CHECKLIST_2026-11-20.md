@@ -1,9 +1,9 @@
 # iClimate deployment checklist — 2026-11-20
 
-**Scope:** every NO-GO item in `ICLIMATE_END_TO_END_AUDIT_ADDENDUM_2026-11-19.md` plus the RC2-R3 report's open items, re-checked against the current working tree on `release/2026.11.18-rc1`.
-**Production writes, deployment, commits, pushes:** none. Every drill ran on throwaway copies.
-**Updated:** 2026-11-20, second pass (Alpine CSP build, `'unsafe-eval'` removed, profile-save fix, final full retest).
-**Overall:** all locally resolvable blockers are cleared. **Public launch remains NO-GO** until the external, credential and owner items in section C are closed.
+**Scope:** Final staging readiness and deployment preparation on `feature/2026-11-20-yield-monitoring-security` (the five commits plus final preflight fixes).
+**Production writes, deployment, commits, pushes:** none. Active staging data (877 users, 713 demo accounts, 1,081 farms, 7 pending migrations) untouched.
+**Updated:** 2026-11-20, final staging readiness pass.
+**Overall:** **GO for private staging rehearsal / RC2 packaging** once owner approves commit/tag. **Public launch remains NO-GO** until the external, credential, and owner-approval items in section C are closed.
 
 ## A. Fixed in this pass
 
@@ -24,45 +24,55 @@
 | Gate in the production template | `ICLIMATE_YIELD_GATE=withhold` (it was `label`), as RC2 runbook step 3 requires. | `deploy-release.sh` accepts withhold or label, never off. The accuracy flag stays false. |
 | Deployment test bug | `test_enabled_accuracy_flag_refused` reused the previous env file. | 26 of 26 deployment tests pass. |
 | Ops runbook | RC2 runbook step 7a: weather archive, 18-month forecast, encryption key, off-host copy, restore from the encrypted copy, alert test. | `deploy/hostinger/VPS-RUNBOOK-RC2.md` |
+| Scoped-user `migrate --pretend` / `migrate` crash | `AppServiceProvider::createMysqlDatabaseForMigrations()` ran `CREATE DATABASE IF NOT EXISTS` unconditionally, failing with `1044 Access denied` for scoped accounts (`iclimate_app` / `iclimate_migrator`) and on `--pretend`. Now skips `--pretend`, checks `dbname=` connectivity first, and only creates on `1049 Unknown database` with `DB_CONNECT_TIMEOUT`. | `php artisan migrate --pretend --no-ansi` exits 0 and previews all 7 pending migrations against `iclimate_staging_20261103_fix3`. |
+| Deployment README drift | `deploy/hostinger/README.md` listed mode `0600` for `/etc/iclimate/iclimate.env` (blocking `www-data` reads) and referenced 6 migrations instead of 7. Aligned with `0640` (`root:www-data`) and `VPS-RUNBOOK-RC2.md` (7 migrations). | Inspected alongside `provision-ubuntu-24.04.sh`, `install-check.sh`, and `VPS-RUNBOOK-RC2.md`. |
 
-## B. Final verification (all on this tree, after the second pass)
+## B. Final verification (re-verified on `feature/2026-11-20-yield-monitoring-security`)
 
 | Requirement | Result | Evidence |
 |---|---|---|
-| PHPUnit, PHP 8.4.27 (target), SQLite | **PASS** | 1,726 passed, 5 MariaDB-only skips, 0 failed |
-| PHPUnit, PHP 8.4.27, MariaDB 10.11.19, `mysql` driver | **PASS** | 1,731 passed, 0 skipped, 0 failed |
-| Playwright desktop + mobile | **PASS** | 180 passed (incl. Alpine CSP and CSP-violation checks for Farmer and MAO pages), 18 intentional skips |
-| Python (ML) | **PASS** | 71 passed |
-| JavaScript | **PASS** | 26 passed |
-| Deployment / packaging | **PASS** | 26 passed |
-| Composer / npm (production and full) audits | **PASS** | 0 advisories / 0 / 0 (after the Alpine package change) |
-| `pip-audit` | **PASS** | No known vulnerabilities after the certifi pin |
-| Vite build | **PASS** | Built (picomatch mitigation check enforced) |
-| PHP 8.4 compatibility of changed files | **PASS** | `php -l` 0 failures; `check-platform-reqs` OK |
-| Model artifacts preserved | **PASS** | Rice `f3a54e12…b777c`, weather `bbd59810…d47`: unchanged |
-| ML integration | **PASS** | 3,235/3,235 stored estimates equal the `.pkl` run directly. The service reports `rice, weather` loaded. |
-| Scheduler / workers | **PASS (local)** | `schedule:list` includes the new jobs. 2 queue workers respawn after `queue:restart`. Health: queue, scheduler, Reverb OK. |
-| External: Open-Meteo forecast and archive, PAGASA | **PASS** | HTTP 200 each; last scheduled fetch succeeded |
-| Farmer yield gate | **PASS (production template)** | `withhold` in the template; accuracy flag false |
-| Data preserved | **PASS** | Staging (read-only check): 877 users, 713 demo accounts, 1,081 farms; 7 migrations still pending |
-| ML accuracy | **NOT VERIFIED** | No independent real-harvest evidence. Not claimed. |
+| PHPUnit (SQLite, PHP 8.4.27 target) | **PASS** | 1,726 passed, 5 MariaDB-only skips, 0 failed (13,670 assertions) |
+| PHPUnit (MariaDB 10.11.19, PHP 8.4.27) | **PASS** | 54 passed, 363 assertions, 0 skipped, 0 failed (`TimestampRefreshMigrationTest`, `TwoRoleAccessTest`, `AssociationReportIntegrityTest`, `AssociationReportingWorkflowTest`, `ProfileTest`, `DeploymentReadinessTest`, `StrictContentSecurityPolicyTest`, `OffsiteBackupTest`, `SystemHealthCommandTest`) |
+| Isolated MariaDB 10.11.19 + PHP 8.4.27 rehearsal | **PASS** | Restored 43.1 MB staging backup; `migrate --pretend` OK; 7 up → 7 down → 7 reapply; `two-role-migration-check.sh compare` OK (78 tables, 107 migrations, 26 FKs added, 0 lost); 877 users, 713 demo accounts, 1,081 farms preserved |
+| Encrypted backup & restore drill (MariaDB 10.11.19) | **PASS** | `mariadb-dump` → OpenSSL AES-256-CBC PBKDF2 (200k iter) → decrypt SHA-256 identical → `restore-isolated-mariadb.sh` + `mysqlcheck` 78/78 tables `OK` |
+| Playwright full suite (`npm run test:browser`) | **PASS** | 180 passed, 18 intentional viewport skips, 0 failed (desktop-1280 + mobile-375; includes Alpine CSP and Farmer/MAO CSP-violation checks) |
+| Python (ML + deployment tooling) | **PASS** | 97 passed (`.venv-ml/bin/pytest python_scripts/tests tests/deployment -q`), `pip check` clean |
+| JavaScript (`npm run test:js`) | **PASS** | 26 passed, `picomatch` mitigation verified |
+| Composer / npm audits | **PASS** | `composer audit`: 0 advisories; `npm audit` (prod & full): 0 vulnerabilities |
+| Vite build (`npm run build`) | **PASS** | Built cleanly in 1.78s (`picomatch` mitigation verified) |
+| PHP & shell syntax | **PASS** | `php -l` 0 failures on changed files; `bash -n` 0 failures across all 10 scripts in `deploy/hostinger/` and `scripts/deploy/` |
+| Config/route/view cache cycle | **PASS** | `config:cache`, `route:cache`, `view:cache` all succeeded, then cleared cleanly |
+| Model artifacts preserved | **PASS** | Rice `f3a54e12…b777c`, weather `bbd59810…d47`: unchanged; `/health` reports `rice, weather` |
+| Staging DB & health checks | **PASS** | `iclimate:environment-check` OK (`10.4.28-MariaDB`, `+08:00`); `iclimate:health` OK for DB, ML, Reverb, queue, scheduler, backup, yield-inputs; 877 users, 713 demo accounts, 1,081 farms preserved; 7 migrations pending |
+| Farmer yield gate | **PASS** | `ICLIMATE_YIELD_GATE=withhold` and `ICLIMATE_YIELD_ACCURACY_VERIFIED=false` in `.env.example` and `iclimate.env.example` |
+| ML accuracy | **NOT VERIFIED** | No independent real-harvest evidence. Estimates stay gated (`withhold`). |
 
-## C. Still blocked — needs infrastructure, credentials, evidence or approval
+## C. Remaining blockers by classification
 
+### Resolved (locally fixed & verified)
+- **Weak CSP & `'unsafe-eval'`**: Fixed with per-response nonces, `'strict-dynamic'`, and `@alpinejs/csp@3.15.12`.
+- **Missing-profile save HTTP 500**: Fixed in `ProfileController` with `ProfileTest` coverage.
+- **Scoped-user `migrate --pretend` / `migrate` `CREATE DATABASE` 1044 error**: Fixed in `AppServiceProvider::createMysqlDatabaseForMigrations()`.
+- **Monitoring, encrypted off-host backups, TLS hardening, logrotate, `certifi` pin, production `withhold` gate, `README.md` drift**: All implemented and verified.
+
+### Externally Dependent (requires target infrastructure / credentials)
 | Blocker | Owner | Status |
 |---|---|---|
-| Target VPS (Ubuntu 24.04, PHP-FPM 8.4, MariaDB 10.11, Python 3.12, Node 22) and its acceptance | Owner / infrastructure | **FAIL — no host.** Unit files cannot be checked with `systemd-analyze verify` on macOS. |
-| DNS and a real TLS certificate for `iclimate-lian.tech` | Owner | **FAIL — external.** The config is tested with a self-signed certificate only. |
-| SMTP provider account and real delivery of a reset e-mail | Owner | **FAIL — credentials.** The transport is proven only against a local listener. |
-| Off-host backup destination and safe keeping of the encryption key | Owner | **FAIL — external.** The tooling is ready; `iclimate:health` warns until it is set. |
-| Groq API key | Owner | **FAIL — HTTP 401 `invalid_api_key`.** The assistant degrades safely without it. |
-| WeatherAPI (optional second provider) | Owner decision | Not configured |
-| 713 `@iclimate.test` demo accounts and seeded data | Owner / MAO | **Decision pending.** Nothing deleted. |
-| Applying the 7 migrations to staging/production | Owner + DBA | **Approval pending.** Rehearsed successfully. |
-| Independent ML validation on harvests not used for training | Researchers | **NOT VERIFIED.** Estimates stay gated. |
-| Showing farmers the number (`label`) in production | Owner | The local `.env` uses `label` (approved for local use 2026-11-20). Production needs that approval recorded. |
-| Shared-password lockdown (2 copied hashes locally) | Owner | On in the production template; local only |
-| Commit, new immutable release candidate, tag | Owner | **Approval pending.** Nothing committed. |
+| Target VPS (Ubuntu 24.04, PHP-FPM 8.4, MariaDB 10.11, Python 3.12, Node 22) and `systemd-analyze verify` | Owner / infrastructure | **FAIL — external.** No target Ubuntu host provisioned yet. |
+| DNS and real TLS certificate for `iclimate-lian.tech` | Owner | **FAIL — external.** Tested with self-signed certificate only. |
+| SMTP provider credentials and live reset-email delivery | Owner | **FAIL — credentials.** Transport proven against local listener only. |
+| Off-host backup destination and off-server encryption key (`/etc/iclimate/backup.key`) | Owner | **FAIL — external.** Tooling ready; `iclimate:health` warns until configured. |
+| Groq API key | Owner | **FAIL — HTTP 401 `invalid_api_key`.** Assistant degrades safely without it. |
+| WeatherAPI (optional second provider) | Owner decision | Optional; Open-Meteo primary works. |
+
+### Requiring Approval
+| Blocker | Owner | Status |
+|---|---|---|
+| Commit, annotated `v2026.11.18-rc2` tag, and bundle/manifest generation | Owner | **Approval pending.** Working tree left uncommitted for review. |
+| Applying the 7 pending migrations to staging/production | Owner + DBA | **Approval pending.** Rehearsed and `--pretend` verified. |
+| 713 `@iclimate.test` demo accounts and seeded data retention/cleanup | Owner / MAO | **Decision pending.** All 713 preserved untouched. |
+| Independent ML validation & switching `ICLIMATE_YIELD_GATE` from `withhold` | Researchers / Owner | **Approval pending.** Remains `withhold` in production template. |
+| Enabling `ICLIMATE_PASSWORD_LOCKDOWN=true` in production rollout | Owner | **Approval pending.** On in production template. |
 
 ## Operator notes
 

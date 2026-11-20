@@ -17,7 +17,7 @@ Assumptions:
 
 1. Provision Ubuntu LTS, SSH keys, firewall, and a non-root deployment operator.
 2. Install/verify PHP 8.3+ with required extensions, Composer, Node LTS, Python 3.11+, MariaDB client/server, and Nginx.
-3. Create `/etc/iclimate/iclimate.env` with mode `0600`; copy values from `iclimate.env.example` only after approving secrets.
+3. Create `/etc/iclimate/iclimate.env` with mode `0640` (`root:www-data`); copy values from `iclimate.env.example` only after approving secrets.
 4. Create the dedicated backup account with the least-privilege SQL in `mariadb-backup-account.sql`.
 5. Deploy the application artifact, install Composer/npm/Python dependencies, and set `storage/` and `bootstrap/cache/` ownership.
 6. Install the systemd units and timer; run `systemctl daemon-reload` but do not enable/start until smoke-test approval.
@@ -41,10 +41,10 @@ and the ML service are long-running processes that need systemd.
 3. Release: deploy the files listed by `scripts/deploy/build-release-manifest.sh` (compare its fingerprint), then
    `composer install --no-dev --optimize-autoloader`, `npm ci && npm run build`, and in `.venv-ml`
    `pip install -r python_scripts/requirements.txt`. Verify `sha256sum storage/models/rice_yield_model_final.pkl`.
-4. Secrets: `/etc/iclimate/iclimate.env` mode 0600 owned by root:www-data, from `iclimate.env.example`. Never in Git,
+4. Secrets: `/etc/iclimate/iclimate.env` mode 0640 owned by root:www-data, from `iclimate.env.example`. Never in Git,
    unit files or shell history.
 5. Database: restore the approved backup (`restore-isolated-mariadb.sh` first, into a disposable database), then
-   follow `phase-18-deployment-runbook.md` for the six migrations. Then `php artisan config:cache route:cache view:cache`.
+   follow `VPS-RUNBOOK-RC2.md` / `phase-18-deployment-runbook.md` for the seven migrations. Then `php artisan config:cache route:cache view:cache`.
 6. Services: `systemctl enable --now iclimate-python iclimate-reverb iclimate-queue iclimate-scheduler.timer`
    (never also `schedule:work`). Check: `php artisan iclimate:health` exits 0;
    `scripts/deploy/ml-activation-check.sh <model sha256>` exits 0.
