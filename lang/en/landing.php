@@ -10,7 +10,6 @@ return [
         'title' => 'About iClimate',
         'description' => 'iClimate combines climate data with the Municipal Agriculture Office’s rice production records so farmers can understand the conditions behind each planting decision.',
         'mission' => 'The Municipal Agriculture Office and iClimate team work to make useful, local climate information easier to understand and act on.',
-        'attribution' => 'Municipal Agriculture Office, Lian, Batangas',
         'sources' => 'Where the data comes from',
         'photo_alt' => 'Rice fields in Lian, Batangas',
         'photo_caption' => 'Rice fields in Lian, Batangas',

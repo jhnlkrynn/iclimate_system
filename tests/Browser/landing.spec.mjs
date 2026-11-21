@@ -919,7 +919,8 @@ test('S11a About iClimate is centered with attributed quote and source grid', as
     await expect(about.locator('.about-rule')).toHaveCSS('background-color', SAGE[300]);
     await expect(about.locator('blockquote')).toHaveCSS('border-left-width', '0px');
     await expect(about.locator('blockquote')).toHaveCSS('font-size', '19px');
-    await expect(about.locator('blockquote + div')).toContainText('Municipal Agriculture Office, Lian, Batangas');
+    await expect(about.locator('blockquote + div')).toHaveCount(0);
+    await expect(about.locator('img[src*="mao-lian-seal.png"]')).toHaveCount(0);
     await expect(about.locator('.about-sources .about-source')).toHaveCount(4);
     await expect(about.locator('.about-sources')).toContainText('PAGASA');
     await expect(about.locator('.about-sources')).toContainText('Official advisories and typhoon bulletins');
