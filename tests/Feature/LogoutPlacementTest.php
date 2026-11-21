@@ -51,9 +51,9 @@ class LogoutPlacementTest extends TestCase
         $this->assertStringContainsString('data-logout-confirm', $foot);
 
         $menu = $this->accountMenu($html);
-        $this->assertStringContainsString('Profile, photo and password', $menu);
-        $this->assertStringNotContainsString(route('logout'), $menu);
-        $this->assertStringNotContainsString('Log out', $menu);
+        $this->assertStringContainsString('Profile', $menu);
+        $this->assertStringContainsString('Settings', $menu);
+        $this->assertStringContainsString('Log out', $menu);
     }
 
     public function test_the_farmer_drawer_label_follows_their_language(): void

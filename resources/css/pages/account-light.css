@@ -72,17 +72,10 @@ html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-
 }
 
 /* -- TOP BAR: MAO logo and iClimate logo, as on the landing page ------------ */
-html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .topbar.ic-topbar { border-bottom: 1px solid var(--sage-100) !important; box-shadow: none !important; }
-html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .gov-brand .gov-app-logo { height: 46px; width: auto; flex: none; }
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .topbar.ic-topbar { border-bottom: 1px solid var(--sage-200) !important; box-shadow: none !important; }
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .gov-brand .gov-app-logo { height: 38px; width: auto; flex: none; }
 @media (max-width: 767.98px) {
-    html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .gov-brand .gov-app-logo { height: 36px; }
-}
-
-html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .ic-lang button { border: 1px solid transparent; }
-html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .ic-lang button[aria-pressed="true"] {
-    background: var(--fa-btn) !important;
-    border-color: var(--fa-btn-hover);
-    color: var(--fa-btn-ink) !important;
+    html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .gov-brand .gov-app-logo { height: 34px; }
 }
 
 /* -- BUTTONS: light green with dark text ----------------------------------- */

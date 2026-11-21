@@ -517,7 +517,127 @@ html[data-theme="dark"] body :is(.mfd-kicker, .mtd-kicker, .fh-kicker, .itd-kick
 /* Language switch shows flags (layouts/partials/lang-flag.blade.php): the chosen one is clear, the other dimmed. */
 .ic-flag { display: block; width: 24px; height: 16px; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0, 0, 0, .18); }
 .ic-lang button, .mobile-more-language button { display: inline-flex; align-items: center; justify-content: center; }
-.ic-lang button[aria-pressed="false"] .ic-flag, .mobile-more-language button[aria-pressed="false"] .ic-flag { opacity: .55; filter: grayscale(.35); }
-.ic-lang button:hover .ic-flag, .mobile-more-language button:hover .ic-flag { opacity: 1; filter: none; }
-html body .mobile-more-language button { padding: 4px; border-radius: 6px; border: 1px solid transparent; }
-html body .mobile-more-language button[aria-pressed="true"] { border-color: var(--sage-300); background: var(--sage-50); }
+
+/* ================================================================== TOP BAR REDESIGN (ALL ROLES) */
+html body .topbar.ic-topbar,
+html[data-theme] body .topbar.ic-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    height: 64px !important;
+    min-height: 64px !important;
+    margin: 0 !important;
+    padding: 0 1.25rem !important;
+    border-radius: 0 !important;
+    border-top: 0 !important;
+    border-bottom: 1px solid var(--sage-200) !important;
+    background: #fff !important;
+    color: var(--sage-800) !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+@media (min-width: 1400px) {
+    html body .topbar.ic-topbar,
+    html[data-theme] body .topbar.ic-topbar { padding: 0 2rem !important; }
+}
+@media (max-width: 991.98px) {
+    html body .topbar.ic-topbar,
+    html[data-theme] body .topbar.ic-topbar { padding: 0 .9rem !important; }
+}
+
+html body .topbar.ic-topbar .ic-topbar-left { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; min-width: 0; }
+html body .topbar.ic-topbar .ic-topbar-brand { display: inline-flex; align-items: center; gap: 10px; padding: 2px 4px; border-radius: 8px; text-decoration: none; }
+html body .topbar.ic-topbar .ic-topbar-brand:focus-visible { outline: 2px solid var(--sage-500) !important; outline-offset: 2px; }
+html body .topbar.ic-topbar .gov-mao-logo { width: 38px; height: 38px; flex: none; object-fit: contain; }
+html body .topbar.ic-topbar .gov-app-logo { height: 38px; width: auto; flex: none; }
+html body .topbar.ic-topbar .gov-brand-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+html body .topbar.ic-topbar .gov-brand-office { font-size: .9375rem; font-weight: 700; color: var(--sage-800); white-space: nowrap; }
+html body .topbar.ic-topbar .gov-brand-place { font-size: 13px; font-weight: 500; color: var(--sage-500); white-space: nowrap; }
+
+html body .topbar.ic-topbar .ic-topbar-middle { display: flex; align-items: center; justify-content: center; gap: 10px; min-width: 0; flex: 1 1 auto; }
+html body .topbar.ic-topbar .ic-topbar-greeting { margin: 0; padding: 0; border: 0; font-size: 15px; font-weight: 500; color: var(--sage-600); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html body .topbar.ic-topbar .ic-topbar-date { font-size: 13px; font-weight: 500; color: var(--sage-500); white-space: nowrap; }
+@media (max-width: 1023.98px) {
+    html body .topbar.ic-topbar .ic-topbar-middle { display: none !important; }
+}
+
+html body .topbar.ic-topbar .ic-topbar-right { display: flex; align-items: center; gap: 12px !important; flex: 0 0 auto; min-width: 0; }
+
+/* Farm switcher button: plain, no background highlight, 200px truncate + tooltip, sage focus ring */
+html body .topbar.ic-topbar .ic-farm-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent !important;
+    color: var(--sage-800);
+    text-align: left;
+    cursor: pointer;
+}
+html body .topbar.ic-topbar .ic-farm-btn:hover { background: var(--sage-50) !important; border-color: var(--sage-200); }
+html body .topbar.ic-topbar .ic-farm-btn:focus-visible { outline: 2px solid var(--sage-500) !important; outline-offset: 2px; box-shadow: none !important; }
+html body .topbar.ic-topbar .ic-farm-btn-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
+html body .topbar.ic-topbar .ic-farm-btn-label { font-size: 11px; font-weight: 500; color: var(--sage-500); }
+html body .topbar.ic-topbar .ic-farm-btn-name { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; color: var(--sage-800); }
+html body .topbar.ic-topbar .ic-farm-chevron { flex: none; color: var(--sage-500); }
+html body .topbar.ic-topbar .ic-farm-menu { min-width: 220px; padding: 6px; border: 1px solid var(--sage-200); border-radius: 10px; box-shadow: 0 8px 24px rgb(var(--sage-950-rgb) / .1); }
+html body .topbar.ic-topbar .ic-farm-menu form { margin: 0; }
+html body .topbar.ic-topbar .ic-farm-option { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-radius: 6px; font-size: 13px; }
+html body .topbar.ic-topbar .ic-farm-option.is-selected { font-weight: 700; color: var(--sage-700); background: var(--sage-50); }
+html body .topbar.ic-topbar .ic-farm-add { font-size: 13px; font-weight: 600; color: var(--sage-700); text-decoration: none; white-space: nowrap; }
+html body .topbar.ic-topbar .ic-farm-add:hover { text-decoration: underline; }
+
+/* Language EN | FIL text toggle */
+html body .topbar.ic-topbar .ic-lang { display: inline-flex; align-items: center; gap: 4px; margin: 0; }
+html body .topbar.ic-topbar .ic-lang form { display: contents; }
+html body .topbar.ic-topbar .ic-lang button {
+    min-width: auto !important;
+    height: auto !important;
+    min-height: 32px !important;
+    padding: 4px 6px !important;
+    border: 0 !important;
+    border-radius: 6px;
+    background: transparent !important;
+    color: var(--sage-500) !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    line-height: 1;
+    cursor: pointer;
+}
+html body .topbar.ic-topbar .ic-lang button:hover { color: var(--sage-800) !important; background: var(--sage-50) !important; }
+html body .topbar.ic-topbar .ic-lang button[aria-pressed="true"] { color: var(--sage-700) !important; font-weight: 700 !important; background: transparent !important; }
+html body .topbar.ic-topbar .ic-lang button:focus-visible { outline: 2px solid var(--sage-500) !important; outline-offset: 2px; }
+html body .ic-lang-sep { color: var(--sage-300); font-size: 12px; user-select: none; }
+
+/* Menu, Bell, Avatar */
+html body .topbar.ic-topbar .ic-icon-btn { width: 40px; height: 40px; min-width: 40px; min-height: 40px; border-radius: 8px; color: var(--sage-700) !important; background: transparent; }
+html body .topbar.ic-topbar .ic-icon-btn:hover { background: var(--sage-50) !important; color: var(--sage-900) !important; }
+html body .topbar.ic-topbar .ic-icon-btn:focus-visible,
+html body .topbar.ic-topbar .ic-avatar-btn:focus-visible { outline: 2px solid var(--sage-500) !important; outline-offset: 2px; }
+html body .topbar.ic-topbar .ic-icon-btn .topbar-bell-badge { top: 4px; right: 4px; min-width: 16px; height: 16px; padding: 0 4px; border-color: #fff; font-size: 10px; }
+html body .topbar.ic-topbar .ic-avatar-btn { width: 38px !important; height: 38px !important; min-width: 38px !important; min-height: 38px !important; flex: none; margin-left: 0; border: 1px solid var(--sage-200); background: var(--sage-100); color: var(--sage-800); }
+
+@media (max-width: 767.98px) {
+    html body .topbar.ic-topbar,
+    html[data-theme] body .topbar.ic-topbar { padding: 0 12px !important; gap: 8px; }
+    html body .topbar.ic-topbar .ic-topbar-menu-btn,
+    html body .topbar.ic-topbar .gov-brand-text,
+    html body .topbar.ic-topbar .ic-topbar-middle,
+    html body .topbar.ic-topbar .ic-topbar-farm-wrap,
+    html body .topbar.ic-topbar .ic-topbar-lang { display: none !important; }
+    html body .topbar.ic-topbar .ic-topbar-left { flex: 0 0 auto; width: auto; }
+    html body .topbar.ic-topbar .gov-mao-logo { width: 32px; height: 32px; }
+    html body .topbar.ic-topbar .gov-app-logo { height: 32px; }
+    html body .topbar.ic-topbar .ic-topbar-right { gap: 12px !important; }
+    html body .mobile-more-farm-form { flex: 1 1 100%; }
+    html body .mobile-more-language { display: inline-flex; align-items: center; gap: 4px; }
+    html body .mobile-more-language button { padding: 4px 6px; border: 0; border-radius: 6px; background: transparent; color: var(--sage-500); font-size: 13px; font-weight: 500; }
+    html body .mobile-more-language button[aria-pressed="true"] { color: var(--sage-700); font-weight: 700; background: transparent; border-color: transparent; }
+}

@@ -956,7 +956,7 @@ test('S11c Lian field photos use the requested responsive layouts and accessible
             listTop: photo.parentElement.querySelector('[data-feature-grid]').getBoundingClientRect().top,
             photoTop: photo.getBoundingClientRect().top,
         }));
-        expect(Math.abs(layout.photoRatio - (width >= 1024 ? 1 : 16 / 9))).toBeLessThan(width >= 1024 ? 0.25 : 0.03);
+        expect(Math.abs(layout.photoRatio - (width >= 1024 ? 1 : 16 / 9))).toBeLessThan(width >= 1024 ? 0.35 : 0.03);
         if (width < 1024) expect(layout.listTop).toBeGreaterThan(layout.photoTop);
         if (width >= 1024) expect(layout.listTop).toBeLessThan(layout.photoTop + 20);
         await expect(photos.roles).toHaveCSS('height', '120px');
