@@ -234,11 +234,10 @@ test('N15 the header is 72px, aligned with the hero, and turns solid after 8px o
     expect(overHero.left).toBe(0);
     expect(overHero.right).toBe(0);
     await expect(nav).toHaveAttribute('data-nav-state', 'hero');
-    expect(overHero.background).toBe('rgba(31, 36, 29, 0.65)'); // a flat dark scrim (ink at 65%), no gradient
-    expect(overHero.border).toBe('rgba(0, 0, 0, 0)');
-    expect(overHero.title).toBe('rgb(255, 255, 255)');
-    await expect(nav.locator('.lp-logo-on-dark')).toBeVisible();
-    await expect(nav.locator('.lp-logo-on-light')).toBeHidden();
+    expect(overHero.background).toBe('rgb(255, 255, 255)'); // a plain white bar over the hero too, no dark scrim
+    expect(overHero.title).toBe(INK);
+    await expect(nav.locator('.lp-logo-on-light')).toBeVisible();
+    await expect(nav.locator('.lp-logo-on-dark')).toBeHidden();
 
     // Any scroll over the hero switches to the solid header.
     await page.evaluate(() => window.scrollTo({ top: document.getElementById('hero').offsetHeight / 2, behavior: 'instant' }));
@@ -254,7 +253,6 @@ test('N15 the header is 72px, aligned with the hero, and turns solid after 8px o
     const solid = await read();
     expect(solid.height).toBe(NAV_HEIGHT);
     expect(solid.background).toBe('rgb(255, 255, 255)');
-    expect(solid.border).toBe('rgba(0, 0, 0, 0)');
     expect(solid.title).toBe(INK);
     await expect(nav.locator('.lp-logo-on-light')).toBeVisible();
     await expect(nav.locator('.lp-logo-on-dark')).toBeHidden();

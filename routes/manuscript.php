@@ -107,6 +107,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::middleware(['role:'.User::ROLE_FARMER, 'farmer.language'])->group(function () {
             Route::get('yield', [YieldPredictionController::class, 'farmer'])->name('yield');
             Route::post('yield', [YieldPredictionController::class, 'farmerStore'])->middleware('throttle:10,1,post-analysis-yield')->name('yield.store');
+            Route::post('yield/{prediction}/useful', [YieldPredictionController::class, 'useful'])->whereNumber('prediction')->middleware('throttle:30,1,post-analysis-yield-useful')->name('yield.useful');
         });
         Route::get('yield/{prediction}/status', [YieldPredictionController::class, 'status'])
             ->whereNumber('prediction')->name('yield.status');

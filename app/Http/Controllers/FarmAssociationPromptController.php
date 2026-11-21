@@ -45,13 +45,13 @@ class FarmAssociationPromptController extends Controller
             'association_status' => $farm->association_status, 'farmer_organization_id' => $farm->farmer_organization_id, 'via' => 'dashboard',
         ]);
 
-        return redirect()->route('farmer.dashboard')->with('success', __('farms.association.prompt.saved', ['name' => $farm->farm_name]));
+        return redirect()->route('farmer.my-farm')->with('success', __('farms.association.prompt.saved', ['name' => $farm->farm_name]));
     }
 
     public function later(Request $request): RedirectResponse
     {
         FarmAssociations::snoozePrompt($request->user());
 
-        return redirect()->route('farmer.dashboard')->with('success', __('farms.association.prompt.later_done', ['days' => FarmAssociations::PROMPT_SNOOZE_DAYS]));
+        return redirect()->route('farmer.my-farm')->with('success', __('farms.association.prompt.later_done', ['days' => FarmAssociations::PROMPT_SNOOZE_DAYS]));
     }
 }

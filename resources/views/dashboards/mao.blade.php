@@ -201,7 +201,7 @@
                     <a class="mtd-link" href="{{ route('heat-map.index') }}">{{ $t('map.open') }}</a>
                 </div>
                 <a class="mhd-map-frame" href="{{ route('heat-map.index') }}" aria-label="{{ $t('map.open_label') }}" data-heat-map-preview>
-                    <div id="heatMapPreviewCanvas" class="mhd-map-canvas" data-boundary-url="{{ url('/api/boundaries/lian-barangays') }}"></div>
+                    <div id="heatMapPreviewCanvas" class="mhd-map-canvas" data-boundary-url="{{ url('/api/boundaries/lian-barangays').'?v='.count(\App\Support\LianBarangays::all()) }}"></div>
                     <script type="application/json" data-heat-map-preview-levels>@json(['levels' => $risk['levels'], 'colors' => \App\Services\Risk\HeatMapPanel::colors()])</script>
                 </a>
                 <p class="mhd-legend">

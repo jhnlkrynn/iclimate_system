@@ -98,11 +98,11 @@
             <div class="ic-topbar-group" role="group" aria-label="Language settings">
                 {{-- One form per language with a hidden input, so the choice is sent even if a script disables the clicked button. --}}
                 <div class="ic-lang" role="group" aria-label="Language">
-                    @foreach (['en' => ['EN', 'English'], 'fil' => ['FIL', 'Filipino']] as $langCode => [$langShort, $langName])
+                    @foreach (['en' => 'English', 'fil' => 'Filipino'] as $langCode => $langName)
                         <form method="POST" action="{{ route($navLangRoute) }}">
                             @csrf
                             <input type="hidden" name="language" value="{{ $langCode }}">
-                            <button type="submit" lang="{{ $langCode }}" aria-pressed="{{ $navLocale === $langCode ? 'true' : 'false' }}" title="{{ $langName }}">{{ $langShort }}</button>
+                            <button type="submit" lang="{{ $langCode }}" aria-pressed="{{ $navLocale === $langCode ? 'true' : 'false' }}" title="{{ $langName }}" aria-label="{{ $langName }}">@include('layouts.partials.lang-flag', ['code' => $langCode])</button>
                         </form>
                     @endforeach
                 </div>

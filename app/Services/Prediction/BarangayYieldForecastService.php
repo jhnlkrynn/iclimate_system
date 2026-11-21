@@ -46,6 +46,11 @@ final class BarangayYieldForecastService
 
     public const PERIOD_DAYS = ['week' => 7, '2weeks' => 14];
 
+    /** Basis of a barangay with no rice farms: no estimate is made for it (LianBarangays::riceFarming()). */
+    public const NO_RICE_FARMS = 'no_rice_farms';
+
+    public const NO_RICE_FARMS_MESSAGE = 'No rice farms in this barangay (not in the MAO rice-production records), so no yield estimate is made.';
+
     /**
      * This season's saved estimate per barangay for the period (empty values when none), with the season estimate
      * beside it ('season_yield') so a week can be compared with the season.
@@ -61,6 +66,18 @@ final class BarangayYieldForecastService
 
         $results = [];
         foreach (LianBarangays::all() as $barangay) {
+            // Barangays without rice farms get no yield estimate (an older saved run for one is not shown either).
+            if (! LianBarangays::isRiceFarming($barangay)) {
+                $results[$barangay] = [
+                    'barangay' => $barangay, 'predicted_yield' => null, 'classification' => 'nodata', 'basis' => self::NO_RICE_FARMS,
+                    'farms_used' => 0, 'area_hectares' => null, 'period' => $period, 'season_yield' => null, 'season' => null,
+                    'season_label' => $this->seasonLabel(), 'target_month' => null, 'model' => 'Random Forest', 'model_source' => $modelSource,
+                    'model_version' => null, 'model_input' => null, 'prediction_timestamp' => null, 'missing_inputs' => [],
+                    'error' => self::NO_RICE_FARMS_MESSAGE,
+                ];
+
+                continue;
+            }
             /** @var YieldPrediction|null $row */
             $row = $saved->get($barangay);
             $results[$barangay] = [
@@ -216,7 +233,8 @@ final class BarangayYieldForecastService
         $typicalArea = $this->median($this->store->farms()->filter(fn (YieldPrediction $row): bool => $row->barangay !== null)->pluck('area_hectares'));
         $calls = 0;
 
-        foreach (LianBarangays::all() as $barangay) {
+        // Only rice-farming barangays get a barangay estimate; the model is never run for one without rice farms.
+        foreach (LianBarangays::riceFarming() as $barangay) {
             $rows = $byBarangay->get($barangay, collect());
             if ($rows->isNotEmpty()) {
                 $area = (float) $rows->sum('area_hectares');

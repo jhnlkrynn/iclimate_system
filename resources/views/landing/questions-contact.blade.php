@@ -34,7 +34,7 @@
                 <div class="contact-map relative overflow-hidden rounded-lg bg-tint ring-brand ring-offset-2 focus-within:ring-2" data-office-map-box>
                     <iframe src="https://maps.google.com/maps?ll=13.992,120.648&amp;z=11&amp;output=embed" title="Map of the Municipal Agriculture Office, Lian Municipal Hall, Lian, Batangas" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen class="block h-full w-full border-0" data-office-map></iframe>
                     <span class="contact-map-marker" aria-hidden="true" data-map-marker><span></span></span>
-                    <a href="{{ $directionsUrl }}" target="_blank" rel="noopener noreferrer" class="absolute left-3 top-3 rounded bg-white px-3 py-2 text-sm font-semibold text-brand" data-map-link>Open in Maps ↗</a>
+                    <a href="{{ $directionsUrl }}" target="_blank" rel="noopener noreferrer" class="absolute left-3 top-3 rounded bg-white px-3 py-2 text-sm font-semibold text-brand" data-map-link>Open in Maps</a>
                 </div>
                 <dl class="contact-details mt-6 text-[17px] leading-[1.4]"><div><dt class="text-muted">Address</dt><dd class="text-ink">{{ \App\Support\MaoContact::ADDRESS }}</dd></div><div><dt class="text-muted">Office hours</dt><dd class="text-ink">{{ \App\Support\MaoContact::HOURS }}</dd></div><div><dt class="text-muted">Email</dt><dd><a href="mailto:{{ $officeEmail }}" class="lp-link" data-contact-email>{{ $officeEmail }}</a></dd></div></dl>
             </div>

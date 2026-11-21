@@ -52,6 +52,7 @@ class FarmerMyFarmController extends Controller
 
         return view('farmer-records.my-farm', [
             'archivedFarms' => $archivedFarms,
+            'associationPrompt' => \App\Services\Farms\FarmAssociations::promptFor($user),
             'available' => ActiveFarm::available(),
             'farms' => $farms->map(fn (Farm $f): array => [
                 'id' => $f->getKey(),

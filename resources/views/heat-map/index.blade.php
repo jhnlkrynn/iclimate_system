@@ -57,7 +57,7 @@
 
         <div class="hmx-map">
             <div id="heatMapCanvas" class="hmx-canvas" role="application" aria-label="{{ $t('map_label') }}"
-                data-boundary-url="{{ url('/api/boundaries/lian-barangays') }}"
+                data-boundary-url="{{ url('/api/boundaries/lian-barangays').'?v='.count(\App\Support\LianBarangays::all()) }}"
                 data-layer-api-url="{{ url('/api/heat-map') }}"
                 data-detail-url-template="{{ route('heat-map.detail', ['range' => '__RANGE__', 'barangay' => '__BARANGAY__']) }}"
                 @if ($ownBarangay) data-own-barangay="{{ $ownBarangay }}" @endif></div>

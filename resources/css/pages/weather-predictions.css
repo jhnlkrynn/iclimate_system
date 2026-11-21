@@ -99,6 +99,17 @@
 .wpx-more-table thead th { font-size: .8125rem; font-weight: 600; color: #5b6660; }
 .wpx-more-table tbody th { font-weight: 600; }
 
+/* Farmer Yield Prediction (/analysis/yield) */
+.yp-farm-plain { padding: .5rem .75rem; border: 1px solid var(--sage-200, #d4ddd7); border-radius: .5rem; background: #f8faf9; font-weight: 600; color: #1b1f1d; }
+.yp-farm-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; }
+.yp-missing-size { padding: .875rem 1rem; border: 1px solid var(--sage-200, #d4ddd7); border-radius: .75rem; background: #f8faf9; max-width: 340px; }
+.yp-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-top: .5rem; }
+.yp-metric { padding: 1rem 1.125rem; border: 1px solid var(--sage-200, #d4ddd7); border-radius: .875rem; background: #f8faf9; }
+.yp-metric-main { margin: 0; font-size: 1.35rem; font-weight: 700; color: #1b1f1d; line-height: 1.25; }
+.yp-metric-sacks { margin: .25rem 0 0; font-size: .9rem; color: #5b6660; }
+.yp-mobile-list { display: grid; gap: .75rem; }
+.yp-mobile-card { padding: .875rem 1rem; border: 1px solid #e3e8e5; border-radius: .75rem; background: #fff; }
+
 /* Transparency record under Expected Yield This Season (components/yield-record). */
 .ytr { margin-top: 16px; }
 .ytr-body { margin-top: 14px; display: grid; gap: 14px; }

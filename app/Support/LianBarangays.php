@@ -44,6 +44,34 @@ class LianBarangays
     ];
 
     /**
+     * The barangays with rice farms in the verified MAO rice-production source. Only these get a rice-yield estimate
+     * (Heat Map yield layer, barangay yield runs); the other ten still get weather, flood, drought and risk ratings.
+     * Owner/team decision 2026-11-20: a yield model run for a barangay with no rice farms is not a meaningful figure.
+     */
+    private const RICE_FARMING = [
+        'Balibago',
+        'Binubusan',
+        'Bungahan',
+        'Kapito',
+        'Luyahan',
+        'Malaruhatan',
+        'Matabungkay',
+        'Prenza',
+        'San Diego',
+    ];
+
+    /** @return list<string> the barangays that get a rice-yield estimate */
+    public static function riceFarming(): array
+    {
+        return self::RICE_FARMING;
+    }
+
+    public static function isRiceFarming(?string $barangay): bool
+    {
+        return in_array(self::canonicalName($barangay), self::RICE_FARMING, true);
+    }
+
+    /**
      * Lian barangays that are named in questions but not supported. Empty since all 19 are supported again; kept so
      * namedIn() and withoutNames() still work if a barangay is ever taken out of COORDINATES.
      */

@@ -4,8 +4,7 @@ test('prediction request persists and renders a safe withheld or missing-data re
     await page.goto('/');await page.locator('#login-email').fill('farmer@browser.test');await page.locator('#login-password').fill('password');
     await page.locator('[data-login-form] button[type="submit"]').click();await page.waitForURL('**/farmer/dashboard');
     await page.goto('/analysis/yield');
-    await page.locator('select[name="season"]').selectOption('Wet');await page.locator('select[name="farm_type"]').selectOption('Rainfed');
-    await page.locator('select[name="barangay"]').selectOption('Prenza');await page.locator('input[name="area_hectares"]').fill('1');
+    await page.locator('select[name="season"]').selectOption('Wet');
     await page.locator('form[action$="/analysis/yield"] button[type="submit"]').click();
     const statusUrl=await page.locator('[data-prediction-status-url]').first().getAttribute('data-prediction-status-url');
     expect(statusUrl).toBeTruthy();

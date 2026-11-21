@@ -80,6 +80,11 @@
                     </div>
                 @endif
             </section>
+            {{-- A farm without an association answer: asked here, under the farm list, one farm at a time
+                 (it used to sit at the top of the Farmer Dashboard). --}}
+            @if (! empty($associationPrompt))
+                @include('dashboards.farmer.association-prompt', ['prompt' => $associationPrompt])
+            @endif
             {{-- Archived farms (removed, or archived when the account was closed): Restore brings one back, plans and map included. --}}
             @if (($archivedFarms ?? collect())->isNotEmpty())
                 <section class="frec-panel fmf-no-print" aria-labelledby="ffmArchivedTitle" data-archived-farms>

@@ -4,9 +4,9 @@
         <h2 id="about-title" class="lp-h2 mt-0">{{ $about['title'] }}</h2>
         <p class="lp-lead mx-auto">{{ $about['description'] }}</p>
         <div class="about-rule mx-auto mt-8" aria-hidden="true"></div>
-        <blockquote class="mt-8 text-[20px] leading-relaxed text-ink">“{{ $about['mission'] }}”</blockquote>
+        <blockquote class="mt-8 text-[19px] leading-[1.6] text-ink">“{{ $about['mission'] }}”</blockquote>
         <div class="mt-4 flex items-center justify-center gap-2 text-sm text-muted"><img src="{{ asset('images/mao-lian-seal.png') }}" alt="" width="24" height="24" class="h-6 w-6 rounded-full object-contain"><span>{{ $about['attribution'] }}</span></div>
     </div>
-    <div class="about-sources-block mx-auto mt-8 max-w-[960px] text-center"><h3 class="text-sm font-medium text-muted">{{ $about['sources'] }}</h3><div class="about-sources mt-3 grid grid-cols-2 text-left sm:grid-cols-4">@foreach($about['source_items'] as $source)<div class="about-source px-3 py-3 first:pl-0"><h4 class="font-semibold text-ink">{{ $source['name'] }}</h4><p class="mt-1 text-sm leading-relaxed text-muted">{{ $source['text'] }}</p></div>@endforeach</div></div>
+    <div class="about-sources-block mx-auto mt-8 max-w-[960px] text-center"><h3 class="text-sm font-medium text-muted">{{ $about['sources'] }}</h3><div class="about-sources mt-3 grid grid-cols-2 text-center sm:grid-cols-4">@foreach($about['source_items'] as $source)<div class="about-source"><h4 class="font-semibold text-ink">{{ $source['name'] }}</h4><p class="mt-1 text-sm leading-relaxed text-muted">{{ $source['text'] }}</p></div>@endforeach</div></div>
     </div>
 </section>

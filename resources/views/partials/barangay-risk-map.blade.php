@@ -87,7 +87,7 @@
         <div class="risk-map-shell" data-risk-map-shell>
             <div id="barangayRiskMap" class="risk-map-canvas"
                 data-risk-map-url="{{ url('/api/lian/risk-map') }}"
-                data-boundary-url="{{ url('/api/boundaries/lian-barangays') }}"
+                data-boundary-url="{{ url('/api/boundaries/lian-barangays').'?v='.count(\App\Support\LianBarangays::all()) }}"
                 @auth
                     data-realtime-user-id="{{ auth()->id() }}"
                     data-realtime-role="{{ match (auth()->user()->role) { \App\Models\User::ROLE_FARMER => 'farmer', \App\Models\User::ROLE_MAO => 'mao', default => '' } }}"
