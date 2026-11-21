@@ -149,7 +149,7 @@
                     @php
                         $isFallback = (bool) data_get($latest->details, 'fallback', false);
                         $factor = (float) data_get($latest->details, 'factor', 1.0);
-                        $isAdjusted = abs($factor - 1.0) >= 0.0001;
+                        $isAdjusted = abs($factor - 1.0) >= \App\Services\Prediction\YieldLocalAdjustment::MIN_EFFECT;
                         $modelValue = data_get($latest->details, 'model_value');
                     @endphp
                     <p class="small text-muted mt-2 mb-1">{{ $Y('early_note') }}</p>

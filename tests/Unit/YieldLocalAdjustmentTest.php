@@ -111,4 +111,29 @@ class YieldLocalAdjustmentTest extends TestCase
         $this->assertSame(0.8, $low['factor']);
         $this->assertSame(3.28, $low['adjusted_yield']);
     }
+
+    public function test_negligible_factor_below_two_percent_falls_back_to_one(): void
+    {
+        foreach ([2020, 2021, 2022, 2023, 2024] as $year) {
+            RiceProduction::query()->create([
+                'barangay' => 'Prenza',
+                'season' => 'Dry',
+                'irrigation_type' => 'Irrigated',
+                'yield_per_hectare' => 4.00,
+                'year' => $year,
+            ]);
+            RiceProduction::query()->create([
+                'barangay' => 'Balibago',
+                'season' => 'Dry',
+                'irrigation_type' => 'Irrigated',
+                'yield_per_hectare' => 4.04,
+                'year' => $year,
+            ]);
+        }
+
+        // Lian avg = 4.02; Balibago factor = 4.04 / 4.02 = 1.005 (< 0.02 from 1.0) -> falls back to 1.0.
+        $result = app(YieldLocalAdjustment::class)->forRequest('Balibago', 'Irrigated', 'Dry', 4.10);
+        $this->assertSame(1.0, $result['factor']);
+        $this->assertSame(4.1, $result['adjusted_yield']);
+    }
 }

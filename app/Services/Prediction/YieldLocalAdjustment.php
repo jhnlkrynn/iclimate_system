@@ -24,6 +24,8 @@ class YieldLocalAdjustment
 
     public const MAX_FACTOR = 1.2;
 
+    public const MIN_EFFECT = 0.02;
+
     /**
      * @return array{model_value: float, factor: float, adjusted_yield: float, record_count: int, seasons_used: int}
      */
@@ -73,6 +75,10 @@ class YieldLocalAdjustment
 
         $rawFactor = $localAvg / (float) $lianAvg;
         $factor = round(max(self::MIN_FACTOR, min(self::MAX_FACTOR, $rawFactor)), 4);
+
+        if (abs($factor - 1.0) < self::MIN_EFFECT) {
+            return $this->unadjusted($modelValue, $recordCount, $seasonsUsed);
+        }
 
         return [
             'model_value' => round($modelValue, 2),

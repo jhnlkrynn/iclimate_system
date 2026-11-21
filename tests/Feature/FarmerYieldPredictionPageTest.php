@@ -359,5 +359,17 @@ class FarmerYieldPredictionPageTest extends TestCase
             ->assertOk()
             ->assertSee('Adjusted for Humayingan rainfed farms: 3.9 t/ha')
             ->assertSee('Lian-wide model estimate: 4.1 t/ha');
+
+        // Negligible factor (|factor - 1| < 0.02) hides "Adjusted for..." and shows the Lian-wide note.
+        $prediction->forceFill([
+            'predicted_yield' => 4.1,
+            'total_tons' => 20.5,
+            'details' => ['fallback' => false, 'factor' => 1.0042, 'model_value' => 4.1, 'record_count' => 6, 'seasons_used' => 6],
+        ])->save();
+
+        $this->actingAs($farmer)->get('/analysis/yield')
+            ->assertOk()
+            ->assertSee('This is a Lian-wide estimate for the season; it doesn\'t yet reflect your barangay or irrigation.')
+            ->assertDontSee('Adjusted for Humayingan');
     }
 }
