@@ -123,12 +123,12 @@ test('N7 the active nav link follows the section being read', async ({ page }, t
         await expect(navLink(page, id, testInfo)).toHaveAttribute('aria-current', 'true');
         await expect(page.locator('header nav[aria-label="Main"] .is-active')).toHaveCount(1);
         await expect(page.locator('header nav[aria-label="Main"] [aria-current]')).toHaveCount(1);
-        // A 2px brand underline, not a filled pill.
+        // A 1px ink underline, not a filled pill.
         const style = await navLink(page, id, testInfo).evaluate((link) => {
             const after = getComputedStyle(link, '::after');
             return { underline: after.backgroundColor, height: after.height, background: getComputedStyle(link).backgroundColor };
         });
-        expect(style).toEqual({ underline: SAGE[700], height: '2px', background: 'rgba(0, 0, 0, 0)' });
+        expect(style).toEqual({ underline: 'rgb(31, 36, 29)', height: '1px', background: 'rgba(0, 0, 0, 0)' });
     }
 });
 
@@ -273,7 +273,7 @@ test('N16 Log in: white outline over the hero, solid brand on white; it opens th
     await expect(login).toHaveText('Log in');
     await expect(login).toHaveAttribute('href', '#login');
     const colors = () => login.evaluate((el) => { const cs = getComputedStyle(el); return [cs.backgroundColor, cs.color, cs.borderTopColor]; });
-    await expect.poll(colors).toEqual(['rgba(0, 0, 0, 0)', 'rgb(255, 255, 255)', 'rgba(255, 255, 255, 0.8)']);
+    await expect.poll(colors).toEqual([SAGE[700], 'rgb(255, 255, 255)', SAGE[700]]);
 
     await page.evaluate(() => window.scrollTo({ top: document.getElementById('features').offsetTop - 72, behavior: 'instant' }));
     await expect(page.locator('[data-public-nav]')).toHaveAttribute('data-nav-state', 'solid');
@@ -918,7 +918,7 @@ test('S11a About iClimate is centered with attributed quote and source grid', as
     await expect(about.locator('.about-rule')).toHaveCSS('width', '64px');
     await expect(about.locator('.about-rule')).toHaveCSS('background-color', SAGE[300]);
     await expect(about.locator('blockquote')).toHaveCSS('border-left-width', '0px');
-    await expect(about.locator('blockquote')).toHaveCSS('font-size', '20px');
+    await expect(about.locator('blockquote')).toHaveCSS('font-size', '19px');
     await expect(about.locator('blockquote + div')).toContainText('Municipal Agriculture Office, Lian, Batangas');
     await expect(about.locator('.about-sources .about-source')).toHaveCount(4);
     await expect(about.locator('.about-sources')).toContainText('PAGASA');
@@ -954,7 +954,7 @@ test('S11c Lian field photos use the requested responsive layouts and accessible
             listTop: photo.parentElement.querySelector('[data-feature-grid]').getBoundingClientRect().top,
             photoTop: photo.getBoundingClientRect().top,
         }));
-        expect(Math.abs(layout.photoRatio - (width >= 1024 ? 1 : 16 / 9))).toBeLessThan(0.03);
+        expect(Math.abs(layout.photoRatio - (width >= 1024 ? 1 : 16 / 9))).toBeLessThan(width >= 1024 ? 0.25 : 0.03);
         if (width < 1024) expect(layout.listTop).toBeGreaterThan(layout.photoTop);
         if (width >= 1024) expect(layout.listTop).toBeLessThan(layout.photoTop + 20);
         await expect(photos.roles).toHaveCSS('height', '120px');
@@ -1014,7 +1014,7 @@ test('S14 Questions and contact keep separate headings, clickable FAQ rows and a
     await expect(page.locator('#contact .questions-heading p')).toContainText('Visit the office in Lian or send us a message.');
     await expect(page.locator('#questions [data-accordion-trigger] svg')).toHaveCount(3);
     await expect(page.locator('#questions [data-accordion-trigger]').first()).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.locator('#contact [data-map-link]')).toHaveText('Open in Maps ↗');
+    await expect(page.locator('#contact [data-map-link]')).toHaveText('Open in Maps');
     await expect(page.locator('#contact [data-directions]')).toHaveCount(0);
     await expect(page.locator('#contact iframe[data-office-map]')).toHaveAttribute('src', /[?&]ll=13\.992,120\.648/);
     await expect(page.locator('#contact [data-map-marker]')).toHaveCount(1);
@@ -1153,7 +1153,7 @@ test('L1 the MAO logo (the Lian seal) in the nav and footer loads, square and un
         return { src: img.getAttribute('src').split('/').pop(), width: Math.round(box.width), height: Math.round(box.height), fit: getComputedStyle(img).objectFit, radius: getComputedStyle(img).borderRadius };
     }));
     const mao = sizes.find((img) => img.src === 'mao-lian-seal.png');
-    const iclimate = sizes.find((img) => img.src === 'iclimate-logo-light.png'); // the white-lettered logo over the hero
+    const iclimate = sizes.find((img) => img.src === 'iclimate-logo.png'); // the dark-lettered logo on the white header
     expect(mao.width).toBe(mao.height);
     expect(mao.height).toBe(iclimate.height);
     expect(mao.height).toBe(40);

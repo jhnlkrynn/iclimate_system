@@ -179,4 +179,42 @@ class FarmerYieldPredictionPageTest extends TestCase
             ->assertRedirect('/analysis/yield');
         $this->assertTrue($prediction->fresh()->useful);
     }
+
+    public function test_old_predictions_without_farm_id_are_not_backfilled_and_still_show_in_history(): void
+    {
+        config(['prediction.rice_yield.accuracy_verified' => true]);
+        $farmer = User::factory()->farmer()->create();
+        Farm::query()->create([
+            'user_id' => $farmer->id,
+            'farm_name' => 'Farm 1',
+            'barangay' => 'Humayingan',
+            'farm_type' => 'Rainfed',
+            'farm_size_hectares' => 2.0,
+            'farm_size_method' => Farm::SIZE_EXACT,
+        ]);
+
+        $legacy = YieldPredictionRequest::query()->create([
+            'user_id' => $farmer->id,
+            'scope' => YieldPredictionRequest::SCOPE_FARM,
+            'barangay' => 'Balibago',
+            'season' => 'Wet',
+            'farm_type' => 'Irrigated',
+            'area_hectares' => 1.5,
+            'target_month' => '2026-09-01',
+            'status' => YieldPredictionRequest::DONE,
+            'predicted_yield' => 4.5,
+            'total_tons' => 6.75,
+            'impact_level' => 'Normal',
+            'completed_at' => now()->subDay(),
+        ]);
+
+        $this->assertNull($legacy->fresh()->farm_id);
+        $this->assertNull($legacy->fresh()->useful);
+
+        $this->actingAs($farmer)->get('/analysis/yield')
+            ->assertOk()
+            ->assertSee('Wet season 2026 · Farm (Balibago)')
+            ->assertSee('4.5 t/ha')
+            ->assertSee('7 t');
+    }
 }

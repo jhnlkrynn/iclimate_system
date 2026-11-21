@@ -97,12 +97,12 @@ test('ordinary staff issues a one-time recovery code and the farmer chooses a ne
     await expect(page.locator('[data-recovery-code]')).toHaveCount(0);
     const context=await browser.newContext(info.project.use);const farmer=await context.newPage();
     try {
-        await farmer.goto('/account/recover');
+        await farmer.goto('/reset-password/code');
         await farmer.locator('input[name="email"]').fill(email);
         await farmer.locator('input[name="token"]').fill(code);
         await farmer.locator('input[name="password"]').fill(`Recovered-${info.project.name}!2026`);
         await farmer.locator('input[name="password_confirmation"]').fill(`Recovered-${info.project.name}!2026`);
-        await farmer.locator('[data-recovery-form] button[type="submit"]').click();
+        await farmer.getByRole('button',{name:'Reset Password'}).click();
         await login(farmer,email,`Recovered-${info.project.name}!2026`,'farmer');
     } finally {await context.close();}
 });
