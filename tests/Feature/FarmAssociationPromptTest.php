@@ -59,35 +59,36 @@ class FarmAssociationPromptTest extends TestCase
         return $mao;
     }
 
-    // ------------------------------------------------------------------ the farmer dashboard card
+    // ------------------------------------------------------------------ the My Farm card (moved from the Farmer Dashboard)
 
-    public function test_the_dashboard_asks_about_one_undeclared_farm_at_a_time_and_stops_once_all_are_answered(): void
+    public function test_my_farm_asks_about_one_undeclared_farm_at_a_time_and_stops_once_all_are_answered(): void
     {
         $farmer = $this->farmer();
-        $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk()->assertDontSee('data-association-prompt', false);   // no farms
+        $this->actingAs($farmer)->get(route('farmer.my-farm'))->assertOk()->assertDontSee('data-association-prompt', false);   // no farms
 
         $north = $this->farm($farmer, 'North', 'Kapito', ['is_primary' => true]);
         $south = $this->farm($farmer, 'South', 'Prenza');
-        $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk()
+        $this->actingAs($farmer)->get(route('farmer.my-farm'))->assertOk()
             ->assertSee('data-association-prompt="'.$north->id.'"', false)
             ->assertSee('Is North part of a farmers&#039; association?', false)
             ->assertSee('Saluysoy Farmers Association')->assertDontSee('Prenza Farmers Association');   // this farm's barangay only
+        $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk()->assertDontSee('data-association-prompt', false);   // not on the dashboard any more
 
         // Answering goes through the farm form's logic: the membership is added.
         $this->actingAs($farmer)->post(route('farmer.association-prompt.store'), ['farm_id' => $north->id, 'association_status' => 'member', 'farmer_organization_id' => $this->prenza->id])
             ->assertSessionHasErrors('farmer_organization_id');   // another barangay's association
         $this->actingAs($farmer)->post(route('farmer.association-prompt.store'), ['farm_id' => $north->id, 'association_status' => 'member', 'farmer_organization_id' => $this->kapito->id])
-            ->assertRedirect(route('farmer.dashboard'))->assertSessionHas('success', 'Thank you. North is saved.');
+            ->assertRedirect(route('farmer.my-farm'))->assertSessionHas('success', 'Thank you. North is saved.');
         $this->assertSame(['member', $this->kapito->id, FarmAssociations::SET_BY_FARMER], [$north->fresh()->association_status, (int) $north->fresh()->farmer_organization_id, $north->fresh()->association_set_by]);
         $this->assertTrue(DB::table('farmer_organization_members')->where('farmer_organization_id', $this->kapito->id)->exists());
 
         // Next farm; "isn't listed" goes to the MAO's Association Requests.
-        $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertSee('data-association-prompt="'.$south->id.'"', false)->assertSee('Prenza Farmers Association');
+        $this->actingAs($farmer)->get(route('farmer.my-farm'))->assertSee('data-association-prompt="'.$south->id.'"', false)->assertSee('Prenza Farmers Association');
         $this->actingAs($farmer)->post(route('farmer.association-prompt.store'), ['farm_id' => $south->id, 'association_status' => 'pending_other', 'association_other_name' => 'Bagbag Irrigators']);
         $this->assertSame('pending_other', $south->fresh()->association_status);
         $this->actingAs($this->mao())->get(route('mao.farm-associations.index'))->assertSee('Bagbag Irrigators');
 
-        $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk()->assertDontSee('data-association-prompt', false);
+        $this->actingAs($farmer)->get(route('farmer.my-farm'))->assertOk()->assertDontSee('data-association-prompt', false);
 
         // Someone else's farm cannot be answered from here.
         $other = $this->farm($this->farmer('Pedro'), 'Theirs');
@@ -100,7 +101,7 @@ class FarmAssociationPromptTest extends TestCase
         $farmer->forceFill(['preferred_language' => 'fil'])->save();
         $this->farm($farmer, 'Bukid 1', 'Kapito', ['is_primary' => true]);
 
-        $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk()
+        $this->actingAs($farmer)->get(route('farmer.my-farm'))->assertOk()
             ->assertSee('Kasapi ba ang Bukid 1 sa isang samahan ng magsasaka?')->assertSee('Mamaya na');
     }
 
@@ -109,14 +110,14 @@ class FarmAssociationPromptTest extends TestCase
         $farmer = $this->farmer();
         $this->farm($farmer, 'North', 'Kapito', ['is_primary' => true]);
 
-        $this->actingAs($farmer)->post(route('farmer.association-prompt.later'))->assertRedirect(route('farmer.dashboard'))
+        $this->actingAs($farmer)->post(route('farmer.association-prompt.later'))->assertRedirect(route('farmer.my-farm'))
             ->assertSessionHas('success', 'We will ask again in 7 days.');
-        $this->actingAs($farmer->fresh())->get(route('farmer.dashboard'))->assertDontSee('data-association-prompt', false);
+        $this->actingAs($farmer->fresh())->get(route('farmer.my-farm'))->assertDontSee('data-association-prompt', false);
 
         $this->travel(6)->days();
-        $this->actingAs($farmer->fresh())->get(route('farmer.dashboard'))->assertDontSee('data-association-prompt', false);
+        $this->actingAs($farmer->fresh())->get(route('farmer.my-farm'))->assertDontSee('data-association-prompt', false);
         $this->travel(2)->days();
-        $this->actingAs($farmer->fresh())->get(route('farmer.dashboard'))->assertSee('data-association-prompt', false);
+        $this->actingAs($farmer->fresh())->get(route('farmer.my-farm'))->assertSee('data-association-prompt', false);
     }
 
     // ------------------------------------------------------------------ MAO: Undeclared Farms
@@ -177,7 +178,7 @@ class FarmAssociationPromptTest extends TestCase
 
         $this->actingAs($farmer)->get(route('farmer.my-farm'))->assertOk()
             ->assertSee('Samahan: Saluysoy Farmers Association')->assertSee('data-association-set-by-mao', false)->assertSee('Set by MAO');
-        $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertDontSee('data-association-prompt', false);   // answered
+        $this->actingAs($farmer)->get(route('farmer.my-farm'))->assertDontSee('data-association-prompt', false);   // answered
 
         // Saving the farm without changing the answer keeps it the MAO's; a different answer is the farmer's own.
         $form = ['farm_name' => 'North', 'barangay' => 'Kapito', 'farm_type' => 'Irrigated', 'farm_size_value' => '1.5', 'farm_size_unit' => Farm::UNIT_HECTARES];

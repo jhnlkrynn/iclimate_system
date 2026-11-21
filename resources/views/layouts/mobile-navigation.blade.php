@@ -158,8 +158,8 @@
                 @if ($isFarmer && $navFarmsOn)<span class="mobile-more-farm">{{ $mobileFarmName ?: __('farms.add_first') }}</span>@endif
                 @if ($navLangRoute)
                     <div class="mobile-more-language" aria-label="Language">
-                        @foreach (['en' => 'EN', 'fil' => 'FIL'] as $mobileLangCode => $mobileLangLabel)
-                            <form method="POST" action="{{ route($navLangRoute) }}"><input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="language" value="{{ $mobileLangCode }}"><button type="submit">{{ $mobileLangLabel }}</button></form>
+                        @foreach (['en' => 'English', 'fil' => 'Filipino'] as $mobileLangCode => $mobileLangLabel)
+                            <form method="POST" action="{{ route($navLangRoute) }}"><input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="language" value="{{ $mobileLangCode }}"><button type="submit" lang="{{ $mobileLangCode }}" aria-pressed="{{ $navLocale === $mobileLangCode ? 'true' : 'false' }}" title="{{ $mobileLangLabel }}" aria-label="{{ $mobileLangLabel }}">@include('layouts.partials.lang-flag', ['code' => $mobileLangCode])</button></form>
                         @endforeach
                     </div>
                 @endif
