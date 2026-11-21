@@ -148,9 +148,20 @@
 
                     @php
                         $isFallback = (bool) data_get($latest->details, 'fallback', false);
+                        $factor = (float) data_get($latest->details, 'factor', 1.0);
+                        $isAdjusted = abs($factor - 1.0) >= 0.0001;
+                        $modelValue = data_get($latest->details, 'model_value');
                     @endphp
                     <p class="small text-muted mt-2 mb-1">{{ $Y('early_note') }}</p>
-                    <p class="small text-muted mb-3" data-yield-basis>{{ $Y($isFallback ? 'basis_fallback' : 'basis_forecast') }}</p>
+                    <p class="small text-muted mb-1" data-yield-basis>{{ $Y($isFallback ? 'basis_fallback' : 'basis_forecast') }}</p>
+                    @if ($isAdjusted && $latest->barangay)
+                        <p class="small fw-semibold mb-1" data-yield-adjusted>{{ $Y('adjusted_for_farm', ['barangay' => $latest->barangay, 'farm_type' => strtolower($Y(strtolower($latest->farm_type))), 'value' => $num($perHa)]) }}</p>
+                        @if ($modelValue !== null)
+                            <p class="small text-muted mb-3" data-yield-model-value>{{ $Y('model_value_note', ['value' => $num($modelValue)]) }}</p>
+                        @endif
+                    @else
+                        <p class="small text-muted mb-3" data-yield-lian-wide>{{ $Y('lian_wide_note') }}</p>
+                    @endif
 
                     <div class="yp-useful pt-2 border-top d-flex flex-wrap align-items-center gap-2">
                         <span class="small fw-semibold text-muted">{{ $Y('useful_question') }}</span>

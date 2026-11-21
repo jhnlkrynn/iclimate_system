@@ -672,9 +672,10 @@ test('F1 feature cards expose their intended preview and navigation controls', a
     const cards = page.locator('#features li, #how article');
     expect(await cards.count()).toBeGreaterThanOrEqual(10);
     for (const card of await page.locator('#features li').all()) {
-        expect(await card.locator('button[role="tab"]').count()).toBe(1);
+        expect(await card.locator('button[role="tab"]').count()).toBe(0);
+        expect(await card.locator('h3').count()).toBe(1);
+        expect(await card.locator('p.feature-description').count()).toBe(1);
         expect(await card.locator('a.feature-open').count()).toBe(1);
-        expect(await card.locator('button[role="tab"]').evaluate((el) => getComputedStyle(el).cursor)).toBe('pointer');
     }
     await expect(page.locator('#how article a, #how article button')).toHaveCount(0);
 });

@@ -312,4 +312,52 @@ class FarmerYieldPredictionPageTest extends TestCase
 
         $this->assertSame(3, YieldPredictionRequest::query()->count());
     }
+
+    public function test_result_card_shows_lian_wide_note_or_local_adjustment(): void
+    {
+        config(['prediction.rice_yield.accuracy_verified' => true]);
+        $farmer = User::factory()->farmer()->create();
+        $farm = Farm::query()->create([
+            'user_id' => $farmer->id,
+            'farm_name' => 'Farm 1',
+            'barangay' => 'Humayingan',
+            'farm_type' => 'Rainfed',
+            'farm_size_hectares' => 5.0,
+            'farm_size_method' => Farm::SIZE_EXACT,
+        ]);
+
+        $prediction = YieldPredictionRequest::query()->create([
+            'user_id' => $farmer->id,
+            'farm_id' => $farm->id,
+            'scope' => YieldPredictionRequest::SCOPE_FARM,
+            'barangay' => 'Humayingan',
+            'season' => 'Dry',
+            'farm_type' => 'Rainfed',
+            'area_hectares' => 5.0,
+            'target_month' => '2027-03-01',
+            'status' => YieldPredictionRequest::DONE,
+            'predicted_yield' => 4.1,
+            'total_tons' => 20.5,
+            'historical_average' => 4.16,
+            'impact_level' => 'Normal',
+            'details' => ['fallback' => false, 'factor' => 1.0, 'model_value' => 4.1],
+            'completed_at' => now(),
+        ]);
+
+        $this->actingAs($farmer)->get('/analysis/yield')
+            ->assertOk()
+            ->assertSee('This is a Lian-wide estimate for the season; it doesn\'t yet reflect your barangay or irrigation.')
+            ->assertDontSee('Adjusted for Humayingan');
+
+        $prediction->forceFill([
+            'predicted_yield' => 3.9,
+            'total_tons' => 19.5,
+            'details' => ['fallback' => false, 'factor' => 0.9512, 'model_value' => 4.1, 'record_count' => 6, 'seasons_used' => 3],
+        ])->save();
+
+        $this->actingAs($farmer)->get('/analysis/yield')
+            ->assertOk()
+            ->assertSee('Adjusted for Humayingan rainfed farms: 3.9 t/ha')
+            ->assertSee('Lian-wide model estimate: 4.1 t/ha');
+    }
 }

@@ -57,8 +57,9 @@ class RunYieldPredictionRequest implements ShouldQueue
             ->afterCommit();
     }
 
-    public function handle(RiceYieldPredictionService $model, SeasonYield $seasonYield): void
+    public function handle(RiceYieldPredictionService $model, SeasonYield $seasonYield, ?\App\Services\Prediction\YieldLocalAdjustment $localAdjustment = null): void
     {
+        $localAdjustment ??= app(\App\Services\Prediction\YieldLocalAdjustment::class);
         $request = YieldPredictionRequest::query()->find($this->requestId);
         if ($request === null || $request->status !== YieldPredictionRequest::QUEUED) {
             return;
@@ -86,11 +87,20 @@ class RunYieldPredictionRequest implements ShouldQueue
                 return;
             }
 
-            $described = $seasonYield->describe((float) $yield, (int) $target->month);
+            $modelValue = round((float) $yield, 2);
+            $adjustment = $localAdjustment->forRequest(
+                $request->barangay,
+                $request->farm_type,
+                $request->season,
+                $modelValue,
+            );
+            $finalYield = $adjustment['adjusted_yield'];
+
+            $described = $seasonYield->describe($finalYield, (int) $target->month);
             $request->forceFill([
                 'status' => YieldPredictionRequest::DONE,
-                'predicted_yield' => round((float) $yield, 2),
-                'total_tons' => $area !== null ? round((float) $yield * $area, 2) : null,
+                'predicted_yield' => $finalYield,
+                'total_tons' => $area !== null ? round($finalYield * $area, 2) : null,
                 'historical_average' => $described['usual'],
                 'impact_level' => match ($described['compare']) {
                     'above' => 'Favorable',
@@ -105,6 +115,10 @@ class RunYieldPredictionRequest implements ShouldQueue
                     'prediction_source' => $result['prediction_source'] ?? $result['model_source'] ?? null,
                     'fallback' => (bool) ($result['fallback'] ?? $result['api_fallback_used'] ?? false),
                     'forecast_hash' => YieldPredictionRequest::forecastHash($result['weather']['predictions'] ?? null),
+                    'model_value' => $adjustment['model_value'],
+                    'factor' => $adjustment['factor'],
+                    'record_count' => $adjustment['record_count'],
+                    'seasons_used' => $adjustment['seasons_used'],
                 ], fn ($v) => $v !== null),
                 'error' => null,
                 'completed_at' => now(),
