@@ -98,13 +98,17 @@ class LoginRequest extends FormRequest
             && \App\Services\Accounts\PasswordChange::isShared($user = Auth::user(), (string) $this->input('password'))) {
             \App\Services\Accounts\PasswordChange::flagIfDefault($user, (string) $this->input('password'));
             $method = \App\Services\Accounts\AccountRecovery::method($user);
-            if ($method === \App\Services\Accounts\AccountRecovery::METHOD_EMAIL) {
-                \App\Services\Accounts\AccountRecovery::sendEmailLink($user);
-            }
+            $emailSent = $method === \App\Services\Accounts\AccountRecovery::METHOD_EMAIL
+                ? \App\Services\Accounts\AccountRecovery::sendEmailLink($user)
+                : false;
             Auth::guard('web')->logout();
             RateLimiter::clear($this->throttleKey());
             throw new \Illuminate\Http\Exceptions\HttpResponseException(
-                redirect()->route('account.recover')->with(['recovery' => $method, 'recovery_email' => $user->email])
+                redirect()->route('account.recover')->with([
+                    'recovery' => $method,
+                    'recovery_email' => $user->email,
+                    'recovery_email_sent' => $emailSent,
+                ])
             );
         }
 

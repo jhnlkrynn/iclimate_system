@@ -318,4 +318,14 @@ class DefaultPasswordLockdownTest extends TestCase
         $this->assertAuthenticatedAs($mao);
         $this->get(route('mao.dashboard'))->assertOk();
     }
+
+    public function test_recover_page_separates_email_and_mao_options_without_false_sent_claim(): void
+    {
+        $this->withSession(['recovery' => AccountRecovery::METHOD_EMAIL, 'recovery_email' => 'farmer@gmail.com', 'recovery_email_sent' => false])
+            ->get(route('account.recover'))
+            ->assertOk()
+            ->assertSee('Option A: Email Recovery')
+            ->assertSee('Option B: MAO Recovery Code')
+            ->assertDontSee('We sent a link to your email');
+    }
 }
