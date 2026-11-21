@@ -49,6 +49,8 @@ return [
     'compare_close' => 'Close to Lian\'s usual :value t/ha',
     'compare_below' => 'Below Lian\'s usual :value t/ha',
     'early_note' => 'Early estimate. It updates as the season\'s weather comes in.',
+    'basis_forecast' => 'Based on the weather forecast and past harvests',
+    'basis_fallback' => 'Based on Lian\'s past harvests (forecast not yet available)',
     'useful_question' => 'Was this useful?',
     'yes' => 'Yes',
     'no' => 'No',

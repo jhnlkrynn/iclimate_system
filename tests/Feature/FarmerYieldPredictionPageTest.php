@@ -217,4 +217,99 @@ class FarmerYieldPredictionPageTest extends TestCase
             ->assertSee('4.5 t/ha')
             ->assertSee('7 t');
     }
+
+    public function test_result_card_shows_forecast_or_fallback_basis_line(): void
+    {
+        config(['prediction.rice_yield.accuracy_verified' => true]);
+        $farmer = User::factory()->farmer()->create();
+        $farm = Farm::query()->create([
+            'user_id' => $farmer->id,
+            'farm_name' => 'Farm 1',
+            'barangay' => 'Humayingan',
+            'farm_type' => 'Rainfed',
+            'farm_size_hectares' => 5.0,
+            'farm_size_method' => Farm::SIZE_EXACT,
+        ]);
+
+        $prediction = YieldPredictionRequest::query()->create([
+            'user_id' => $farmer->id,
+            'farm_id' => $farm->id,
+            'scope' => YieldPredictionRequest::SCOPE_FARM,
+            'barangay' => 'Humayingan',
+            'season' => 'Dry',
+            'farm_type' => 'Rainfed',
+            'area_hectares' => 5.0,
+            'target_month' => '2027-03-01',
+            'status' => YieldPredictionRequest::DONE,
+            'predicted_yield' => 4.1,
+            'total_tons' => 20.5,
+            'historical_average' => 4.16,
+            'impact_level' => 'Normal',
+            'details' => ['fallback' => false],
+            'completed_at' => now(),
+        ]);
+
+        $this->actingAs($farmer)->get('/analysis/yield')
+            ->assertOk()
+            ->assertSee('Based on the weather forecast and past harvests')
+            ->assertDontSee('Based on Lian\'s past harvests (forecast not yet available)');
+
+        $prediction->forceFill(['details' => ['fallback' => true]])->save();
+
+        $this->actingAs($farmer)->get('/analysis/yield')
+            ->assertOk()
+            ->assertSee('Based on Lian\'s past harvests (forecast not yet available)')
+            ->assertDontSee('Based on the weather forecast and past harvests');
+    }
+
+    public function test_repeat_request_within_24_hours_refreshes_existing_row_unless_inputs_or_forecast_change(): void
+    {
+        $farmer = User::factory()->farmer()->create();
+        $farm = Farm::query()->create([
+            'user_id' => $farmer->id,
+            'farm_name' => 'Farm 1',
+            'barangay' => 'Humayingan',
+            'farm_type' => 'Rainfed',
+            'farm_size_hectares' => 5.0,
+            'farm_size_method' => Farm::SIZE_EXACT,
+        ]);
+
+        $this->actingAs($farmer)->post('/analysis/yield', [
+            'farm_id' => $farm->id,
+            'season' => 'Dry',
+        ])->assertRedirect('/analysis/yield');
+
+        $first = YieldPredictionRequest::query()->sole();
+        $earlier = now()->subHours(2);
+        $first->forceFill(['created_at' => $earlier, 'updated_at' => $earlier, 'completed_at' => $earlier])->save();
+
+        // Repeat within 24h with same inputs and forecast: refreshes timestamp, no new row.
+        $this->actingAs($farmer)->post('/analysis/yield', [
+            'farm_id' => $farm->id,
+            'season' => 'Dry',
+        ])->assertRedirect('/analysis/yield');
+
+        $this->assertSame(1, YieldPredictionRequest::query()->count());
+        $this->assertTrue($first->fresh()->created_at->gt($earlier));
+
+        // Changed forecast hash on existing row: creates a new row.
+        $first->forceFill(['details' => ['forecast_hash' => 'outdated-forecast']])->save();
+
+        $this->actingAs($farmer)->post('/analysis/yield', [
+            'farm_id' => $farm->id,
+            'season' => 'Dry',
+        ])->assertRedirect('/analysis/yield');
+
+        $this->assertSame(2, YieldPredictionRequest::query()->count());
+
+        // Changed farm input (area): creates a new row.
+        $farm->forceFill(['farm_size_hectares' => 7.5])->save();
+
+        $this->actingAs($farmer)->post('/analysis/yield', [
+            'farm_id' => $farm->id,
+            'season' => 'Dry',
+        ])->assertRedirect('/analysis/yield');
+
+        $this->assertSame(3, YieldPredictionRequest::query()->count());
+    }
 }

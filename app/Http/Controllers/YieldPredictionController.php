@@ -8,6 +8,7 @@ use App\Models\Farm;
 use App\Models\RiceProduction;
 use App\Models\User;
 use App\Models\YieldPredictionRequest;
+use App\Services\Prediction\PredictionOrchestrator;
 use App\Services\SystemAuditLogger;
 use App\Support\ActiveFarm;
 use App\Support\FarmerLanguage;
@@ -195,6 +196,29 @@ class YieldPredictionController extends Controller
             return redirect()->route($back)->withErrors(['season' => __('yield_request.too_many')]);
         }
 
+        $targetMonth = YieldPredictionRequest::targetMonthFor($data['season']);
+        $forecastHash = $this->currentForecastHash($targetMonth);
+
+        if ($scope === YieldPredictionRequest::SCOPE_FARM && ! empty($data['farm_id'])) {
+            $existing = $this->findRecentMatchingRequest(
+                $user->getKey(),
+                (int) $data['farm_id'],
+                $data,
+                $targetMonth->toDateString(),
+                $forecastHash,
+            );
+            if ($existing !== null) {
+                $now = now();
+                $existing->forceFill([
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                    'completed_at' => $now,
+                ])->save();
+
+                return redirect()->route($back)->with('success', __('yield_request.queued'));
+            }
+        }
+
         $prediction = YieldPredictionRequest::query()->create([
             'user_id' => $user->getKey(),
             'farm_id' => $data['farm_id'] ?? null,
@@ -203,13 +227,56 @@ class YieldPredictionController extends Controller
             'season' => $data['season'],
             'farm_type' => $data['farm_type'],
             'area_hectares' => $data['area_hectares'] ?? null,
-            'target_month' => YieldPredictionRequest::targetMonthFor($data['season'])->toDateString(),
+            'target_month' => $targetMonth->toDateString(),
             'status' => YieldPredictionRequest::QUEUED,
         ]);
         SystemAuditLogger::forModel('requested', $prediction, $request, ['scope' => $scope]);
         RunYieldPredictionRequest::start($prediction);
 
         return redirect()->route($back)->with('success', __('yield_request.queued'));
+    }
+
+    private function currentForecastHash(\Carbon\CarbonImmutable $targetMonth): ?string
+    {
+        return rescue(function () use ($targetMonth): ?string {
+            $weather = app(PredictionOrchestrator::class)->monthlyWeatherForecast($targetMonth);
+
+            return YieldPredictionRequest::forecastHash($weather['predictions'] ?? null);
+        }, null, false);
+    }
+
+    private function findRecentMatchingRequest(
+        int $userId,
+        int $farmId,
+        array $data,
+        string $targetDate,
+        ?string $forecastHash,
+    ): ?YieldPredictionRequest {
+        $latest = YieldPredictionRequest::query()
+            ->where('user_id', $userId)
+            ->where('farm_id', $farmId)
+            ->where('season', $data['season'])
+            ->where('status', YieldPredictionRequest::DONE)
+            ->where('created_at', '>=', now()->subHours(24))
+            ->latest('created_at')
+            ->first();
+
+        if ($latest === null) {
+            return null;
+        }
+
+        $sameArea = $latest->area_hectares !== null && isset($data['area_hectares'])
+            ? round((float) $latest->area_hectares, 2) === round((float) $data['area_hectares'], 2)
+            : ($latest->area_hectares === null && ($data['area_hectares'] ?? null) === null);
+
+        $sameInputs = $latest->barangay === ($data['barangay'] ?? null)
+            && $latest->farm_type === $data['farm_type']
+            && $sameArea
+            && $latest->target_month?->toDateString() === $targetDate;
+
+        $sameForecast = ($latest->details['forecast_hash'] ?? null) === $forecastHash;
+
+        return $sameInputs && $sameForecast ? $latest : null;
     }
 
     /** Rice area per barangay: the MAO's figure on the Barangays page, else the farm area farmers registered. */

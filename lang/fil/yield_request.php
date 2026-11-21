@@ -49,6 +49,8 @@ return [
     'compare_close' => 'Malapit sa karaniwang :value t/ha sa Lian',
     'compare_below' => 'Mas mababa sa karaniwang :value t/ha sa Lian',
     'early_note' => 'Maagang taya. Nagbabago ito habang pumapasok ang lagay ng panahon.',
+    'basis_forecast' => 'Batay sa taya ng panahon at mga nakaraang ani',
+    'basis_fallback' => 'Batay sa mga nakaraang ani sa Lian (wala pang taya ng panahon)',
     'useful_question' => 'Nakatulong ba ito?',
     'yes' => 'Oo',
     'no' => 'Hindi',

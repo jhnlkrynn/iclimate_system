@@ -61,4 +61,16 @@ class YieldPredictionRequest extends Model
 
         return $target->lt($today) ? $target->addYear() : $target;
     }
+
+    /** Deterministic signature of the weather forecast payload so repeat requests can detect forecast updates. */
+    public static function forecastHash(mixed $predictions): ?string
+    {
+        if (! is_array($predictions) || $predictions === []) {
+            return null;
+        }
+
+        ksort($predictions);
+
+        return sha1((string) json_encode($predictions));
+    }
 }

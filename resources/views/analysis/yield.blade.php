@@ -146,7 +146,11 @@
                         @endif
                     </div>
 
-                    <p class="small text-muted mt-2 mb-3">{{ $Y('early_note') }}</p>
+                    @php
+                        $isFallback = (bool) data_get($latest->details, 'fallback', false);
+                    @endphp
+                    <p class="small text-muted mt-2 mb-1">{{ $Y('early_note') }}</p>
+                    <p class="small text-muted mb-3" data-yield-basis>{{ $Y($isFallback ? 'basis_fallback' : 'basis_forecast') }}</p>
 
                     <div class="yp-useful pt-2 border-top d-flex flex-wrap align-items-center gap-2">
                         <span class="small fw-semibold text-muted">{{ $Y('useful_question') }}</span>
