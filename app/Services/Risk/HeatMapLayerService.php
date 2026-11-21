@@ -55,7 +55,7 @@ final class HeatMapLayerService
             }
         } elseif ($layer === 'yield') {
             [$rows, $data['updated_at']] = $this->yieldRows($names, $period);
-            $source = 'Unvalidated iClimate yield estimate · '.($period === '2weeks' ? "next 2 weeks' forecast" : "this week's forecast");
+            $source = 'iClimate yield estimate · '.($period === '2weeks' ? "next 2 weeks' forecast" : "this week's forecast");
         } else {
             $data = $this->layers->layers('en', $period)[$layer] ?? ['barangays' => [], 'updated_at' => null, 'source' => $source, 'labels' => []];
             $profiles = $layer === 'flood' && Schema::hasTable('barangay_profiles')
@@ -120,8 +120,8 @@ final class HeatMapLayerService
             $level = ['good' => 'low', 'fair' => 'moderate', 'low' => 'high', 'none' => 'unavailable'][$class];
             $basis = $p['basis'] ?? null;
             $reason = match ($basis) {
-                'barangay_model' => 'Unvalidated rice-yield model estimate run for this barangay.',
-                'farm_average' => 'Unvalidated average of '.($p['farms_used'] ?? 0).' farm estimates, weighted by farm size.',
+                'barangay_model' => 'Rice-yield model estimate run for this barangay.',
+                'farm_average' => 'Average of '.($p['farms_used'] ?? 0).' farm estimates, weighted by farm size.',
                 default => 'No estimate yet.',
             };
             $row = $this->row($name, $level, $value, [$reason], $reason);

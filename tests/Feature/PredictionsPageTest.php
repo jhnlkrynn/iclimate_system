@@ -282,7 +282,7 @@ class PredictionsPageTest extends TestCase
 
         $this->assertStringContainsString('4.60 t/ha', $text);
         // The disclosure stays; the farmer card has no Normal / Higher / Lower badge (owner decision 2026-11-20).
-        $this->assertStringContainsString('Unvalidated estimate', $text);
+        $this->assertStringContainsString('Preliminary estimate', $text);
         $this->assertStringContainsString('Accuracy not verified', $text);
         $this->assertStringNotContainsString('Compared with the usual Lian yield', $text);
         $this->assertStringContainsString('From your farm size (1.50 ha) and farm type (Irrigated', $text);
@@ -362,7 +362,7 @@ class PredictionsPageTest extends TestCase
         $this->assertStringContainsString('197.10 mm', $text);
         $this->assertStringContainsString('past weather from Open-Meteo, adjusted to PAGASA Ambulong station', $text);
         $this->assertStringNotContainsString('Compared with real harvests', $text, 'owner removed this line 2026-11-20');
-        $this->assertStringContainsString('Unvalidated estimate', $text, 'the disclosure stays on the card');
+        $this->assertStringContainsString('Preliminary estimate', $text, 'the disclosure stays on the card');
     }
 
     public function test_all_lian_renders_a_cached_model_result_without_farmer_estimates(): void
@@ -377,7 +377,7 @@ class PredictionsPageTest extends TestCase
         $text = $this->text($this->actingAs($mao)->get(route('weather-predictions.index'))->getContent());
 
         $this->assertStringContainsString('4.25 t/ha', $text);
-        $this->assertStringContainsString('Unvalidated estimate', $text);
+        $this->assertStringContainsString('Preliminary estimate', $text);
         $this->assertStringContainsString('Municipality-wide forecast from the trained rice-yield model', $text);
         $this->assertStringNotContainsString('No saved farmer estimates yet', $text);
         Queue::assertNotPushed(\App\Jobs\PrepareMunicipalYieldForecast::class);

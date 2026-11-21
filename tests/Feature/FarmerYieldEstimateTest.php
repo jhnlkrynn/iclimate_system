@@ -326,7 +326,7 @@ class FarmerYieldEstimateTest extends TestCase
         $text = trim((string) preg_replace('/\s+/', ' ', html_entity_decode(strip_tags($html))));
         $this->assertStringContainsString('4.10 t/ha', $text);
         $this->assertStringContainsString('For Farm 1 · Prenza: 2.00 ha, Irrigated (canal or pump).', $text);
-        $this->assertStringContainsString('Unvalidated estimate', $text);
+        $this->assertStringContainsString('Preliminary estimate', $text);
     }
 
     // ------------------------------------------------------------ the scheduled warm-up

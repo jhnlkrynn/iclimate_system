@@ -644,7 +644,7 @@
                             @if($chat->weather_prediction || $chat->rice_yield_prediction || $chat->planting_recommendation || $chat->irrigation_recommendation)
                                 <div class="ic-ai-results">
                                     <div class="ic-ai-card"><div class="ic-ai-card-label">Weather</div><div class="ic-ai-card-value">{{ data_get($chat->weather_prediction, 'predicted_weather', 'N/A') }}</div></div>
-                                    <div class="ic-ai-card"><div class="ic-ai-card-label">Yield</div><div class="ic-ai-card-value">{{ data_get($chat->rice_yield_prediction, 'predicted_yield') !== null && \App\Services\Prediction\YieldModelGate::showsStoredEstimate() ? number_format((float) data_get($chat->rice_yield_prediction, 'predicted_yield'), 2).' t/ha' : 'Not available yet' }} @if (data_get($chat->rice_yield_prediction, 'predicted_yield') !== null && \App\Services\Prediction\YieldModelGate::showsStoredEstimate())<span class="small">Unvalidated estimate</span>@endif</div></div>
+                                    <div class="ic-ai-card"><div class="ic-ai-card-label">Yield</div><div class="ic-ai-card-value">{{ data_get($chat->rice_yield_prediction, 'predicted_yield') !== null && \App\Services\Prediction\YieldModelGate::showsStoredEstimate() ? number_format((float) data_get($chat->rice_yield_prediction, 'predicted_yield'), 2).' t/ha' : 'Not available yet' }} @if (data_get($chat->rice_yield_prediction, 'predicted_yield') !== null && \App\Services\Prediction\YieldModelGate::showsStoredEstimate())<span class="small">Preliminary estimate</span>@endif</div></div>
                                     <div class="ic-ai-card"><div class="ic-ai-card-label">Planting</div><div class="ic-ai-card-value">{{ data_get($chat->planting_recommendation, 'recommendation', data_get($chat->planting_recommendation, 'action', 'N/A')) }}</div></div>
                                     <div class="ic-ai-card"><div class="ic-ai-card-label">Irrigation</div><div class="ic-ai-card-value">{{ data_get($chat->irrigation_recommendation, 'recommendation', 'N/A') }}</div></div>
                                 </div>
@@ -909,7 +909,7 @@
             const cards = [];
 
             if (visibleCards.includes('weather')) cards.push(resultCard('Weather', weather));
-            if (visibleCards.includes('yield')) cards.push(resultCard('Yield', `${yieldValue} · Unvalidated estimate`));
+            if (visibleCards.includes('yield')) cards.push(resultCard('Yield', `${yieldValue} · Preliminary estimate`));
             if (visibleCards.includes('planting')) cards.push(resultCard('Planting', planting));
             if (visibleCards.includes('irrigation')) cards.push(resultCard('Irrigation', irrigation));
 
