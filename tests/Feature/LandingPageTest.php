@@ -176,10 +176,11 @@ class LandingPageTest extends TestCase
     public function test_landing_page_has_the_interactive_features_showcase_without_decorative_section_photos(): void
     {
         $this->get('/')->assertOk()
-            ->assertSee('farmer-dashboard.jpg', false)
-            ->assertSee('alt="iClimate farmer dashboard showing harvest, advisories and wet-season status"', false)
-            ->assertSee('data-feature-select="0"', false)
-            ->assertSee('data-feature-select="5"', false)
+            // Six plain feature cards, each with its own link; no preview card or dashboard screenshot under them.
+            ->assertDontSee('farmer-dashboard.jpg', false)
+            ->assertDontSee('data-features-preview', false)
+            ->assertDontSee('data-feature-select', false)
+            ->assertSee('Log in to open', false)
             ->assertDontSee('lian-rice-dawn-960.webp', false)
             ->assertDontSee('lian-rice-horizon.webp', false)
             ->assertDontSee('alt="Ripening rice at dawn in Lian"', false)
@@ -197,7 +198,7 @@ class LandingPageTest extends TestCase
         $this->assertSame(8, preg_match_all('/<section id="[a-z-]+"[^>]*data-section/', $html));
         $this->assertStringNotContainsString('id="faq"', $html);
         $this->assertStringNotContainsString('id="get-started"', $html);
-        $this->assertStringContainsString('data-feature-select="0"', $html);
+        $this->assertSame(6, substr_count($html, 'data-feature class="feature-item"'));
         $this->assertStringContainsString('data-steps', $html);
     }
 
@@ -215,7 +216,7 @@ class LandingPageTest extends TestCase
         $this->assertStringNotContainsString('data-season-month', $html);
         $this->assertStringNotContainsString('data-step-number', $html);
         $this->assertStringNotContainsString('data-dashboard-shot', $html);
-        $this->assertStringContainsString('farmer-dashboard.jpg', $html);
+        $this->assertStringNotContainsString('farmer-dashboard.jpg', $html);
     }
 
     public function test_the_hero_card_holds_both_the_login_and_the_create_account_form(): void

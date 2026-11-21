@@ -218,68 +218,6 @@
         min-width: 0;
     }
 
-    /* The selected feature: a compact white card (or the dashboard screenshot), only as tall as its content. */
-    .features-preview {
-        position: relative;
-        overflow: hidden;
-        border-radius: .5rem;
-        background: #fff;
-    }
-
-    .feature-preview-panel {
-        height: 100%;
-    }
-
-    .feature-preview-panel[hidden] {
-        display: none;
-    }
-
-    .feature-preview-panel > img {
-        display: block;
-        width: 100%;
-        height: auto;
-        aspect-ratio: 16 / 10;
-        object-fit: cover;
-        object-position: top left;
-    }
-
-    .feature-preview-caption {
-        position: absolute;
-        right: 1rem;
-        bottom: 1rem;
-        margin: 0;
-        padding: .45rem .65rem;
-        border-radius: .35rem;
-        border: 1px solid var(--sage-200);
-        background: #fff;
-        color: theme('colors.ink');
-        font-size: .875rem;
-    }
-
-    .feature-preview-placeholder {
-        display: flex;
-        padding: 1.75rem;
-        flex-direction: column;
-        align-items: center;
-        gap: .5rem;
-        text-align: center;
-        color: theme('colors.ink');
-        background: #fff;
-    }
-
-    .feature-preview-placeholder strong {
-        font-size: 1.375rem;
-        line-height: 1.3;
-    }
-
-    .feature-preview-placeholder > span {
-        max-width: 32rem;
-        color: theme('colors.muted');
-        font-size: 1rem;
-    }
-
-
-
     .features-list {
         display: grid;
         min-width: 0;
@@ -290,22 +228,17 @@
         list-style: none;
     }
 
-    /* Each feature: a plain white tile on the light green section, no lines. The selected one turns light green. */
+    /* Each feature: a plain white tile on the light green section, no lines. */
     .feature-item {
+        display: flex;
         min-width: 0;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
         text-align: center;
         padding: 1rem 1.25rem;
         border-radius: .5rem;
         background: #fff;
-        transition: background-color .15s ease;
-    }
-
-    .feature-item:hover {
-        background: var(--sage-100);
-    }
-
-    .feature-item.is-active {
-        background: var(--sage-200);
     }
 
     /* Roles and data sources: the same plain tiles. */
@@ -341,34 +274,16 @@
         text-align: center;
     }
 
-    .feature-select {
-        display: block;
-        width: 100%;
-        padding: 0;
-        border: 0;
-        background: transparent;
-        color: inherit;
-        text-align: center;
-        cursor: pointer;
-    }
-
-
-    .feature-select .lp-card-title {
-        display: block;
+    .feature-item .lp-card-title {
+        margin: 0;
         font-size: 1.0625rem;
     }
 
     .feature-description {
-        display: block;
-        margin-top: .35rem;
+        margin: .35rem 0 0;
         color: theme('colors.muted');
         font-size: .9375rem;
         line-height: 1.45;
-    }
-
-    .feature-item.is-active .feature-select .lp-card-title,
-    .feature-item:hover .feature-select .lp-card-title {
-        color: var(--sage-700);
     }
 
     .feature-open {
@@ -640,12 +555,11 @@ html[data-theme="dark"] #roles .text-brand { color: var(--sage-200); }
     }
 
     .features-main { display: contents; }
-    .features-photo { grid-column: 1; grid-row: 1 / span 2; }
+    .features-photo { grid-column: 1; grid-row: 1; }
     .features-list { grid-column: 2; grid-row: 1; }
-    .features-preview { grid-column: 2; grid-row: 2; }
 
-    /* The photo fills its column next to the list and the card, so no empty space is left under it. */
-    .features-photo { aspect-ratio: auto; align-self: stretch; min-height: 24rem; }
+    /* The photo is as tall as the feature list next to it: a landscape crop, never stretched into a tall strip. */
+    .features-photo { aspect-ratio: auto; align-self: stretch; min-height: 20rem; }
 }
 
 .contact-map:focus-within {
@@ -679,19 +593,6 @@ html[data-theme="dark"] #roles .text-brand { color: var(--sage-200); }
         grid-template-columns: minmax(0, 1fr);
     }
 
-    /* Phones: the feature list first, then the selected feature's card right under it. */
-    .features-main {
-        gap: 1rem;
-    }
-
-    .features-main .features-list {
-        order: -1;
-    }
-
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .features-layout > ul > li, .feature-item { transition: none; }
 }
 
 /* Hero card: the sign-up form (auth/partials/register-form*) keeps its /register look; only its button and checkbox
@@ -776,7 +677,7 @@ html[data-theme="dark"] #roles .text-brand { color: var(--sage-200); }
 }
 
 /* Create account mode: the guide replaces the tiles, buttons and counts. */
-.lp-hero-row:has([data-auth-mode='register']) :is(.lp-hero-offers, .lp-hero-stats) { display: none; }
+.lp-hero-row:has([data-auth-mode='register']) .lp-hero-offers { display: none; }
 
 /* Sign in mode: the card matches the taller headline card, so its content sits in the middle rather than leaving
    empty space at the bottom. */

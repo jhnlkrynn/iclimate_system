@@ -2,10 +2,6 @@
     <div class="lp-hero-row lp-wrap flex flex-col gap-8 lg:flex-row lg:items-stretch lg:gap-12">
         <div class="lp-hero-intro flex min-w-0 flex-1 flex-col items-center justify-center gap-5 rounded-lg border border-line bg-white p-6 text-center sm:p-8 lg:p-10">
             <div class="lp-hero-intro-inner flex flex-col items-center gap-5">
-                <div class="lp-hero-office flex items-center gap-3">
-                    <img src="{{ asset('images/mao-lian-seal.png') }}" alt="" width="40" height="40" class="h-10 w-10 rounded-full object-contain">
-                    <span class="text-left text-sm leading-tight text-muted"><span class="block font-semibold text-ink">Municipal Agriculture Office</span>Lian, Batangas</span>
-                </div>
                 <h1 class="lp-hero-title max-w-[40rem] text-[clamp(2rem,3.4vw,2.875rem)] font-semibold leading-[1.18] tracking-[-0.025em] text-sage-900">{{ __('landing.hero.title') }}</h1>
                 <p class="max-w-[36rem] text-[17px] leading-[1.6] text-muted">{{ __('landing.hero.description') }}</p>
                 <ul class="lp-hero-offers">
@@ -20,10 +16,6 @@
                 <div class="lp-hero-more flex flex-wrap items-center justify-center gap-3">
                     <a href="#features" class="lp-btn-primary lp-btn-lg" data-hero-features data-hero-how>{{ __('landing.hero.button') }}</a>
                 </div>
-                @php($heroStats = \App\Support\LandingStats::get())
-                @if ($heroStats)
-                    <p class="lp-hero-stats text-sm text-muted">{{ number_format($heroStats['farmers']) }} registered farmers · {{ number_format($heroStats['barangays']) }} barangays with farms · {{ number_format($heroStats['varieties']) }} rice varieties</p>
-                @endif
                 @guest
                     {{-- Shown only while the card on the right is in Create account mode (landing.css, .lp-hero-row:has(...)). --}}
                     <div class="lp-reg-guide" data-reg-guide>
