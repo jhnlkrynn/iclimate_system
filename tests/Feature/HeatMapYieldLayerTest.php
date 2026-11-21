@@ -129,11 +129,12 @@ class HeatMapYieldLayerTest extends TestCase
         $week = $service->preparePeriod('week');
         $service->preparePeriod('2weeks');
 
-        // Two farms (same weather, different sizes) and the 18 barangays without farms; one call per distinct input.
+        // Two farms (same weather, different sizes) and the 8 rice-farming barangays without farms; one call per distinct input.
+        // The 10 barangays without rice farms get no model run (LianBarangays::riceFarming()).
         $this->assertSame(2, $week['farm_runs']);
-        $this->assertSame(2 + 18, $week['model_calls']);
+        $this->assertSame(2 + 8, $week['model_calls']);
         foreach (['season', 'week', '2weeks'] as $period) {
-            $this->assertSame(19, YieldPrediction::query()->where('scope', YieldPrediction::SCOPE_BARANGAY)->where('period', $period)->count(), $period);
+            $this->assertSame(9, YieldPrediction::query()->where('scope', YieldPrediction::SCOPE_BARANGAY)->where('period', $period)->count(), $period);
         }
 
         $rows = $this->api('week');
@@ -144,6 +145,10 @@ class HeatMapYieldLayerTest extends TestCase
         // Luyahan has no farms and receives its own barangay model run.
         $this->assertEquals(['t_ha' => 4.21, 'basis' => 'barangay_model', 'farms_used' => 0, 'season_t_ha' => 3.9], array_intersect_key($rows['Luyahan']['yield'], array_flip(['t_ha', 'basis', 'farms_used', 'season_t_ha'])));
         $this->assertSame('malaruhatan', $rows['Malaruhatan']['key']);
+        // Cumba has no rice farms: still on the map, but with no yield estimate and the reason.
+        $this->assertNull($rows['Cumba']['yield']['t_ha']);
+        $this->assertSame(BarangayYieldForecastService::NO_RICE_FARMS, $rows['Cumba']['yield']['basis']);
+        $this->assertCount(19, $rows);
 
         // 2 weeks: 14 mm + 237.31 x 17/31 = 144.14 -> 4.26.
         $this->assertSame(4.26, $this->api('2weeks')['Malaruhatan']['yield']['t_ha']);

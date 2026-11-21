@@ -122,6 +122,7 @@ final class HeatMapLayerService
             $reason = match ($basis) {
                 'barangay_model' => 'Unvalidated rice-yield model estimate run for this barangay.',
                 'farm_average' => 'Unvalidated average of '.($p['farms_used'] ?? 0).' farm estimates, weighted by farm size.',
+                BarangayYieldForecastService::NO_RICE_FARMS => BarangayYieldForecastService::NO_RICE_FARMS_MESSAGE,
                 default => 'No estimate yet.',
             };
             $row = $this->row($name, $level, $value, [$reason], $reason);

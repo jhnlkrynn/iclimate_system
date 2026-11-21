@@ -15,14 +15,12 @@
                 <article id="feature-preview-{{ $index }}" role="tabpanel" class="feature-preview-panel{{ $loop->first ? ' is-active' : '' }}" data-feature-preview="{{ $index }}" @unless($loop->first) hidden @endunless>
                     @if($index === 2)
                         <img src="{{ asset('images/landing/farmer-dashboard.jpg') }}" alt="iClimate farmer dashboard showing harvest, advisories and wet-season status" loading="lazy">
-                        <p class="feature-preview-caption">Existing iClimate farmer dashboard preview</p>
+                        <p class="feature-preview-caption">Farmer dashboard</p>
                     @else
                         <div class="feature-preview-placeholder">
-                            <span class="feature-preview-kicker">iClimate system preview</span>
                             <strong>{{ $feature['title'] }}</strong>
                             <span>{{ $feature['text'] }}</span>
-                            <span>Preview image is not available in the project assets yet.</span>
-                            <span class="feature-preview-line" aria-hidden="true"></span>
+                            <a href="{{ auth()->check() ? route($featureRoutes[$index]) : '#login' }}" class="lp-btn-primary mt-2 self-center">{{ auth()->check() ? 'Open '.strtolower($feature['title']) : 'Log in to use this' }}</a>
                         </div>
                     @endif
                 </article>
@@ -32,10 +30,9 @@
             @foreach($features['items'] as $index => $feature)
                 <li data-feature class="feature-item{{ $loop->first ? ' is-active' : '' }}">
                     <button type="button" role="tab" class="feature-select" data-feature-select="{{ $index }}" aria-controls="feature-preview-{{ $index }}" aria-selected="{{ $loop->first ? 'true' : 'false' }}" tabindex="{{ $loop->first ? '0' : '-1' }}">
-                        <span class="feature-index">0{{ $index + 1 }}</span>
                         <span><strong class="lp-card-title">{{ $feature['title'] }}</strong><span class="feature-description">{{ $feature['text'] }}</span></span>
                     </button>
-                    <a class="feature-open" href="{{ auth()->check() ? route($featureRoutes[$index]) : '#login' }}">{{ auth()->check() ? 'Open feature' : 'Log in to open' }} <span aria-hidden="true">↗</span></a>
+                    <a class="feature-open" href="{{ auth()->check() ? route($featureRoutes[$index]) : '#login' }}">{{ auth()->check() ? 'Open feature' : 'Log in to open' }}</a>
                 </li>
             @endforeach
         </ul>
