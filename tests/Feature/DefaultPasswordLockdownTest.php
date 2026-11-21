@@ -53,18 +53,19 @@ class DefaultPasswordLockdownTest extends TestCase
         foreach ([User::ROLE_FARMER, User::ROLE_MAO] as $role) {
             $user = $this->onDefault($role);
             $this->post('/login', ['email' => $user->email, 'password' => self::DEFAULT])
-                ->assertRedirect(route('account.recover'))->assertSessionHas('recovery', AccountRecovery::METHOD_MAO);
+                ->assertRedirect(route('password.request'));
             $this->assertGuest();
             $this->assertTrue((bool) $user->fresh()->must_change_password, $role.' is flagged');
         }
-        $this->get(route('account.recover'))->assertOk()->assertSee('Municipal Agriculture Office');
+        $this->get(route('password.request'))->assertOk()->assertSee('Municipal Agriculture Office');
+        $this->get('/account/recover')->assertRedirect(route('password.request'));
     }
 
     public function test_an_account_with_a_working_email_is_sent_a_reset_link_instead(): void
     {
         Notification::fake();
         $user = $this->onDefault(domain: 'gmail.com');
-        $this->post('/login', ['email' => $user->email, 'password' => self::DEFAULT])->assertSessionHas('recovery', AccountRecovery::METHOD_EMAIL);
+        $this->post('/login', ['email' => $user->email, 'password' => self::DEFAULT])->assertRedirect(route('password.request'));
         $this->assertGuest();
         Notification::assertSentTo($user, ResetPassword::class);
     }
@@ -79,13 +80,13 @@ class DefaultPasswordLockdownTest extends TestCase
     public function test_a_session_opened_before_the_lockdown_is_ended_on_every_route(): void
     {
         $user = $this->onDefault(User::ROLE_MAO, flagged: true);
-        $this->actingAs($user)->get(route('password.first-change'))->assertRedirect(route('account.recover'));
+        $this->actingAs($user)->get(route('password.first-change'))->assertRedirect(route('password.request'));
         $this->assertGuest();
         $this->actingAs($user)->post(route('password.first-change.update'), ['password' => self::STRONG, 'password_confirmation' => self::STRONG])
-            ->assertRedirect(route('account.recover'));
+            ->assertRedirect(route('password.request'));
         $this->assertTrue(Hash::check(self::DEFAULT, $user->fresh()->password), 'the takeover attempt changed nothing');
         $this->actingAs($user)->getJson('/api/heat-map')->assertStatus(409)->assertJsonPath('recovery_required', true);
-        $this->actingAs($user)->withSession([EnsurePasswordChanged::SKIP_KEY => true])->get('/mao/dashboard')->assertRedirect(route('account.recover'));
+        $this->actingAs($user)->withSession([EnsurePasswordChanged::SKIP_KEY => true])->get('/mao/dashboard')->assertRedirect(route('password.request'));
     }
 
     public function test_mobile_sign_in_and_mobile_password_change_refuse_a_shared_password(): void
@@ -253,14 +254,14 @@ class DefaultPasswordLockdownTest extends TestCase
         $user = $this->onDefault();
         $remote = ['REMOTE_ADDR' => '203.0.113.7'];
 
-        $this->withServerVariables($remote)->post('/login', ['email' => $user->email, 'password' => self::DEFAULT])->assertRedirect(route('account.recover'));
+        $this->withServerVariables($remote)->post('/login', ['email' => $user->email, 'password' => self::DEFAULT])->assertRedirect(route('password.request'));
         $this->assertGuest();
         $this->withServerVariables($remote)->postJson('/api/mobile/login', ['email' => $user->email, 'password' => self::DEFAULT])
             ->assertStatus(409)->assertJsonPath('recovery_required', true)->assertJsonMissingPath('user');
         $this->withServerVariables($remote)->postJson('/api/mobile/password', ['email' => $user->email, 'current_password' => self::DEFAULT, 'password' => self::STRONG, 'password_confirmation' => self::STRONG])
             ->assertStatus(409);
         $this->withServerVariables($remote + ['HTTP_X_FORWARDED_FOR' => '127.0.0.1'])->post('/login', ['email' => $user->email, 'password' => self::DEFAULT])
-            ->assertRedirect(route('account.recover'));   // a forged forwarding header does not count as this machine
+            ->assertRedirect(route('password.request'));   // a forged forwarding header does not count as this machine
         $this->assertFalse((bool) $user->fresh()->must_change_password, 'with the switch off no account is changed');
         $this->assertTrue(Hash::check(self::DEFAULT, $user->fresh()->password));
     }
@@ -319,13 +320,14 @@ class DefaultPasswordLockdownTest extends TestCase
         $this->get(route('mao.dashboard'))->assertOk();
     }
 
-    public function test_recover_page_separates_email_and_mao_options_without_false_sent_claim(): void
+    public function test_forgot_password_links_to_mao_code_entry_and_code_page_renders(): void
     {
-        $this->withSession(['recovery' => AccountRecovery::METHOD_EMAIL, 'recovery_email' => 'farmer@gmail.com', 'recovery_email_sent' => false])
-            ->get(route('account.recover'))
+        $this->get(route('password.request'))
             ->assertOk()
-            ->assertSee('Option A: Email Recovery')
-            ->assertSee('Option B: MAO Recovery Code')
-            ->assertDontSee('We sent a link to your email');
+            ->assertSee('Have a recovery code from MAO?');
+
+        $this->get(route('password.reset', ['token' => 'code']))
+            ->assertOk()
+            ->assertSee('MAO Recovery Code');
     }
 }

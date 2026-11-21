@@ -3,7 +3,15 @@
         @csrf
 
         <!-- Password Reset Token -->
-        <input type="hidden" name="token" value="{{ $request->route('token') }}">
+        @if ($request->route('token') === 'code')
+            <div class="mb-4">
+                <x-input-label for="token" value="MAO Recovery Code" />
+                <x-text-input id="token" class="block mt-1 w-full" type="text" name="token" :value="old('token')" required autofocus autocomplete="one-time-code" placeholder="ABCDE-FGHJK" />
+                <x-input-error :messages="$errors->get('token')" class="mt-2" />
+            </div>
+        @else
+            <input type="hidden" name="token" value="{{ $request->route('token') }}">
+        @endif
 
         <!-- Email Address -->
         <div>

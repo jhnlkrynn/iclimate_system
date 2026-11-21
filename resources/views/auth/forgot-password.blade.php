@@ -23,7 +23,10 @@
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
-        <div class="flex items-center justify-end mt-4">
+        <div class="flex items-center justify-between gap-3 mt-4">
+            <a class="text-sm text-sage-700 underline hover:text-sage-900" href="{{ route('password.reset', ['token' => 'code']) }}">
+                Have a recovery code from MAO?
+            </a>
             <x-primary-button data-loading-text="Sending link...">
                 {{ __('Email Password Reset Link') }}
             </x-primary-button>

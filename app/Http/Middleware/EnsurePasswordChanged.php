@@ -35,7 +35,7 @@ class EnsurePasswordChanged
                 return response()->json(['message' => 'Choose a new password with the code or email link.', 'recovery_required' => true, 'recovery_method' => $method], Response::HTTP_CONFLICT);
             }
 
-            return redirect()->route('account.recover')->with(['recovery' => $method, 'recovery_email' => $user->email]);
+            return redirect()->route('password.request')->with('status', 'This account uses a default password and must set a new password before signing in.');
         }
 
         // The session "skip" only counts while skipping is allowed (off by default): an old skipped session ends here.

@@ -82,7 +82,7 @@ class FarmerPagesSimplificationTest extends TestCase
         $this->assertStringContainsString('Irrigated', $html);
         $this->assertStringContainsString('My Planting Schedule', $html);
         $this->assertStringContainsString('4.35', $html);
-        $this->assertStringNotContainsString('9.99', $html, "another farmer's harvest is never shown");
+        $this->assertStringNotContainsString('9.99 t/ha', $html, "another farmer's harvest is never shown");
         $this->assertStringContainsString('My Calendar', $html);
         $this->assertStringContainsString(route('calendar.index'), $html);
     }

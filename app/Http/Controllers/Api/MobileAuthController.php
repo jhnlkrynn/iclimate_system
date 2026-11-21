@@ -181,7 +181,9 @@ class MobileAuthController extends Controller
                 : 'Your password is not safe. Ask the Municipal Agriculture Office for a code to choose a new one.',
             'recovery_required' => true,
             'recovery_method' => $method,
-            'recover_url' => route('account.recover'),
+            'recover_url' => $method === \App\Services\Accounts\AccountRecovery::METHOD_EMAIL
+                ? route('password.request')
+                : route('password.reset', ['token' => 'code']),
         ], 409);
     }
 

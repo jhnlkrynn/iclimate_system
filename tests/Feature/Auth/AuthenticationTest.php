@@ -239,7 +239,7 @@ class AuthenticationTest extends TestCase
         $this->seed(StaffLoginAccountSeeder::class);
 
         // The shared default proves nothing: no session; the account recovers by email link or a MAO-issued code.
-        $this->post('/login', ['email' => 'mao@gmail.com', 'password' => 'Password@123'])->assertRedirect(route('account.recover'));
+        $this->post('/login', ['email' => 'mao@gmail.com', 'password' => 'Password@123'])->assertRedirect(route('password.request'));
         $this->assertGuest();
     }
 
