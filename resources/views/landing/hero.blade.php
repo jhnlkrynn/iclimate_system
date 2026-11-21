@@ -16,10 +16,6 @@
                 <div class="lp-hero-more flex flex-wrap items-center justify-center gap-3">
                     <a href="#features" class="lp-btn-primary lp-btn-lg" data-hero-features data-hero-how>{{ __('landing.hero.button') }}</a>
                 </div>
-                @php($heroStats = \App\Support\LandingStats::get())
-                @if ($heroStats)
-                    <p class="lp-hero-stats text-sm text-muted">{{ number_format($heroStats['farmers']) }} registered farmers · {{ number_format($heroStats['barangays']) }} barangays with farms · {{ number_format($heroStats['varieties']) }} rice varieties</p>
-                @endif
                 @guest
                     {{-- Shown only while the card on the right is in Create account mode (landing.css, .lp-hero-row:has(...)). --}}
                     <div class="lp-reg-guide" data-reg-guide>

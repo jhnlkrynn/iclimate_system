@@ -4,34 +4,18 @@
     <div class="features-layout mt-10">
         <figure class="features-photo" data-features-photo>
             <picture>
-                <source type="image/webp" srcset="{{ asset('images/landing/lian-rice-field-960.webp') }}">
-                <source type="image/jpeg" srcset="{{ asset('images/landing/lian-rice-field-960.jpg') }}">
-                <img src="{{ asset('images/landing/lian-rice-field-960.jpg') }}" alt="Green rice fields in Lian" loading="lazy" class="h-full w-full rounded-xl object-cover">
+                <source type="image/webp" srcset="{{ asset('images/landing/lian-rice-field-960.webp') }} 960w, {{ asset('images/landing/lian-rice-field.webp') }} 1191w" sizes="(min-width: 1024px) 40vw, 100vw">
+                <source type="image/jpeg" srcset="{{ asset('images/landing/lian-rice-field-960.jpg') }} 960w, {{ asset('images/landing/lian-rice-field.jpg') }} 1191w" sizes="(min-width: 1024px) 40vw, 100vw">
+                <img src="{{ asset('images/landing/lian-rice-field.jpg') }}" alt="Green rice fields in Lian" width="1191" height="677" loading="lazy" class="h-full w-full rounded-xl object-cover">
             </picture>
         </figure>
         <div class="features-main">
-        <div class="features-preview" data-features-preview aria-live="polite">
+        {{-- Six plain cards: each says what the feature does and links to it (or to the sign-in card). --}}
+        <ul class="features-list" data-feature-grid aria-label="iClimate features">
             @foreach($features['items'] as $index => $feature)
-                <article id="feature-preview-{{ $index }}" role="tabpanel" class="feature-preview-panel{{ $loop->first ? ' is-active' : '' }}" data-feature-preview="{{ $index }}" @unless($loop->first) hidden @endunless>
-                    @if($index === 2)
-                        <img src="{{ asset('images/landing/farmer-dashboard.jpg') }}" alt="iClimate farmer dashboard showing harvest, advisories and wet-season status" loading="lazy">
-                        <p class="feature-preview-caption">Farmer dashboard</p>
-                    @else
-                        <div class="feature-preview-placeholder">
-                            <strong>{{ $feature['title'] }}</strong>
-                            <span>{{ $feature['text'] }}</span>
-                            <a href="{{ auth()->check() ? route($featureRoutes[$index]) : '#login' }}" class="lp-btn-primary mt-2 self-center">{{ auth()->check() ? 'Open '.strtolower($feature['title']) : 'Log in to use this' }}</a>
-                        </div>
-                    @endif
-                </article>
-            @endforeach
-        </div>
-        <ul class="features-list" data-feature-grid role="tablist" aria-label="iClimate features">
-            @foreach($features['items'] as $index => $feature)
-                <li data-feature class="feature-item{{ $loop->first ? ' is-active' : '' }}">
-                    <button type="button" role="tab" class="feature-select" data-feature-select="{{ $index }}" aria-controls="feature-preview-{{ $index }}" aria-selected="{{ $loop->first ? 'true' : 'false' }}" tabindex="{{ $loop->first ? '0' : '-1' }}">
-                        <span><strong class="lp-card-title">{{ $feature['title'] }}</strong><span class="feature-description">{{ $feature['text'] }}</span></span>
-                    </button>
+                <li data-feature class="feature-item">
+                    <h3 class="lp-card-title">{{ $feature['title'] }}</h3>
+                    <p class="feature-description">{{ $feature['text'] }}</p>
                     <a class="feature-open" href="{{ auth()->check() ? route($featureRoutes[$index]) : '#login' }}">{{ auth()->check() ? 'Open feature' : 'Log in to open' }}</a>
                 </li>
             @endforeach
