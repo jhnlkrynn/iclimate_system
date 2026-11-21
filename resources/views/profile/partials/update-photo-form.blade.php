@@ -14,7 +14,7 @@
             <form method="POST" action="{{ route('profile.photo.update') }}" enctype="multipart/form-data">
                 @csrf
                 <label class="btn btn-primary mb-0" for="profilePhotoInput">{{ $user->avatarUrl() ? 'Change photo' : 'Upload photo' }}</label>
-                <input id="profilePhotoInput" class="visually-hidden" type="file" name="photo" accept="image/jpeg,image/png,image/webp" onchange="this.form.submit()">
+                <input id="profilePhotoInput" class="visually-hidden" type="file" name="photo" accept="image/jpeg,image/png,image/webp" data-autosubmit>
             </form>
             @if ($user->avatarUrl())
                 <form method="POST" action="{{ route('profile.photo.destroy') }}">

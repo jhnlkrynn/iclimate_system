@@ -43,7 +43,7 @@ step() { printf '\n== %s\n' "$1"; }
 
 step "System updates and automatic security updates"
 apt-get update -q && apt-get -y -q upgrade
-apt-get -y -q install ca-certificates curl gnupg software-properties-common unattended-upgrades ufw fail2ban git unzip acl
+apt-get -y -q install ca-certificates curl gnupg software-properties-common unattended-upgrades ufw fail2ban git unzip acl openssl rsync
 dpkg-reconfigure -f noninteractive unattended-upgrades
 
 step "Operator account with SSH key (root and password logins are disabled only after you confirm the key works)"
@@ -99,6 +99,7 @@ apt-get -y -q install python3 python3-venv python3-dev build-essential
 step "MariaDB (localhost only)"
 apt-get -y -q install mariadb-server mariadb-client
 [ -f "$(dirname "$0")/mariadb-iclimate.cnf" ] && install -m 644 "$(dirname "$0")/mariadb-iclimate.cnf" /etc/mysql/mariadb.conf.d/60-iclimate.cnf
+[ -f "$(dirname "$0")/iclimate-logrotate" ] && install -m 644 "$(dirname "$0")/iclimate-logrotate" /etc/logrotate.d/iclimate
 systemctl enable mariadb && systemctl restart mariadb
 ss -ltn | grep -q '127.0.0.1:3306' && ! ss -ltn | grep -qE '(0\.0\.0\.0|\*|\[::\]):3306' || { echo "MariaDB is not bound to localhost only"; exit 1; }
 echo "   Next (DBA, interactive): mariadb-secure-installation, then the accounts in mariadb-migration-account.sql / phase-18-dba-handoff.md"

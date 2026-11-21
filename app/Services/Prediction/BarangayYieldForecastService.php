@@ -316,7 +316,10 @@ final class BarangayYieldForecastService
      */
     private function runForBarangay(string $barangay, ?float $area, string $label, string $period = 'season', array $overrides = []): void
     {
-        $result = $this->run(BusinessClock::now()->toImmutable(), $this->usualFarmType($barangay), $area, null, $overrides);
+        // The season estimate is for this season's harvest month, as the farm estimates it is shown beside; This Week /
+        // 2 Weeks stay on the current month with that window's forecast.
+        $now = BusinessClock::now()->toImmutable();
+        $result = $this->run($period === 'season' ? \App\Support\RiceSeason::harvestMonth($now) : $now, $this->usualFarmType($barangay), $area, null, $overrides);
         if ($result === null) {
             return;
         }

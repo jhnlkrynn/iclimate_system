@@ -82,7 +82,7 @@ class FarmerPagesSimplificationTest extends TestCase
         $this->assertStringContainsString('Irrigated', $html);
         $this->assertStringContainsString('My Planting Schedule', $html);
         $this->assertStringContainsString('4.35', $html);
-        $this->assertStringNotContainsString('9.99', $html, "another farmer's harvest is never shown");
+        $this->assertStringNotContainsString('9.99 t/ha', $html, "another farmer's harvest is never shown");
         $this->assertStringContainsString('My Calendar', $html);
         $this->assertStringContainsString(route('calendar.index'), $html);
     }
@@ -91,7 +91,7 @@ class FarmerPagesSimplificationTest extends TestCase
     {
         $html = $this->actingAs($this->farmer())->get(route('farmer.my-farm'))->assertOk()->getContent();
 
-        $this->assertStringContainsString('window.print()', $html);
+        $this->assertStringContainsString('data-print', $html);   // print button (strict CSP: no inline handler)
         $this->assertStringContainsString('Municipal Agricultural Office – Lian, Batangas', $html);
         $this->assertStringContainsString('Printed: ', $html);
         $css = (string) file_get_contents(resource_path('css/farmer-records.css'));

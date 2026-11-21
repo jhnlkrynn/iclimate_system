@@ -68,8 +68,10 @@ class DeploymentSafety(unittest.TestCase):
         self.assertFalse(self.app.exists())
 
     def production_env(self):
+        # A second call in one test must check out without the previous call's (deliberately bad) env file.
+        self.env.pop('ENV_FILE',None); self.env['VERIFY_ONLY']='1'
         self.checkout(); envfile=self.base/'production.env'
-        envfile.write_text('APP_ENV=production\nAPP_DEBUG=false\nDB_CONNECTION=mysql\nICLIMATE_YIELD_ACCURACY_VERIFIED=false\nICLIMATE_PASSWORD_LOCKDOWN=true\nICLIMATE_YIELD_GATE=withhold\nSESSION_SECURE_COOKIE=true\nBROADCAST_CONNECTION=reverb\nREVERB_APP_KEY=disposable-public-key\nVITE_REVERB_APP_KEY=disposable-public-key\nAPP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\n')
+        envfile.write_text('APP_ENV=production\nAPP_DEBUG=false\nDB_CONNECTION=mysql\nICLIMATE_YIELD_ACCURACY_VERIFIED=false\nICLIMATE_PASSWORD_LOCKDOWN=true\nICLIMATE_YIELD_GATE=withhold\nSESSION_SECURE_COOKIE=true\nMAIL_MAILER=smtp\nBROADCAST_CONNECTION=reverb\nREVERB_APP_KEY=disposable-public-key\nVITE_REVERB_APP_KEY=disposable-public-key\nAPP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\n')
         envfile.chmod(0o640);self.env.update(VERIFY_ONLY='0',ENV_FILE=str(envfile))
         return envfile
 
@@ -114,6 +116,10 @@ class DeploymentSafety(unittest.TestCase):
         self.refused_with('ICLIMATE_YIELD_ACCURACY_VERIFIED=false','ICLIMATE_YIELD_ACCURACY_VERIFIED=true','ICLIMATE_YIELD_ACCURACY_VERIFIED')
         # label (number shown, marked unvalidated) is allowed; off (no gate) is not, while accuracy is not verified.
         self.refused_with('ICLIMATE_YIELD_GATE=withhold','ICLIMATE_YIELD_GATE=off','ICLIMATE_YIELD_GATE must be withhold or label')
+
+    def test_log_mailer_refused(self):
+        # Password recovery and health alerts need a real mail transport (deployment audit 2026-11-19: SMTP).
+        self.refused_with('MAIL_MAILER=smtp','MAIL_MAILER=log','MAIL_MAILER must be a real transport')
 
     def test_mariadb_driver_refused(self):
         self.refused_with('DB_CONNECTION=mysql','DB_CONNECTION=mariadb','DB_CONNECTION must be mysql')

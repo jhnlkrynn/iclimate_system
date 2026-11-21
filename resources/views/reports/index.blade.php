@@ -258,7 +258,7 @@
 
     </div>
     @if ($analyticsRun && in_array($analyticsRun->status, ['pending', 'processing'], true))
-        <script>
+        <script @nonce>
             (() => {
                 const banner = document.querySelector('[data-analytics-run]');
                 if (!banner) return;

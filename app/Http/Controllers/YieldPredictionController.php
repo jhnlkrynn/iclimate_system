@@ -60,31 +60,94 @@ class YieldPredictionController extends Controller
     {
         $user = $request->user();
         app()->setLocale(FarmerLanguage::resolve($request));
-        $farm = rescue(fn () => ActiveFarm::current($user), null, false);
+        $farms = rescue(fn () => ActiveFarm::farms($user), collect(), false);
+        $selectedFarm = rescue(fn () => ActiveFarm::current($user), null, false) ?? $farms->first();
+        if (old('farm_id') && $farms->isNotEmpty()) {
+            $selectedFarm = $farms->firstWhere('id', (int) old('farm_id')) ?? $selectedFarm;
+        }
 
         return view('analysis.yield', [
+            'farms' => $farms,
+            'selectedFarm' => $selectedFarm,
             'defaults' => [
                 'season' => RiceSeason::forMonth((int) now(\App\Support\BusinessClock::timezone())->month),
-                'farm_type' => $farm?->farm_type ?: ($user->farmerProfile?->farm_type ?: 'Irrigated'),
-                'barangay' => $farm?->barangay ?: $user->registeredBarangay(),
-                'area' => $farm?->modelArea() ?? ($user->farmerProfile?->farm_area ? (float) $user->farmerProfile->farm_area : null),
+                'farm_id' => $selectedFarm?->getKey(),
             ],
-            'barangays' => LianBarangays::all(),
-            'requests' => YieldPredictionRequest::query()->where('user_id', $user->getKey())->latest()->limit(20)->get(),
+            'requests' => YieldPredictionRequest::query()
+                ->where('user_id', $user->getKey())
+                ->with('farm:id,farm_name,barangay')
+                ->latest()
+                ->limit(20)
+                ->get(),
         ]);
     }
 
     public function farmerStore(Request $request): RedirectResponse
     {
         app()->setLocale(FarmerLanguage::resolve($request));
+        $user = $request->user();
+
         $data = $request->validate([
             'season' => ['required', Rule::in([RiceSeason::WET, RiceSeason::DRY])],
-            'farm_type' => ['required', Rule::in(['Irrigated', 'Rainfed'])],
-            'barangay' => ['required', Rule::in(LianBarangays::all())],
-            'area_hectares' => ['required', 'numeric', 'gt:0', 'max:1000'],
+            'farm_id' => ['required', 'integer'],
         ]);
 
-        return $this->queue($request, YieldPredictionRequest::SCOPE_FARM, $data, 'analysis.yield');
+        $farm = ActiveFarm::owned($user, $data['farm_id']);
+        if ($farm === null) {
+            if (Farm::query()->whereKey((int) $data['farm_id'])->exists()) {
+                abort(403);
+            }
+
+            return redirect()->route('analysis.yield')->withErrors(['farm_id' => __('yield_request.farm_required')])->withInput();
+        }
+
+        $area = $farm->modelArea();
+        if ($area === null) {
+            $sizeData = $request->validate([
+                'area_hectares' => ['required', 'numeric', 'gt:0', 'max:1000'],
+            ]);
+            $area = round((float) $sizeData['area_hectares'], 2);
+
+            if ($request->boolean('save_size_to_farm')) {
+                $farm->forceFill([
+                    'farm_size_hectares' => round($area, 4),
+                    'farm_size_method' => Farm::SIZE_EXACT,
+                    'farm_size_unit' => Farm::UNIT_HECTARES,
+                ])->save();
+                ActiveFarm::forget($user);
+            }
+        }
+
+        $barangay = LianBarangays::canonicalName($farm->barangay) ?: ($user->registeredBarangay() ?: LianBarangays::all()[0]);
+        $farmType = in_array($farm->farm_type, ['Irrigated', 'Rainfed'], true) ? $farm->farm_type : 'Irrigated';
+
+        return $this->queue($request, YieldPredictionRequest::SCOPE_FARM, [
+            'farm_id' => $farm->getKey(),
+            'season' => $data['season'],
+            'farm_type' => $farmType,
+            'barangay' => $barangay,
+            'area_hectares' => $area,
+        ], 'analysis.yield');
+    }
+
+    public function useful(Request $request, int $prediction): RedirectResponse|JsonResponse
+    {
+        app()->setLocale(FarmerLanguage::resolve($request));
+        $record = YieldPredictionRequest::query()
+            ->where('user_id', $request->user()->getKey())
+            ->findOrFail($prediction);
+
+        $data = $request->validate([
+            'useful' => ['required', 'boolean'],
+        ]);
+
+        $record->forceFill(['useful' => (bool) $data['useful']])->save();
+
+        if ($request->expectsJson()) {
+            return response()->json(['useful' => $record->useful]);
+        }
+
+        return redirect()->route('analysis.yield')->with('success', __('yield_request.useful_saved'));
     }
 
     public function mao(): View
@@ -134,6 +197,7 @@ class YieldPredictionController extends Controller
 
         $prediction = YieldPredictionRequest::query()->create([
             'user_id' => $user->getKey(),
+            'farm_id' => $data['farm_id'] ?? null,
             'scope' => $scope,
             'barangay' => $data['barangay'] ?? null,
             'season' => $data['season'],

@@ -29,10 +29,18 @@ class Phase5YieldTest extends TestCase
     {
         $this->modelReturns(9.5);
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER, 'barangay' => 'Balibago']);
+        $farm = \App\Models\Farm::query()->create([
+            'user_id' => $farmer->id,
+            'farm_name' => 'Farm 1',
+            'barangay' => 'Balibago',
+            'farm_type' => 'Irrigated',
+            'farm_size_hectares' => 2.0,
+            'farm_size_method' => \App\Models\Farm::SIZE_EXACT,
+        ]);
 
         $this->actingAs($farmer)->get(route('analysis.yield'))->assertOk()->assertSee('data-manuscript-tabs="analysis"', false);
         $this->actingAs($farmer)->post(route('analysis.yield.store'), [
-            'season' => 'Wet', 'farm_type' => 'Irrigated', 'barangay' => 'Balibago', 'area_hectares' => '2',
+            'season' => 'Wet', 'farm_id' => $farm->id,
         ])->assertRedirect(route('analysis.yield'));
 
         $request = YieldPredictionRequest::query()->sole();
@@ -53,8 +61,16 @@ class Phase5YieldTest extends TestCase
     {
         $this->modelReturns(null, ['rainfall']);
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER, 'preferred_language' => 'fil']);
+        $farm = \App\Models\Farm::query()->create([
+            'user_id' => $farmer->id,
+            'farm_name' => 'Bukid 1',
+            'barangay' => 'San Diego',
+            'farm_type' => 'Rainfed',
+            'farm_size_hectares' => 1.0,
+            'farm_size_method' => \App\Models\Farm::SIZE_EXACT,
+        ]);
 
-        $this->actingAs($farmer)->post(route('analysis.yield.store'), ['season' => 'Dry', 'farm_type' => 'Rainfed', 'barangay' => 'San Diego', 'area_hectares' => '1']);
+        $this->actingAs($farmer)->post(route('analysis.yield.store'), ['season' => 'Dry', 'farm_id' => $farm->id]);
 
         $request = YieldPredictionRequest::query()->sole();
         $this->assertSame(YieldPredictionRequest::FAILED, $request->status);

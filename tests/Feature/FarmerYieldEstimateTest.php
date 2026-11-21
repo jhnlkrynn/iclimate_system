@@ -52,7 +52,7 @@ class FarmerYieldEstimateTest extends TestCase
                 throw new RuntimeException('The Farming AI API could not be reached.');
             }
 
-            return ['success' => true, 'yield_tons_per_hectare' => $yield, 'predicted_yield' => $yield, 'target_month' => now('Asia/Manila')->format('Y-m')];
+            return ['success' => true, 'yield_tons_per_hectare' => $yield, 'predicted_yield' => $yield, 'target_month' => \App\Support\RiceSeason::harvestMonth(now('Asia/Manila'))->format('Y-m')];
         }));
     }
 
@@ -76,7 +76,7 @@ class FarmerYieldEstimateTest extends TestCase
     {
         Cache::forever(FarmerDashboardService::predictionCacheKey($farmer->id, $this->primaryFarmId($farmer)), [
             'success' => true, 'yield_tons_per_hectare' => $yield, 'predicted_yield' => $yield,
-            'target_month' => now('Asia/Manila')->format('Y-m'),
+            'target_month' => \App\Support\RiceSeason::harvestMonth(now('Asia/Manila'))->format('Y-m'),
             'ran_at' => ($ranAt ?? CarbonImmutable::now('Asia/Manila'))->toIso8601String(),
         ]);
     }
@@ -309,6 +309,24 @@ class FarmerYieldEstimateTest extends TestCase
         $this->assertStringContainsString('4.37 t/ha', $this->card($this->home($farmer)));
         $predictions = $this->actingAs($farmer)->get(route('weather-predictions.index'))->assertOk()->getContent();
         $this->assertStringContainsString('4.37 <small>t/ha</small>', $predictions);
+    }
+
+    public function test_the_predictions_card_names_the_farm_size_and_type_the_model_was_given(): void
+    {
+        $farmer = $this->farmer(area: 2.0);
+        Queue::fake();
+        $farmId = $this->primaryFarmId($farmer);
+        Farm::query()->whereKey($farmId)->update(['farm_name' => 'Farm 1']);
+        Cache::forever(FarmerDashboardService::predictionCacheKey($farmer->id, $farmId), [
+            'success' => true, 'yield_tons_per_hectare' => 4.1, 'predicted_yield' => 4.1, 'farm_area_hectares' => 2.0, 'farm_type' => 'Irrigated',
+            'target_month' => \App\Support\RiceSeason::harvestMonth(now('Asia/Manila'))->format('Y-m'), 'ran_at' => CarbonImmutable::now('Asia/Manila')->toIso8601String(),
+        ]);
+
+        $html = $this->actingAs($farmer)->get(route('weather-predictions.index'))->assertOk()->getContent();
+        $text = trim((string) preg_replace('/\s+/', ' ', html_entity_decode(strip_tags($html))));
+        $this->assertStringContainsString('4.10 t/ha', $text);
+        $this->assertStringContainsString('For Farm 1 · Prenza: 2.00 ha, Irrigated (canal or pump).', $text);
+        $this->assertStringContainsString('Preliminary estimate', $text);
     }
 
     // ------------------------------------------------------------ the scheduled warm-up

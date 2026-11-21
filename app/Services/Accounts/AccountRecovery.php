@@ -30,6 +30,11 @@ final class AccountRecovery
     /** Unambiguous letters and digits (no 0/O, 1/I/L): read aloud or written down without mistakes. */
     private const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
+    public static function emailDeliveryEnabled(): bool
+    {
+        return ! in_array((string) config('mail.default'), ['log', 'array', 'null', ''], true);
+    }
+
     public static function method(User $user): string
     {
         return AccountEmails::recipient($user) !== null ? self::METHOD_EMAIL : self::METHOD_MAO;
@@ -39,6 +44,9 @@ final class AccountRecovery
     public static function sendEmailLink(User $user): bool
     {
         if (self::method($user) !== self::METHOD_EMAIL) {
+            return false;
+        }
+        if (! app()->runningUnitTests() && ! self::emailDeliveryEnabled()) {
             return false;
         }
         $status = rescue(fn () => Password::sendResetLink(['email' => $user->email]), null, true);

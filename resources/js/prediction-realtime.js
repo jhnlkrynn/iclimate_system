@@ -85,4 +85,28 @@ export function initPredictionRealtime() {
     });
     if (rows.length) window.setInterval(() => { if (document.visibilityState === 'visible') refetchAll(); }, 8000);
     window.iClimatePredictionApply = renderStatus;
+
+    const form = root.querySelector('[data-yield-form]');
+    const select = form?.querySelector('[data-yield-farm-select]');
+    if (form && select) {
+        let farms = {};
+        try { farms = JSON.parse(form.dataset.farms || '{}'); } catch {}
+        const summary = form.querySelector('[data-farm-summary]');
+        const editLink = form.querySelector('[data-farm-edit-link]');
+        const sizeWrap = form.querySelector('[data-missing-size-wrap]');
+        const areaInput = form.querySelector('#ypArea');
+        const saveBox = form.querySelector('#ypSaveSize');
+        select.addEventListener('change', () => {
+            const f = farms[select.value];
+            if (!f) return;
+            if (summary) summary.textContent = f.summary;
+            if (editLink) editLink.href = f.edit_url;
+            if (sizeWrap && areaInput && saveBox) {
+                sizeWrap.hidden = !!f.has_size;
+                areaInput.disabled = !!f.has_size;
+                areaInput.required = !f.has_size;
+                saveBox.disabled = !!f.has_size;
+            }
+        });
+    }
 }

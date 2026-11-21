@@ -46,6 +46,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // CSP nonce for inline <script> blocks (App\Http\Middleware\SecurityHeaders): <script @nonce>. Empty when
+        // no nonce was made for this response (console, mail views, the loose fallback policy).
+        \Illuminate\Support\Facades\Blade::directive('nonce', fn (): string => '<?php if ($__icNonce = \Illuminate\Support\Facades\Vite::cspNonce()): ?>nonce="<?php echo e($__icNonce); ?>"<?php endif; ?>');
+
         // Local and production databases stay apart; Supabase is never a runtime database. Checked from
         // configuration only (no connection is opened). iclimate:environment-check reports instead of stopping.
         if (! $this->app->runningUnitTests() && ! in_array('iclimate:environment-check', (array) ($_SERVER['argv'] ?? []), true)) {
@@ -303,7 +307,8 @@ class AppServiceProvider extends ServiceProvider
 
         $command = $_SERVER['argv'][1] ?? null;
 
-        if (! in_array($command, ['migrate', 'migrate:fresh'], true)) {
+        if (! in_array($command, ['migrate', 'migrate:fresh'], true)
+            || in_array('--pretend', $_SERVER['argv'] ?? [], true)) {
             return;
         }
 
@@ -328,12 +333,25 @@ class AppServiceProvider extends ServiceProvider
             return;
         }
 
-        $pdo = new PDO(
-            "mysql:host={$host};port={$port}",
-            $username,
-            $password,
-            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION],
-        );
+        $options = [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_TIMEOUT => max(1, (int) config('database.connections.mysql.options.'.PDO::ATTR_TIMEOUT, 5)),
+        ];
+
+        try {
+            // If the target database already exists and is accessible (the normal case for
+            // scoped staging/production accounts), do not require global CREATE DATABASE privileges.
+            new PDO("mysql:host={$host};port={$port};dbname={$database}", $username, $password, $options);
+
+            return;
+        } catch (\PDOException $e) {
+            // Only attempt CREATE DATABASE when MySQL/MariaDB specifically reports Unknown database (1049).
+            if ((int) ($e->errorInfo[1] ?? 0) !== 1049) {
+                return;
+            }
+        }
+
+        $pdo = new PDO("mysql:host={$host};port={$port}", $username, $password, $options);
 
         $escapedDatabase = str_replace('`', '``', $database);
         $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$escapedDatabase}` CHARACTER SET {$charset} COLLATE {$collation}");

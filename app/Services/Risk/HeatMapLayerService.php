@@ -55,7 +55,7 @@ final class HeatMapLayerService
             }
         } elseif ($layer === 'yield') {
             [$rows, $data['updated_at']] = $this->yieldRows($names, $period);
-            $source = 'Unvalidated iClimate yield estimate · '.($period === '2weeks' ? "next 2 weeks' forecast" : "this week's forecast");
+            $source = 'iClimate yield estimate · '.($period === '2weeks' ? "next 2 weeks' forecast" : "this week's forecast");
         } else {
             $data = $this->layers->layers('en', $period)[$layer] ?? ['barangays' => [], 'updated_at' => null, 'source' => $source, 'labels' => []];
             $profiles = $layer === 'flood' && Schema::hasTable('barangay_profiles')

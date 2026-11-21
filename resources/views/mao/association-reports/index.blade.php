@@ -14,7 +14,7 @@
 @if($periods->isNotEmpty())
 <form method="GET" action="{{ route('mao.association-reports.index') }}" class="mb-3" data-period-picker>
 <label for="periodPicker">Reporting period</label>
-<select id="periodPicker" name="period" class="form-control" onchange="this.form.submit()">
+<select id="periodPicker" name="period" class="form-control" data-autosubmit>
 @foreach($periods as $option)<option value="{{ $option->id }}" @selected($period?->id === $option->id)>{{ $option->label }} — due {{ $option->due_at->format('M j, Y') }}{{ $option->due_at->isPast() ? ' (overdue)' : '' }}</option>@endforeach
 </select>
 <noscript><button class="btn btn-secondary mt-1">Show</button></noscript>

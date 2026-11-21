@@ -50,7 +50,7 @@
                     @if ($show !== 'active')<input type="hidden" name="show" value="{{ $show }}">@endif
                     @if ($type !== 'planting')<input type="hidden" name="type" value="{{ $type }}">@endif
                     <label class="fad-label" for="advBarangay">Barangay</label>
-                    <select class="fad-input" id="advBarangay" name="target_barangay" onchange="this.form.submit()">
+                    <select class="fad-input" id="advBarangay" name="target_barangay" data-autosubmit>
                         <option value="">All barangays</option>
                         @foreach ($barangays as $name)
                             <option value="{{ $name }}" @selected($barangay === $name)>{{ $name }}</option>

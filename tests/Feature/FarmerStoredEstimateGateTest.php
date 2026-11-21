@@ -86,7 +86,7 @@ class FarmerStoredEstimateGateTest extends TestCase
         config(['prediction.rice_yield.accuracy_verified' => true]);
         [$farmer, , $request] = $this->farmerWithSavedEstimates();
 
-        $this->actingAs($farmer)->get('/calendar')->assertOk()->assertSee(self::SCHEDULE_YIELD)->assertSee('Unvalidated estimate');
+        $this->actingAs($farmer)->get('/calendar')->assertOk()->assertSee(self::SCHEDULE_YIELD)->assertSee('Preliminary estimate');
         $this->actingAs($farmer)->get('/farmer/my-reports')->assertOk()->assertSee(self::REQUEST_YIELD);
         $this->actingAs($farmer)->get('/analysis/yield')->assertOk()->assertSee(self::REQUEST_YIELD);
     }

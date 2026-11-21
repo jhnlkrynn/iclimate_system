@@ -95,7 +95,7 @@ class FarmerApprovalController extends Controller
         $code = \App\Services\Accounts\AccountRecovery::issueCode($user, $request->user(), $data['verification_method'], $data['note'] ?? null, $request);
 
         return back()->with('recovery_code', $code)
-            ->with('success', 'Give this code only to '.$user->name.'. It works once, for '.(int) config('auth.passwords.users.expire', 60).' minutes, at '.route('account.recover').'.');
+            ->with('success', 'Give this code only to '.$user->name.'. It works once, for '.(int) config('auth.passwords.users.expire', 60).' minutes, at '.route('password.reset', ['token' => 'code']).'.');
     }
 
     public function reconsider(Request $request, User $user, FarmerAccountReviewService $reviews): RedirectResponse

@@ -90,7 +90,7 @@
                 @endif
             @endforeach
             <label for="dashYear">Year</label>
-            <select id="dashYear" name="year" onchange="this.form.submit()">
+            <select id="dashYear" name="year" data-autosubmit>
                 @foreach ($years as $option)
                     <option value="{{ $option }}" @selected($option === $year)>{{ $option }}</option>
                 @endforeach
@@ -160,7 +160,7 @@
 
 @if ($hasCharts)
     @once
-        <script>
+        <script @nonce>
             (() => {
                 const GREEN = '{{ config('palette.sage.700') }}', BLUE = '#3B7A9E', AMBER = '#C58B2A', SAGE = '{{ config('palette.sage.300') }}';
                 const seriesColors = [GREEN, BLUE, AMBER];

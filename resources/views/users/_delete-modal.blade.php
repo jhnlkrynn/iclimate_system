@@ -96,7 +96,7 @@
         </footer>
     </form>
 </dialog>
-<script>
+<script @nonce>
     (() => {
         const dialog = document.getElementById('userDeleteDialog');
         if (!dialog || dialog.dataset.bound) return;

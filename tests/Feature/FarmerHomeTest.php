@@ -121,7 +121,7 @@ class FarmerHomeTest extends TestCase
     private function mockPrediction(float $yield): void
     {
         $this->mock(RiceYieldPredictionService::class, fn ($mock) => $mock->shouldReceive('predictForUser')->andReturn([
-            'success' => true, 'yield_tons_per_hectare' => $yield, 'predicted_yield' => $yield, 'target_month' => now()->format('Y-m'),
+            'success' => true, 'yield_tons_per_hectare' => $yield, 'predicted_yield' => $yield, 'target_month' => \App\Support\RiceSeason::harvestMonth(now('Asia/Manila'))->format('Y-m'),
             'input_sources' => ['area' => ['value' => 2.0, 'source' => 'farmer_profile']],
         ]));
     }
@@ -326,15 +326,18 @@ class FarmerHomeTest extends TestCase
 
     // ------------------------------------------------------------ 4. expected yield this season
 
-    public function test_yield_is_one_number_for_this_season_with_normal_higher_or_lower(): void
+    public function test_yield_is_one_number_for_this_season_with_the_disclosure_and_no_badge(): void
     {
-        config(['prediction.rice_yield.gate' => 'off']);   // display formatting; the gate itself: YieldModelGateTest
+        config(['prediction.rice_yield.gate' => 'label']);   // display formatting; the gate itself: YieldModelGateTest
         $this->lianYields(4.0);
+        // The disclosure stays; the farmer card has no Normal / Higher / Lower badge (owner decision 2026-11-20).
         foreach ([4.1 => 'Normal', 5.0 => 'Higher', 3.0 => 'Lower'] as $yield => $label) {
             $this->mockPrediction((float) $yield);
             $html = $this->home($this->farmer(attributes: ['email' => 'y'.$yield.'@example.test']), estimate: true)->getContent();
             $this->assertStringContainsString(number_format((float) $yield, 2).' <small>t/ha</small>', $html);
-            $this->assertStringContainsString('>'.$label.'</p>', $html, (string) $yield);
+            $this->assertStringNotContainsString('>'.$label.'</p>', $html, (string) $yield);
+            $this->assertStringNotContainsString('Compared with the usual Lian yield', $html);
+            $this->assertStringContainsString('data-ml-status="unvalidated-estimate"', substr($html, (int) strpos($html, 'data-fh-harvest'), 3000));
         }
         $season = \App\Support\RiceSeason::current() === 'Wet' ? 'Wet season' : 'Dry season';
         $this->assertStringContainsString($season, $this->text($html));
@@ -383,7 +386,7 @@ class FarmerHomeTest extends TestCase
         $json = $this->actingAs($farmer)->getJson(route('farmer.dashboard.live', ['retry' => 'harvest-check']))->assertOk()->json();
         $this->assertSame([], $json['slots'], 'still preparing: nothing replaces the placeholder');
 
-        Cache::put(FarmerDashboardService::predictionCacheKey($farmer->id), ['success' => true, 'yield_tons_per_hectare' => 4.2, 'target_month' => now()->format('Y-m')], now()->addHour());
+        Cache::put(FarmerDashboardService::predictionCacheKey($farmer->id), ['success' => true, 'yield_tons_per_hectare' => 4.2, 'target_month' => \App\Support\RiceSeason::harvestMonth(now('Asia/Manila'))->format('Y-m')], now()->addHour());
         $json = $this->actingAs($farmer)->getJson(route('farmer.dashboard.live', ['retry' => 'harvest-check']))->assertOk()->json();
         $this->assertSame(['harvest'], array_keys($json['slots']));
         $this->assertStringContainsString('4.20', $json['slots']['harvest']);

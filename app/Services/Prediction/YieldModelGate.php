@@ -59,6 +59,15 @@ final class YieldModelGate
                 $outside[] = $feature;
             }
         }
+        foreach ((array) config('prediction.rice_yield.extended_split_envelope', []) as $feature => [$low, $high]) {
+            if (! array_key_exists($feature, $modelInput)) {
+                continue;
+            }
+            $value = $modelInput[$feature];
+            if (! is_numeric($value) || (float) $value < (float) $low || (float) $value > (float) $high) {
+                $outside[] = $feature;
+            }
+        }
 
         return ['compatible' => $outside === [] && self::accuracyVerified(), 'outside' => $outside, 'within_range' => $outside === []];
     }

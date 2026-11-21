@@ -59,6 +59,24 @@ final class RiceSeason
     }
 
     /** Input encoding for the deployed rice-yield model only (see the class note). */
+    /**
+     * The harvest month of the iClimate season that contains $date: Wet (May-Oct) harvests around September, Dry
+     * (Nov-Apr) around March of the year it ends — the months YieldPredictionRequest::HARVEST_MONTH names. Every
+     * "expected yield this season" estimate is made for this month, so the farmer card, the Heat Map, the MAO cards and
+     * a season request on /analysis/yield show the same number (2026-11-20). Once the harvest month has passed (October,
+     * April) it is the current month instead: an estimate is never made for a month that is already over.
+     */
+    public static function harvestMonth(CarbonInterface $date): \Carbon\CarbonImmutable
+    {
+        $window = self::window($date);
+        $harvest = $window['season'] === self::WET
+            ? $window['start']->setDate($window['start']->year, 9, 1)->startOfDay()
+            : $window['end']->setDate($window['end']->year, 3, 1)->startOfDay();
+        $current = \Carbon\CarbonImmutable::instance($date)->startOfMonth()->startOfDay();
+
+        return $harvest->lt($current) ? $current : $harvest;
+    }
+
     public static function forTrainedYieldModel(int $month): string
     {
         return in_array($month, self::TRAINED_YIELD_MODEL_WET_MONTHS, true) ? self::WET : self::DRY;

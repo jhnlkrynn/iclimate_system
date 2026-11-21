@@ -1,6 +1,6 @@
 {{-- Behaviour of the farmer sign-up form (auth/partials/register-form.blade.php): name joining, inline checks, password
      strength (the eye is <x-password-toggle>), farm location and the other-organizations picker. Shared by /register and the landing page. --}}
-<script>
+<script @nonce>
   document.addEventListener('DOMContentLoaded', () => {
     const form = document.querySelector('.register-form');
     const formMessage = document.getElementById('formMessage');

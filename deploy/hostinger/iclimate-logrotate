@@ -1,0 +1,15 @@
+# /etc/logrotate.d/iclimate (deployment audit 2026-11-19: log rotation). Laravel's own daily logs
+# (LOG_CHANNEL=daily) already keep 14 days; these are the scheduler's append-only automation logs.
+# copytruncate: the scheduler keeps appending to the same file name.
+/var/www/iclimate_system/storage/logs/automation-*.log {
+    weekly
+    rotate 8
+    maxsize 20M
+    compress
+    delaycompress
+    missingok
+    notifempty
+    copytruncate
+    su www-data www-data
+    create 0640 www-data www-data
+}

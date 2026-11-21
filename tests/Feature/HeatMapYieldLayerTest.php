@@ -138,7 +138,7 @@ class HeatMapYieldLayerTest extends TestCase
         }
 
         $rows = $this->api('week');
-        $this->assertStringContainsString('Unvalidated iClimate yield estimate', $this->actingAs(User::factory()->create(['role' => User::ROLE_MAO]))->getJson('/api/heat-map?layer=yield&period=week')->json('source'));
+        $this->assertStringContainsString('iClimate yield estimate', $this->actingAs(User::factory()->create(['role' => User::ROLE_MAO]))->getJson('/api/heat-map?layer=yield&period=week')->json('source'));
         // This week in Malaruhatan: 7 x 1 mm + 237.31 x 24/31 = 190.72 mm -> 4.40 - 0.19 = 4.21 for both farms.
         $this->assertEquals(['t_ha' => 4.21, 'class' => 'fair', 'basis' => 'farm_average', 'farms_used' => 2, 'season_t_ha' => 3.7, 'vs_season' => 0.51],
             array_intersect_key($rows['Malaruhatan']['yield'], array_flip(['t_ha', 'class', 'basis', 'farms_used', 'season_t_ha', 'vs_season'])));

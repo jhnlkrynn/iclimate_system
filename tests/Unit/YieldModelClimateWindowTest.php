@@ -125,4 +125,32 @@ class YieldModelClimateWindowTest extends TestCase
         $older = YieldModelClimateWindow::features(CarbonImmutable::parse('2024-08-01'), ['tmax' => 31.0, 'tmin' => 24.0]);
         $this->assertSame([], $older['missing_months'], 'station months around it are untouched');
     }
+
+    public function test_lag_months_not_over_yet_use_the_stored_forecast_but_past_months_never_do(): void
+    {
+        CarbonImmutable::setTestNow('2026-11-20 10:00:00');
+        foreach (['2026-09', '2026-10', '2026-11', '2026-12', '2027-01', '2027-02', '2027-04'] as $ym) {
+            MonthlyWeatherPrediction::query()->create(['prediction_year' => (int) substr($ym, 0, 4), 'prediction_month' => (int) substr($ym, 5, 2), 'rainfall' => 100.0,
+                'temperature_average' => 27.0, 'humidity' => 80.0, 'wind_speed' => 2.0, 'weather_model' => 'test', 'status' => 'ready', 'generated_at' => now()]);
+        }
+        YieldModelClimateWindow::forget();
+
+        $r = YieldModelClimateWindow::features(CarbonImmutable::parse('2027-03-01'), ['tmax' => 32.0, 'tmin' => 24.0, 'rainfall' => 50.0, 'temperature' => 28.0]);
+        $this->assertSame(['2026-10', '2026-09'], $r['missing_months'], 'September and October are over: their forecasts are never used');
+        $this->assertSame(['2026-11', '2026-12', '2027-01', '2027-02'], $r['lag_forecast_months']);
+        $this->assertSame(100.0, $r['features']['previous_rainfall']);
+        $this->assertSame(80.0, $r['features']['previous_humidity']);
+        $this->assertNull($r['features']['rainfall_6m']);
+
+        foreach (['2026-09', '2026-10'] as $ym) {
+            ClimateRecord::query()->create(['record_date' => $ym.'-01', 'rainfall' => 200.0, 'temperature' => 28.0, 'humidity' => 85, 'wind_speed' => 2, 'season' => 'Wet', 'source' => 'PAGASA Ambulong (entered)']);
+        }
+        YieldModelClimateWindow::forget();
+        $full = YieldModelClimateWindow::features(CarbonImmutable::parse('2027-03-01'), ['tmax' => 32.0, 'tmin' => 24.0, 'rainfall' => 50.0, 'temperature' => 28.0]);
+        $this->assertSame([], $full['missing_months']);
+        $this->assertEqualsWithDelta(133.33, $full['features']['rainfall_6m'], 0.01);   // (200 + 200 + 4 x 100) / 6
+        $this->assertSame([], $full['seasonal_missing_months']);
+        $this->assertSame(['2026-11', '2026-12', '2027-01', '2027-02', '2027-04'], $full['seasonal_forecast_months']);
+        CarbonImmutable::setTestNow();
+    }
 }

@@ -1,7 +1,9 @@
 import './bootstrap';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import { initScrollAnimations } from './scroll-animations';
-import Alpine from 'alpinejs';
+// CSP build: no runtime evaluation, so the Content-Security-Policy needs no 'unsafe-eval' (components in alpine-components.js).
+import Alpine from '@alpinejs/csp';
+import { registerAlpineComponents } from './alpine-components';
 // Shared by the Farmer, MAO, and IT Expert/Admin dashboards so risk-map
 // rendering logic exists in exactly one place. initBarangayRiskMap() itself
 // no-ops on any page without a #barangayRiskMap element.
@@ -166,6 +168,22 @@ window.iClimateVisualsReady = (async () => {
     });
 })();
 
+if (!window.__icDataActions) {
+    // Replaces inline on* handlers (strict CSP, script-src-attr none): data-autosubmit, data-print, data-window-close.
+    window.__icDataActions = true;
+    document.addEventListener("change", (e) => {
+        const el = e.target instanceof Element ? e.target.closest("[data-autosubmit]") : null;
+        if (el && el.form) (el.form.requestSubmit ? el.form.requestSubmit() : el.form.submit());
+    });
+    document.addEventListener("click", (e) => {
+        const el = e.target instanceof Element ? e.target.closest("[data-print], [data-window-close]") : null;
+        if (!el) return;
+        e.preventDefault();
+        el.hasAttribute("data-print") ? window.print() : window.close();
+    });
+}
+
+registerAlpineComponents(Alpine);
 window.Alpine = Alpine;
 
 Alpine.start();

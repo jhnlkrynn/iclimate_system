@@ -10,7 +10,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>{{ $code }} | {{ config('app.name', 'iClimate') }}</title>
   {{-- Same Light / Dark choice as the rest of iClimate (layouts/app.blade.php), applied before the first paint. --}}
-  <script>(function(){var t='light';try{t=localStorage.getItem('iclimate-theme')==='dark'?'dark':'light';}catch(e){}document.documentElement.setAttribute('data-theme',t);document.documentElement.style.colorScheme=t;})();</script>
+  <script @nonce>(function(){var t='light';try{t=localStorage.getItem('iclimate-theme')==='dark'?'dark':'light';}catch(e){}document.documentElement.setAttribute('data-theme',t);document.documentElement.style.colorScheme=t;})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>

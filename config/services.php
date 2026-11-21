@@ -65,6 +65,11 @@ return [
     ],
 
 
+    // Monitoring (iclimate:health --log): where FAIL alerts are e-mailed; empty = application log only.
+    'health' => [
+        'alert_email' => env('HEALTH_ALERT_EMAIL'),
+    ],
+
     'open_meteo' => [
         'base_url' => env('OPEN_METEO_BASE_URL', 'https://api.open-meteo.com/v1'),
         'latitude' => env('ICLIMATE_LATITUDE', \App\Support\LianLocation::LATITUDE),
@@ -77,6 +82,13 @@ return [
         'barangay_refresh_minutes' => env('OPEN_METEO_BARANGAY_REFRESH_MINUTES', 10),
         'forecast_days' => env('OPEN_METEO_FORECAST_DAYS', 16),
         'realtime' => env('OPEN_METEO_REALTIME', true),
+        // Historical Weather API (ERA5): the last fallback for observed-month rice-yield inputs (App\Services\Climate\
+        // OpenMeteoArchiveMonthly), read at the PAGASA Ambulong station the model was trained on.
+        'archive_url' => env('OPEN_METEO_ARCHIVE_URL', 'https://archive-api.open-meteo.com/v1/archive'),
+        'archive_latitude' => env('OPEN_METEO_ARCHIVE_LAT', 14.0886),
+        'archive_longitude' => env('OPEN_METEO_ARCHIVE_LON', 121.0553),
+        'archive_timeout' => env('OPEN_METEO_ARCHIVE_TIMEOUT', 30),
+        'archive_file' => env('OPEN_METEO_ARCHIVE_FILE'),
     ],
 
     'accuweather' => [

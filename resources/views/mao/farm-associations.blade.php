@@ -9,7 +9,7 @@
 
         <form class="itd-filters mb-3" method="GET" action="{{ route('mao.farm-associations.index') }}">
             <label>Barangay
-                <select name="barangay" onchange="this.form.submit()">
+                <select name="barangay" data-autosubmit>
                     <option value="">All</option>
                     @foreach ($barangays as $name)<option value="{{ $name }}" @selected($barangay === $name)>{{ $name }}</option>@endforeach
                 </select>

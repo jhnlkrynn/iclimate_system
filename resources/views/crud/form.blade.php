@@ -84,7 +84,7 @@
 </x-app-layout>
 
 @if ($routeName === 'farmer-profiles')
-    <script>
+    <script @nonce>
         (() => {
             const userSelect = document.querySelector('[data-farmer-profile-user]');
             if (!userSelect) return;

@@ -36,8 +36,8 @@
                     <p class="text-muted mb-0">Generated {{ $generatedAt?->format('Y-m-d H:i') }}</p>
                 </div>
                 <div class="d-flex gap-2 no-print">
-                    <button class="btn btn-primary" onclick="window.print()">Print</button>
-                    <button class="btn btn-outline-secondary" onclick="window.close()">Close</button>
+                    <button class="btn btn-primary" data-print>Print</button>
+                    <button class="btn btn-outline-secondary" data-window-close>Close</button>
                 </div>
             </div>
 
@@ -72,5 +72,21 @@
                 </div>
             @endif
         </main>
-    </body>
+    <script @nonce>
+if (!window.__icDataActions) {
+    // Replaces inline on* handlers (strict CSP, script-src-attr none): data-autosubmit, data-print, data-window-close.
+    window.__icDataActions = true;
+    document.addEventListener("change", (e) => {
+        const el = e.target instanceof Element ? e.target.closest("[data-autosubmit]") : null;
+        if (el && el.form) (el.form.requestSubmit ? el.form.requestSubmit() : el.form.submit());
+    });
+    document.addEventListener("click", (e) => {
+        const el = e.target instanceof Element ? e.target.closest("[data-print], [data-window-close]") : null;
+        if (!el) return;
+        e.preventDefault();
+        el.hasAttribute("data-print") ? window.print() : window.close();
+    });
+}
+</script>
+</body>
 </html>

@@ -99,6 +99,34 @@
 .wpx-more-table thead th { font-size: .8125rem; font-weight: 600; color: #5b6660; }
 .wpx-more-table tbody th { font-weight: 600; }
 
+/* Farmer Yield Prediction (/analysis/yield) */
+.yp-farm-plain { padding: .5rem .75rem; border: 1px solid var(--sage-200, #d4ddd7); border-radius: .5rem; background: #f8faf9; font-weight: 600; color: #1b1f1d; }
+.yp-farm-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; }
+.yp-missing-size { padding: .875rem 1rem; border: 1px solid var(--sage-200, #d4ddd7); border-radius: .75rem; background: #f8faf9; max-width: 340px; }
+.yp-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-top: .5rem; }
+.yp-metric { padding: 1rem 1.125rem; border: 1px solid var(--sage-200, #d4ddd7); border-radius: .875rem; background: #f8faf9; }
+.yp-metric-main { margin: 0; font-size: 1.35rem; font-weight: 700; color: #1b1f1d; line-height: 1.25; }
+.yp-metric-sacks { margin: .25rem 0 0; font-size: .9rem; color: #5b6660; }
+.yp-mobile-list { display: grid; gap: .75rem; }
+.yp-mobile-card { padding: .875rem 1rem; border: 1px solid #e3e8e5; border-radius: .75rem; background: #fff; }
+
+/* Transparency record under Expected Yield This Season (components/yield-record). */
+.ytr { margin-top: 16px; }
+.ytr-body { margin-top: 14px; display: grid; gap: 14px; }
+.ytr-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px 20px; margin: 0; }
+.ytr-facts dt { font-size: .8125rem; font-weight: 600; color: #5b6660; }
+.ytr-facts dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+.ytr-facts code { font-size: .8125rem; color: inherit; }
+.ytr-title { font-size: 1rem; font-weight: 700; margin: 4px 0 0; }
+.ytr-inputs, .ytr-checks { list-style: none; margin: 0; padding: 0; }
+.ytr-inputs li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 16px; padding: 10px 0; border-bottom: 1px solid #e3e8e5; }
+.ytr-value { text-align: right; white-space: nowrap; }
+.ytr-source { grid-column: 1 / -1; font-size: .8125rem; color: #5b6660; }
+.ytr-checks li { display: flex; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid #e3e8e5; }
+.ytr-checks li > span { min-width: 0; }
+.ytr-checks li > strong { flex: none; white-space: nowrap; }
+.ytr-note { margin: 0; }
+
 @media (max-width: 575.98px) {
     .wpx-answer { flex-direction: column; align-items: flex-start; gap: 14px; padding: 22px 20px; }
     .wpx-answer-icon { width: 68px; height: 68px; }
@@ -126,5 +154,7 @@ html[data-theme="dark"] body .wpx-more { border-top-color: var(--dk-border-stron
 html[data-theme="dark"] body .wpx-more > summary { border-color: var(--dk-border-strong, var(--sage-800)); color: var(--sage-200); }
 html[data-theme="dark"] body .wpx-more-table th, html[data-theme="dark"] body .wpx-more-table td { border-bottom-color: var(--dk-border-strong, var(--sage-800)); color: var(--dk-ink, var(--sage-200)); }
 html[data-theme="dark"] body .wpx-more-table thead th { color: var(--dk-muted, var(--sage-300)); }
+html[data-theme="dark"] body .ytr-facts dt, html[data-theme="dark"] body .ytr-source { color: var(--dk-muted, var(--sage-300)); }
+html[data-theme="dark"] body .ytr-inputs li, html[data-theme="dark"] body .ytr-checks li { border-bottom-color: var(--dk-border-strong, var(--sage-800)); }
 html[data-theme="dark"] body .wpx.is-farmer .wpx-range a.is-active { background: var(--sage-200); color: var(--sage-300); }
 /* ------------------------------------------------------------ end farmers */

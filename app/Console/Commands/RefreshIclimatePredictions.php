@@ -13,7 +13,7 @@ use Illuminate\Console\Command;
  * to the server can run it.
  *
  *   php artisan iclimate:refresh-predictions
- *     Ensures the 12-month operational horizon (this month .. +11) has a
+ *     Ensures the 18-month operational horizon (this month .. +17) has a
  *     fresh persisted forecast, queuing background generation for any
  *     month that's missing/stale. Non-blocking — safe to run often
  *     (e.g. from the scheduler); already-fresh months are skipped.
@@ -30,11 +30,13 @@ class RefreshIclimatePredictions extends Command
     protected $signature = 'iclimate:refresh-predictions
         {--year= : Force-refresh a specific year (requires --month)}
         {--month= : Force-refresh a specific month (requires --year)}
-        {--all : Force-refresh every month in the 12-month operational horizon}';
+        {--all : Force-refresh every month in the 18-month operational horizon}';
 
     protected $description = 'Pre-generate/refresh persisted monthly weather predictions for the operational horizon.';
 
-    private const OPERATIONAL_HORIZON_MONTHS = 12;
+    // 18 months (was 12, owner request 2026-11-20): a yield target up to 11 months ahead needs the rest of its model
+    // season too (a Dry season runs to April), so whole-season inputs never run out of stored forecasts.
+    private const OPERATIONAL_HORIZON_MONTHS = 18;
 
     public function handle(PredictionOrchestrator $orchestrator): int
     {

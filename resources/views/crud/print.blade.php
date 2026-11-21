@@ -34,7 +34,7 @@
     <body>
         <div class="print-actions no-print">
             <a href="{{ $backUrl }}">Back to the list</a>
-            <button type="button" onclick="window.print()">Print</button>
+            <button type="button" data-print>Print</button>
         </div>
 
         <header class="print-head">
@@ -85,9 +85,25 @@
             </table>
         @endif
 
-        <script>
+        <script @nonce>
             // Opens the print dialog once the page is ready; "Back to the list" and "Print" stay on screen for later.
             window.addEventListener('load', () => { if (!new URLSearchParams(location.search).has('noprompt')) window.print(); });
         </script>
-    </body>
+    <script @nonce>
+if (!window.__icDataActions) {
+    // Replaces inline on* handlers (strict CSP, script-src-attr none): data-autosubmit, data-print, data-window-close.
+    window.__icDataActions = true;
+    document.addEventListener("change", (e) => {
+        const el = e.target instanceof Element ? e.target.closest("[data-autosubmit]") : null;
+        if (el && el.form) (el.form.requestSubmit ? el.form.requestSubmit() : el.form.submit());
+    });
+    document.addEventListener("click", (e) => {
+        const el = e.target instanceof Element ? e.target.closest("[data-print], [data-window-close]") : null;
+        if (!el) return;
+        e.preventDefault();
+        el.hasAttribute("data-print") ? window.print() : window.close();
+    });
+}
+</script>
+</body>
 </html>

@@ -293,6 +293,8 @@ function bindLiveFilters(root = document) {
                     node.querySelectorAll('script').forEach((old) => {
                         const fresh = document.createElement('script');
                         [...old.attributes].forEach((a) => fresh.setAttribute(a.name, a.value));
+                        // The fetched page's nonce is not this page's: give it this page's (strict CSP).
+                        fresh.nonce = document.querySelector('script[nonce]')?.nonce || '';
                         fresh.textContent = old.textContent;
                         old.replaceWith(fresh);
                     });

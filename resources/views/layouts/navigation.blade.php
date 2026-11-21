@@ -156,7 +156,7 @@
     </div>
 @endif
 @if ($navFarmsOn)
-    <script>
+    <script @nonce>
         // My Farm selector: choosing a farm shows that farm's pages; "+ Add Farm" opens the form.
         document.querySelector('[data-farm-select] select')?.addEventListener('change', (event) => {
             const select = event.target;

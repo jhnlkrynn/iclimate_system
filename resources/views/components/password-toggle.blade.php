@@ -8,7 +8,7 @@
 </button>
 
 @once
-    <script>
+    <script @nonce>
         (() => {
             const fieldOf = (button) => document.getElementById(button.getAttribute('aria-controls'));
 

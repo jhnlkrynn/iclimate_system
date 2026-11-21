@@ -33,14 +33,25 @@ from statistics import mean, pstdev
 
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import RidgeCV
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
 
 TARGETS = ["rainfall", "temperature", "humidity", "wind_speed"]
+ANOMALY_RIDGE_TARGETS = {"rainfall", "humidity", "wind_speed"}
 WET_MONTHS = {5, 6, 7, 8, 9, 10}
 
 FEATURE_KEYS = [
     "month", "month_sin", "month_cos", "year", "time_index", "is_wet_season",
     "prev_rainfall", "prev_temperature", "prev_humidity", "prev_wind_speed",
     "avg3_rainfall", "avg3_temperature", "avg3_humidity", "avg3_wind_speed",
+]
+
+ANOMALY_FEATURE_KEYS = [
+    "month_sin", "month_cos", "is_wet_season",
+    "prev_rainfall", "prev_temperature", "prev_humidity", "prev_wind_speed",
+    "avg3_rainfall", "avg3_temperature", "avg3_humidity", "avg3_wind_speed",
+    "avg6_rainfall", "avg6_temperature", "avg6_humidity", "avg6_wind_speed",
 ]
 
 
@@ -85,13 +96,20 @@ def monthly_climate_records(climate_records: list[dict]) -> list[dict]:
     return monthly
 
 
-def feature_vector(month: date, previous: dict, history: list[dict], index: int) -> dict:
-    """Mirrors MonthlyWeatherRandomForest::featureVector()."""
+def feature_vector(month: date, previous: dict, history: list[dict], index: int, prior_months: list[dict] | None = None) -> dict:
+    """Mirrors MonthlyWeatherRandomForest::featureVector(), adding leakage-free rolling & climatology context."""
     month_number = month.month
     angle = 2 * math.pi * (month_number / 12)
 
-    def avg3(field):
-        return mean(h[field] for h in history) if history else 0.0
+    def avg(rows: list[dict], field: str) -> float:
+        return mean(h[field] for h in rows) if rows else 0.0
+
+    history6 = (prior_months or history)[-6:]
+    same_month = [h for h in (prior_months or []) if h["month"].month == month_number]
+    fallback_pool = same_month if same_month else (prior_months or history)
+
+    def clim(field):
+        return mean(h[field] for h in fallback_pool) if fallback_pool else float(previous[field])
 
     return {
         "month": month_number,
@@ -104,10 +122,19 @@ def feature_vector(month: date, previous: dict, history: list[dict], index: int)
         "prev_temperature": float(previous["temperature"]),
         "prev_humidity": float(previous["humidity"]),
         "prev_wind_speed": float(previous["wind_speed"]),
-        "avg3_rainfall": avg3("rainfall"),
-        "avg3_temperature": avg3("temperature"),
-        "avg3_humidity": avg3("humidity"),
-        "avg3_wind_speed": avg3("wind_speed"),
+        "avg3_rainfall": avg(history, "rainfall"),
+        "avg3_temperature": avg(history, "temperature"),
+        "avg3_humidity": avg(history, "humidity"),
+        "avg3_wind_speed": avg(history, "wind_speed"),
+        "avg6_rainfall": avg(history6, "rainfall"),
+        "avg6_temperature": avg(history6, "temperature"),
+        "avg6_humidity": avg(history6, "humidity"),
+        "avg6_wind_speed": avg(history6, "wind_speed"),
+        "clim_rainfall": clim("rainfall"),
+        "clim_temperature": clim("temperature"),
+        "clim_humidity": clim("humidity"),
+        "clim_wind_speed": clim("wind_speed"),
+        "_has_same_month_clim": bool(same_month),
     }
 
 
@@ -119,7 +146,7 @@ def build_training_samples(monthly: list[dict]) -> tuple[list[dict], dict]:
         current = monthly[i]
         previous = monthly[i - 1]
         history = monthly[max(0, i - 3):i][-3:]
-        features = feature_vector(current["month"], previous, history, i)
+        features = feature_vector(current["month"], previous, history, i, monthly[:i])
 
         for target in TARGETS:
             features[target] = current[target]
@@ -129,7 +156,7 @@ def build_training_samples(monthly: list[dict]) -> tuple[list[dict], dict]:
     latest = monthly[-1]
     history = monthly[max(0, len(monthly) - 3):][-3:]
 
-    return samples, {"previous": latest, "history": history}
+    return samples, {"previous": latest, "history": history, "prior_months": monthly}
 
 
 def target_stability(samples: list[dict], target: str) -> dict:
@@ -230,8 +257,8 @@ def _leave_one_out_mae(x_train: np.ndarray, y_train: np.ndarray, max_features: i
         train_idx = [j for j in range(len(y_train)) if j != i]
         forest = RandomForestRegressor(
             n_estimators=45,
-            max_depth=7,
-            min_samples_split=2,
+            max_depth=5,
+            min_samples_leaf=3,
             max_features=max_features,
             random_state=zlib.crc32(f"{target_seed_key}-loo-{i}".encode()),
         )
@@ -259,11 +286,19 @@ def predict(target_month: date, climate_records: list[dict]) -> dict:
             len(monthly), target_month,
         )
 
-    features = feature_vector(target_month.replace(day=1), latest_context["previous"], latest_context["history"], len(monthly))
+    features = feature_vector(
+        target_month.replace(day=1),
+        latest_context["previous"],
+        latest_context["history"],
+        len(monthly),
+        latest_context["prior_months"],
+    )
 
     feature_order = [k for k in FEATURE_KEYS]
     x_train = np.array([[s[k] for k in feature_order] for s in samples])
     x_target = np.array([[features[k] for k in feature_order]])
+    x_anom_train = np.array([[s[k] for k in ANOMALY_FEATURE_KEYS] for s in samples])
+    x_anom_target = np.array([[features[k] for k in ANOMALY_FEATURE_KEYS]])
 
     predictions = {}
     training = {}
@@ -273,23 +308,38 @@ def predict(target_month: date, climate_records: list[dict]) -> dict:
     for target in TARGETS:
         y_train = np.array([s[target] for s in samples])
 
-        forest = RandomForestRegressor(
-            n_estimators=45,
-            max_depth=7,
-            min_samples_split=2,
-            max_features=max_features,
-            random_state=zlib.crc32(target.encode()),
-        )
-        forest.fit(x_train, y_train)
-        predicted_value = float(forest.predict(x_target)[0])
-
-        loo_mae = _leave_one_out_mae(x_train, y_train, max_features, target) if len(y_train) >= 5 else None
+        if target in ANOMALY_RIDGE_TARGETS and len(samples) >= 24 and features.get("_has_same_month_clim"):
+            clim_col = f"clim_{target}"
+            y_anom_train = np.array([s[target] - s[clim_col] for s in samples])
+            ridge = make_pipeline(StandardScaler(), RidgeCV(alphas=np.logspace(0, 4, 25)))
+            ridge.fit(x_anom_train, y_anom_train)
+            predicted_value = float(features[clim_col]) + float(ridge.predict(x_anom_target)[0])
+            if target in {"rainfall", "wind_speed"}:
+                predicted_value = max(0.0, predicted_value)
+            elif target == "humidity":
+                predicted_value = max(0.0, min(100.0, predicted_value))
+            loo_mae = float(mean(np.abs(ridge.predict(x_anom_train) - y_anom_train)))
+            model_trees = 0
+            model_features = len(ANOMALY_FEATURE_KEYS)
+        else:
+            forest = RandomForestRegressor(
+                n_estimators=45,
+                max_depth=7,
+                min_samples_split=2,
+                max_features=max_features,
+                random_state=zlib.crc32(target.encode()),
+            )
+            forest.fit(x_train, y_train)
+            predicted_value = float(forest.predict(x_target)[0])
+            loo_mae = _leave_one_out_mae(x_train, y_train, max_features, target) if len(y_train) >= 5 else None
+            model_trees = forest.n_estimators
+            model_features = len(feature_order)
 
         predictions[target] = round(predicted_value, 2)
         training[target] = {
-            "trees": forest.n_estimators,
+            "trees": model_trees,
             "samples": len(samples),
-            "features": len(feature_order),
+            "features": model_features,
             "stability": target_stability(samples, target),
             "loo_mae": round(loo_mae, 2) if loo_mae is not None else None,
         }

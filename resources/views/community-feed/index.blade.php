@@ -401,7 +401,7 @@
         </div>
     </div>
 
-    <script>
+    <script @nonce>
         document.addEventListener('DOMContentLoaded', () => {
             const composerAttachments = document.getElementById('composerAttachments');
             const composerFileList = document.getElementById('composerFileList');

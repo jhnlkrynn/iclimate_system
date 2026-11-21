@@ -28,8 +28,8 @@ class YieldPredictionRequest extends Model
     public const HARVEST_MONTH = [RiceSeason::WET => 9, RiceSeason::DRY => 3];
 
     protected $fillable = [
-        'user_id', 'scope', 'barangay', 'season', 'farm_type', 'area_hectares', 'target_month', 'status',
-        'predicted_yield', 'total_tons', 'historical_average', 'impact_level', 'error', 'details', 'completed_at',
+        'user_id', 'farm_id', 'scope', 'barangay', 'season', 'farm_type', 'area_hectares', 'target_month', 'status',
+        'predicted_yield', 'total_tons', 'historical_average', 'impact_level', 'error', 'details', 'completed_at', 'useful',
     ];
 
     protected $casts = [
@@ -40,11 +40,17 @@ class YieldPredictionRequest extends Model
         'target_month' => 'date',
         'details' => 'array',
         'completed_at' => 'datetime',
+        'useful' => 'boolean',
     ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function farm(): BelongsTo
+    {
+        return $this->belongsTo(Farm::class);
     }
 
     /** The next harvest month of the season from today (inside the 12 months the weather forecast covers). */

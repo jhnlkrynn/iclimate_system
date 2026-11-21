@@ -134,7 +134,7 @@
     </div>
     @endunless
 
-    <script>
+    <script @nonce>
         // Drawn at load and again after the figures update while open (iclimate:live-region-updated).
         const drawWeatherAnalysisCharts = (charts) => {
             charts.splice(0).forEach((chart) => chart.destroy());

@@ -30,9 +30,7 @@ final class PasswordChange
     }
 
     /**
-     * Sign-in found a shared password: from now on the account must choose its own first. "Shared" is a published
-     * default, or a password hash identical to another account's (hashes are salted, so an identical hash can only
-     * come from a copied password: imports and seeders did that for whole batches of accounts).
+     * Sign-in found a known exposed default password: from now on the account must choose its own first.
      */
     public static function flagIfDefault(User $user, ?string $plain): void
     {
@@ -45,18 +43,15 @@ final class PasswordChange
         }
     }
 
-    /** The password just typed is shared: a published default, or the account's hash is copied on another account. */
+    /** The password just typed is a known exposed default password. */
     public static function isShared(User $user, ?string $plain): bool
     {
-        return DefaultPasswords::isKnown($plain) || self::hashIsCopied($user);
+        return DefaultPasswords::isKnown($plain);
     }
 
-    /** Without the typed password (an open session): copied hash, or the stored hash is a published default. */
+    /** Without the typed password (an open session): the stored hash matches a known exposed default password. */
     public static function hasSharedPassword(User $user): bool
     {
-        if (self::hashIsCopied($user)) {
-            return true;
-        }
         foreach (DefaultPasswords::known() as $known) {
             if (rescue(fn () => \Illuminate\Support\Facades\Hash::check($known, (string) $user->password), false, false)) {
                 return true;
@@ -85,11 +80,6 @@ final class PasswordChange
         $ip = (string) $request?->ip();
 
         return ! in_array($ip, ['127.0.0.1', '::1'], true);
-    }
-
-    private static function hashIsCopied(User $user): bool
-    {
-        return User::withDeleted()->where('password', $user->password)->whereKeyNot($user->getKey())->exists();
     }
 
     public static function endOtherSessions(User $user, ?string $keepSessionId = null): void

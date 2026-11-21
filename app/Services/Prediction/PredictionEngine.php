@@ -60,7 +60,11 @@ class PredictionEngine
         // retrains a model on a normal request.
         $weatherResult = $this->orchestrator->monthlyWeatherForecast($targetMonth);
 
-        $modelInput = $this->buildModelInput($weatherResult, $farmType, $targetDate, $areaOverride, $user, $manualOverrides);
+        // The climate inputs of THIS target month: lags and trailing windows end at the month before it (never the
+        // latest months on file, which gave every prediction the same eight inputs), Rainfall_6M is a six-month mean
+        // and TEMP_RANGE the month's TMAX - TMIN, as the model was trained. Unobserved months stay missing.
+        $climate = \App\Support\YieldModelClimateWindow::features($targetDate, $weatherResult['predictions'] ?? []);
+        $modelInput = $this->buildModelInput($weatherResult, $climate, $farmType, $targetDate, $areaOverride, $user, $manualOverrides);
         $missing = $this->missingInputs($modelInput);
         $weatherLabel = $modelInput['rainfall'] !== null ? WeatherLabeler::fromRainfall((float) $modelInput['rainfall']) : null;
 
@@ -70,7 +74,7 @@ class PredictionEngine
 
         if ($apiError !== null) {
             // Real problems stay visible to IT in the logs (System Logs / Health); the farmer sees a plain "not available".
-            \Illuminate\Support\Facades\Log::warning('Rice-yield prediction was not produced.', ['reason' => $apiError, 'missing_inputs' => $missing, 'target_month' => $targetMonth->format('Y-m')]);
+            \Illuminate\Support\Facades\Log::warning('Rice-yield prediction was not produced.', ['reason' => $apiError, 'missing_inputs' => $missing, 'target_month' => $targetMonth->format('Y-m'), 'missing_months' => array_values(array_unique(array_merge($climate['missing_months'] ?? [], $climate['seasonal_missing_months'] ?? [])))]);
         }
 
         $decision = $this->decisionSupport->evaluate([
@@ -85,6 +89,13 @@ class PredictionEngine
             'weather_label' => $weatherLabel,
             'model_input' => $modelInput,
             'missing_inputs' => $missing,
+            // Where the observed-month inputs came from: months read from the Open-Meteo archive (ERA5) because neither
+            // the Ambulong station file nor a MAO Climate Record covers them.
+            'climate_sources' => [
+                'reanalysis_months' => $climate['reanalysis_months'] ?? [],
+                'forecast_months' => array_values(array_unique(array_merge($climate['lag_forecast_months'] ?? [], $climate['seasonal_forecast_months'] ?? []))),
+                'missing_months' => array_values(array_unique(array_merge($climate['missing_months'] ?? [], $climate['seasonal_missing_months'] ?? []))),
+            ],
             'yield' => $yield,
             'decision_support' => $decision,
             'api_error' => $apiError,
@@ -117,6 +128,7 @@ class PredictionEngine
      */
     private function buildModelInput(
         array $weatherResult,
+        array $climate,
         string $farmType,
         CarbonImmutable $targetDate,
         ?float $areaOverride,
@@ -124,10 +136,6 @@ class PredictionEngine
         array $manualOverrides,
     ): array {
         $predictions = $weatherResult['predictions'] ?? [];
-        // The climate inputs of THIS target month: lags and trailing windows end at the month before it (never the
-        // latest months on file, which gave every prediction the same eight inputs), Rainfall_6M is a six-month mean
-        // and TEMP_RANGE the month's TMAX - TMIN, as the model was trained. Unobserved months stay missing.
-        $climate = \App\Support\YieldModelClimateWindow::features($targetDate, $predictions);
 
         $num = static fn ($v): ?float => is_numeric($v) ? (float) $v : null;
         $round = static fn (?float $v): ?float => $v === null ? null : round($v, 2);

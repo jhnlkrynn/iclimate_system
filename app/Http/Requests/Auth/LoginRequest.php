@@ -98,13 +98,16 @@ class LoginRequest extends FormRequest
             && \App\Services\Accounts\PasswordChange::isShared($user = Auth::user(), (string) $this->input('password'))) {
             \App\Services\Accounts\PasswordChange::flagIfDefault($user, (string) $this->input('password'));
             $method = \App\Services\Accounts\AccountRecovery::method($user);
-            if ($method === \App\Services\Accounts\AccountRecovery::METHOD_EMAIL) {
-                \App\Services\Accounts\AccountRecovery::sendEmailLink($user);
-            }
+            $emailSent = $method === \App\Services\Accounts\AccountRecovery::METHOD_EMAIL
+                ? \App\Services\Accounts\AccountRecovery::sendEmailLink($user)
+                : false;
             Auth::guard('web')->logout();
             RateLimiter::clear($this->throttleKey());
+            $status = $emailSent
+                ? 'We sent a password-reset link to your email. Please open it to set a new password.'
+                : 'This account uses a default password and must set a new password before signing in. Request a reset link below or use a code from the Municipal Agriculture Office.';
             throw new \Illuminate\Http\Exceptions\HttpResponseException(
-                redirect()->route('account.recover')->with(['recovery' => $method, 'recovery_email' => $user->email])
+                redirect()->route('password.request')->with('status', $status)->withInput(['email' => $user->email])
             );
         }
 

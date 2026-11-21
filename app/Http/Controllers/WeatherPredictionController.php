@@ -158,7 +158,7 @@ class WeatherPredictionController extends Controller
         $ranAt = $estimates->pluck('ran_at')->filter()->sort()->last();
 
         return $base + ['state' => 'ok', 'count' => $estimates->count()]
-            + $seasonYield->describe($average, $now->month)
+            + $seasonYield->describe($average, \App\Support\RiceSeason::harvestMonth($now)->month)
             + ['ran_at' => $ranAt ? CarbonImmutable::parse($ranAt)->timezone('Asia/Manila') : null];
     }
 
@@ -173,7 +173,7 @@ class WeatherPredictionController extends Controller
         $month = \App\Support\BusinessClock::now()->toImmutable()->startOfMonth();
         $weather = rescue(fn () => app(PredictionOrchestrator::class)->preparedMonthlyWeatherForecasts([$month])[$month->format('Y-m')] ?? null, null, false);
         $model = rescue(fn () => \App\Models\MlModel::query()->where('purpose', \App\Models\MlModel::PURPOSE_RICE_YIELD)->where('is_active', true)->first(), null, false);
-        $municipalRun = $municipalYield?->cached($month);
+        $municipalRun = $municipalYield?->cached(\App\Support\RiceSeason::harvestMonth($month));
         $lastYieldRun = $municipalRun['ran_at'] ?? \App\Services\Analytics\FarmerDashboardService::storedEstimates()->pluck('ran_at')->filter()->sort()->last();
 
         return [

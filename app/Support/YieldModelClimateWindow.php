@@ -20,7 +20,8 @@ use Throwable;
  *   seasonal_temp         mean temperature over the same whole season
  *   temp_range            TMAX - TMIN of the target month itself (thresholds 5.75-9.45 degC), from the month's weather
  *
- * Lags and trailing windows read only months strictly before T. The whole-season pair is the one exception, decided by
+ * Lags and trailing windows read only months strictly before T. A month before T that is not over yet (T in the future)
+ * uses the stored ready monthly weather forecast, flagged in lag_forecast_months (owner decision 2026-11-20). The whole-season pair is the one exception, decided by
  * the owner on 2026-11-18 to match training: its months before T must be observed; T itself uses the target month's
  * weather; months after T use the observation when that month has passed, otherwise the stored monthly weather
  * forecast (they are listed in seasonal_forecast_months). A month is the entered Climate Record when one exists,
@@ -44,10 +45,22 @@ final class YieldModelClimateWindow
         $first = $target->startOfMonth();
         $months = [];
         $missing = [];
+        $lagForecast = [];
+        $forecasts = self::forecasts();
+        $thisMonth = self::thisMonth();
         for ($i = 1; $i <= self::MONTHS; $i++) {
             $key = $first->subMonthsNoOverflow($i)->format('Y-m');
             $row = $history[$key] ?? null;
             $complete = $row !== null && is_numeric($row->rainfall ?? null) && is_numeric($row->temperature ?? null);
+            // A lag month that is not over yet (a target month in the future) cannot be observed: the stored ready
+            // monthly weather forecast stands in, as for the rest of the season (owner decision 2026-11-20). A month
+            // that is over must be observed; its forecast is never used.
+            if (! $complete && $key >= $thisMonth && isset($forecasts[$key])) {
+                [$rain, $temp, $humidity, $wind] = $forecasts[$key];
+                $row = (object) ['record_date' => $key.'-01', 'rainfall' => $rain, 'temperature' => $temp, 'humidity' => $humidity, 'wind_speed' => $wind, 'source' => 'iClimate monthly weather forecast', 'forecast' => true];
+                $complete = true;
+                $lagForecast[] = $key;
+            }
             $months[$i] = $complete ? $row : null;
             if (! $complete) {
                 $missing[] = $key;
@@ -85,6 +98,13 @@ final class YieldModelClimateWindow
             'seasonal_months' => $seasonal['months'],
             'seasonal_forecast_months' => $seasonal['forecast'],
             'seasonal_missing_months' => $seasonal['missing'],
+            // Months read from the Open-Meteo archive instead of the station or an entered record (lags and season).
+            // Lag months that had not ended yet and used the stored monthly weather forecast.
+            'lag_forecast_months' => array_reverse($lagForecast),
+            'reanalysis_months' => collect(array_merge(
+                collect($months)->filter(fn (?object $m): bool => (bool) ($m->reanalysis ?? false))->map(fn (object $m): string => substr((string) $m->record_date, 0, 7))->all(),
+                $seasonal['reanalysis'],
+            ))->unique()->sort()->values()->all(),
         ];
     }
 
@@ -93,7 +113,7 @@ final class YieldModelClimateWindow
      *
      * @param  array<string, object>  $history
      * @param  array<string, mixed>  $targetWeather
-     * @return array{rainfall: ?float, temperature: ?float, months: list<string>, forecast: list<string>, missing: list<string>}
+     * @return array{rainfall: ?float, temperature: ?float, months: list<string>, forecast: list<string>, missing: list<string>, reanalysis: list<string>}
      */
     private static function wholeSeason(CarbonImmutable $first, array $history, array $targetWeather): array
     {
@@ -108,13 +128,21 @@ final class YieldModelClimateWindow
 
         $targetKey = $first->format('Y-m');
         $forecasts = self::forecasts();
-        $rain = []; $temp = []; $forecast = []; $missing = [];
+        $rain = []; $temp = []; $forecast = []; $missing = []; $reanalysis = [];
         foreach ($months as $m) {
             $key = $m->format('Y-m');
             $observed = $history[$key] ?? null;
             $observed = $observed && is_numeric($observed->rainfall ?? null) && is_numeric($observed->temperature ?? null) ? $observed : null;
+            if ($key !== $targetKey && $observed && ($observed->reanalysis ?? false)) {
+                $reanalysis[] = $key;
+            }
             if ($key < $targetKey) {
                 $value = $observed ? [(float) $observed->rainfall, (float) $observed->temperature] : null;
+                // Not over yet (a future target): the stored forecast, flagged, as for months after the target.
+                if ($value === null && $key >= self::thisMonth() && isset($forecasts[$key])) {
+                    $value = [$forecasts[$key][0], $forecasts[$key][1]];
+                    $forecast[] = $key;
+                }
             } elseif ($key === $targetKey) {
                 $value = is_numeric($targetWeather['rainfall'] ?? null) && is_numeric($targetWeather['temperature'] ?? null)
                     ? [(float) $targetWeather['rainfall'], (float) $targetWeather['temperature']] : null;
@@ -142,10 +170,17 @@ final class YieldModelClimateWindow
             'months' => array_map(fn (CarbonImmutable $m): string => $m->format('Y-m'), $months),
             'forecast' => $forecast,
             'missing' => $missing,
+            'reanalysis' => $complete ? $reanalysis : [],
         ];
     }
 
-    /** @return array<string, array{0: float, 1: float}> the latest ready monthly weather forecast per month ('unready' rows are not forecasts) */
+    /** The current month (Philippine time), Y-m: it and later months are not over, so they cannot be observed yet. */
+    private static function thisMonth(): string
+    {
+        return CarbonImmutable::now('Asia/Manila')->format('Y-m');
+    }
+
+    /** @return array<string, array{0: float, 1: float, 2: ?float, 3: ?float}> the latest ready monthly weather forecast per month: rainfall, temperature, humidity, wind ('unready' rows are not forecasts) */
     private static function forecasts(): array
     {
         try {
@@ -154,8 +189,9 @@ final class YieldModelClimateWindow
             }
             $out = [];
             foreach (\App\Models\MonthlyWeatherPrediction::query()->where('status', 'ready')->whereNotNull('rainfall')->whereNotNull('temperature_average')
-                ->orderBy('generated_at')->get(['prediction_year', 'prediction_month', 'rainfall', 'temperature_average']) as $row) {
-                $out[sprintf('%04d-%02d', $row->prediction_year, $row->prediction_month)] = [(float) $row->rainfall, (float) $row->temperature_average];
+                ->orderBy('generated_at')->get(['prediction_year', 'prediction_month', 'rainfall', 'temperature_average', 'humidity', 'wind_speed']) as $row) {
+                $out[sprintf('%04d-%02d', $row->prediction_year, $row->prediction_month)] = [(float) $row->rainfall, (float) $row->temperature_average,
+                    is_numeric($row->humidity) ? (float) $row->humidity : null, is_numeric($row->wind_speed) ? (float) $row->wind_speed : null];
             }
 
             return $out;
@@ -191,6 +227,15 @@ final class YieldModelClimateWindow
             }
         } catch (Throwable $exception) {
             report($exception);   // a database outage keeps the station record
+        }
+        // Last: the Open-Meteo historical archive (ERA5 at Ambulong, owner decision 2026-11-20) only for months that
+        // neither the station file nor an entered record covers with the readings the model needs.
+        // Put on the station's scale first (the model was trained on Ambulong): OpenMeteoArchiveMonthly::calibrated().
+        foreach (\App\Services\Climate\OpenMeteoArchiveMonthly::calibrated(self::$station) as $key => $row) {
+            $have = $months[$key] ?? null;
+            if ($have === null || ! is_numeric($have->rainfall ?? null) || ! is_numeric($have->temperature ?? null)) {
+                $months[$key] = $row;
+            }
         }
 
         return $months;

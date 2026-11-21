@@ -2,13 +2,16 @@ import { test, expect } from '@playwright/test';
 
 // Critical authenticated page walk complements form/CRUD tests and covers tablet layouts.
 const cases = [
-    ['farmer', 'farmer@browser.test', ['/farmer/dashboard', '/farmer/my-farm', '/farmer/farms/create', '/farmer/planting-schedules/create', '/farmer/my-reports', '/planting-advisories', '/profile', '/notifications']],
-    ['mao', 'reviewer@browser.test', ['/mao/dashboard', '/mao/farmer-approvals', '/mao/farm-associations', '/mao/association-reports', '/mao/planner', '/mao/alerts', '/heat-map', '/reports', '/profile', '/notifications']],
+    ['farmer', 'farmer@browser.test', ['/farmer/dashboard', '/weather-predictions', '/heat-map', '/analysis/yield', '/calendar', '/farmer/my-farm', '/farmer/farms/create', '/farmer/planting-schedules/create', '/farmer/my-reports', '/planting-advisories', '/profile', '/notifications']],
+    ['mao', 'reviewer@browser.test', ['/mao/dashboard', '/mao/farmer-approvals', '/mao/farm-associations', '/mao/association-reports', '/mao/planner', '/mao/alerts', '/heat-map', '/weather-predictions', '/reports', '/profile', '/notifications']],
 ];
 for (const [role, email, routes] of cases) {
     test(`${role} protected pages render without runtime errors or horizontal overflow`, async ({ page }) => {
         const errors = [];
         page.on('pageerror', error => errors.push(error.message));
+        // Strict CSP (2026-11-20): any blocked script, handler or resource is a failure.
+        await page.addInitScript(() => document.addEventListener('securitypolicyviolation', e => console.error(`CSP ${e.effectiveDirective} ${e.blockedURI || 'inline'} ${e.sourceFile}:${e.lineNumber}`)));
+        page.on('console', message => { if (message.type() === 'error' && message.text().startsWith('CSP ')) errors.push(message.text()); });
         page.on('response', response => { if (response.url().startsWith(test.info().project.use.baseURL || '') && response.status() >= 500) errors.push(`${response.status()} ${response.url()}`); });
         await page.goto('/');
         await page.locator('#login-email').fill(email);
@@ -32,6 +35,10 @@ test('public HTTP boundary enforces CSRF and hides sensitive files', async ({ re
         const result = await request.get(path);
         expect([403, 404], path).toContain(result.status());
     }
+    const csp = (await request.get('/login')).headers()['content-security-policy'] || '';
+    expect(csp).toMatch(/script-src 'nonce-[A-Za-z0-9+\/=_-]+' 'strict-dynamic'/);
+    expect(csp).toContain("script-src-attr 'none'");
+    expect(csp).toContain("object-src 'none'");
     const dashboard = await request.get('/mao/dashboard', { maxRedirects: 0 });
     expect(dashboard.status()).toBe(302);
 });

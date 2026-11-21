@@ -122,6 +122,7 @@ class RiceYieldPredictionService
             'decision_support' => $decision,
             'api_error' => $engineResult['api_error'] ?? null,
             'missing_inputs' => $engineResult['missing_inputs'] ?? [],
+            'climate_sources' => $engineResult['climate_sources'] ?? [],
             'engine_result' => $engineResult,
         ];
 
@@ -155,7 +156,7 @@ class RiceYieldPredictionService
         }
 
         $result['predicted_yield_unvalidated'] = $result['predicted_yield'];
-        foreach (['yield_tons_per_hectare', 'predicted_yield_raw', 'predicted_yield', 'predicted_yield_tons_per_hectare', 'estimated_total_production_tons'] as $key) {
+        foreach (['yield_tons_per_hectare', 'predicted_yield_raw', 'predicted_yield', 'predicted_yield_tons_per_hectare', 'estimated_total_production_tons', 'confidence'] as $key) {
             $result[$key] = null;
         }
         $result['success'] = false;

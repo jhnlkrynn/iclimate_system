@@ -20,7 +20,7 @@
             <label>Search<input type="search" name="search" value="{{ $search }}" placeholder="Farmer name or email" maxlength="120"></label>
             <button class="btn btn-outline-primary btn-sm" type="submit">Search</button>
             <label>Barangay
-                <select name="barangay" onchange="this.form.submit()">
+                <select name="barangay" data-autosubmit>
                     <option value="">All</option>
                     @foreach ($barangays as $name)<option value="{{ $name }}" @selected($barangay === $name)>{{ $name }}</option>@endforeach
                 </select>

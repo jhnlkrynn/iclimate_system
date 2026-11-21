@@ -18,7 +18,7 @@
             @if (session('recovery_code'))
                 <p class="alert alert-warning" role="status">Recovery code: <strong data-recovery-code>{{ session('recovery_code') }}</strong>. It is shown only now.</p>
             @endif
-            <p class="small mb-2">Use this when the farmer cannot sign in or their password is not safe. First check that it is really them. The farmer enters the code at <strong>{{ route('account.recover') }}</strong>.</p>
+            <p class="small mb-2">Use this when the farmer cannot sign in or their password is not safe. First check that it is really them. The farmer enters the code at <strong>{{ route('password.reset', ['token' => 'code']) }}</strong>.</p>
             <form method="POST" action="{{ route('mao.farmer-approvals.recovery-code', $farmer) }}">
                 @csrf
                 <label for="verificationMethod" class="form-label">How you checked who they are</label>

@@ -400,7 +400,7 @@
             </div>
         </div>
     </div>
-    <script>
+    <script @nonce>
         document.addEventListener('DOMContentLoaded', () => {
             const wrap = document.querySelector('.msg-wrap');
             if (!wrap) return;
