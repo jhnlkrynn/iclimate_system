@@ -197,7 +197,6 @@ class DashboardController extends Controller
 
         return view('dashboards.farmer', [
             'f' => $payload,
-            'associationPrompt' => \App\Services\Farms\FarmAssociations::promptFor($request->user()),
         ]);
     }
 

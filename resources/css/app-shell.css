@@ -513,3 +513,11 @@ html[data-theme="dark"] body :is(.mfd-kicker, .mtd-kicker, .fh-kicker, .itd-kick
     html body.mobile-nav-open { overflow: hidden; }
     html body:has(.mobile-nav-shell) #icAiLauncher { bottom: calc(92px + env(safe-area-inset-bottom)); }
 }
+
+/* Language switch shows flags (layouts/partials/lang-flag.blade.php): the chosen one is clear, the other dimmed. */
+.ic-flag { display: block; width: 24px; height: 16px; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0, 0, 0, .18); }
+.ic-lang button, .mobile-more-language button { display: inline-flex; align-items: center; justify-content: center; }
+.ic-lang button[aria-pressed="false"] .ic-flag, .mobile-more-language button[aria-pressed="false"] .ic-flag { opacity: .55; filter: grayscale(.35); }
+.ic-lang button:hover .ic-flag, .mobile-more-language button:hover .ic-flag { opacity: 1; filter: none; }
+html body .mobile-more-language button { padding: 4px; border-radius: 6px; border: 1px solid transparent; }
+html body .mobile-more-language button[aria-pressed="true"] { border-color: var(--sage-300); background: var(--sage-50); }

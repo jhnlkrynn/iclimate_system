@@ -1,4 +1,4 @@
-{{-- Farmer Dashboard: "Is <farm> part of a farmers' association?" for one farm without an answer
+{{-- My Farm page (moved from the Farmer Dashboard): "Is <farm> part of a farmers' association?" for one farm without an answer
      (FarmAssociations::promptFarm), with the Add Farm choices: an association of that farm's barangay, "isn't listed"
      (goes to the MAO) or "not a member". "Later" hides it for 7 days (FarmAssociationPromptController). $prompt --}}
 @php
@@ -7,9 +7,9 @@
     $old = fn (string $key, $default = null) => (int) old('farm_id') === (int) $farm->id ? old($key, $default) : $default;
     $status = $old('association_status');
 @endphp
-<section class="fh-card fh-assoc" aria-labelledby="fhAssocTitle" data-association-prompt="{{ $farm->id }}">
-    <h2 id="fhAssocTitle" class="fh-assoc-title">{{ __('farms.association.prompt.title', ['name' => $farm->farm_name]) }}</h2>
-    <p class="fh-words">{{ __('farms.association.prompt.intro', ['barangay' => $farm->barangay ? \App\Services\Risk\HeatMapPanel::displayName($farm->barangay) : __('farms.no_barangay')]) }}</p>
+<section class="frec-panel fmf-no-print fh-assoc" aria-labelledby="fhAssocTitle" data-association-prompt="{{ $farm->id }}">
+    <div class="frec-panel-head"><h2 id="fhAssocTitle" class="fh-assoc-title">{{ __('farms.association.prompt.title', ['name' => $farm->farm_name]) }}</h2></div>
+    <p class="fad-m-small mb-0">{{ __('farms.association.prompt.intro', ['barangay' => $farm->barangay ? \App\Services\Risk\HeatMapPanel::displayName($farm->barangay) : __('farms.no_barangay')]) }}</p>
 
     @if ($errors->any() && (int) old('farm_id') === (int) $farm->id)
         <p class="fh-assoc-error" role="alert">{{ $errors->first() }}</p>
@@ -45,15 +45,15 @@
         </div>
 
         <div class="fh-assoc-actions">
-            <button type="submit" class="mfd-btn">{{ __('farms.association.prompt.save') }}</button>
-            <button type="submit" class="mfd-btn is-quiet" form="fhAssocLater">{{ __('farms.association.prompt.later') }}</button>
+            <button type="submit" class="fad-btn">{{ __('farms.association.prompt.save') }}</button>
+            <button type="submit" class="fad-btn is-quiet" form="fhAssocLater">{{ __('farms.association.prompt.later') }}</button>
         </div>
     </form>
     <form method="POST" action="{{ route('farmer.association-prompt.later') }}" id="fhAssocLater">@csrf</form>
 </section>
 <style>
     .fh-assoc { display: grid; gap: 10px; border: 2px solid var(--brand, var(--sage-700)); }
-    .fh-assoc-title { margin: 0; font-size: 1.25rem; line-height: 1.3; font-weight: 700; color: var(--ink, var(--palette-ink)); }
+    .fh-assoc-title { margin: 0; }
     .fh-assoc-form { display: grid; gap: 12px; }
     .fh-assoc-choices { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; }
     .fh-assoc-choice { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 10px 14px; border: 1px solid var(--sage-100); border-radius: 8px; background: #fff; font-weight: 600; cursor: pointer; }
@@ -66,7 +66,7 @@
     .fh-assoc-error { margin: 0; padding: 10px 12px; border-radius: 8px; background: #fdecea; color: #8a1f17; font-weight: 600; }
     .fh-assoc-actions { display: flex; flex-wrap: wrap; gap: 8px; }
     .fh-assoc [hidden] { display: none !important; }
-    @media (max-width: 480px) { .fh-assoc-actions .mfd-btn { flex: 1 1 100%; } }
+    @media (max-width: 480px) { .fh-assoc-actions .fad-btn { flex: 1 1 100%; } }
 </style>
 <script>
     (() => {
