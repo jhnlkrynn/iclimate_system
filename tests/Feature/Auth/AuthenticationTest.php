@@ -304,6 +304,39 @@ class AuthenticationTest extends TestCase
         $this->actingAs($farmer)->get(route('mao.dashboard'))->assertForbidden();
     }
 
+    public function test_mao_staff_can_not_open_the_farmer_dashboard(): void
+    {
+        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
+
+        $this->actingAs($mao)->get(route('farmer.dashboard'))->assertForbidden();
+        $this->actingAs($mao)->get(route('mao.dashboard'))->assertOk();
+    }
+
+    public function test_mao_account_stored_with_the_legacy_role_name_reaches_the_mao_dashboard(): void
+    {
+        // Live accounts are stored as "MAO Personnel" (the old enum value), not "mao".
+        $mao = User::factory()->create(['role' => 'MAO Personnel']);
+        $this->assertSame('MAO Personnel', $mao->getRawOriginal('role'));
+
+        $this->post('/login', ['email' => $mao->email, 'password' => 'password'])
+            ->assertRedirect(route('mao.dashboard', absolute: false));
+        $this->assertAuthenticatedAs($mao);
+        $this->get(route('mao.dashboard'))->assertOk();
+        $this->get(route('farmer.dashboard'))->assertForbidden();
+    }
+
+    public function test_farmer_account_stored_with_the_legacy_role_name_reaches_the_farmer_dashboard(): void
+    {
+        // Live accounts are stored as "Farmer" (the old enum value), not "farmer".
+        $farmer = User::factory()->create(['role' => 'Farmer']);
+        $this->assertSame('Farmer', $farmer->getRawOriginal('role'));
+
+        $this->post('/login', ['email' => $farmer->email, 'password' => 'password'])
+            ->assertRedirect(route('farmer.dashboard', absolute: false));
+        $this->assertAuthenticatedAs($farmer);
+        $this->get(route('mao.dashboard'))->assertForbidden();
+    }
+
     public function test_users_can_not_authenticate_with_invalid_password(): void
     {
         $user = User::factory()->create();
