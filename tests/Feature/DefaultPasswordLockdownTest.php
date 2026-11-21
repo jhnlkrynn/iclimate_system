@@ -98,16 +98,16 @@ class DefaultPasswordLockdownTest extends TestCase
         $this->assertTrue(Hash::check(self::DEFAULT, $user->fresh()->password), 'an attacker with the default cannot set a password');
     }
 
-    public function test_a_password_copied_to_several_accounts_is_refused_even_when_its_value_is_unknown(): void
+    public function test_two_accounts_with_matching_hashes_sign_in_while_flagged_accounts_require_change(): void
     {
         $hash = Hash::make('Some-Imported-Batch-1');
-        $first = User::factory()->farmer()->create(['password' => $hash, 'email' => 'batch-a@iclimate.local']);
-        User::query()->whereKey(User::factory()->farmer()->create()->id)->update(['password' => $hash]);
-        $own = User::factory()->farmer()->create(['password' => Hash::make('Only-Mine-2027!')]);
+        $first = User::factory()->farmer()->create(['password' => $hash, 'email' => 'batch-a@iclimate.local', 'must_change_password' => false]);
+        User::query()->whereKey(User::factory()->farmer()->create()->id)->update(['password' => $hash, 'must_change_password' => false]);
+        $flagged = User::factory()->farmer()->create(['password' => Hash::make('Flagged-Mine-2027!'), 'must_change_password' => true]);
 
-        $this->postJson('/api/mobile/login', ['email' => $first->email, 'password' => 'Some-Imported-Batch-1'])->assertStatus(409)->assertJsonPath('recovery_required', true);
-        $this->assertTrue((bool) $first->fresh()->must_change_password);
-        $this->postJson('/api/mobile/login', ['email' => $own->email, 'password' => 'Only-Mine-2027!'])->assertOk();
+        $this->postJson('/api/mobile/login', ['email' => $first->email, 'password' => 'Some-Imported-Batch-1'])->assertOk()->assertJsonPath('user.id', $first->id);
+        $this->assertFalse((bool) $first->fresh()->must_change_password);
+        $this->postJson('/api/mobile/login', ['email' => $flagged->email, 'password' => 'Flagged-Mine-2027!'])->assertStatus(409)->assertJsonPath('password_change_required', true);
     }
 
     public function test_reverb_channels_refuse_flagged_accounts(): void
@@ -283,5 +283,39 @@ class DefaultPasswordLockdownTest extends TestCase
         $this->post('/login', ['email' => $user->email, 'password' => self::DEFAULT]);
         $this->assertAuthenticatedAs($user);
         $this->assertFalse((bool) $user->fresh()->must_change_password, 'no account is changed until the rollout is approved');
+    }
+
+    public function test_two_normal_accounts_can_independently_use_identical_passwords_without_recovery_redirect(): void
+    {
+        $sharedPlain = 'MyOwnHarvest#2027!';
+        $identicalHash = Hash::make($sharedPlain);
+
+        $farmer = User::factory()->create([
+            'role' => User::ROLE_FARMER,
+            'status' => User::STATUS_ACTIVE,
+            'barangay' => 'Prenza',
+            'email' => 'farmer-same@gmail.com',
+            'password' => $identicalHash,
+            'must_change_password' => false,
+        ]);
+        $mao = User::factory()->create([
+            'role' => User::ROLE_MAO,
+            'status' => User::STATUS_ACTIVE,
+            'barangay' => 'Prenza',
+            'email' => 'mao-same@gmail.com',
+            'password' => $identicalHash,
+            'must_change_password' => false,
+        ]);
+
+        $this->post('/login', ['email' => $farmer->email, 'password' => $sharedPlain])
+            ->assertRedirect(route('farmer.dashboard', absolute: false));
+        $this->assertAuthenticatedAs($farmer);
+        $this->get(route('farmer.dashboard'))->assertOk();
+        $this->post('/logout');
+
+        $this->post('/login', ['email' => $mao->email, 'password' => $sharedPlain])
+            ->assertRedirect(route('mao.dashboard', absolute: false));
+        $this->assertAuthenticatedAs($mao);
+        $this->get(route('mao.dashboard'))->assertOk();
     }
 }

@@ -2,9 +2,9 @@
     {{-- Recovery for an account on a shared password (App\Services\Accounts\AccountRecovery). --}}
     <h1 class="text-lg font-semibold mb-2">Choose a new password</h1>
     @if (session('recovery') === 'email')
-        <p class="mb-4 text-sm" data-recovery="email">Your password is used by other accounts too, so it is not safe. We sent a link to your email. Open it to choose a new password. You can also ask the Municipal Agriculture Office for a code.</p>
+        <p class="mb-4 text-sm" data-recovery="email">This account requires password recovery before signing in. We sent a link to your email. Open it to choose a new password. You can also ask the Municipal Agriculture Office for a code.</p>
     @elseif (session('recovery') === 'mao')
-        <p class="mb-4 text-sm" data-recovery="mao">Your password is used by other accounts too, so it is not safe. Visit or call the Municipal Agriculture Office. After they check that it is you, they give you a code. Enter it below.</p>
+        <p class="mb-4 text-sm" data-recovery="mao">This account requires password recovery before signing in. Visit or call the Municipal Agriculture Office. After they check that it is you, they give you a code. Enter it below.</p>
     @else
         <p class="mb-4 text-sm">Enter the code from the Municipal Agriculture Office (or from your email link).</p>
     @endif
