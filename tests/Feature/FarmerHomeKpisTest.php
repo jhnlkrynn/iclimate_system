@@ -211,7 +211,9 @@ class FarmerHomeKpisTest extends TestCase
         $text = (string) preg_replace('/\s+/', ' ', html_entity_decode(strip_tags($m[1])));
         $this->assertStringContainsString('Farm size 1.5 ha Irrigated', $text);
         $this->assertStringContainsString('Days to harvest 30 days', $text);
-        $this->assertStringContainsString('href="'.route('farmer.my-farm').'"', $m[1]);
+        // A tile opens its summary panel on this page; it never links to another page (2026-11-22).
+        $this->assertStringNotContainsString('href=', $m[1]);
+        $this->assertStringContainsString('data-panel="farm-size"', $m[1]);
 
         $slots = $this->actingAs($farmer)->getJson(route('farmer.dashboard.live'))->assertOk()->json('slots');
         $this->assertStringContainsString('data-fh-kpi="crop"', $slots['kpis']);
@@ -246,16 +248,22 @@ class FarmerHomeKpisTest extends TestCase
         $this->assertSame('4.20 t/ha × 1.5 ha = 6.30 tons', $expected['rows']['Computation']);
         $this->assertSame(route('weather-predictions.index').'#yield', $expected['link']);
 
-        // On the page: the tile asks for the panel, its <template> is rendered with it (so the timed refresh keeps it
-        // current), and without scripts the tile's link is the full-details page, not My Farm.
+        // On the page: the tile is a button for its panel section, the one drawer holds that section (hidden until a
+        // card is clicked), and the section's "View full details" link is the planting plan, not My Farm.
         $html = $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk()->getContent();
-        $this->assertMatchesRegularExpression('#<a class="fh-kpi" href="'.preg_quote(route('farmer.planting-schedules.edit', $plan), '#').'" data-fh-kpi="crop"\s+data-fh-detail-open="kpi-crop" aria-haspopup="dialog"#', $html);
-        $this->assertSame(1, preg_match('#<template data-fh-detail="kpi-crop">(.*?)</template>#s', $html, $m));
+        $this->assertMatchesRegularExpression('#<button type="button" class="fh-kpi" data-fh-kpi="crop" data-panel="days-to-harvest" aria-haspopup="dialog" aria-controls="fhDrawer">#', $html);
+        $this->assertStringNotContainsString('<a class="fh-kpi"', $html);
+        $this->assertSame(1, substr_count($html, 'id="fhDrawer"'), 'one summary panel');
+        $this->assertSame(1, preg_match('#<div class="fh-drawer-body" data-panel-section="days-to-harvest" hidden>(.*?)</div>\s*(?=<div class="fh-drawer-body"|</div>\s*</div>)#s', $html, $m));
         $text = (string) preg_replace('/\s+/', ' ', html_entity_decode(strip_tags(str_replace('<', ' <', $m[1]))));
         $this->assertStringContainsString('Planting date Jul 28, 2026', $text);
         $this->assertStringContainsString('Expected harvest date Nov 5, 2026', $text);
+        $this->assertStringContainsString('Days left 30 days', $text);
+        $this->assertStringContainsString('href="'.route('farmer.planting-schedules.edit', $plan).'"', $m[1]);
         $this->assertStringContainsString('View full details', $text);
-        $this->assertStringContainsString('data-fh-drawer', $html);
+        $this->assertStringContainsString('data-panel-section="farm-size"', $html);
+        // The script that opens and closes it (with the page's CSP nonce when strict CSP is on).
+        $this->assertMatchesRegularExpression('#<script(?: nonce="[^"]+")?>\s*// The summary panel#', $html);
     }
 
     public function test_a_farmer_with_nothing_saved_still_gets_real_figures_about_their_place_and_no_empty_tiles(): void
