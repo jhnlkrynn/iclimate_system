@@ -812,6 +812,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware(['role:'.User::ROLE_MAO, 'throttle:20,1,get-model-evaluation'])
             ->name('model-evaluation.index');
 
+        Route::get(
+            'analysis/harvest-training',
+            [\App\Http\Controllers\HarvestTrainingController::class, 'index']
+        )
+            ->middleware(['role:'.User::ROLE_MAO])
+            ->name('analysis.harvest-training');
+
+        Route::get(
+            'analysis/harvest-training/export',
+            [\App\Http\Controllers\HarvestTrainingController::class, 'export']
+        )
+            ->middleware(['role:'.User::ROLE_MAO])
+            ->name('analysis.harvest-training.export');
+
 
         Route::post(
             'rice-yield-predictions/predict',

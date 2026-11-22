@@ -1170,6 +1170,11 @@ return [
             'yield_model_version' => 'Bersyon ng modelo',
             'yield_data_source' => 'Pinagmulan ng datos',
             'yield_missing' => 'Wala pang tantiya. Kulang na model input: :inputs.',
+            'yield_lian_card' => 'Tantiya para sa buong Lian, :season: :value t/ha (:compare)',
+            'yield_lian_note' => 'Panahon ng buong Lian ang gamit ng modelo, kaya pareho ang tantiya sa lahat ng barangay. Kailangan ng mas maraming lokal na tala ng ani para sa bawat barangay.',
+            'yield_compare_close' => 'malapit sa karaniwang :usual sa Lian',
+            'yield_compare_above' => 'mas mataas sa karaniwang :usual sa Lian',
+            'yield_compare_below' => 'mas mababa sa karaniwang :usual sa Lian',
         ],
         // End Manuscript – Naicel
     ],

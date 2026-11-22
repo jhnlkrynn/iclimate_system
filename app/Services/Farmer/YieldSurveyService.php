@@ -81,7 +81,20 @@ class YieldSurveyService
         }
 
         $predicted = $this->predictedFor($schedule);
-        $schedule->forceFill(['actual_yield' => round($actual, 2), 'progress_status' => 'Harvested'])->save();
+        $harvestedOn = $schedule->harvested_on ?? CarbonImmutable::now('Asia/Manila')->toDateString();
+        $farm = $schedule->farm_id ? \App\Models\Farm::query()->find($schedule->farm_id) : null;
+        $barangay = \App\Support\LianBarangays::canonicalName($schedule->barangay ?: $farm?->barangay);
+        $farmType = $schedule->farm_type ?: $farm?->farm_type;
+        $season = $schedule->season ?: ($schedule->planting_date ? RiceSeason::forDate($schedule->planting_date) : RiceSeason::forMonth((int) CarbonImmutable::parse($harvestedOn)->month));
+
+        $schedule->forceFill([
+            'actual_yield' => round($actual, 2),
+            'harvested_on' => $harvestedOn,
+            'progress_status' => 'Harvested',
+            'barangay' => $barangay ?? $schedule->barangay,
+            'farm_type' => $farmType ?? $schedule->farm_type,
+            'season' => $season,
+        ])->save();
 
         $existing = YieldPredictionFeedback::query()->where('farmer_planting_schedule_id', $schedule->id)->first();
         $answer = ['actual_yield' => round($actual, 2), 'harvested_on' => $schedule->harvested_on, 'submitted_at' => now()];
@@ -92,14 +105,12 @@ class YieldSurveyService
             return $existing;
         }
 
-        $season = $schedule->season ?: RiceSeason::forDate($schedule->planting_date);
-
         return YieldPredictionFeedback::query()->create($answer + [
             'user_id' => $schedule->user_id,
             'farm_id' => $schedule->farm_id,
             'farmer_planting_schedule_id' => $schedule->id,
             'season' => $season,
-            'season_year' => RiceSeason::window($schedule->planting_date)['start']->year,
+            'season_year' => RiceSeason::window($schedule->planting_date ?? CarbonImmutable::parse($harvestedOn))['start']->year,
             'barangay' => $schedule->barangay,
             'farm_type' => $schedule->farm_type,
             'predicted_yield' => $predicted['value'],

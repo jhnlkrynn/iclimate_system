@@ -130,6 +130,8 @@ class HeatMapYieldLayerTest extends TestCase
 
         $this->assertCount(19, $rows);
         $this->assertTrue((bool) $json->json('summary.all_close'));
+        $this->assertSame(4.1, $json->json('summary.lian_wide.t_ha'));
+        $this->assertSame('neutral', $rows['Humayingan']['level']);
         $this->assertSame(4.1, $rows['Humayingan']['yield']['t_ha']);
         $this->assertSame('Lian-wide estimate', $rows['Humayingan']['yield']['basis_label']);
         $this->assertSame('Lian-wide estimate', $rows['Cumba']['yield']['basis_label']);

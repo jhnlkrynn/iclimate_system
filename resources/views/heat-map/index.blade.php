@@ -16,7 +16,14 @@
         $riskLevels = ['low', 'moderate', 'high', 'severe'];   // panel revision 2.1
         $labels = collect([...$riskLevels, 'nodata'])->mapWithKeys(fn (string $l) => [$l => $t('level.'.$l)])->all();
         $hasNoData = collect($ranges)->except($layerKeys ?? [])->contains(fn (array $r) => $r['counts']['nodata'] > 0);   // Manuscript – Naicel: weekly ranges only
-        $mapData = ['levels' => $levels, 'colors' => $colors + ['flood_prone' => '#C62828', 'unavailable' => '#9CA3AF'], 'labels' => $labels, 'yours' => $t('your_barangay')];
+        $mapData = ['levels' => $levels, 'colors' => $colors + ['flood_prone' => '#C62828', 'unavailable' => '#9CA3AF', 'neutral' => '#7fa890'], 'labels' => $labels, 'yours' => $t('your_barangay')];
+        $mapData['yieldCopy'] = [
+            'card' => $t('layers.yield_lian_card'),
+            'note' => $t('layers.yield_lian_note'),
+            'close' => $t('layers.yield_compare_close'),
+            'above' => $t('layers.yield_compare_above'),
+            'below' => $t('layers.yield_compare_below'),
+        ];
         $mapData['versions'] = collect($ranges)->mapWithKeys(fn (array $r, string $key) => [$key => $r['updated_at'] ?? null])->all();
         // Panel revision 2.1: what the map tooltip / tap shows besides the name and level.
         $mapData['details'] = collect($ranges)->map(fn (array $r) => collect($r['barangays'])->map(fn (array $b) => ['factor' => $b['factor'] ?? null, 'impact' => $b['impact'] ?? null])->all())->all();

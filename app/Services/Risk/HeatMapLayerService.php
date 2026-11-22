@@ -54,7 +54,7 @@ final class HeatMapLayerService
                 $rows[] = $this->row($name, $level, $e['risk_score'] ?? null, [$e['risk_type'] ?? 'Stored agricultural risk'], $e['description'] ?? null);
             }
         } elseif ($layer === 'yield') {
-            [$rows, $data['updated_at'], $allClose] = $this->yieldRows($names, $period);
+            [$rows, $data['updated_at'], $allClose, $lianWide] = $this->yieldRows($names, $period);
             $source = 'Season yield estimate from the iClimate model and local adjustment, stored daily.';
         } else {
             $data = $this->layers->layers('en', $period)[$layer] ?? ['barangays' => [], 'updated_at' => null, 'source' => $source, 'labels' => []];
@@ -90,7 +90,7 @@ final class HeatMapLayerService
         }
         $counts = collect($rows)->countBy('level')->all();
         $standing = $layer === 'flood' ? (float) FarmerPlantingSchedule::query()->whereNull('harvested_on')->whereIn('barangay', collect($rows)->where('level', 'flood_prone')->pluck('name'))->sum('farm_area_hectares') : null;
-        return ['layer' => $layer, 'period' => $period, 'updated_at' => $data['updated_at'] ?? ($map['generated_at'] ?? null), 'source' => $source, 'summary' => ['count' => count($rows), 'levels' => $counts, 'standing_crop_hectares' => $standing, 'all_close' => $allClose ?? false], 'barangays' => $rows];
+        return ['layer' => $layer, 'period' => $period, 'updated_at' => $data['updated_at'] ?? ($map['generated_at'] ?? null), 'source' => $source, 'summary' => ['count' => count($rows), 'levels' => $counts, 'standing_crop_hectares' => $standing, 'all_close' => $allClose ?? false, 'lian_wide' => $lianWide ?? null], 'barangays' => $rows];
     }
 
     /**
@@ -120,6 +120,22 @@ final class HeatMapLayerService
             $allClose = $avg > 0 && (($max - $min) / $avg) <= 0.03;
         }
 
+        $lianWide = null;
+        if ($allClose && $numericValues->isNotEmpty()) {
+            $avgValue = round((float) $numericValues->avg(), 2);
+            $firstPrediction = collect($yields)->first(fn ($p) => is_numeric($p['predicted_yield'] ?? null));
+            $monthNum = is_string($firstPrediction['target_month'] ?? null) && strlen($firstPrediction['target_month']) >= 7
+                ? (int) substr($firstPrediction['target_month'], 5, 2)
+                : (int) now('Asia/Manila')->month;
+            $described = $seasonYield->describe($avgValue, $monthNum);
+            $lianWide = [
+                't_ha' => $avgValue,
+                'season' => $firstPrediction['season_label'] ?? null,
+                'usual' => $described['usual'],
+                'compare' => $described['compare'],
+            ];
+        }
+
         $rows = [];
         $newest = null;
         foreach ($names as $name) {
@@ -132,7 +148,7 @@ final class HeatMapLayerService
             if ($value === null) {
                 $class = 'none';
             } elseif ($allClose) {
-                $class = 'fair';
+                $class = 'neutral';
             } else {
                 $described = $seasonYield->describe($value, $targetMonthNum);
                 $class = match ($described['compare']) {
@@ -142,7 +158,7 @@ final class HeatMapLayerService
                 };
             }
 
-            $level = ['good' => 'low', 'fair' => 'moderate', 'low' => 'high', 'none' => 'unavailable'][$class];
+            $level = ['good' => 'low', 'fair' => 'moderate', 'low' => 'high', 'neutral' => 'neutral', 'none' => 'unavailable'][$class];
             $basis = $p['basis'] ?? null;
             $basisLabel = $value !== null ? ($p['basis_label'] ?? 'Lian-wide estimate') : 'No estimate yet';
             $row = $this->row($name, $level, $value, [$basisLabel], $basisLabel);
@@ -167,7 +183,7 @@ final class HeatMapLayerService
             $rows[] = $row;
         }
 
-        return [$rows, $newest, $allClose];
+        return [$rows, $newest, $allClose, $lianWide];
     }
 
     /** A stable id for a supported rice-farm barangay. */

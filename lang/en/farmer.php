@@ -1160,6 +1160,11 @@ return [
             'yield_model_version' => 'Model version',
             'yield_data_source' => 'Data source',
             'yield_missing' => 'No estimate yet. Missing model input(s): :inputs.',
+            'yield_lian_card' => 'Lian-wide estimate, :season: :value t/ha (:compare)',
+            'yield_lian_note' => 'The model uses Lian\'s weather, so all barangays share this estimate. Barangay-level estimates need more local harvest records.',
+            'yield_compare_close' => 'close to Lian\'s usual :usual',
+            'yield_compare_above' => 'above Lian\'s usual :usual',
+            'yield_compare_below' => 'below Lian\'s usual :usual',
         ],
         // End Manuscript – Naicel
     ],

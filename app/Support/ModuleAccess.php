@@ -27,7 +27,7 @@ class ModuleAccess
         'farmer_management' => ['Farmer Management', ['farmer-profiles.*', 'mao.farm-associations.*'], [self::M], []],
         'association_reporting' => ['Farmers Association Reporting', ['association-chairman.*', 'mao.association-reports.*'], [self::M, self::F], []],
         'impact_analysis' => ['Weather Impact Analysis', ['analysis.impact*'], [self::M], []],
-        'yield_prediction' => ['Yield Prediction', ['analysis.yield*', 'analysis.forecast*', 'model-evaluation.*'], [self::F, self::M], []],
+        'yield_prediction' => ['Yield Prediction', ['analysis.yield*', 'analysis.forecast*', 'analysis.harvest-training*', 'model-evaluation.*'], [self::F, self::M], []],
         'advisories' => ['Planting Advisory', ['planting-advisories.*', 'management.advisories.*', 'calendar.*'], [self::F, self::M], []],
         'alerts' => ['Advisory Notifications (send)', ['mao.alerts.*'], [self::M], []],
         'heat_map' => ['Heat Map', ['heat-map.*'], [self::F, self::M], []],

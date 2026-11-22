@@ -31,6 +31,7 @@
             ['analysis.yield', ['Yield Prediction', 'Taya ng Ani'], ['analysis.yield*'], [$farmerRole]],
             ['analysis.impact', 'Impact Analysis', ['analysis.impact*'], [$mao]],
             ['analysis.forecast', 'Yield Forecast', ['analysis.forecast*'], [$mao]],
+            ['analysis.harvest-training', 'Harvest records for model training', ['analysis.harvest-training*'], [$mao]],
             ['model-evaluation.index', 'Model Evaluation', ['model-evaluation.*'], [$mao]],
         ],
     ];
