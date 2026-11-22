@@ -3,6 +3,7 @@
 namespace App\Services\Farms;
 
 use App\Models\Farm;
+use App\Models\FarmerOrganization;
 use App\Models\FarmerProfile;
 use App\Models\User;
 use App\Support\ActiveFarm;
@@ -36,6 +37,12 @@ class FarmService
             $farm = new Farm(['user_id' => $user->getKey()]);
             $farm->fill($this->attributes($data, null));
             FarmAssociations::fill($farm, $data);
+            if ($farm->farm_type === null && $farm->farmer_organization_id !== null) {
+                $orgType = FarmerOrganization::query()->whereKey($farm->farmer_organization_id)->value('farm_type');
+                if (in_array($orgType, ['Irrigated', 'Rainfed'], true)) {
+                    $farm->farm_type = $orgType;
+                }
+            }
             $farm->farm_name = trim((string) ($data['farm_name'] ?? '')) ?: $this->defaultName($user);
             // The first farm is the primary farm; a farmer can change that later.
             $farm->is_primary = ! Farm::query()->ownedBy($user)->active()->where('is_primary', true)->exists();

@@ -24,7 +24,7 @@ class ModuleAccess
         'production_data' => ['Production Data Management', ['rice-productions.*', 'historical-rice-productions.*'], [self::M], []],
         'barangays' => ['Barangay / Location Management', ['mao.barangays.*'], [self::M], []],
         'account_requests' => ['Account Requests', ['mao.farmer-approvals.*'], [self::M], [self::M]],
-        'farmer_management' => ['Farmer Management', ['farmer-profiles.*', 'mao.farm-associations.*'], [self::M], []],
+        'farmer_management' => ['Farmer Management', ['farmer-profiles.*', 'mao.farm-associations.*', 'mao.associations.*'], [self::M], []],
         'association_reporting' => ['Farmers Association Reporting', ['association-chairman.*', 'mao.association-reports.*'], [self::M, self::F], []],
         'impact_analysis' => ['Weather Impact Analysis', ['analysis.impact*'], [self::M], []],
         'yield_prediction' => ['Yield Prediction', ['analysis.yield*', 'analysis.forecast*', 'analysis.harvest-training*', 'model-evaluation.*'], [self::F, self::M], []],

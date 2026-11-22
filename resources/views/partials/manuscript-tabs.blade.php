@@ -12,6 +12,7 @@
             ['mao.farmer-approvals.index', 'Account Requests', ['mao.farmer-approvals.*'], [$mao]],
             ['mao.farm-associations.index', 'Association Requests', ['mao.farm-associations.index'], [$mao]],
             ['mao.farm-associations.undeclared', 'Undeclared Farms', ['mao.farm-associations.undeclared*'], [$mao]],
+            ['mao.associations.farm-types.index', 'Association Farm Types', ['mao.associations.farm-types.*'], [$mao]],
         ],
         // Records: the two record lists keep their own tab row (crud.index); this one is for the Barangays page.
         'records' => [

@@ -23,6 +23,11 @@ class FarmerOrganization extends Model
         'name',
         'barangay',
         'farm_type',
+        'farm_type_source',
+        'farm_type_confirmed_at',
+        'farm_type_confirmed_by',
+        'registration_no',
+        'date_registered',
         'area_hectares',
         'farmer_count',
         'directory_key',
@@ -37,6 +42,8 @@ class FarmerOrganization extends Model
     protected $casts = [
         'area_hectares' => 'decimal:2',
         'farmer_count' => 'integer',
+        'date_registered' => 'date',
+        'farm_type_confirmed_at' => 'datetime',
         'contact_verified_at' => 'datetime',
         'confirmed_at' => 'datetime',
     ];

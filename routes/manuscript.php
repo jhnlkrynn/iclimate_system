@@ -60,6 +60,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('{user}/reject', [FarmerApprovalController::class, 'reject'])->whereNumber('user')->middleware('throttle:60,1,post-farmer-reject')->name('reject');
     });
 
+    Route::middleware('role:'.User::ROLE_MAO)->prefix('mao/associations')->name('mao.associations.')->group(function () {
+        Route::get('farm-types', [\App\Http\Controllers\MaoAssociationFarmTypeController::class, 'index'])->name('farm-types.index');
+        Route::post('{association}/farm-type', [\App\Http\Controllers\MaoAssociationFarmTypeController::class, 'update'])->whereNumber('association')->middleware('throttle:60,1,post-association-farm-type')->name('farm-types.update');
+    });
+
     // Association Requests (MAO): farms whose farmer's association "isn't listed" (FarmAssociationReviewController).
     Route::middleware('role:'.User::ROLE_MAO)->prefix('mao/farm-associations')->name('mao.farm-associations.')->group(function () {
         Route::get('/', [\App\Http\Controllers\FarmAssociationReviewController::class, 'index'])->name('index');

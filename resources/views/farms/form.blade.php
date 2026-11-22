@@ -127,6 +127,7 @@
             const barangay = form.querySelector('#barangay');
             const pick = box.querySelector('[data-association-select]');
             const status = box.querySelector('[data-association-status]');
+            const farmType = form.querySelector('#farm_type');
             let list = [];
             try { list = JSON.parse(box.querySelector('[data-association-list]').textContent) || []; } catch (e) { list = []; }
             const placeholder = pick.options[0].cloneNode(true);
@@ -154,6 +155,12 @@
 
             pick.addEventListener('change', () => {
                 status.value = pick.selectedOptions[0]?.dataset.associationStatus || '';
+                if (farmType && farmType.value === '' && status.value === 'member') {
+                    const selectedOrg = list.find((o) => String(o.id) === String(pick.value));
+                    if (selectedOrg && (selectedOrg.farm_type === 'Irrigated' || selectedOrg.farm_type === 'Rainfed')) {
+                        farmType.value = selectedOrg.farm_type;
+                    }
+                }
             });
 
             barangay.addEventListener('change', () => {

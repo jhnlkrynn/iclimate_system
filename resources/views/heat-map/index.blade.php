@@ -11,12 +11,22 @@
          page again a few times until it has. --}}
     @php
         $t = fn (string $key, array $replace = []) => trans('farmer.heat_map.'.$key, $replace, $locale);
-        $colors = \App\Services\Risk\HeatMapPanel::colors();   // panel revision 2.1: config/weather_risk.php
+        $colors = \App\Services\Risk\HeatMapPanel::colors() + [
+            'mostly_irrigated' => '#2E7D32',
+            'mixed' => '#D97706',
+            'mostly_rainfed' => '#0284C7',
+        ];   // panel revision 2.1: config/weather_risk.php + irrigation layer
         $levels = collect($ranges)->map(fn (array $r) => collect($r['barangays'])->map(fn (array $b) => $b['level'])->all())->all();
         $riskLevels = ['low', 'moderate', 'high', 'severe'];   // panel revision 2.1
         $labels = collect([...$riskLevels, 'nodata'])->mapWithKeys(fn (string $l) => [$l => $t('level.'.$l)])->all();
         $hasNoData = collect($ranges)->except($layerKeys ?? [])->contains(fn (array $r) => $r['counts']['nodata'] > 0);   // Manuscript – Naicel: weekly ranges only
         $mapData = ['levels' => $levels, 'colors' => $colors + ['flood_prone' => '#C62828', 'unavailable' => '#9CA3AF', 'neutral' => '#7fa890'], 'labels' => $labels, 'yours' => $t('your_barangay')];
+        $mapData['irrigationCopy'] = [
+            'irrigated_ha' => $t('layers.irrigation_irrigated_ha'),
+            'rainfed_ha' => $t('layers.irrigation_rainfed_ha'),
+            'no_record' => $t('layers.irrigation_no_record'),
+            'inferred_note' => $t('layers.irrigation_inferred_note'),
+        ];
         $mapData['yieldCopy'] = [
             'card' => $t('layers.yield_lian_card'),
             'note' => $t('layers.yield_lian_note'),
@@ -143,14 +153,24 @@
                         <h3 class="hmx-sub">{{ $t('all_barangays') }}</h3>
                         </div>
                         <ul class="hmx-list">
-                            @foreach (collect($r['barangays'])->sortBy(fn (array $b) => array_search($b['level'], ['severe', 'high', 'moderate', 'low', 'nodata'], true))->values() as $b)
+                            @foreach (collect($r['barangays'])->sortBy(fn (array $b) => array_search($b['level'], ['severe', 'high', 'mostly_irrigated', 'mixed', 'mostly_rainfed', 'moderate', 'low', 'nodata'], true))->values() as $b)
                                 <li><button type="button" class="hmx-row" data-heat-map-pick="{{ $b['barangay'] }}">
-                                    <span class="hmx-dot" style="--hmx-color: {{ $colors[$b['level']] }}"></span>
+                                    <span class="hmx-dot" style="--hmx-color: {{ $colors[$b['level']] ?? '#9CA3AF' }}"></span>
                                     <span class="hmx-row-name">{{ $b['name'] }}</span>
                                     <span class="hmx-row-level">{{ $b['label'] }}</span>
-                                </button></li>
+                                </button>
+                                @if ($key === 'irrigation' && ! empty($b['irrigation']['associations']))
+                                    <div class="hmx-hint ps-3 pb-2">
+                                        <div>{{ $t('layers.irrigation_irrigated_ha', ['ha' => number_format($b['irrigation']['irrigated_ha'], 2)]) }} · {{ $t('layers.irrigation_rainfed_ha', ['ha' => number_format($b['irrigation']['rainfed_ha'], 2)]) }}</div>
+                                        <div>{{ collect($b['irrigation']['associations'])->pluck('name')->implode(', ') }}</div>
+                                    </div>
+                                @endif
+                                </li>
                             @endforeach
                         </ul>
+                        @if ($key === 'irrigation' && ($r['has_inferred'] ?? false))
+                            <p class="hmx-source" data-heat-map-irrigation-inferred>{{ $t('layers.irrigation_inferred_note') }}</p>
+                        @endif
                         <x-updated-at :at="$r['updated_at']" :label="trans('farmer.home.updated', [], $locale)" :data-weather-fetched="($r['follows_fetch'] ?? false) ? 'barangays' : null" />
                         @if ($r['delayed'])
                             <p class="hmx-source" data-heat-map-delayed>{{ $t('delayed') }}</p>

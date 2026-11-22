@@ -133,10 +133,43 @@ export function initHeatMap() {
         }
         views = [...root.querySelectorAll('[data-heat-map-view]')];
     };
+    const renderIrrigationPanel = (view, payload) => {
+        const order = { mostly_irrigated: 0, mixed: 1, mostly_rainfed: 2, nodata: 3, unavailable: 3 };
+        const rows = (Array.isArray(payload.barangays) ? payload.barangays.slice() : [])
+            .sort((a, b) => (order[a.level] ?? 9) - (order[b.level] ?? 9) || String(a.name).localeCompare(String(b.name)));
+        const title = view.querySelector('.hmx-title')?.textContent || 'Irrigated and rainfed areas';
+        const counts = payload.summary?.levels || {};
+        const copy = data.irrigationCopy || {};
+        const countLines = ['mostly_irrigated', 'mixed', 'mostly_rainfed', 'nodata', 'unavailable']
+            .filter((level) => Number(counts[level]) > 0)
+            .map((level) => {
+                const mapped = level === 'unavailable' ? 'nodata' : level;
+                const label = labelOf(mapped) || rows.find((row) => row.level === level)?.label || mapped;
+                return `<li class="is-${escapeHtml(mapped)}"><span class="hmx-dot" style="--hmx-color:${escapeHtml(data.colors?.[mapped] || '#9CA3AF')}"></span>${escapeHtml(String(counts[level]))}: ${escapeHtml(label)}</li>`;
+            }).join('');
+        const list = rows.map((row) => {
+            const mapped = row.level === 'unavailable' ? 'nodata' : row.level;
+            const info = row.irrigation || null;
+            const assocNames = Array.isArray(info?.associations) ? info.associations.map((a) => a.name).filter(Boolean).join(', ') : '';
+            const irrText = (copy.irrigated_ha || ':ha ha irrigated').replace(':ha', Number(info?.irrigated_ha || 0).toFixed(2));
+            const rainText = (copy.rainfed_ha || ':ha ha rainfed').replace(':ha', Number(info?.rainfed_ha || 0).toFixed(2));
+            const sub = info && Array.isArray(info.associations) && info.associations.length > 0
+                ? `<div class="hmx-hint ps-3 pb-2"><div>${escapeHtml(irrText)} · ${escapeHtml(rainText)}</div><div>${escapeHtml(assocNames)}</div></div>`
+                : '';
+            return `<li><button type="button" class="hmx-row" data-heat-map-pick="${escapeHtml(row.name)}"><span class="hmx-dot" style="--hmx-color:${escapeHtml(data.colors?.[mapped] || '#9CA3AF')}"></span><span class="hmx-row-name">${escapeHtml(row.name)}</span><span class="hmx-row-level">${escapeHtml(labelOf(mapped) || row.label || mapped)}</span></button>${sub}</li>`;
+        }).join('');
+        const inferredNote = payload.summary?.has_inferred
+            ? `<p class="hmx-source" data-heat-map-irrigation-inferred>${escapeHtml(copy.inferred_note || 'Farm types marked as inferred come from federation area totals and are pending MAO confirmation.')}</p>`
+            : '';
+        const source = payload.source ? `<p class="hmx-source">${escapeHtml(payload.source)}</p>` : '';
+        view.innerHTML = `<h2 class="hmx-title">${escapeHtml(title)}</h2><div class="hmx-summary"><ul class="hmx-counts">${countLines}</ul><p class="hmx-hint">${rows.length} barangays</p></div><ul class="hmx-list">${list}</ul>${inferredNote}${source}`;
+        views = [...root.querySelectorAll('[data-heat-map-view]')];
+    };
     const renderApiPanel = (payload) => {
         const view = root.querySelector(`[data-heat-map-view="${range}:summary"]`);
         if (!view) return;
         if (range === 'yield') return renderYieldPanel(view, payload);
+        if (range === 'irrigation') return renderIrrigationPanel(view, payload);
         const rows = Array.isArray(payload.barangays) ? payload.barangays.slice() : [];
         const order = { flood_prone: 0, severe: 0, high: 0, moderate: 1, low: 2, unavailable: 3 };
         rows.sort((a, b) => (order[a.level] ?? 9) - (order[b.level] ?? 9) || String(a.name).localeCompare(String(b.name)));
