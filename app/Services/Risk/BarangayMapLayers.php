@@ -135,10 +135,10 @@ class BarangayMapLayers
                     ]),
                     'action' => $this->t('irrigation_action_data', $locale),
                     'also' => $assocLines,
-                    'numbers' => [
-                        $this->t('irrigation_irrigated_ha', $locale, ['ha' => number_format($info['irrigated_ha'], 2)]) => number_format($info['irrigated_ha'], 2).' ha',
-                        $this->t('irrigation_rainfed_ha', $locale, ['ha' => number_format($info['rainfed_ha'], 2)]) => number_format($info['rainfed_ha'], 2).' ha',
-                    ],
+                    'numbers' => array_filter([
+                        $info['irrigated_ha'] > 0 ? $this->t('irrigation_irrigated_ha', $locale, ['ha' => number_format($info['irrigated_ha'], 2)]) : null => $info['irrigated_ha'] > 0 ? number_format($info['irrigated_ha'], 2).' ha' : null,
+                        $info['rainfed_ha'] > 0 ? $this->t('irrigation_rainfed_ha', $locale, ['ha' => number_format($info['rainfed_ha'], 2)]) : null => $info['rainfed_ha'] > 0 ? number_format($info['rainfed_ha'], 2).' ha' : null,
+                    ], fn ($v): bool => $v !== null),
                     'irrigation' => [
                         'irrigated_ha' => $info['irrigated_ha'],
                         'rainfed_ha' => $info['rainfed_ha'],
@@ -170,7 +170,7 @@ class BarangayMapLayers
         foreach (LianBarangays::all() as $name) {
             $level = $levelOf($name);
             $counts[$level] = ($counts[$level] ?? 0) + 1;
-            $barangays[$name] = [
+            $barangays[$name] = array_merge([
                 'barangay' => $name,
                 'name' => HeatMapPanel::displayName($name),
                 'level' => $level,
@@ -178,7 +178,7 @@ class BarangayMapLayers
                 'also' => [],
                 'partial' => null,
                 'numbers' => [],
-            ] + $text($name, $level);
+            ], $text($name, $level));
         }
 
         return [
@@ -316,20 +316,14 @@ class BarangayMapLayers
             $rainfedHa = round((float) $orgs->where('farm_type', 'Rainfed')->sum('area_hectares'), 2);
             $totalHa = round($irrigatedHa + $rainfedHa, 2);
 
-            if ($totalHa > 0) {
-                $share = $irrigatedHa / $totalHa;
-                $level = $share >= 0.75 ? 'mostly_irrigated' : ($share > 0.25 ? 'mixed' : 'mostly_rainfed');
-            } else {
-                $irrigatedCount = $orgs->where('farm_type', 'Irrigated')->count();
-                $rainfedCount = $orgs->where('farm_type', 'Rainfed')->count();
-                $typedCount = $irrigatedCount + $rainfedCount;
-                if ($typedCount === 0) {
-                    $level = 'nodata';
-                } else {
-                    $share = $irrigatedCount / $typedCount;
-                    $level = $share >= 0.75 ? 'mostly_irrigated' : ($share > 0.25 ? 'mixed' : 'mostly_rainfed');
-                }
-            }
+            $hasIrrigated = $orgs->contains(fn (FarmerOrganization $o): bool => $o->farm_type === 'Irrigated');
+            $hasRainfed = $orgs->contains(fn (FarmerOrganization $o): bool => $o->farm_type === 'Rainfed');
+            $level = match (true) {
+                $hasIrrigated && $hasRainfed => 'irrigated_and_rainfed',
+                $hasIrrigated => 'irrigated',
+                $hasRainfed => 'rainfed',
+                default => 'nodata',
+            };
 
             $result[$name] = [
                 'level' => $level,

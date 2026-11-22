@@ -103,11 +103,34 @@ class FederationAssociationImportTest extends TestCase
             ->assertJsonPath('summary.has_inferred', true);
 
         $rows = collect($api->json('barangays'))->keyBy('name');
-        $this->assertSame('mostly_irrigated', $rows['Balibago']['level']);
-        $this->assertSame('mixed', $rows['San Diego']['level']);
-        $this->assertSame('mostly_rainfed', $rows['Luyahan']['level']);
+        $this->assertSame('irrigated', $rows['Balibago']['level']);
+        $this->assertSame('Irrigated', $rows['Balibago']['label']);
+        $this->assertSame('irrigated_and_rainfed', $rows['San Diego']['level']);
+        $this->assertSame('Irrigated and rainfed', $rows['San Diego']['label']);
+        $this->assertSame('rainfed', $rows['Luyahan']['level']);
+        $this->assertSame('Rainfed', $rows['Luyahan']['label']);
         $this->assertSame('nodata', $rows['Bagong Pook']['level']);
+        $this->assertSame('No record', $rows['Bagong Pook']['label']);
         $this->assertCount(10, $rows->where('level', 'nodata'));
+
+        // Non-zero area only on list rows; both on Irrigated and rainfed; detail shows each association with its farm type.
+        $heatMapPage = $this->actingAs($mao)->get(route('heat-map.index', ['range' => 'irrigation']))
+            ->assertOk()
+            ->getContent();
+        $this->assertStringContainsString('34.27 ha irrigated', $heatMapPage);
+        $this->assertStringNotContainsString('0.00 ha rainfed', $heatMapPage);
+        $this->assertStringContainsString('17.20 ha irrigated · 48.13 ha rainfed', $heatMapPage);
+        $this->assertStringNotContainsString('Mostly irrigated', $heatMapPage);
+        $this->assertStringNotContainsString('Mostly rainfed', $heatMapPage);
+
+        $detailHtml = $this->actingAs($mao)
+            ->getJson(route('heat-map.detail', ['range' => 'irrigation', 'barangay' => 'San Diego']))
+            ->assertOk()
+            ->json('html');
+        $this->assertStringContainsString('Samahan ng Gintong Pagasa Ng Magsasaka Ng Lian, Inc.', $detailHtml);
+        $this->assertStringContainsString('Tan-ag Farmers Association', $detailHtml);
+        $this->assertStringContainsString('Irrigated', $detailHtml);
+        $this->assertStringContainsString('Rainfed', $detailHtml);
 
         $this->actingAs($mao)->get(route('mao.associations.farm-types.index'))
             ->assertOk()

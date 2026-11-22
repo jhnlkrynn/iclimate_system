@@ -1178,9 +1178,9 @@ return [
             'irrigation' => 'Mga lugar na may patubig at umaasa sa ulan',
             'irrigation_title' => 'Mga lugar na may patubig at umaasa sa ulan',
             'irrigation_levels' => [
-                'mostly_irrigated' => 'Karamihan ay may patubig',
-                'mixed' => 'Halo (may patubig at ulan)',
-                'mostly_rainfed' => 'Karamihan ay umaasa sa ulan',
+                'irrigated' => 'May patubig',
+                'rainfed' => 'Umaasa sa ulan',
+                'irrigated_and_rainfed' => 'May patubig at umaasa sa ulan',
                 'nodata' => 'Walang tala',
             ],
             'irrigation_source' => 'Datos mula sa Lian Federation of Farmers Associations at mga tala ng MAO.',

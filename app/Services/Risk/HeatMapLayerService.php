@@ -223,8 +223,12 @@ final class HeatMapLayerService
                 $newest = max($newest ?? '', $iso);
             }
 
-            $detail = $info['associations'] !== []
-                ? number_format($info['irrigated_ha'], 2).' ha irrigated · '.number_format($info['rainfed_ha'], 2).' ha rainfed'
+            $areaParts = array_filter([
+                $info['irrigated_ha'] > 0 ? number_format($info['irrigated_ha'], 2).' ha irrigated' : null,
+                $info['rainfed_ha'] > 0 ? number_format($info['rainfed_ha'], 2).' ha rainfed' : null,
+            ]);
+            $detail = $areaParts !== []
+                ? implode(' · ', $areaParts)
                 : ($labels['nodata'] ?? 'No record');
 
             $row = $this->row($name, $level, $info['total_ha'], [$detail], $detail);

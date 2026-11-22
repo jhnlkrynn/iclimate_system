@@ -1168,9 +1168,9 @@ return [
             'irrigation' => 'Irrigated and rainfed areas',
             'irrigation_title' => 'Irrigated and rainfed areas',
             'irrigation_levels' => [
-                'mostly_irrigated' => 'Mostly irrigated',
-                'mixed' => 'Mixed',
-                'mostly_rainfed' => 'Mostly rainfed',
+                'irrigated' => 'Irrigated',
+                'rainfed' => 'Rainfed',
+                'irrigated_and_rainfed' => 'Irrigated and rainfed',
                 'nodata' => 'No record',
             ],
             'irrigation_source' => 'Lian Federation of Farmers Associations dataset and MAO association records.',

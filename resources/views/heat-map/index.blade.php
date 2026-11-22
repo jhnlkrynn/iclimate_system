@@ -12,9 +12,9 @@
     @php
         $t = fn (string $key, array $replace = []) => trans('farmer.heat_map.'.$key, $replace, $locale);
         $colors = \App\Services\Risk\HeatMapPanel::colors() + [
-            'mostly_irrigated' => '#2E7D32',
-            'mixed' => '#D97706',
-            'mostly_rainfed' => '#0284C7',
+            'irrigated' => '#485A42',
+            'rainfed' => '#0284C7',
+            'irrigated_and_rainfed' => '#D97706',
         ];   // panel revision 2.1: config/weather_risk.php + irrigation layer
         $levels = collect($ranges)->map(fn (array $r) => collect($r['barangays'])->map(fn (array $b) => $b['level'])->all())->all();
         $riskLevels = ['low', 'moderate', 'high', 'severe'];   // panel revision 2.1
@@ -153,15 +153,21 @@
                         <h3 class="hmx-sub">{{ $t('all_barangays') }}</h3>
                         </div>
                         <ul class="hmx-list">
-                            @foreach (collect($r['barangays'])->sortBy(fn (array $b) => array_search($b['level'], ['severe', 'high', 'mostly_irrigated', 'mixed', 'mostly_rainfed', 'moderate', 'low', 'nodata'], true))->values() as $b)
+                            @foreach (collect($r['barangays'])->sortBy(fn (array $b) => array_search($b['level'], ['severe', 'high', 'irrigated', 'irrigated_and_rainfed', 'rainfed', 'moderate', 'low', 'nodata'], true))->values() as $b)
                                 <li><button type="button" class="hmx-row" data-heat-map-pick="{{ $b['barangay'] }}">
                                     <span class="hmx-dot" style="--hmx-color: {{ $colors[$b['level']] ?? '#9CA3AF' }}"></span>
                                     <span class="hmx-row-name">{{ $b['name'] }}</span>
                                     <span class="hmx-row-level">{{ $b['label'] }}</span>
                                 </button>
                                 @if ($key === 'irrigation' && ! empty($b['irrigation']['associations']))
+                                    @php
+                                        $areaParts = array_filter([
+                                            ($b['irrigation']['irrigated_ha'] ?? 0) > 0 ? $t('layers.irrigation_irrigated_ha', ['ha' => number_format($b['irrigation']['irrigated_ha'], 2)]) : null,
+                                            ($b['irrigation']['rainfed_ha'] ?? 0) > 0 ? $t('layers.irrigation_rainfed_ha', ['ha' => number_format($b['irrigation']['rainfed_ha'], 2)]) : null,
+                                        ]);
+                                    @endphp
                                     <div class="hmx-hint ps-3 pb-2">
-                                        <div>{{ $t('layers.irrigation_irrigated_ha', ['ha' => number_format($b['irrigation']['irrigated_ha'], 2)]) }} · {{ $t('layers.irrigation_rainfed_ha', ['ha' => number_format($b['irrigation']['rainfed_ha'], 2)]) }}</div>
+                                        @if ($areaParts !== [])<div>{{ implode(' · ', $areaParts) }}</div>@endif
                                         <div>{{ collect($b['irrigation']['associations'])->pluck('name')->implode(', ') }}</div>
                                     </div>
                                 @endif

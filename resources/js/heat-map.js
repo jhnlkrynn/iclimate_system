@@ -134,13 +134,13 @@ export function initHeatMap() {
         views = [...root.querySelectorAll('[data-heat-map-view]')];
     };
     const renderIrrigationPanel = (view, payload) => {
-        const order = { mostly_irrigated: 0, mixed: 1, mostly_rainfed: 2, nodata: 3, unavailable: 3 };
+        const order = { irrigated: 0, irrigated_and_rainfed: 1, rainfed: 2, nodata: 3, unavailable: 3 };
         const rows = (Array.isArray(payload.barangays) ? payload.barangays.slice() : [])
             .sort((a, b) => (order[a.level] ?? 9) - (order[b.level] ?? 9) || String(a.name).localeCompare(String(b.name)));
         const title = view.querySelector('.hmx-title')?.textContent || 'Irrigated and rainfed areas';
         const counts = payload.summary?.levels || {};
         const copy = data.irrigationCopy || {};
-        const countLines = ['mostly_irrigated', 'mixed', 'mostly_rainfed', 'nodata', 'unavailable']
+        const countLines = ['irrigated', 'irrigated_and_rainfed', 'rainfed', 'nodata', 'unavailable']
             .filter((level) => Number(counts[level]) > 0)
             .map((level) => {
                 const mapped = level === 'unavailable' ? 'nodata' : level;
@@ -151,10 +151,15 @@ export function initHeatMap() {
             const mapped = row.level === 'unavailable' ? 'nodata' : row.level;
             const info = row.irrigation || null;
             const assocNames = Array.isArray(info?.associations) ? info.associations.map((a) => a.name).filter(Boolean).join(', ') : '';
-            const irrText = (copy.irrigated_ha || ':ha ha irrigated').replace(':ha', Number(info?.irrigated_ha || 0).toFixed(2));
-            const rainText = (copy.rainfed_ha || ':ha ha rainfed').replace(':ha', Number(info?.rainfed_ha || 0).toFixed(2));
+            const areaParts = [];
+            if (Number(info?.irrigated_ha || 0) > 0) {
+                areaParts.push((copy.irrigated_ha || ':ha ha irrigated').replace(':ha', Number(info.irrigated_ha).toFixed(2)));
+            }
+            if (Number(info?.rainfed_ha || 0) > 0) {
+                areaParts.push((copy.rainfed_ha || ':ha ha rainfed').replace(':ha', Number(info.rainfed_ha).toFixed(2)));
+            }
             const sub = info && Array.isArray(info.associations) && info.associations.length > 0
-                ? `<div class="hmx-hint ps-3 pb-2"><div>${escapeHtml(irrText)} · ${escapeHtml(rainText)}</div><div>${escapeHtml(assocNames)}</div></div>`
+                ? `<div class="hmx-hint ps-3 pb-2">${areaParts.length > 0 ? `<div>${escapeHtml(areaParts.join(' · '))}</div>` : ''}<div>${escapeHtml(assocNames)}</div></div>`
                 : '';
             return `<li><button type="button" class="hmx-row" data-heat-map-pick="${escapeHtml(row.name)}"><span class="hmx-dot" style="--hmx-color:${escapeHtml(data.colors?.[mapped] || '#9CA3AF')}"></span><span class="hmx-row-name">${escapeHtml(row.name)}</span><span class="hmx-row-level">${escapeHtml(labelOf(mapped) || row.label || mapped)}</span></button>${sub}</li>`;
         }).join('');
