@@ -22,13 +22,40 @@ class Phase4AnalysisTest extends TestCase
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
         $response = $this->actingAs($mao)->get(route('analysis.weather'))->assertOk();
-        $response->assertSee('waRainfallChart', false)->assertSee('waWindChart', false)
+        $response->assertSee('waRainfallChart', false)->assertSee('waWindTable', false)
+            ->assertSee('data-wa-range-toggle', false)
+            ->assertSee('What does this mean?')
             ->assertSee('data-season-comparison', false)->assertSee('data-climate-indicators', false)
             ->assertSee('data-manuscript-tabs="analysis"', false);
 
         $this->assertSame(2020, $response->viewData('fromYear'));
         $this->assertGreaterThan(0, $response->viewData('count'));
         $this->assertSame(2020, (int) substr($response->viewData('chart')['labels'][0], -4));
+    }
+
+    public function test_usual_year_averages_and_summary_sentences(): void
+    {
+        $service = app(WeatherAnalysisService::class);
+        $months = collect([
+            (object) ['key' => '2023-09', 'year' => 2023, 'month' => 9, 'season' => 'Wet', 'rainfall' => 300.0, 'temperature' => 28.0, 'humidity' => 84.0, 'wind_speed' => 1.5],
+            (object) ['key' => '2024-09', 'year' => 2024, 'month' => 9, 'season' => 'Wet', 'rainfall' => 400.0, 'temperature' => 28.4, 'humidity' => 86.0, 'wind_speed' => 1.7],
+            (object) ['key' => '2025-05', 'year' => 2025, 'month' => 5, 'season' => 'Wet', 'rainfall' => 120.0, 'temperature' => 30.2, 'humidity' => 76.0, 'wind_speed' => 1.2],
+            (object) ['key' => '2025-09', 'year' => 2025, 'month' => 9, 'season' => 'Wet', 'rainfall' => 712.0, 'temperature' => 28.2, 'humidity' => 88.0, 'wind_speed' => 2.6],
+        ]);
+
+        $comp = $service->usualYearComparison($months, 2025);
+        $this->assertSame(712.0, $comp['rainfall']['current'][8]);
+        $this->assertSame(350.0, $comp['rainfall']['usual'][8]);
+
+        $rainSentence = $service->summarySentence('rainfall', $comp['rainfall'], 'en');
+        $this->assertSame('September was the rainiest month: 712 mm, about twice the usual.', $rainSentence);
+
+        $tempSentence = $service->summarySentence('temperature', $comp['temperature'], 'en');
+        $this->assertSame('Hottest month: May, 30.2 °C, close to usual.', $tempSentence);
+
+        $filRain = $service->summarySentence('rainfall', $comp['rainfall'], 'fil');
+        $this->assertStringContainsString('Setyembre', $filRain);
+        $this->assertStringContainsString('712 mm', $filRain);
     }
 
     public function test_filters_by_year_season_and_month(): void
@@ -47,7 +74,8 @@ class Phase4AnalysisTest extends TestCase
 
         $this->actingAs($farmer)->get(route('analysis.weather'))->assertOk()
             ->assertSee('Pagsusuri ng Panahon')->assertSee('Tag-ulan laban sa tag-araw')
-            ->assertDontSee('data-climate-indicators', false);
+            ->assertDontSee('data-climate-indicators', false)
+            ->assertDontSee('waWindTable', false);
         $this->actingAs($farmer)->get(route('weather-predictions.index'))->assertOk()->assertSee('href="'.route('analysis.weather').'"', false);
     }
 

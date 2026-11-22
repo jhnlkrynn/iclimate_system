@@ -126,6 +126,130 @@ class WeatherAnalysisService
     }
 
     /**
+     * Twelve monthly slots (Jan–Dec) comparing the focus period ("this year" or "last 3 years")
+     * against the usual year (average of all past years before the focus year).
+     *
+     * @return array<string, array{current: list<float|null>, usual: list<float|null>, focus_year: int}>
+     */
+    public function usualYearComparison(Collection $allMonths, int $focusYear, string $range = 'this_year', ?string $season = null, ?int $month = null): array
+    {
+        $filtered = $this->filter($allMonths, null, $season, $month);
+        $past = $filtered->filter(fn (object $m): bool => $m->year < $focusYear);
+        $currentRows = $range === 'last_3_years'
+            ? $filtered->filter(fn (object $m): bool => $m->year >= $focusYear - 2 && $m->year <= $focusYear)
+            : $filtered->filter(fn (object $m): bool => $m->year === $focusYear);
+
+        $out = [];
+        foreach (['rainfall', 'temperature', 'humidity'] as $var) {
+            $current = [];
+            $usual = [];
+            for ($m = 1; $m <= 12; $m++) {
+                $cVals = $currentRows->where('month', $m)->pluck($var)->filter(fn ($v) => $v !== null);
+                $uVals = $past->where('month', $m)->pluck($var)->filter(fn ($v) => $v !== null);
+                $current[] = $cVals->isEmpty() ? null : round((float) $cVals->avg(), 1);
+                $usual[] = $uVals->isEmpty() ? null : round((float) $uVals->avg(), 1);
+            }
+            $out[$var] = ['current' => $current, 'usual' => $usual, 'focus_year' => $focusYear];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Plain-language one-sentence summary of the focus period vs usual year for one variable.
+     *
+     * @param  array{current: list<float|null>, usual: list<float|null>}  $series
+     */
+    public function summarySentence(string $variable, array $series, string $locale = 'en'): string
+    {
+        $current = $series['current'] ?? [];
+        $usual = $series['usual'] ?? [];
+        $peakIdx = null;
+        $peakVal = null;
+
+        foreach ($current as $idx => $val) {
+            if ($val !== null && ($peakVal === null || $val > $peakVal)) {
+                $peakVal = (float) $val;
+                $peakIdx = $idx;
+            }
+        }
+
+        if ($peakIdx === null || $peakVal === null) {
+            return __('weather_analysis.summary_none', [], $locale);
+        }
+
+        $monthName = __('weather_analysis.month_names', [], $locale)[$peakIdx + 1] ?? (string) ($peakIdx + 1);
+        $usualVal = $usual[$peakIdx] ?? null;
+        $formatted = rtrim(rtrim(number_format($peakVal, 1), '0'), '.');
+
+        if ($variable === 'rainfall') {
+            $compKey = 'cmp_close';
+            if ($usualVal !== null && $usualVal > 0) {
+                $ratio = $peakVal / (float) $usualVal;
+                $compKey = match (true) {
+                    $ratio >= 1.75 => 'cmp_twice',
+                    $ratio >= 1.2 => 'cmp_above',
+                    $ratio <= 0.8 => 'cmp_below',
+                    default => 'cmp_close',
+                };
+            }
+
+            return __('weather_analysis.summary_rainfall', [
+                'month' => $monthName,
+                'value' => $formatted,
+                'comparison' => __('weather_analysis.'.$compKey, [], $locale),
+            ], $locale);
+        }
+
+        if ($variable === 'temperature') {
+            $compKey = 'cmp_close';
+            if ($usualVal !== null) {
+                $diff = $peakVal - (float) $usualVal;
+                $compKey = $diff >= 0.8 ? 'cmp_warmer' : ($diff <= -0.8 ? 'cmp_cooler' : 'cmp_close');
+            }
+
+            return __('weather_analysis.summary_temperature', [
+                'month' => $monthName,
+                'value' => number_format($peakVal, 1),
+                'comparison' => __('weather_analysis.'.$compKey, [], $locale),
+            ], $locale);
+        }
+
+        $compKey = 'cmp_close';
+        if ($usualVal !== null) {
+            $diff = $peakVal - (float) $usualVal;
+            $compKey = $diff >= 4.0 ? 'cmp_higher' : ($diff <= -4.0 ? 'cmp_lower' : 'cmp_close');
+        }
+
+        return __('weather_analysis.summary_humidity', [
+            'month' => $monthName,
+            'value' => $formatted,
+            'comparison' => __('weather_analysis.'.$compKey, [], $locale),
+        ], $locale);
+    }
+
+    /**
+     * Categorizes months with wind readings into Calm / Breezy / Windy for MAO staff.
+     *
+     * @return array<string, array{count: int, months: list<string>}>
+     */
+    public function windSummary(Collection $months): array
+    {
+        $label = fn (object $m) => date('M Y', mktime(0, 0, 0, $m->month, 1, $m->year));
+        $withWind = $months->filter(fn (object $m): bool => $m->wind_speed !== null);
+
+        $calm = $withWind->filter(fn (object $m): bool => $m->wind_speed < 1.5)->map($label)->values()->all();
+        $breezy = $withWind->filter(fn (object $m): bool => $m->wind_speed >= 1.5 && $m->wind_speed < 2.5)->map($label)->values()->all();
+        $windy = $withWind->filter(fn (object $m): bool => $m->wind_speed >= 2.5)->map($label)->values()->all();
+
+        return [
+            'calm' => ['count' => count($calm), 'months' => array_slice($calm, -6)],
+            'breezy' => ['count' => count($breezy), 'months' => array_slice($breezy, -6)],
+            'windy' => ['count' => count($windy), 'months' => array_slice($windy, -6)],
+        ];
+    }
+
+    /**
      * Months that have both a yield record and climate readings: the yield beside the same month's readings and the
      * average of the three months up to it (the growing period before harvest).
      *

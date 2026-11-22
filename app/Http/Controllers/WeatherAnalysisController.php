@@ -40,18 +40,34 @@ class WeatherAnalysisController extends Controller
         $season = in_array($request->query('season'), [RiceSeason::WET, RiceSeason::DRY], true) ? $request->query('season') : null;
         $month = (int) $request->query('month') >= 1 && (int) $request->query('month') <= 12 ? (int) $request->query('month') : null;
 
+        $range = in_array($request->query('range'), ['this_year', 'last_3_years', 'all_years'], true)
+            ? (string) $request->query('range')
+            : ($year !== null ? 'all_years' : 'this_year');
+        $focusYear = $year ?? (int) ($years->last() ?? now('Asia/Manila')->year);
+
         $shown = $this->analysis->filter($all, $year, $season, $month, $year ? null : $fromYear);
         $label = fn (object $m) => (__('weather_analysis.month_names')[$m->month] ? mb_substr(__('weather_analysis.month_names')[$m->month], 0, 3) : $m->month).' '.$m->year;
         $sources = $shown->pluck('source')->filter()->unique()->values();
 
+        $comparison = $this->analysis->usualYearComparison($all, $focusYear, $range, $season, $month);
+        $summaries = [];
+        foreach (['rainfall', 'temperature', 'humidity'] as $var) {
+            $summaries[$var] = $this->analysis->summarySentence($var, $comparison[$var], $locale);
+        }
+
         return view('analysis.weather', [
             'isFarmer' => $farmer,
             'locale' => $locale,
+            'range' => $range,
+            'focusYear' => $focusYear,
             'years' => $years->filter(fn ($y) => $y >= $fromYear)->values(),
             'fromYear' => $fromYear,
             'toYear' => $years->last(),
             'filters' => ['year' => $year, 'season' => $season, 'month' => $month],
             'count' => $shown->count(),
+            'comparison' => $comparison,
+            'summaries' => $summaries,
+            'windSummary' => $farmer ? null : $this->analysis->windSummary($shown),
             'chart' => [
                 'labels' => $shown->map($label)->all(),
                 'rainfall' => $shown->pluck('rainfall')->all(),
