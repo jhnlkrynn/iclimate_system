@@ -1,12 +1,6 @@
 {{-- Profile photo: shown in the top bar's account button; without one, the initials show. --}}
 <section class="ic-photo-form" aria-labelledby="profilePhotoTitle">
-    <div class="ic-photo-current" aria-hidden="true">
-        @if ($user->avatarUrl())
-            <img src="{{ $user->avatarUrl() }}" alt="">
-        @else
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8.5" r="3.6" fill="currentColor"/><path d="M4.8 20c.9-3.9 3.6-6.1 7.2-6.1s6.3 2.2 7.2 6.1" fill="currentColor"/></svg>
-        @endif
-    </div>
+    <x-user-avatar :user="$user" :size="64" class="ic-photo-current" />
     <div class="ic-photo-body">
         <h2 id="profilePhotoTitle" class="ic-photo-title">Profile photo</h2>
         <p class="ic-photo-hint">A square JPG, PNG or WebP image, up to 2 MB. It appears at the top right of every page.</p>

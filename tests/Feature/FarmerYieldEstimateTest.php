@@ -84,7 +84,7 @@ class FarmerYieldEstimateTest extends TestCase
     /** The yield card's visible words. */
     private function card(string $html): string
     {
-        $this->assertSame(1, preg_match('#<section class="fh-card"[^>]*data-fh-harvest[^>]*>(.*?)</section>#s', $html, $m), 'yield card');
+        $this->assertSame(1, preg_match('#<section class="fh-card[^"]*"[^>]*data-fh-harvest[^>]*>(.*?)</section>#s', $html, $m), 'yield card');
 
         return trim((string) preg_replace('/\s+/', ' ', html_entity_decode(strip_tags($m[1]))));
     }

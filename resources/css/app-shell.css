@@ -617,13 +617,49 @@ html body .topbar.ic-topbar .ic-lang button[aria-pressed="true"] { border-color:
 html body .topbar.ic-topbar .ic-lang button:focus-visible { outline: 2px solid var(--sage-500) !important; outline-offset: 2px; }
 
 /* Menu, Bell (24px icon), Avatar (40px) */
+.ic-user-avatar {
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: var(--ic-avatar-size, 40px);
+    height: var(--ic-avatar-size, 40px);
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--sage-100);
+    color: var(--sage-800);
+    border: 1px solid var(--sage-200);
+}
+.ic-user-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ic-user-avatar-initials { font-size: 15px; font-weight: 600; line-height: 1; letter-spacing: 0.01em; }
+.ic-avatar-inner { border: 0 !important; width: 100%; height: 100%; }
+
 html body .topbar.ic-topbar .ic-icon-btn { width: 40px; height: 40px; min-width: 40px; min-height: 40px; border-radius: 8px; color: var(--sage-700) !important; background: transparent; }
 html body .topbar.ic-topbar .ic-icon-btn[data-ic-notifications] > svg { width: 24px; height: 24px; }
 html body .topbar.ic-topbar .ic-icon-btn:hover { background: var(--sage-50) !important; color: var(--sage-900) !important; }
-html body .topbar.ic-topbar .ic-icon-btn:focus-visible,
-html body .topbar.ic-topbar .ic-avatar-btn:focus-visible { outline: 2px solid var(--sage-500) !important; outline-offset: 2px; }
+html body .topbar.ic-topbar .ic-icon-btn:focus-visible { outline: 2px solid var(--sage-500) !important; outline-offset: 2px; }
 html body .topbar.ic-topbar .ic-icon-btn .topbar-bell-badge { top: 2px; right: 2px; min-width: 16px; height: 16px; padding: 0 4px; border-color: #fff; font-size: 10px; }
-html body .topbar.ic-topbar .ic-avatar-btn { width: 40px !important; height: 40px !important; min-width: 40px !important; min-height: 40px !important; flex: none; margin-left: 0; border: 1px solid var(--sage-200); background: var(--sage-100); color: var(--sage-800); }
+html body .topbar.ic-topbar .ic-avatar-btn {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    flex: none;
+    margin-left: 0;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid var(--sage-200) !important;
+    background: var(--sage-100) !important;
+    color: var(--sage-800) !important;
+    font-size: 15px;
+    font-weight: 600;
+    transition: box-shadow .15s ease, border-color .15s ease;
+}
+html body .topbar.ic-topbar .ic-avatar-btn:hover,
+html body .topbar.ic-topbar .ic-avatar-btn:focus-visible {
+    border-color: var(--sage-300) !important;
+    box-shadow: 0 0 0 3px var(--sage-300) !important;
+    outline: none !important;
+}
 
 @media (max-width: 767.98px) {
     html body .topbar.ic-topbar,
