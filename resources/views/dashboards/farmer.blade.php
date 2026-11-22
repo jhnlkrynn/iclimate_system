@@ -87,6 +87,7 @@
         <div class="fh-drawer" id="fhDrawer" data-fh-drawer hidden>
             <div class="fh-drawer-backdrop" data-fh-drawer-close></div>
             <div class="fh-drawer-panel" role="dialog" aria-modal="true" tabindex="-1" data-fh-drawer-panel>
+                <div class="fh-drawer-handle" aria-hidden="true"></div>
                 <button type="button" class="fh-drawer-x" data-fh-drawer-close aria-label="{{ __('farmer.kpis.detail.close') }}">
                     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
                 </button>

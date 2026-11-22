@@ -1345,6 +1345,7 @@ return [
             ],
             'crop' => 'Crop / variety',
             'rice' => 'Rice',
+            'rice_no_variety' => 'Rice (no variety chosen)',
             'planting_date' => 'Planting date',
             'harvest_date' => 'Expected harvest date',
             'days_left' => 'Days left',
@@ -1353,7 +1354,8 @@ return [
             'harvest_basis' => [
                 'manual' => 'You set this harvest date yourself in your planting plan.',
                 'variety' => 'The harvest date is worked out from the planting date and how many days this variety usually takes to grow.',
-                'plan' => 'The harvest date comes from your planting plan.',
+                'variety_maturity' => 'Based on :variety\'s days to maturity (:season season, :method).',
+                'plan' => 'Based on your planting plan (:days-day default).',
                 'month' => 'Only the harvest month is known, so the end of that month is used.',
             ],
             'estimated_tons' => 'Estimated harvest',

@@ -1355,6 +1355,7 @@ return [
             ],
             'crop' => 'Pananim / barayti',
             'rice' => 'Palay',
+            'rice_no_variety' => 'Palay (walang napiling barayti)',
             'planting_date' => 'Petsa ng pagtatanim',
             'harvest_date' => 'Inaasahang petsa ng ani',
             'days_left' => 'Natitirang araw',
@@ -1363,7 +1364,8 @@ return [
             'harvest_basis' => [
                 'manual' => 'Ikaw mismo ang naglagay ng petsang ito ng ani sa plano mo sa pagtatanim.',
                 'variety' => 'Kinuwenta ang petsa ng ani mula sa petsa ng pagtatanim at sa karaniwang bilang ng araw ng paglaki ng barayting ito.',
-                'plan' => 'Ang petsa ng ani ay mula sa plano mo sa pagtatanim.',
+                'variety_maturity' => 'Batay sa tagal ng paglaki ng :variety (panahon ng :season, :method).',
+                'plan' => 'Batay sa plano mo sa pagtatanim (karaniwang :days araw).',
                 'month' => 'Buwan lang ng ani ang alam, kaya ang huling araw ng buwang iyon ang ginamit.',
             ],
             'estimated_tons' => 'Tantiyang ani',

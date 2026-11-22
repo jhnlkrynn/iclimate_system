@@ -216,16 +216,25 @@ class FarmerHomeKpis
         $long = fn (CarbonImmutable $d): string => $d->locale(app()->getLocale())->translatedFormat('M j, Y');
         // The summary panel: the crop, its two dates, and where the harvest date comes from.
         $facts = fn (array $more): array => [
-            __('farmer.kpis.detail.crop') => $variety ? __('farmer.kpis.detail.rice').' · '.$variety : __('farmer.kpis.detail.rice'),
+            __('farmer.kpis.detail.crop') => $variety ? __('farmer.kpis.detail.rice').' · '.$variety : __('farmer.kpis.detail.rice_no_variety'),
             __('farmer.kpis.detail.planting_date') => $long($planted),
             __('farmer.kpis.detail.harvest_date') => $harvest !== null ? $long($harvest) : __('farms.size.not_added'),
         ] + $more;
-        $basis = $harvest === null ? null : __('farmer.kpis.detail.harvest_basis.'.match (true) {
-            (bool) $plan->harvest_date_manual => 'manual',
-            $plan->scheduled_harvest_date !== null && $variety !== null => 'variety',
-            $plan->scheduled_harvest_date !== null => 'plan',
-            default => 'month',
-        });
+        $defaultDays = (int) config('farmer_dashboard.crop.default_duration_days', 115);
+        $estimate = $harvest !== null && ! $plan->harvest_date_manual && $plan->scheduled_harvest_date !== null && $variety !== null
+            ? $plan->varietyEstimate()
+            : null;
+        $basis = match (true) {
+            $harvest === null => null,
+            (bool) $plan->harvest_date_manual => __('farmer.kpis.detail.harvest_basis.manual'),
+            $plan->scheduled_harvest_date !== null && $variety !== null && $estimate !== null && ($estimate['basis_code'] ?? 'default') !== 'default' => __('farmer.kpis.detail.harvest_basis.variety_maturity', [
+                'variety' => $variety,
+                'season' => mb_strtolower((string) __('rice_varieties.season_name.'.$estimate['season']), 'UTF-8'),
+                'method' => mb_strtolower((string) __('rice_varieties.method_name.'.$estimate['method']), 'UTF-8'),
+            ]),
+            $plan->scheduled_harvest_date !== null => __('farmer.kpis.detail.harvest_basis.plan', ['days' => $defaultDays]),
+            default => __('farmer.kpis.detail.harvest_basis.month'),
+        };
         $link = route('farmer.planting-schedules.edit', $plan);
 
         if ($planted->gt($today)) {

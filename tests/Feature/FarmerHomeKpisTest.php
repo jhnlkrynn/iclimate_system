@@ -239,7 +239,7 @@ class FarmerHomeKpisTest extends TestCase
         $this->assertSame(route('farmer.farms.edit', $farm), $farmDetail['link']);
 
         $crop = $tiles['crop']['detail'];
-        $this->assertSame(['Rice', 'Jul 28, 2026', 'Nov 5, 2026', '30 days'], array_values($crop['rows']));
+        $this->assertSame(['Rice (no variety chosen)', 'Jul 28, 2026', 'Nov 5, 2026', '30 days'], array_values($crop['rows']));
         $this->assertSame(70, $crop['progress']);
         $this->assertSame(route('farmer.planting-schedules.edit', $plan), $crop['link']);
 
@@ -256,14 +256,38 @@ class FarmerHomeKpisTest extends TestCase
         $this->assertSame(1, substr_count($html, 'id="fhDrawer"'), 'one summary panel');
         $this->assertSame(1, preg_match('#<div class="fh-drawer-body" data-panel-section="days-to-harvest" hidden>(.*?)</div>\s*(?=<div class="fh-drawer-body"|</div>\s*</div>)#s', $html, $m));
         $text = (string) preg_replace('/\s+/', ' ', html_entity_decode(strip_tags(str_replace('<', ' <', $m[1]))));
+        $this->assertStringContainsString('Crop / variety Rice (no variety chosen)', $text);
         $this->assertStringContainsString('Planting date Jul 28, 2026', $text);
         $this->assertStringContainsString('Expected harvest date Nov 5, 2026', $text);
         $this->assertStringContainsString('Days left 30 days', $text);
+        $this->assertStringContainsString('Based on your planting plan (115-day default).', $text);
         $this->assertStringContainsString('href="'.route('farmer.planting-schedules.edit', $plan).'"', $m[1]);
         $this->assertStringContainsString('View full details', $text);
         $this->assertStringContainsString('data-panel-section="farm-size"', $html);
         // The script that opens and closes it (with the page's CSP nonce when strict CSP is on).
         $this->assertMatchesRegularExpression('#<script(?: nonce="[^"]+")?>\s*// The summary panel#', $html);
+    }
+
+    public function test_days_to_harvest_detail_shows_planted_variety_and_maturity_basis(): void
+    {
+        $variety = \App\Models\RiceVariety::query()->create([
+            'import_key' => 'nsic-rc-222',
+            'variety_name' => 'NSIC Rc 222',
+            'maturity_tpr_ws' => 114,
+            'maturity_tpr_ws_min' => 110,
+            'maturity_tpr_ws_max' => 118,
+        ]);
+        $farmer = $this->farmer();
+        $farm = $this->farm($farmer);
+        $this->plan($farmer, '2026-07-28', '2026-11-05', [
+            'rice_variety_id' => $variety->id,
+            'crop_establishment' => \App\Support\VarietyHarvestEstimator::TRANSPLANTED,
+        ]);
+
+        $tiles = $this->tiles($farmer, $farm);
+        $detail = $tiles['crop']['detail'];
+        $this->assertSame('Rice · NSIC Rc 222', $detail['rows']['Crop / variety']);
+        $this->assertSame("Based on NSIC Rc 222's days to maturity (wet season, transplanted).", $detail['text']);
     }
 
     public function test_a_farmer_with_nothing_saved_still_gets_real_figures_about_their_place_and_no_empty_tiles(): void
