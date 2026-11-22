@@ -220,8 +220,12 @@ class DashboardController extends Controller
      * Heat Map (2026-10): the map with one panel beside it. Both ranges ([This Week], [2 Weeks]) come with the page,
      * from the saved daily forecast only, so the toggle and a barangay click never wait for a request.
      */
-    public function heatMap(Request $request, HeatMapPanel $panel, LianBarangayWeatherService $weather): View
+    public function heatMap(Request $request, HeatMapPanel $panel, LianBarangayWeatherService $weather): View|\Illuminate\Http\RedirectResponse
     {
+        if ($request->query('layer') === 'irrigation') {
+            return redirect()->route('heat-map.index');
+        }
+
         $user = $request->user();
         $farmer = $user?->role === User::ROLE_FARMER;
         $locale = $farmer ? FarmerLanguage::resolve($request) : 'en';

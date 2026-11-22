@@ -33,7 +33,7 @@ class Phase4RuntimePerformanceTest extends TestCase
         $user = User::factory()->maoPersonnel()->create();
         $page = $this->actingAs($user)->get(route('heat-map.index'))->assertOk()->getContent();
 
-        $this->assertSame(6, substr_count($page, 'data-heat-map-view='));
+        $this->assertSame(5, substr_count($page, 'data-heat-map-view='));
         $this->assertStringNotContainsString('data-heat-map-view="week:Prenza"', $page);
         $this->assertStringNotContainsString('data-heat-map-view="2weeks:Prenza"', $page);
 

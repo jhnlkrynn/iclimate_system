@@ -2,13 +2,10 @@
 
 namespace App\Services\Risk;
 
-use App\Models\FarmerOrganization;
 use App\Services\Prediction\BarangayYieldForecastService;
 use App\Services\Weather\LianBarangayWeatherService;
 use App\Support\LianBarangays;
-use App\Support\SchemaCache;
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\Schema;
 use Throwable;
 
 /**
@@ -22,7 +19,7 @@ use Throwable;
  */
 class BarangayMapLayers
 {
-    public const KEYS = ['flood', 'drought', 'yield', 'irrigation'];
+    public const KEYS = ['flood', 'drought', 'yield'];
 
     private const FORECAST_DAYS = 14;
 
@@ -96,62 +93,6 @@ class BarangayMapLayers
             }
             unset($row);
         }
-
-        $irrigationAssessments = self::irrigationAssessments();
-        $irrigationUpdated = collect($irrigationAssessments)
-            ->pluck('updated_at')
-            ->filter()
-            ->max();
-        $layers['irrigation'] = $this->layer(
-            'irrigation',
-            $locale,
-            fn (string $name): string => $irrigationAssessments[$name]['level'] ?? 'nodata',
-            function (string $name, string $level) use ($irrigationAssessments, $locale): array {
-                $info = $irrigationAssessments[$name] ?? null;
-                if ($info === null || $level === 'nodata') {
-                    return [
-                        'meaning' => $this->t('irrigation_meaning_nodata', $locale),
-                        'action' => $this->t('irrigation_action_nodata', $locale),
-                    ];
-                }
-
-                $assocLines = array_map(function (array $a): string {
-                    $parts = [$a['name']];
-                    if ($a['area_hectares'] !== null) {
-                        $parts[] = number_format((float) $a['area_hectares'], 2).' ha';
-                    }
-                    if ($a['farm_type']) {
-                        $parts[] = $a['farm_type'];
-                    }
-
-                    return implode(' · ', $parts);
-                }, $info['associations']);
-
-                return [
-                    'meaning' => $this->t('irrigation_meaning_data', $locale, [
-                        'total' => number_format($info['total_ha'], 2),
-                        'irrigated' => number_format($info['irrigated_ha'], 2),
-                        'rainfed' => number_format($info['rainfed_ha'], 2),
-                    ]),
-                    'action' => $this->t('irrigation_action_data', $locale),
-                    'also' => $assocLines,
-                    'numbers' => array_filter([
-                        $info['irrigated_ha'] > 0 ? $this->t('irrigation_irrigated_ha', $locale, ['ha' => number_format($info['irrigated_ha'], 2)]) : null => $info['irrigated_ha'] > 0 ? number_format($info['irrigated_ha'], 2).' ha' : null,
-                        $info['rainfed_ha'] > 0 ? $this->t('irrigation_rainfed_ha', $locale, ['ha' => number_format($info['rainfed_ha'], 2)]) : null => $info['rainfed_ha'] > 0 ? number_format($info['rainfed_ha'], 2).' ha' : null,
-                    ], fn ($v): bool => $v !== null),
-                    'irrigation' => [
-                        'irrigated_ha' => $info['irrigated_ha'],
-                        'rainfed_ha' => $info['rainfed_ha'],
-                        'total_ha' => $info['total_ha'],
-                        'associations' => $info['associations'],
-                        'inferred' => $info['inferred'],
-                    ],
-                ];
-            },
-            $this->t('irrigation_source', $locale),
-            $irrigationUpdated,
-        );
-        $layers['irrigation']['has_inferred'] = collect($irrigationAssessments)->contains(fn (array $a): bool => (bool) ($a['inferred'] ?? false));
 
         return $layers;
     }
@@ -272,76 +213,6 @@ class BarangayMapLayers
             'meaning' => $this->t($key.'_meaning.'.$level, $locale, ['days' => $assessment['metrics']['days_covered'] ?? 0]),
             'action' => $this->t($key.'_action.'.$level, $locale),
         ];
-    }
-
-    /**
-     * Per-barangay irrigated vs rainfed summary from farmer_organizations.
-     *
-     * @return array<string, array{level: string, irrigated_ha: float, rainfed_ha: float, total_ha: float, inferred: bool, updated_at: ?CarbonImmutable, associations: list<array{name: string, area_hectares: ?float, farm_type: ?string, inferred: bool}>}>
-     */
-    public static function irrigationAssessments(): array
-    {
-        if (! SchemaCache::hasTable('farmer_organizations')) {
-            return [];
-        }
-
-        $hasSource = Schema::hasColumn('farmer_organizations', 'farm_type_source');
-        $columns = ['name', 'barangay', 'farm_type', 'area_hectares', 'updated_at'];
-        if ($hasSource) {
-            $columns[] = 'farm_type_source';
-        }
-
-        $grouped = FarmerOrganization::query()
-            ->orderBy('name')
-            ->get($columns)
-            ->groupBy(fn (FarmerOrganization $org): string => LianBarangays::canonicalName($org->barangay) ?? $org->barangay);
-
-        $result = [];
-        foreach (LianBarangays::all() as $name) {
-            $orgs = $grouped->get($name, collect());
-            if ($orgs->isEmpty()) {
-                $result[$name] = [
-                    'level' => 'nodata',
-                    'irrigated_ha' => 0.0,
-                    'rainfed_ha' => 0.0,
-                    'total_ha' => 0.0,
-                    'inferred' => false,
-                    'updated_at' => null,
-                    'associations' => [],
-                ];
-                continue;
-            }
-
-            $irrigatedHa = round((float) $orgs->where('farm_type', 'Irrigated')->sum('area_hectares'), 2);
-            $rainfedHa = round((float) $orgs->where('farm_type', 'Rainfed')->sum('area_hectares'), 2);
-            $totalHa = round($irrigatedHa + $rainfedHa, 2);
-
-            $hasIrrigated = $orgs->contains(fn (FarmerOrganization $o): bool => $o->farm_type === 'Irrigated');
-            $hasRainfed = $orgs->contains(fn (FarmerOrganization $o): bool => $o->farm_type === 'Rainfed');
-            $level = match (true) {
-                $hasIrrigated && $hasRainfed => 'irrigated_and_rainfed',
-                $hasIrrigated => 'irrigated',
-                $hasRainfed => 'rainfed',
-                default => 'nodata',
-            };
-
-            $result[$name] = [
-                'level' => $level,
-                'irrigated_ha' => $irrigatedHa,
-                'rainfed_ha' => $rainfedHa,
-                'total_ha' => $totalHa,
-                'inferred' => $hasSource && $orgs->contains(fn (FarmerOrganization $o): bool => ! empty($o->farm_type_source)),
-                'updated_at' => $orgs->pluck('updated_at')->filter()->map(fn ($dt) => CarbonImmutable::parse($dt))->max(),
-                'associations' => $orgs->map(fn (FarmerOrganization $o): array => [
-                    'name' => (string) $o->name,
-                    'area_hectares' => $o->area_hectares !== null ? round((float) $o->area_hectares, 2) : null,
-                    'farm_type' => $o->farm_type,
-                    'inferred' => $hasSource && ! empty($o->farm_type_source),
-                ])->values()->all(),
-            ];
-        }
-
-        return $result;
     }
 
     private function t(string $key, string $locale, array $replace = []): mixed

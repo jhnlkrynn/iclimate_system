@@ -26,7 +26,7 @@ final class HeatMapLayerService
     /** @return array<string, mixed> */
     public function get(string $layer, string $period, ?\App\Models\User $user = null): array
     {
-        $layer = in_array($layer, ['weather_risk', 'flood', 'drought', 'yield', 'irrigation'], true) ? $layer : 'weather_risk';
+        $layer = in_array($layer, ['weather_risk', 'flood', 'drought', 'yield'], true) ? $layer : 'weather_risk';
         $period = $period === '2weeks' ? '2weeks' : 'week';
         $scope = MaoScope::barangays($user);
         $scopeKey = $scope === null ? 'all' : sha1(implode('|', $scope));
@@ -56,9 +56,6 @@ final class HeatMapLayerService
         } elseif ($layer === 'yield') {
             [$rows, $data['updated_at'], $allClose, $lianWide] = $this->yieldRows($names, $period);
             $source = 'Season yield estimate from the iClimate model and local adjustment, stored daily.';
-        } elseif ($layer === 'irrigation') {
-            [$rows, $data['updated_at'], $hasInferred] = $this->irrigationRows($names);
-            $source = trans('farmer.heat_map.layers.irrigation_source', [], 'en');
         } else {
             $data = $this->layers->layers('en', $period)[$layer] ?? ['barangays' => [], 'updated_at' => null, 'source' => $source, 'labels' => []];
             $profiles = $layer === 'flood' && Schema::hasTable('barangay_profiles')
@@ -93,7 +90,7 @@ final class HeatMapLayerService
         }
         $counts = collect($rows)->countBy('level')->all();
         $standing = $layer === 'flood' ? (float) FarmerPlantingSchedule::query()->whereNull('harvested_on')->whereIn('barangay', collect($rows)->where('level', 'flood_prone')->pluck('name'))->sum('farm_area_hectares') : null;
-        return ['layer' => $layer, 'period' => $period, 'updated_at' => $data['updated_at'] ?? ($map['generated_at'] ?? null), 'source' => $source, 'summary' => ['count' => count($rows), 'levels' => $counts, 'standing_crop_hectares' => $standing, 'all_close' => $allClose ?? false, 'lian_wide' => $lianWide ?? null, 'has_inferred' => $hasInferred ?? false], 'barangays' => $rows];
+        return ['layer' => $layer, 'period' => $period, 'updated_at' => $data['updated_at'] ?? ($map['generated_at'] ?? null), 'source' => $source, 'summary' => ['count' => count($rows), 'levels' => $counts, 'standing_crop_hectares' => $standing, 'all_close' => $allClose ?? false, 'lian_wide' => $lianWide ?? null], 'barangays' => $rows];
     }
 
     /**
@@ -187,63 +184,6 @@ final class HeatMapLayerService
         }
 
         return [$rows, $newest, $allClose, $lianWide];
-    }
-
-    /**
-     * Per-barangay irrigated vs rainfed breakdown from farmer_organizations.
-     *
-     * @param  array<int, string>  $names
-     * @return array{0: list<array<string, mixed>>, 1: ?string, 2: bool}
-     */
-    private function irrigationRows(array $names): array
-    {
-        $assessments = BarangayMapLayers::irrigationAssessments();
-        $labels = trans('farmer.heat_map.layers.irrigation_levels', [], 'en');
-        $rows = [];
-        $newest = null;
-        $hasInferred = false;
-
-        foreach ($names as $name) {
-            $info = $assessments[$name] ?? [
-                'level' => 'nodata',
-                'irrigated_ha' => 0.0,
-                'rainfed_ha' => 0.0,
-                'total_ha' => 0.0,
-                'inferred' => false,
-                'updated_at' => null,
-                'associations' => [],
-            ];
-            $level = $info['level'];
-            $label = $labels[$level] ?? $level;
-            if ($info['inferred']) {
-                $hasInferred = true;
-            }
-            if ($info['updated_at'] !== null) {
-                $iso = $info['updated_at']->toIso8601String();
-                $newest = max($newest ?? '', $iso);
-            }
-
-            $areaParts = array_filter([
-                $info['irrigated_ha'] > 0 ? number_format($info['irrigated_ha'], 2).' ha irrigated' : null,
-                $info['rainfed_ha'] > 0 ? number_format($info['rainfed_ha'], 2).' ha rainfed' : null,
-            ]);
-            $detail = $areaParts !== []
-                ? implode(' · ', $areaParts)
-                : ($labels['nodata'] ?? 'No record');
-
-            $row = $this->row($name, $level, $info['total_ha'], [$detail], $detail);
-            $row['label'] = $label;
-            $row['irrigation'] = [
-                'irrigated_ha' => $info['irrigated_ha'],
-                'rainfed_ha' => $info['rainfed_ha'],
-                'total_ha' => $info['total_ha'],
-                'associations' => $info['associations'],
-                'inferred' => $info['inferred'],
-            ];
-            $rows[] = $row;
-        }
-
-        return [$rows, $newest, $hasInferred];
     }
 
     /** A stable id for a supported rice-farm barangay. */
