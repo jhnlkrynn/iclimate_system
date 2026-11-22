@@ -64,6 +64,19 @@ class Phase4AnalysisTest extends TestCase
         $this->assertSame('May', $summary['hottest_month']);
         $this->assertSame('September', $summary['coolest_month']);
         $this->assertSame(2, $summary['rainy_months_count']);
+
+        // Isolated rainy February (>100 mm) is ignored when computing longest consecutive wet run (June–November).
+        $wetWithFeb = [
+            'rainfall' => [
+                'current' => [20.0, 140.0, 15.0, 18.0, 60.0, 210.0, 710.0, 190.0, 350.0, 280.0, 360.0, 80.0],
+                'usual' => [40.0, 30.0, 20.0, 25.0, 120.0, 200.0, 350.0, 250.0, 260.0, 270.0, 150.0, 180.0],
+                'focus_year' => 2025,
+            ],
+            'temperature' => ['current' => array_fill(0, 12, 28.0), 'usual' => array_fill(0, 12, 28.0), 'focus_year' => 2025],
+        ];
+        $wetSummary = $service->yearSummary($wetWithFeb, 'en');
+        $this->assertSame(7, $wetSummary['rainy_months_count']);
+        $this->assertSame('Wet season rains ran June–November, about a month later than usual.', $wetSummary['wet_season_note']);
     }
 
     public function test_filters_by_year_season_and_month(): void

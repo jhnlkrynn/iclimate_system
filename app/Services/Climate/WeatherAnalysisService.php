@@ -256,11 +256,19 @@ class WeatherAnalysisService
      * @return array{
      *     total_rain: float|null,
      *     usual_rain: float|null,
+     *     rain_diff_pct: int|null,
+     *     rain_bar_pct: int,
+     *     usual_bar_pct: int,
      *     rainiest_month: string|null,
+     *     rainiest_mm: float|null,
      *     driest_month: string|null,
+     *     driest_mm: float|null,
      *     hottest_month: string|null,
+     *     hottest_c: float|null,
      *     coolest_month: string|null,
+     *     coolest_c: float|null,
      *     rainy_months_count: int,
+     *     rainy_mask: list<bool>,
      *     wet_season_note: string,
      *     months_present: int,
      * }
@@ -305,30 +313,89 @@ class WeatherAnalysisService
         $hottest = $maxIdx($temp);
         $coolest = $minIdx($temp);
 
-        $rainyIndices = [];
-        foreach ($rain as $i => $v) {
-            if ($v !== null && (float) $v > 100.0) {
-                $rainyIndices[] = $i;
+        $rainyMask = [];
+        $rainyCount = 0;
+        for ($i = 0; $i < 12; $i++) {
+            $isRainy = isset($rain[$i]) && $rain[$i] !== null && (float) $rain[$i] > 100.0;
+            $rainyMask[] = $isRainy;
+            if ($isRainy) {
+                $rainyCount++;
+            }
+        }
+
+        // Longest consecutive run of months > 100 mm (ignoring single isolated rainy months).
+        $runs = [];
+        $runStart = null;
+        for ($i = 0; $i < 12; $i++) {
+            if ($rainyMask[$i]) {
+                $runStart ??= $i;
+            } elseif ($runStart !== null) {
+                if ($i - $runStart >= 2) {
+                    $runs[] = [$runStart, $i - 1];
+                }
+                $runStart = null;
+            }
+        }
+        if ($runStart !== null && 12 - $runStart >= 2) {
+            $runs[] = [$runStart, 11];
+        }
+
+        $bestRun = null;
+        foreach ($runs as $run) {
+            $len = $run[1] - $run[0] + 1;
+            if ($bestRun === null || $len > ($bestRun[1] - $bestRun[0] + 1)) {
+                $bestRun = $run;
             }
         }
 
         $wetNote = __('weather_analysis.wet_note_none', [], $locale);
-        if ($rainyIndices !== []) {
-            $firstM = $monthNames[$rainyIndices[0] + 1] ?? '';
-            $lastM = $monthNames[end($rainyIndices) + 1] ?? '';
-            $usualHit = count(array_filter($rainyIndices, fn (int $i): bool => $i >= 4 && $i <= 10));
-            $key = $usualHit >= count($rainyIndices) / 2 ? 'wet_note_usual' : 'wet_note_shifted';
-            $wetNote = __('weather_analysis.'.$key, ['from' => $firstM, 'to' => $lastM], $locale);
+        if ($bestRun !== null) {
+            [$startIdx, $endIdx] = $bestRun;
+            $from = $monthNames[$startIdx + 1] ?? '';
+            $to = $monthNames[$endIdx + 1] ?? '';
+            $startShift = $startIdx - 4; // May = index 4, Oct = index 9
+
+            if ($startIdx === 4 && $endIdx === 9) {
+                $wetNote = __('weather_analysis.wet_note_as_usual', ['from' => $from, 'to' => $to], $locale);
+            } elseif ($startShift > 0) {
+                $shiftLabel = $startShift === 1
+                    ? __('weather_analysis.one_month', [], $locale)
+                    : __('weather_analysis.n_months', ['n' => $startShift], $locale);
+                $wetNote = __('weather_analysis.wet_note_later', ['from' => $from, 'to' => $to, 'shift' => $shiftLabel], $locale);
+            } elseif ($startShift < 0) {
+                $absShift = abs($startShift);
+                $shiftLabel = $absShift === 1
+                    ? __('weather_analysis.one_month', [], $locale)
+                    : __('weather_analysis.n_months', ['n' => $absShift], $locale);
+                $wetNote = __('weather_analysis.wet_note_earlier', ['from' => $from, 'to' => $to, 'shift' => $shiftLabel], $locale);
+            } else {
+                $wetNote = __('weather_analysis.wet_note_ran', ['from' => $from, 'to' => $to], $locale);
+            }
         }
 
+        $totalRain = $rainVals->isEmpty() ? null : round((float) $rainVals->sum(), 0);
+        $usualRainTotal = $usualRainVals->isEmpty() ? null : round((float) $usualRainVals->sum(), 0);
+        $diffPct = ($totalRain !== null && $usualRainTotal !== null && $usualRainTotal > 0)
+            ? (int) round((($totalRain - $usualRainTotal) / $usualRainTotal) * 100)
+            : null;
+        $maxRainBar = max(1.0, (float) ($totalRain ?? 0), (float) ($usualRainTotal ?? 0));
+
         return [
-            'total_rain' => $rainVals->isEmpty() ? null : round((float) $rainVals->sum(), 0),
-            'usual_rain' => $usualRainVals->isEmpty() ? null : round((float) $usualRainVals->sum(), 0),
+            'total_rain' => $totalRain,
+            'usual_rain' => $usualRainTotal,
+            'rain_diff_pct' => $diffPct,
+            'rain_bar_pct' => $totalRain !== null ? (int) round(($totalRain / $maxRainBar) * 100) : 0,
+            'usual_bar_pct' => $usualRainTotal !== null ? (int) round(($usualRainTotal / $maxRainBar) * 100) : 0,
             'rainiest_month' => $rainiest !== null ? ($monthNames[$rainiest + 1] ?? null) : null,
+            'rainiest_mm' => $rainiest !== null ? round((float) $rain[$rainiest], 1) : null,
             'driest_month' => $driest !== null ? ($monthNames[$driest + 1] ?? null) : null,
+            'driest_mm' => $driest !== null ? round((float) $rain[$driest], 1) : null,
             'hottest_month' => $hottest !== null ? ($monthNames[$hottest + 1] ?? null) : null,
+            'hottest_c' => $hottest !== null ? round((float) $temp[$hottest], 1) : null,
             'coolest_month' => $coolest !== null ? ($monthNames[$coolest + 1] ?? null) : null,
-            'rainy_months_count' => count($rainyIndices),
+            'coolest_c' => $coolest !== null ? round((float) $temp[$coolest], 1) : null,
+            'rainy_months_count' => $rainyCount,
+            'rainy_mask' => $rainyMask,
             'wet_season_note' => $wetNote,
             'months_present' => $rainVals->count(),
         ];

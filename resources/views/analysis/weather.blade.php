@@ -1,6 +1,26 @@
 <x-app-layout>
     <x-slot:title>{{ __('weather_analysis.title') }}</x-slot:title>
     @vite('resources/css/pages/weather-predictions.css')
+    <style @nonce>
+        .wa-stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        @media (max-width: 767.98px) { .wa-stat-grid { grid-template-columns: 1fr; } }
+        .wa-stat-tile { background: var(--sage-50); border-radius: 12px; padding: 16px; box-shadow: none; }
+        .wa-stat-label { font-size: 13px; font-weight: 500; color: var(--sage-600); margin-bottom: 4px; }
+        .wa-stat-big { font-size: 28px; font-weight: 600; line-height: 1.15; color: var(--sage-900); }
+        .wa-stat-pair { font-size: 18px; font-weight: 600; line-height: 1.25; color: var(--sage-900); }
+        .wa-stat-muted { font-size: 13px; color: var(--sage-500); margin-top: 4px; }
+        .wa-rain-bars { display: grid; gap: 4px; margin-top: 10px; }
+        .wa-rain-bar-track { height: 6px; border-radius: 999px; background: var(--sage-100); overflow: hidden; }
+        .wa-rain-bar-fill { display: block; height: 100%; border-radius: 999px; }
+        .wa-rain-bar-fill.is-current { background: var(--sage-700); }
+        .wa-rain-bar-fill.is-usual { background: var(--sage-200); }
+        .wa-dots-row { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; margin-top: 10px; text-align: center; }
+        .wa-dot-col { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+        .wa-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--sage-200); }
+        .wa-dot.is-filled { background: var(--sage-700); }
+        .wa-dot-lbl { font-size: 10px; font-weight: 600; color: var(--sage-500); line-height: 1; }
+        .wa-season-band { background: var(--sage-50); border-radius: 12px; padding: 12px 16px; font-size: 15px; color: var(--sage-800); }
+    </style>
     @php
         $L = fn (string $key, array $replace = []) => __('weather_analysis.'.$key, $replace);
         $fmt = fn ($v, int $d = 1, string $unit = '') => $v === null ? '—' : rtrim(rtrim(number_format((float) $v, $d), '0'), '.').$unit;
@@ -114,27 +134,51 @@
 
                 @if ($isFarmer)
                     <div class="col-12 col-lg-6">
-                        <section class="fad-card h-100" aria-labelledby="waYearSummaryTitle" data-wa-year-summary>
+                        <section class="fad-card h-100 d-flex flex-column" aria-labelledby="waYearSummaryTitle" data-wa-year-summary>
                             <h2 class="mb-3 fw-bold" id="waYearSummaryTitle" style="font-size: 22px; color: var(--sage-800);">{{ $yearCardTitle }}</h2>
-                            <ul class="list-unstyled mb-0 d-grid gap-2" style="color: var(--sage-800);">
-                                @if ($yearSummary['total_rain'] !== null)
-                                    <li>
-                                        @if ($yearSummary['usual_rain'] !== null)
-                                            {{ $L('total_rain_line', ['total' => number_format($yearSummary['total_rain']), 'usual' => number_format($yearSummary['usual_rain'])]) }}
-                                        @else
-                                            {{ $L('total_rain_only', ['total' => number_format($yearSummary['total_rain'])]) }}
-                                        @endif
-                                    </li>
-                                @endif
-                                @if ($yearSummary['rainiest_month'] && $yearSummary['driest_month'])
-                                    <li>{{ $L('rainiest_driest_line', ['rainiest' => $yearSummary['rainiest_month'], 'driest' => $yearSummary['driest_month']]) }}</li>
-                                @endif
-                                @if ($yearSummary['hottest_month'] && $yearSummary['coolest_month'])
-                                    <li>{{ $L('hottest_coolest_line', ['hottest' => $yearSummary['hottest_month'], 'coolest' => $yearSummary['coolest_month']]) }}</li>
-                                @endif
-                                <li>{{ $L('rainy_months_line', ['count' => $yearSummary['rainy_months_count']]) }}</li>
-                            </ul>
-                            <p class="small text-muted mt-3 mb-0">{{ $yearSummary['wet_season_note'] }}</p>
+                            <div class="wa-stat-grid">
+                                <div class="wa-stat-tile">
+                                    <div class="wa-stat-label">{{ $L('tile_total_rain') }}</div>
+                                    <div class="wa-stat-big">{{ $yearSummary['total_rain'] !== null ? number_format($yearSummary['total_rain']).' mm' : '—' }}</div>
+                                    @if ($yearSummary['usual_rain'] !== null)
+                                        @php
+                                            $diffPct = $yearSummary['rain_diff_pct'];
+                                            $pctKey = $diffPct === null || abs($diffPct) < 2 ? 'tile_rain_vs_usual_same' : ($diffPct > 0 ? 'tile_rain_vs_usual_more' : 'tile_rain_vs_usual_less');
+                                        @endphp
+                                        <div class="wa-stat-muted">{{ $L($pctKey, ['usual' => number_format($yearSummary['usual_rain']), 'pct' => abs((int) $diffPct)]) }}</div>
+                                        <div class="wa-rain-bars" aria-hidden="true">
+                                            <div class="wa-rain-bar-track"><span class="wa-rain-bar-fill is-current" style="width: {{ $yearSummary['rain_bar_pct'] }}%;"></span></div>
+                                            <div class="wa-rain-bar-track"><span class="wa-rain-bar-fill is-usual" style="width: {{ $yearSummary['usual_bar_pct'] }}%;"></span></div>
+                                        </div>
+                                    @endif
+                                </div>
+
+                                <div class="wa-stat-tile">
+                                    <div class="wa-stat-label">{{ $L('tile_rainiest_driest') }}</div>
+                                    <div class="wa-stat-pair">{{ ($yearSummary['rainiest_month'] ?? '—').' / '.($yearSummary['driest_month'] ?? '—') }}</div>
+                                    <div class="wa-stat-muted">{{ $fmt($yearSummary['rainiest_mm'], 1, ' mm').' · '.$fmt($yearSummary['driest_mm'], 1, ' mm') }}</div>
+                                </div>
+
+                                <div class="wa-stat-tile">
+                                    <div class="wa-stat-label">{{ $L('tile_hottest_coolest') }}</div>
+                                    <div class="wa-stat-pair">{{ ($yearSummary['hottest_month'] ?? '—').' / '.($yearSummary['coolest_month'] ?? '—') }}</div>
+                                    <div class="wa-stat-muted">{{ $fmt($yearSummary['hottest_c'], 1, ' °C').' · '.$fmt($yearSummary['coolest_c'], 1, ' °C') }}</div>
+                                </div>
+
+                                <div class="wa-stat-tile">
+                                    <div class="wa-stat-label">{{ $L('tile_rainy_months') }}</div>
+                                    <div class="wa-stat-pair">{{ $L('of_12', ['count' => $yearSummary['rainy_months_count']]) }}</div>
+                                    <div class="wa-dots-row" aria-hidden="true">
+                                        @foreach ($L('month_initials') as $mIdx => $mInit)
+                                            <span class="wa-dot-col">
+                                                <span @class(['wa-dot', 'is-filled' => $yearSummary['rainy_mask'][$mIdx] ?? false])></span>
+                                                <span class="wa-dot-lbl">{{ $mInit }}</span>
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="wa-season-band mt-3 mb-0" data-wa-wet-note>{{ $yearSummary['wet_season_note'] }}</p>
                         </section>
                     </div>
                 @elseif ($windSummary)
