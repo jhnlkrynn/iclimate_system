@@ -513,9 +513,9 @@ html body .hmx-mine.is-nodata .hmx-mine-icon { background: #9CA3AF !important; }
 html body .mhd-reading { position: relative; z-index: 1; margin-top: 16px !important; }
 html body [data-mao-impact] .mtd-chart, html body [data-mao-accuracy] .mtd-chart { min-height: 340px; }
 
-/* 4.5: a flat, full-width government header (64px height, styled in app-shell.css). */
+/* 4.5: a flat, full-width government header (72px height, styled in app-shell.css). */
 html[data-theme] body .topbar.ic-topbar {
-    top: 0; height: 64px !important; min-height: 64px !important; margin: 0 !important;
+    top: 0; height: 72px !important; min-height: 72px !important; margin: 0 !important;
     border-radius: 0 !important; corner-shape: round;
 }
 @media (max-width: 575.98px) {
@@ -538,20 +538,20 @@ html body .ic-tabs .ic-tab { background: var(--gov-surface); color: var(--gov-te
 html body .ic-tabs .ic-tab:hover { background: var(--gov-primary-soft); color: var(--gov-primary-dark) !important; }
 html body .ic-tabs .ic-tab.is-active, html body .ic-tabs .ic-tab[aria-current="page"] { background: var(--gov-primary) !important; border-color: var(--gov-primary); color: #fff !important; }
 
-/* Header size (all roles): 64px bar aligned in app-shell.css. */
-html[data-theme] body .topbar.ic-topbar { height: 64px !important; min-height: 64px !important; }
+/* Header size (all roles): 72px bar aligned in app-shell.css. */
+html[data-theme] body .topbar.ic-topbar { height: 72px !important; min-height: 72px !important; }
 html body .ic-topbar-left { gap: 10px; }
-html body .ic-topbar-right { gap: 12px; }
+html body .ic-topbar-right { gap: 14px; }
 html body .gov-brand { gap: 10px; }
 html body .gov-brand-text { line-height: 1.2; }
-html body .gov-brand-office { font-size: .9375rem; }
-html body .gov-brand-place { font-size: 13px; }
-html body .ic-topbar-greeting { font-size: 15px; }
+html body .gov-brand-office { font-size: 18px; font-weight: 600; }
+html body .gov-brand-place { font-size: 15px; }
+html body .ic-topbar-greeting { font-size: 17px; }
 html body .mao-identity-name { font-size: 1.0625rem; }
 html body .mao-identity-position { font-size: .875rem; }
 html body .topbar .ic-icon-btn { width: 40px; height: 40px; }
-html body .topbar .ic-icon-btn > svg { width: 18px; height: 18px; }
-html body .ic-avatar-btn { width: 38px; height: 38px; font-size: .875rem; }
+html body .topbar .ic-icon-btn > svg { width: 24px; height: 24px; }
+html body .ic-avatar-btn { width: 40px; height: 40px; font-size: .875rem; }
 @media (max-width: 767.98px) {
-    html[data-theme] body .topbar.ic-topbar { height: 64px !important; min-height: 64px !important; }
+    html[data-theme] body .topbar.ic-topbar { height: 72px !important; min-height: 72px !important; }
 }

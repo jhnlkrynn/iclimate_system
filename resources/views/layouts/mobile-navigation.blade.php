@@ -172,9 +172,9 @@
                 @endif
                 @if ($navLangRoute)
                     <div class="mobile-more-language" role="group" aria-label="Language">
-                        <form method="POST" action="{{ route($navLangRoute) }}"><input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="language" value="en"><button type="submit" lang="en" aria-pressed="{{ $navLocale === 'en' ? 'true' : 'false' }}" title="English" aria-label="English">EN</button></form>
-                        <span class="ic-lang-sep" aria-hidden="true">|</span>
-                        <form method="POST" action="{{ route($navLangRoute) }}"><input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="language" value="fil"><button type="submit" lang="fil" aria-pressed="{{ $navLocale === 'fil' ? 'true' : 'false' }}" title="Filipino" aria-label="Filipino">FIL</button></form>
+                        @foreach (['en' => 'English', 'fil' => 'Filipino'] as $mobileLangCode => $mobileLangLabel)
+                            <form method="POST" action="{{ route($navLangRoute) }}"><input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="language" value="{{ $mobileLangCode }}"><button type="submit" lang="{{ $mobileLangCode }}" aria-pressed="{{ $navLocale === $mobileLangCode ? 'true' : 'false' }}" title="{{ $mobileLangLabel }}" aria-label="{{ $mobileLangLabel }}">@include('layouts.partials.lang-flag', ['code' => $mobileLangCode])</button></form>
+                        @endforeach
                     </div>
                 @endif
                 @include('layouts.partials.logout-form', ['variant' => $isFarmer ? 'sidebar' : 'menu', 'label' => $isFarmer ? __('farmer.nav.logout', [], $farmerLocale ?? 'en') : 'Log out'])

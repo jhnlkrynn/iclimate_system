@@ -47,7 +47,6 @@
 
     <div class="ic-topbar-middle">
         <p class="ic-topbar-greeting">{{ $navGreeting }}</p>
-        <span class="ic-topbar-date">{{ $navDate }}</span>
     </div>
 
     <div class="ic-topbar-right">
@@ -86,17 +85,13 @@
 
         @if ($navLangRoute)
             <div class="ic-lang ic-topbar-lang" role="group" aria-label="Language">
-                <form method="POST" action="{{ route($navLangRoute) }}">
-                    @csrf
-                    <input type="hidden" name="language" value="en">
-                    <button type="submit" lang="en" aria-pressed="{{ $navLocale === 'en' ? 'true' : 'false' }}" title="English" aria-label="English">EN</button>
-                </form>
-                <span class="ic-lang-sep" aria-hidden="true">|</span>
-                <form method="POST" action="{{ route($navLangRoute) }}">
-                    @csrf
-                    <input type="hidden" name="language" value="fil">
-                    <button type="submit" lang="fil" aria-pressed="{{ $navLocale === 'fil' ? 'true' : 'false' }}" title="Filipino" aria-label="Filipino">FIL</button>
-                </form>
+                @foreach (['en' => 'English', 'fil' => 'Filipino'] as $langCode => $langName)
+                    <form method="POST" action="{{ route($navLangRoute) }}">
+                        @csrf
+                        <input type="hidden" name="language" value="{{ $langCode }}">
+                        <button type="submit" lang="{{ $langCode }}" aria-pressed="{{ $navLocale === $langCode ? 'true' : 'false' }}" title="{{ $langName }}" aria-label="{{ $langName }}">@include('layouts.partials.lang-flag', ['code' => $langCode])</button>
+                    </form>
+                @endforeach
             </div>
         @endif
 
@@ -105,7 +100,7 @@
                 data-feed-url="{{ route('notifications.feed') }}" data-index-url="{{ route('notifications.index') }}" data-mark-all-url="{{ route('notifications.mark-all-read') }}"
                 data-notification-user-id="{{ $user->id }}"
                 data-fast-nav-bound="true" data-no-loader aria-label="Notifications{{ $navUnread > 0 ? ', '.$navUnread.' unread' : '' }}">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M5 7.2C5 4.6 6.8 3 9 3s4 1.6 4 4.2c0 3.6 1.3 4.6 1.3 4.6H3.7S5 10.8 5 7.2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.5 14.5a1.6 1.6 0 0 0 3 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                <svg width="24" height="24" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M5 7.2C5 4.6 6.8 3 9 3s4 1.6 4 4.2c0 3.6 1.3 4.6 1.3 4.6H3.7S5 10.8 5 7.2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.5 14.5a1.6 1.6 0 0 0 3 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
                 <span class="sidebar-badge topbar-bell-badge" data-ic-notif-badge @if ($navUnread <= 0) hidden @endif>{{ $navUnread > 99 ? '99+' : $navUnread }}</span>
             </a>
         @endif
