@@ -101,17 +101,19 @@ export function initHeatMap() {
             .sort((a, b) => (b.yield?.t_ha ?? -1) - (a.yield?.t_ha ?? -1) || String(a.name).localeCompare(String(b.name)));
         const title = view.querySelector('.hmx-title')?.textContent || 'Expected rice yield this season (t/ha)';
         const counts = payload.summary?.levels || {};
-        const countLines = ['low', 'moderate', 'high', 'unavailable'].filter((level) => Number(counts[level]) > 0).map((level) => `<li class="is-${escapeHtml(level)}"><span class="hmx-dot" style="--hmx-color:${escapeHtml(data.colors?.[level] || '#9CA3AF')}"></span>${escapeHtml(String(counts[level]))}: ${escapeHtml(rows.find((row) => row.level === level)?.label || level)}</li>`).join('');
+        const allClose = Boolean(payload.summary?.all_close);
+        const countLines = allClose
+            ? ''
+            : ['low', 'moderate', 'high', 'unavailable'].filter((level) => Number(counts[level]) > 0).map((level) => `<li class="is-${escapeHtml(level)}"><span class="hmx-dot" style="--hmx-color:${escapeHtml(data.colors?.[level] || '#9CA3AF')}"></span>${escapeHtml(String(counts[level]))}: ${escapeHtml(rows.find((row) => row.level === level)?.label || level)}</li>`).join('');
         const season = rows.find((row) => row.yield?.season)?.yield.season;
-        const valueText = (row) => (row.yield?.t_ha != null ? `${tHa(row.yield.t_ha)} · ${yieldClass[row.yield.class] || row.label}` : (row.label || 'No estimate yet'));
-        const list = rows.map((row) => `<li><button type="button" class="hmx-row" data-heat-map-pick="${escapeHtml(row.name)}"><span class="hmx-dot" style="--hmx-color:${escapeHtml(data.colors?.[row.level] || '#9CA3AF')}"></span><span class="hmx-row-name">${escapeHtml(row.name)}</span><span class="hmx-row-level">${escapeHtml(valueText(row))}</span></button></li>`).join('');
+        const valueText = (row) => (row.yield?.t_ha != null ? `${tHa(row.yield.t_ha)} · ${row.yield?.basis_label || 'Lian-wide estimate'}` : (row.label || 'No estimate yet'));
+        const list = rows.map((row) => `<li><button type="button" class="hmx-row" data-heat-map-pick="${escapeHtml(row.name)}">${allClose ? '' : `<span class="hmx-dot" style="--hmx-color:${escapeHtml(data.colors?.[row.level] || '#9CA3AF')}"></span>`}<span class="hmx-row-name">${escapeHtml(row.name)}</span><span class="hmx-row-level">${escapeHtml(valueText(row))}</span></button></li>`).join('');
         const anyEstimate = rows.some((row) => row.yield?.t_ha != null);
         const updated = updatedText(payload.updated_at);
         const mine = own ? rows.find((row) => canonicalName(row.name) === own) : null;
-        const change = mine?.yield?.vs_season;
-        const changeText = change != null ? `, ${change > 0 ? '+' : change < 0 ? '\u2212' : '\u00b1'}${Math.abs(change).toFixed(2)} vs season` : '';
-        const mineCard = mine ? `<button type="button" class="hmx-own" data-heat-map-pick="${escapeHtml(mine.name)}" data-heat-map-yield-mine><span class="hmx-own-label">${escapeHtml(data.yours || 'Your barangay')}</span><strong>${escapeHtml(mine.name)}</strong><span class="hmx-badge is-${escapeHtml(mine.level)}">${escapeHtml(mine.yield?.t_ha != null ? `${tHa(mine.yield.t_ha)}${changeText}` : (mine.label || 'No estimate yet'))}</span></button>` : '';
-        view.innerHTML = `<h2 class="hmx-title">${escapeHtml(title)}</h2>${season ? `<p class="hmx-hint">${escapeHtml(season)}</p>` : ''}${anyEstimate ? '' : '<p class="hmx-text">No estimate yet</p>'}<div class="hmx-summary"><ul class="hmx-counts">${countLines}</ul>${mineCard}<p class="hmx-hint">${rows.length} barangays</p></div><ul class="hmx-list">${list}</ul><p class="hmx-source" data-heat-map-yield-source>${escapeHtml(payload.source || 'Based on trained model')}${updated ? ` · updated ${escapeHtml(updated)}` : ''}</p>`;
+        const mineCard = mine ? `<button type="button" class="hmx-own" data-heat-map-pick="${escapeHtml(mine.name)}" data-heat-map-yield-mine><span class="hmx-own-label">${escapeHtml(data.yours || 'Your barangay')}</span><strong>${escapeHtml(mine.name)}</strong><span class="hmx-badge is-${escapeHtml(mine.level)}">${escapeHtml(mine.yield?.t_ha != null ? tHa(mine.yield.t_ha) : (mine.label || 'No estimate yet'))}</span></button>` : '';
+        const closeBanner = allClose && anyEstimate ? '<p class="hmx-text" data-heat-map-yield-close>All barangays are close to Lian\'s usual yield</p>' : '';
+        view.innerHTML = `<h2 class="hmx-title">${escapeHtml(title)}</h2>${season ? `<p class="hmx-hint">${escapeHtml(season)}</p>` : ''}${anyEstimate ? closeBanner : '<p class="hmx-text">No estimate yet</p>'}<div class="hmx-summary">${countLines ? `<ul class="hmx-counts">${countLines}</ul>` : ''}${mineCard}<p class="hmx-hint">${rows.length} barangays</p></div><ul class="hmx-list">${list}</ul><p class="hmx-source" data-heat-map-yield-source>${escapeHtml(payload.source || 'Based on trained model')}${updated ? ` · updated ${escapeHtml(updated)}` : ''}</p>`;
         views = [...root.querySelectorAll('[data-heat-map-view]')];
     };
     const renderApiPanel = (payload) => {

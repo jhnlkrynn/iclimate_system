@@ -66,25 +66,20 @@ final class BarangayYieldForecastService
 
         $results = [];
         foreach (LianBarangays::all() as $barangay) {
-            // Barangays without rice farms get no yield estimate (an older saved run for one is not shown either).
-            if (! LianBarangays::isRiceFarming($barangay)) {
-                $results[$barangay] = [
-                    'barangay' => $barangay, 'predicted_yield' => null, 'classification' => 'nodata', 'basis' => self::NO_RICE_FARMS,
-                    'farms_used' => 0, 'area_hectares' => null, 'period' => $period, 'season_yield' => null, 'season' => null,
-                    'season_label' => $this->seasonLabel(), 'target_month' => null, 'model' => 'Random Forest', 'model_source' => $modelSource,
-                    'model_version' => null, 'model_input' => null, 'prediction_timestamp' => null, 'missing_inputs' => [],
-                    'error' => self::NO_RICE_FARMS_MESSAGE,
-                ];
-
-                continue;
-            }
             /** @var YieldPrediction|null $row */
             $row = $saved->get($barangay);
+            $factor = (float) data_get($row?->model_input, 'local_adjustment.factor', 1.0);
+            $isAdjusted = abs($factor - 1.0) >= YieldLocalAdjustment::MIN_EFFECT;
             $results[$barangay] = [
                 'barangay' => $barangay,
                 'predicted_yield' => $row?->predicted_yield,
                 'classification' => $row?->classification ?? 'nodata',
                 'basis' => $row?->basis,
+                'basis_label' => $row?->predicted_yield !== null
+                    ? ($isAdjusted ? 'Adjusted with local records' : 'Lian-wide estimate')
+                    : null,
+                'adjustment_factor' => $factor,
+                'adjusted' => $isAdjusted,
                 'farms_used' => $row?->farms_used ?? 0,
                 'area_hectares' => $row?->area_hectares,
                 'period' => $period,
@@ -233,24 +228,26 @@ final class BarangayYieldForecastService
         $typicalArea = $this->median($this->store->farms()->filter(fn (YieldPrediction $row): bool => $row->barangay !== null)->pluck('area_hectares'));
         $calls = 0;
 
-        // Only rice-farming barangays get a barangay estimate; the model is never run for one without rice farms.
-        foreach (LianBarangays::riceFarming() as $barangay) {
-            $rows = $byBarangay->get($barangay, collect());
-            if ($rows->isNotEmpty()) {
-                $area = (float) $rows->sum('area_hectares');
-                $this->store->saveBarangay($barangay, [
-                    'predicted_yield' => round($rows->sum(fn (YieldPrediction $r): float => $r->predicted_yield * $r->area_hectares) / $area, 2),
-                    'basis' => 'farm_average',
-                    'farms_used' => $rows->count(),
-                    'area_hectares' => round($area, 4),
-                    'season_label' => $label,
-                    'target_month' => $rows->pluck('target_month')->filter()->max(),
-                    'model_version' => $rows->pluck('model_version')->filter()->first(),
-                    'model_input' => null,
-                    'generated_at' => $rows->pluck('generated_at')->filter()->max(),
-                ], $period);
+        // Every one of the 19 Lian barangays gets an estimate from the same model + YieldLocalAdjustment path as /analysis/yield.
+        foreach (LianBarangays::all() as $barangay) {
+            if ($period !== 'season') {
+                $rows = $byBarangay->get($barangay, collect());
+                if ($rows->isNotEmpty()) {
+                    $area = (float) $rows->sum('area_hectares');
+                    $this->store->saveBarangay($barangay, [
+                        'predicted_yield' => round($rows->sum(fn (YieldPrediction $r): float => $r->predicted_yield * $r->area_hectares) / $area, 2),
+                        'basis' => 'farm_average',
+                        'farms_used' => $rows->count(),
+                        'area_hectares' => round($area, 4),
+                        'season_label' => $label,
+                        'target_month' => $rows->pluck('target_month')->filter()->max(),
+                        'model_version' => $rows->pluck('model_version')->filter()->first(),
+                        'model_input' => null,
+                        'generated_at' => $rows->pluck('generated_at')->filter()->max(),
+                    ], $period);
 
-                continue;
+                    continue;
+                }
             }
 
             $overrides = $weather === null ? [] : ($weather[$barangay]['overrides'] ?? null);
@@ -310,45 +307,61 @@ final class BarangayYieldForecastService
     }
 
     /**
-     * One model run for a barangay without farms, through the farm path's own input builder.
+     * One model run for a barangay using the same path as /analysis/yield (RiceYieldPredictionService + YieldLocalAdjustment).
      *
      * @param  array<string, mixed>  $overrides
      */
     private function runForBarangay(string $barangay, ?float $area, string $label, string $period = 'season', array $overrides = []): void
     {
-        // The season estimate is for this season's harvest month, as the farm estimates it is shown beside; This Week /
-        // 2 Weeks stay on the current month with that window's forecast.
         $now = BusinessClock::now()->toImmutable();
-        $result = $this->run($period === 'season' ? \App\Support\RiceSeason::harvestMonth($now) : $now, $this->usualFarmType($barangay), $area, null, $overrides);
+        $season = \App\Support\RiceSeason::forMonth((int) $now->month);
+        $targetDate = $period === 'season' ? \App\Models\YieldPredictionRequest::targetMonthFor($season, $now->startOfMonth()) : $now;
+        $farmType = $this->dominantFarmType($barangay);
+        $result = $this->run($targetDate, $farmType, $area, null, $overrides);
         if ($result === null) {
             return;
         }
-        $yield = $result['yield_tons_per_hectare'] ?? $result['predicted_yield'];
+        $modelValue = round((float) ($result['yield_tons_per_hectare'] ?? $result['predicted_yield']), 2);
+        $adjustment = app(YieldLocalAdjustment::class)->forRequest($barangay, $farmType, $season, $modelValue);
+        $finalYield = $adjustment['adjusted_yield'];
+        $modelInput = is_array($result['model_input'] ?? null) ? $result['model_input'] : [];
+        $modelInput['local_adjustment'] = $adjustment;
+        $modelInput['farm_type'] = $farmType;
 
         $this->store->saveBarangay($barangay, [
-            'predicted_yield' => round((float) $yield, 2),
+            'predicted_yield' => $finalYield,
             'basis' => 'barangay_model',
             'farms_used' => 0,
             'area_hectares' => $result['model_input']['area'] ?? $area,
             'season_label' => $label,
-            'target_month' => $result['target_month'] ?? null,
+            'target_month' => $result['target_month'] ?? $targetDate->format('Y-m'),
             'model_version' => $result['model_version'] ?? null,
-            'model_input' => is_array($result['model_input'] ?? null) ? $result['model_input'] : null,
+            'model_input' => $modelInput,
             'generated_at' => CarbonImmutable::now(),   // an instant; stored as UTC (YieldPrediction::UTC_INSTANT_COLUMNS)
         ], $period);
     }
 
-    /** The barangay's main farm type in the MAO planting records (by area); Rainfed, the farm path's default, without records. */
-    private function usualFarmType(string $barangay): string
+    /** Most common farm_type from the farms table for this barangay, else Irrigated. */
+    public function dominantFarmType(string $barangay): string
     {
-        $summary = rescue(fn (): ?array => LianFarmTypes::summaryFor($barangay), null, false);
-        if (! is_array($summary)) {
-            return \App\Models\FarmerProfile::FARM_TYPE_RAINFED;
+        if (ActiveFarm::available()) {
+            $counts = Farm::query()->active()
+                ->whereIn('farm_type', [\App\Models\FarmerProfile::FARM_TYPE_IRRIGATED, \App\Models\FarmerProfile::FARM_TYPE_RAINFED])
+                ->get(['barangay', 'farm_type'])
+                ->filter(fn (Farm $f): bool => LianBarangays::canonicalName($f->barangay) === $barangay)
+                ->countBy('farm_type');
+
+            if ($counts->isNotEmpty()) {
+                $irrigated = (int) $counts->get(\App\Models\FarmerProfile::FARM_TYPE_IRRIGATED, 0);
+                $rainfed = (int) $counts->get(\App\Models\FarmerProfile::FARM_TYPE_RAINFED, 0);
+
+                return $rainfed > $irrigated
+                    ? \App\Models\FarmerProfile::FARM_TYPE_RAINFED
+                    : \App\Models\FarmerProfile::FARM_TYPE_IRRIGATED;
+            }
         }
 
-        return (float) ($summary['irrigated_area_hectares'] ?? 0) > (float) ($summary['rainfed_area_hectares'] ?? 0)
-            ? \App\Models\FarmerProfile::FARM_TYPE_IRRIGATED
-            : \App\Models\FarmerProfile::FARM_TYPE_RAINFED;
+        return \App\Models\FarmerProfile::FARM_TYPE_IRRIGATED;
     }
 
     /** @param  Collection<int, mixed>  $values */

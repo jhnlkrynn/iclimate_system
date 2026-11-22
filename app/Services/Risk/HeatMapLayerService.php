@@ -54,8 +54,8 @@ final class HeatMapLayerService
                 $rows[] = $this->row($name, $level, $e['risk_score'] ?? null, [$e['risk_type'] ?? 'Stored agricultural risk'], $e['description'] ?? null);
             }
         } elseif ($layer === 'yield') {
-            [$rows, $data['updated_at']] = $this->yieldRows($names, $period);
-            $source = 'iClimate yield estimate · '.($period === '2weeks' ? "next 2 weeks' forecast" : "this week's forecast");
+            [$rows, $data['updated_at'], $allClose] = $this->yieldRows($names, $period);
+            $source = 'Season yield estimate from the iClimate model and local adjustment, stored daily.';
         } else {
             $data = $this->layers->layers('en', $period)[$layer] ?? ['barangays' => [], 'updated_at' => null, 'source' => $source, 'labels' => []];
             $profiles = $layer === 'flood' && Schema::hasTable('barangay_profiles')
@@ -90,50 +90,72 @@ final class HeatMapLayerService
         }
         $counts = collect($rows)->countBy('level')->all();
         $standing = $layer === 'flood' ? (float) FarmerPlantingSchedule::query()->whereNull('harvested_on')->whereIn('barangay', collect($rows)->where('level', 'flood_prone')->pluck('name'))->sum('farm_area_hectares') : null;
-        return ['layer' => $layer, 'period' => $period, 'updated_at' => $data['updated_at'] ?? ($map['generated_at'] ?? null), 'source' => $source, 'summary' => ['count' => count($rows), 'levels' => $counts, 'standing_crop_hectares' => $standing], 'barangays' => $rows];
+        return ['layer' => $layer, 'period' => $period, 'updated_at' => $data['updated_at'] ?? ($map['generated_at'] ?? null), 'source' => $source, 'summary' => ['count' => count($rows), 'levels' => $counts, 'standing_crop_hectares' => $standing, 'all_close' => $allClose ?? false], 'barangays' => $rows];
     }
 
     /**
-     * Expected yield per barangay from the trained rice-yield model for This Week / 2 Weeks (BarangayYieldForecastService:
-     * the area-weighted average of its farms' saved estimates, else the barangay's own run, with that window's forecast),
-     * next to the season estimate the farmer dashboard shows. Colours follow the legend: Good is green (level low), Fair
-     * yellow (moderate), Low orange (high), no estimate gray.
+     * Expected yield per barangay from the same season model + YieldLocalAdjustment path as /analysis/yield.
+     * Bands compare each barangay against Lian's usual yield; if all values are within ±3% of each other,
+     * the map flags all_close so it renders a plain notice instead of band colors.
      *
      * @param  array<int, string>  $names
-     * @return array{0: list<array<string, mixed>>, 1: ?string} rows and the newest generation time
+     * @return array{0: list<array<string, mixed>>, 1: ?string, 2: bool} rows, newest generation time, all_close flag
      */
     private function yieldRows(array $names, string $period): array
     {
-        $yields = rescue(fn (): array => app(BarangayYieldForecastService::class)->all($period), [], false);
+        $yields = rescue(fn (): array => app(BarangayYieldForecastService::class)->all('season'), [], false);
+        $seasonYield = app(\App\Services\Prediction\SeasonYield::class);
         $labels = trans('farmer.heat_map.layers.yield_levels', [], 'en');
+
+        $numericValues = collect($names)
+            ->map(fn (string $n) => $yields[$n]['predicted_yield'] ?? null)
+            ->filter(fn ($v) => is_numeric($v))
+            ->map(fn ($v): float => (float) $v);
+
+        $allClose = false;
+        if ($numericValues->count() >= 2) {
+            $min = (float) $numericValues->min();
+            $max = (float) $numericValues->max();
+            $avg = (float) $numericValues->avg();
+            $allClose = $avg > 0 && (($max - $min) / $avg) <= 0.03;
+        }
+
         $rows = [];
         $newest = null;
         foreach ($names as $name) {
             $p = $yields[$name] ?? [];
             $value = is_numeric($p['predicted_yield'] ?? null) ? round((float) $p['predicted_yield'], 2) : null;
-            $class = match (true) {
-                $value === null => 'none',
-                $value >= BarangayMapLayers::YIELD_GOOD => 'good',
-                $value >= BarangayMapLayers::YIELD_FAIR => 'fair',
-                default => 'low',
-            };
+            $targetMonthNum = is_string($p['target_month'] ?? null) && strlen($p['target_month']) >= 7
+                ? (int) substr($p['target_month'], 5, 2)
+                : (int) now('Asia/Manila')->month;
+
+            if ($value === null) {
+                $class = 'none';
+            } elseif ($allClose) {
+                $class = 'fair';
+            } else {
+                $described = $seasonYield->describe($value, $targetMonthNum);
+                $class = match ($described['compare']) {
+                    'above' => 'good',
+                    'below' => 'low',
+                    default => 'fair',
+                };
+            }
+
             $level = ['good' => 'low', 'fair' => 'moderate', 'low' => 'high', 'none' => 'unavailable'][$class];
             $basis = $p['basis'] ?? null;
-            $reason = match ($basis) {
-                'barangay_model' => 'Unvalidated rice-yield model estimate run for this barangay.',
-                'farm_average' => 'Unvalidated average of '.($p['farms_used'] ?? 0).' farm estimates, weighted by farm size.',
-                BarangayYieldForecastService::NO_RICE_FARMS => BarangayYieldForecastService::NO_RICE_FARMS_MESSAGE,
-                default => 'No estimate yet.',
-            };
-            $row = $this->row($name, $level, $value, [$reason], $reason);
-            $row['label'] = $labels[$level === 'unavailable' ? 'nodata' : $level] ?? $row['label'];
+            $basisLabel = $value !== null ? ($p['basis_label'] ?? 'Lian-wide estimate') : 'No estimate yet';
+            $row = $this->row($name, $level, $value, [$basisLabel], $basisLabel);
+            $row['label'] = $value !== null ? $basisLabel : ($labels['nodata'] ?? 'No estimate yet');
             $row['yield'] = [
                 't_ha' => $value,
                 'class' => $class,
                 'basis' => $basis,
-                'period' => $period,
-                'season_t_ha' => is_numeric($p['season_yield'] ?? null) ? round((float) $p['season_yield'], 2) : null,
-                'vs_season' => $value !== null && is_numeric($p['season_yield'] ?? null) ? round($value - (float) $p['season_yield'], 2) : null,
+                'basis_label' => $basisLabel,
+                'adjusted' => (bool) ($p['adjusted'] ?? false),
+                'period' => 'season',
+                'season_t_ha' => $value,
+                'vs_season' => null,
                 'farms_used' => (int) ($p['farms_used'] ?? 0),
                 'season' => $p['season_label'] ?? null,
                 'model_version' => $p['model_version'] ?? null,
@@ -145,7 +167,7 @@ final class HeatMapLayerService
             $rows[] = $row;
         }
 
-        return [$rows, $newest];
+        return [$rows, $newest, $allClose];
     }
 
     /** A stable id for a supported rice-farm barangay. */
