@@ -250,6 +250,91 @@ class WeatherAnalysisService
     }
 
     /**
+     * Plain-language year summary for the farmer weather card.
+     *
+     * @param  array<string, array{current: list<float|null>, usual: list<float|null>, focus_year: int}>  $comparison
+     * @return array{
+     *     total_rain: float|null,
+     *     usual_rain: float|null,
+     *     rainiest_month: string|null,
+     *     driest_month: string|null,
+     *     hottest_month: string|null,
+     *     coolest_month: string|null,
+     *     rainy_months_count: int,
+     *     wet_season_note: string,
+     *     months_present: int,
+     * }
+     */
+    public function yearSummary(array $comparison, string $locale = 'en'): array
+    {
+        $rain = $comparison['rainfall']['current'] ?? [];
+        $usualRain = $comparison['rainfall']['usual'] ?? [];
+        $temp = $comparison['temperature']['current'] ?? [];
+        $monthNames = __('weather_analysis.month_names', [], $locale);
+
+        $rainVals = collect($rain)->filter(fn ($v) => $v !== null);
+        $usualRainVals = collect($usualRain)->filter(fn ($v) => $v !== null);
+
+        $maxIdx = static function (array $vals): ?int {
+            $bestIdx = null;
+            $bestVal = null;
+            foreach ($vals as $i => $v) {
+                if ($v !== null && ($bestVal === null || $v > $bestVal)) {
+                    $bestVal = $v;
+                    $bestIdx = $i;
+                }
+            }
+
+            return $bestIdx;
+        };
+        $minIdx = static function (array $vals): ?int {
+            $bestIdx = null;
+            $bestVal = null;
+            foreach ($vals as $i => $v) {
+                if ($v !== null && ($bestVal === null || $v < $bestVal)) {
+                    $bestVal = $v;
+                    $bestIdx = $i;
+                }
+            }
+
+            return $bestIdx;
+        };
+
+        $rainiest = $maxIdx($rain);
+        $driest = $minIdx($rain);
+        $hottest = $maxIdx($temp);
+        $coolest = $minIdx($temp);
+
+        $rainyIndices = [];
+        foreach ($rain as $i => $v) {
+            if ($v !== null && (float) $v > 100.0) {
+                $rainyIndices[] = $i;
+            }
+        }
+
+        $wetNote = __('weather_analysis.wet_note_none', [], $locale);
+        if ($rainyIndices !== []) {
+            $firstM = $monthNames[$rainyIndices[0] + 1] ?? '';
+            $lastM = $monthNames[end($rainyIndices) + 1] ?? '';
+            $usualHit = count(array_filter($rainyIndices, fn (int $i): bool => $i >= 4 && $i <= 10));
+            $key = $usualHit >= count($rainyIndices) / 2 ? 'wet_note_usual' : 'wet_note_shifted';
+            $wetNote = __('weather_analysis.'.$key, ['from' => $firstM, 'to' => $lastM], $locale);
+        }
+
+        return [
+            'total_rain' => $rainVals->isEmpty() ? null : round((float) $rainVals->sum(), 0),
+            'usual_rain' => $usualRainVals->isEmpty() ? null : round((float) $usualRainVals->sum(), 0),
+            'rainiest_month' => $rainiest !== null ? ($monthNames[$rainiest + 1] ?? null) : null,
+            'driest_month' => $driest !== null ? ($monthNames[$driest + 1] ?? null) : null,
+            'hottest_month' => $hottest !== null ? ($monthNames[$hottest + 1] ?? null) : null,
+            'coolest_month' => $coolest !== null ? ($monthNames[$coolest + 1] ?? null) : null,
+            'rainy_months_count' => count($rainyIndices),
+            'wet_season_note' => $wetNote,
+            'months_present' => $rainVals->count(),
+        ];
+    }
+
+    /**
      * Months that have both a yield record and climate readings: the yield beside the same month's readings and the
      * average of the three months up to it (the growing period before harvest).
      *

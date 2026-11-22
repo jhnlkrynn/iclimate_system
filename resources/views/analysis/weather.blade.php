@@ -8,6 +8,21 @@
         $shortMonths = array_slice($L('month_short'), 1, 12);
         $sage700 = config('palette.sage.700', '#2d6a4f');
         $sageMuted = '#6b7f74';
+        $yearBtnLabel = match ($yearMode) {
+            'latest_full' => $L('range_latest_full', ['year' => $focusYear]),
+            'so_far' => $L('range_so_far', ['year' => $focusYear]),
+            default => $L('range_this_year'),
+        };
+        $yearSeriesLabel = $range === 'last_3_years' ? $L('series_last_3_years') : match ($yearMode) {
+            'latest_full' => $L('series_latest_full', ['year' => $focusYear]),
+            'so_far' => $L('series_so_far', ['year' => $focusYear]),
+            default => $L('series_this_year', ['year' => $focusYear]),
+        };
+        $yearCardTitle = $range === 'last_3_years' ? $L('series_last_3_years') : match ($yearMode) {
+            'latest_full' => $L('card_title_year', ['year' => $focusYear]),
+            'so_far' => $L('card_title_so_far', ['year' => $focusYear]),
+            default => $L('card_title_this_year'),
+        };
     @endphp
 
     @unless ($isFarmer)
@@ -28,10 +43,10 @@
 
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
             <div class="btn-group btn-group-sm" role="group" aria-label="{{ $L('filters') }}" data-wa-range-toggle>
-                @foreach (['this_year' => 'range_this_year', 'last_3_years' => 'range_last_3_years', 'all_years' => 'range_all_years'] as $rKey => $rLabel)
+                @foreach (['this_year' => $yearBtnLabel, 'last_3_years' => $L('range_last_3_years'), 'all_years' => $L('range_all_years')] as $rKey => $rText)
                     <a href="{{ route('analysis.weather', array_filter(['range' => $rKey, 'season' => $filters['season'], 'month' => $filters['month']])) }}"
                        @class(['btn', 'btn-success' => $range === $rKey, 'btn-outline-secondary' => $range !== $rKey])
-                       @if ($range === $rKey) aria-current="page" @endif>{{ $L($rLabel) }}</a>
+                       @if ($range === $rKey) aria-current="page" @endif>{{ $rText }}</a>
                 @endforeach
             </div>
         </div>
@@ -97,7 +112,32 @@
                     </div>
                 @endforeach
 
-                @if (! $isFarmer && $windSummary)
+                @if ($isFarmer)
+                    <div class="col-12 col-lg-6">
+                        <section class="fad-card h-100" aria-labelledby="waYearSummaryTitle" data-wa-year-summary>
+                            <h2 class="mb-3 fw-bold" id="waYearSummaryTitle" style="font-size: 22px; color: var(--sage-800);">{{ $yearCardTitle }}</h2>
+                            <ul class="list-unstyled mb-0 d-grid gap-2" style="color: var(--sage-800);">
+                                @if ($yearSummary['total_rain'] !== null)
+                                    <li>
+                                        @if ($yearSummary['usual_rain'] !== null)
+                                            {{ $L('total_rain_line', ['total' => number_format($yearSummary['total_rain']), 'usual' => number_format($yearSummary['usual_rain'])]) }}
+                                        @else
+                                            {{ $L('total_rain_only', ['total' => number_format($yearSummary['total_rain'])]) }}
+                                        @endif
+                                    </li>
+                                @endif
+                                @if ($yearSummary['rainiest_month'] && $yearSummary['driest_month'])
+                                    <li>{{ $L('rainiest_driest_line', ['rainiest' => $yearSummary['rainiest_month'], 'driest' => $yearSummary['driest_month']]) }}</li>
+                                @endif
+                                @if ($yearSummary['hottest_month'] && $yearSummary['coolest_month'])
+                                    <li>{{ $L('hottest_coolest_line', ['hottest' => $yearSummary['hottest_month'], 'coolest' => $yearSummary['coolest_month']]) }}</li>
+                                @endif
+                                <li>{{ $L('rainy_months_line', ['count' => $yearSummary['rainy_months_count']]) }}</li>
+                            </ul>
+                            <p class="small text-muted mt-3 mb-0">{{ $yearSummary['wet_season_note'] }}</p>
+                        </section>
+                    </div>
+                @elseif ($windSummary)
                     <div class="col-12 col-lg-6">
                         <section class="fad-card h-100" aria-labelledby="waWindTableTitle" id="waWindTable">
                             <h2 class="mb-1 fw-bold" id="waWindTableTitle" style="font-size: 22px; color: var(--sage-800);">{{ $L('wind_table_title') }}</h2>
@@ -187,7 +227,7 @@
                     'comparison' => $comparison,
                     'timeline' => $chart,
                     'labels' => [
-                        'current' => $range === 'last_3_years' ? $L('series_last_3_years') : $L('series_this_year', ['year' => $focusYear]),
+                        'current' => $yearSeriesLabel,
                         'usual' => $L('series_usual'),
                         'usualShort' => $L('usual_short'),
                     ],
@@ -271,7 +311,38 @@
                         maintainAspectRatio: false,
                         interaction: { mode: 'index', intersect: false },
                         plugins: {
-                            legend: { display: true, position: 'top', align: 'end', labels: { boxWidth: 14, usePointStyle: false } },
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                align: 'end',
+                                labels: {
+                                    usePointStyle: true,
+                                    boxWidth: 20,
+                                    boxHeight: 10,
+                                    generateLabels: (chart) => [
+                                        {
+                                            text: payload.labels.current,
+                                            fillStyle: sage700,
+                                            strokeStyle: sage700,
+                                            lineWidth: type === 'bar' ? 0 : 2.5,
+                                            lineDash: [],
+                                            pointStyle: type === 'bar' ? 'rect' : 'line',
+                                            hidden: !chart.isDatasetVisible(0),
+                                            datasetIndex: 0,
+                                        },
+                                        {
+                                            text: payload.labels.usual,
+                                            fillStyle: 'transparent',
+                                            strokeStyle: sageMuted,
+                                            lineWidth: 2,
+                                            lineDash: [5, 3],
+                                            pointStyle: 'line',
+                                            hidden: !chart.isDatasetVisible(1),
+                                            datasetIndex: 1,
+                                        },
+                                    ],
+                                },
+                            },
                             tooltip: {
                                 callbacks: {
                                     title: (items) => items[0] ? `${items[0].label} ${payload.focusYear}` : '',

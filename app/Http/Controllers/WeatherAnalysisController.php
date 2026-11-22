@@ -54,12 +54,19 @@ class WeatherAnalysisController extends Controller
         foreach (['rainfall', 'temperature', 'humidity'] as $var) {
             $summaries[$var] = $this->analysis->summarySentence($var, $comparison[$var], $locale);
         }
+        $yearSummary = $this->analysis->yearSummary($comparison, $locale);
+        $calendarYear = (int) now('Asia/Manila')->year;
+        $focusMonths = $all->where('year', $focusYear)->count();
+        $yearMode = $focusYear < $calendarYear
+            ? 'latest_full'
+            : ($focusMonths < 12 ? 'so_far' : 'this_year');
 
         return view('analysis.weather', [
             'isFarmer' => $farmer,
             'locale' => $locale,
             'range' => $range,
             'focusYear' => $focusYear,
+            'yearMode' => $yearMode,
             'years' => $years->filter(fn ($y) => $y >= $fromYear)->values(),
             'fromYear' => $fromYear,
             'toYear' => $years->last(),
@@ -67,6 +74,7 @@ class WeatherAnalysisController extends Controller
             'count' => $shown->count(),
             'comparison' => $comparison,
             'summaries' => $summaries,
+            'yearSummary' => $yearSummary,
             'windSummary' => $farmer ? null : $this->analysis->windSummary($shown),
             'chart' => [
                 'labels' => $shown->map($label)->all(),
