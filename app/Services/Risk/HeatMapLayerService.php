@@ -128,11 +128,14 @@ final class HeatMapLayerService
                 ? (int) substr($firstPrediction['target_month'], 5, 2)
                 : (int) now('Asia/Manila')->month;
             $described = $seasonYield->describe($avgValue, $monthNum);
+            $seasonName = $firstPrediction['season'] ?? \App\Support\RiceSeason::forMonth($monthNum);
+            $farmTypeSplit = app(\App\Services\Prediction\YieldFarmTypeAdjustment::class)->summaryForSeason($seasonName, $avgValue);
             $lianWide = [
                 't_ha' => $avgValue,
                 'season' => $firstPrediction['season_label'] ?? null,
                 'usual' => $described['usual'],
                 'compare' => $described['compare'],
+                'farm_type_split' => $farmTypeSplit,
             ];
         }
 

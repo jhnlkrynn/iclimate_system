@@ -688,9 +688,14 @@ final class FarmerDashboardService
         $month = ! empty($result['target_month']) ? CarbonImmutable::parse($result['target_month'].'-01') : $now;
         $range = ($result['farm_size_basis'] ?? null) === Farm::SIZE_ESTIMATED ? (Farm::ESTIMATE_RANGES[$result['farm_size_range'] ?? ''] ?? null) : null;
 
+        $described = $this->seasonYield->describe((float) ($result['yield_tons_per_hectare'] ?? $result['predicted_yield']), (int) $month->month);
+        $farmTypeSplit = app(\App\Services\Prediction\YieldFarmTypeAdjustment::class)
+            ->summaryForSeason(\App\Support\RiceSeason::forMonth((int) $month->month), (float) ($described['yield'] ?? 0));
+
         return ['state' => 'ok', 'season' => $seasonLabel]
-            + $this->seasonYield->describe((float) ($result['yield_tons_per_hectare'] ?? $result['predicted_yield']), (int) $month->month)
+            + $described
             + [
+                'farm_type_split' => $farmTypeSplit,
                 'ran_at' => ! empty($result['ran_at']) ? CarbonImmutable::parse($result['ran_at'])->timezone(self::TIMEZONE) : null,
                 // An estimate made from an estimated farm size says so, with the range the farmer picked.
                 'size_note' => $range !== null ? __('farms.yield.estimated_size', ['range' => \App\Support\FarmSize::rangeLabel((string) $result['farm_size_range'])]) : null,

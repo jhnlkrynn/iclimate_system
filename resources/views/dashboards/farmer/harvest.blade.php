@@ -23,6 +23,14 @@
         {{-- The "Unvalidated estimate" disclosure stays until the model has validation evidence; no Normal/Higher/Lower badge
              on the farmer card (owner decision 2026-11-20). --}}
         <p class="fh-muted">@include('components.unvalidated-estimate')</p>
+        @if (! empty($h['farm_type_split']))
+            @php $split = $h['farm_type_split']; @endphp
+            @if ($split['active'])
+                <p class="fh-muted" data-fh-farm-type-split>{{ __('farmer.yield_farm_type.split', ['rainfed' => number_format($split['rainfed_t_ha'], 1), 'irrigated' => number_format($split['irrigated_t_ha'], 1)]) }} ({{ $split['basis'] }})</p>
+            @else
+                <p class="fh-muted" data-fh-farm-type-pending>{{ __('farmer.yield_farm_type.pending', ['count' => $split['rainfed_count'], 'min' => $split['min_harvests']]) }}</p>
+            @endif
+        @endif
         @if (! empty($h['size_note']))<p class="fh-muted">{{ $h['size_note'] }}</p>@endif
         <x-updated-at :at="$h['ran_at']" :label="__('farmer.home.updated')" />
         {{-- 2026-11-22: the whole card is a button that opens the "expected-harvest" section of the summary panel

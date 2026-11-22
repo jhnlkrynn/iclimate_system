@@ -3,11 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\FarmerOrganization;
+use App\Models\FarmTypeYieldOverride;
+use App\Services\Prediction\YieldFarmTypeAdjustment;
 use App\Services\Risk\HeatMapLayerService;
 use App\Services\SystemAuditLogger;
 use App\Support\CacheScope;
 use App\Support\LianBarangays;
 use App\Support\MaoScope;
+use App\Support\RiceSeason;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -39,13 +42,55 @@ class MaoAssociationFarmTypeController extends Controller
                 ->count()
             : 0;
 
+        $farmTypeAdj = app(YieldFarmTypeAdjustment::class);
+
         return view('mao.association-farm-types', [
             'associations' => $associations,
             'barangay' => $barangay,
             'barangays' => LianBarangays::all(),
             'status' => $status,
             'pendingCount' => $pendingCount,
+            'override' => $farmTypeAdj->currentOverride(),
+            'farmTypeStats' => $farmTypeAdj->summaryForSeason(RiceSeason::forMonth((int) now('Asia/Manila')->month), 4.10),
         ]);
+    }
+
+    public function saveOverride(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'rainfed_diff_percent' => ['required', 'numeric', 'min:-30', 'max:30'],
+            'note' => ['required', 'string', 'max:500'],
+        ]);
+
+        $override = FarmTypeYieldOverride::query()->create([
+            'rainfed_diff_percent' => round((float) $data['rainfed_diff_percent'], 2),
+            'note' => trim($data['note']),
+            'updated_by' => $request->user()->getKey(),
+        ]);
+
+        CacheScope::bump('heat-map-layers');
+        app(HeatMapLayerService::class)->forgetCache();
+
+        SystemAuditLogger::record('Updated Farm Type Yield Override', $request, [
+            'record_type' => 'FarmTypeYieldOverride',
+            'record_id' => $override->getKey(),
+            'rainfed_diff_percent' => $override->rainfed_diff_percent,
+            'note' => $override->note,
+        ]);
+
+        return back()->with('success', 'Farm-type yield difference saved (Set by MAO).');
+    }
+
+    public function clearOverride(Request $request): RedirectResponse
+    {
+        if (Schema::hasTable('farm_type_yield_overrides')) {
+            FarmTypeYieldOverride::query()->delete();
+            CacheScope::bump('heat-map-layers');
+            app(HeatMapLayerService::class)->forgetCache();
+            SystemAuditLogger::record('Cleared Farm Type Yield Override', $request, []);
+        }
+
+        return back()->with('success', 'MAO farm-type yield difference cleared.');
     }
 
     public function update(Request $request, FarmerOrganization $association): RedirectResponse

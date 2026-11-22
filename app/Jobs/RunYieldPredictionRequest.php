@@ -57,9 +57,14 @@ class RunYieldPredictionRequest implements ShouldQueue
             ->afterCommit();
     }
 
-    public function handle(RiceYieldPredictionService $model, SeasonYield $seasonYield, ?\App\Services\Prediction\YieldLocalAdjustment $localAdjustment = null): void
-    {
+    public function handle(
+        RiceYieldPredictionService $model,
+        SeasonYield $seasonYield,
+        ?\App\Services\Prediction\YieldLocalAdjustment $localAdjustment = null,
+        ?\App\Services\Prediction\YieldFarmTypeAdjustment $farmTypeAdjustment = null,
+    ): void {
         $localAdjustment ??= app(\App\Services\Prediction\YieldLocalAdjustment::class);
+        $farmTypeAdjustment ??= app(\App\Services\Prediction\YieldFarmTypeAdjustment::class);
         $request = YieldPredictionRequest::query()->find($this->requestId);
         if ($request === null || $request->status !== YieldPredictionRequest::QUEUED) {
             return;
@@ -94,7 +99,12 @@ class RunYieldPredictionRequest implements ShouldQueue
                 $request->season,
                 $modelValue,
             );
-            $finalYield = $adjustment['adjusted_yield'];
+            $farmTypeAdj = $farmTypeAdjustment->forRequest(
+                $request->farm_type,
+                $request->season,
+                $adjustment['adjusted_yield'],
+            );
+            $finalYield = $farmTypeAdj['adjusted_yield'];
 
             $described = $seasonYield->describe($finalYield, (int) $target->month);
             $request->forceFill([
@@ -119,6 +129,10 @@ class RunYieldPredictionRequest implements ShouldQueue
                     'factor' => $adjustment['factor'],
                     'record_count' => $adjustment['record_count'],
                     'seasons_used' => $adjustment['seasons_used'],
+                    'farm_type_model_value' => $farmTypeAdj['model_value'],
+                    'farm_type_factor' => $farmTypeAdj['factor'],
+                    'farm_type_basis' => $farmTypeAdj['basis'],
+                    'farm_type_source' => $farmTypeAdj['source'],
                 ], fn ($v) => $v !== null),
                 'error' => null,
                 'completed_at' => now(),

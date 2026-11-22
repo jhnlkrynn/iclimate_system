@@ -63,6 +63,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('role:'.User::ROLE_MAO)->prefix('mao/associations')->name('mao.associations.')->group(function () {
         Route::get('farm-types', [\App\Http\Controllers\MaoAssociationFarmTypeController::class, 'index'])->name('farm-types.index');
         Route::post('{association}/farm-type', [\App\Http\Controllers\MaoAssociationFarmTypeController::class, 'update'])->whereNumber('association')->middleware('throttle:60,1,post-association-farm-type')->name('farm-types.update');
+        Route::post('yield-override', [\App\Http\Controllers\MaoAssociationFarmTypeController::class, 'saveOverride'])->middleware('throttle:30,1,post-association-yield-override')->name('yield-override.store');
+        Route::delete('yield-override', [\App\Http\Controllers\MaoAssociationFarmTypeController::class, 'clearOverride'])->middleware('throttle:30,1,delete-association-yield-override')->name('yield-override.destroy');
     });
 
     // Association Requests (MAO): farms whose farmer's association "isn't listed" (FarmAssociationReviewController).

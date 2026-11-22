@@ -23,6 +23,8 @@
             'close' => $t('layers.yield_compare_close'),
             'above' => $t('layers.yield_compare_above'),
             'below' => $t('layers.yield_compare_below'),
+            'split' => trans('farmer.yield_farm_type.split', [], $locale),
+            'pending' => trans('farmer.yield_farm_type.pending', [], $locale),
         ];
         $mapData['versions'] = collect($ranges)->mapWithKeys(fn (array $r, string $key) => [$key => $r['updated_at'] ?? null])->all();
         // Panel revision 2.1: what the map tooltip / tap shows besides the name and level.

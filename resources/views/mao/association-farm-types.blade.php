@@ -9,6 +9,44 @@
             <div class="alert alert-success" role="status">{{ session('success') }}</div>
         @endif
 
+        @if ($errors->any())
+            <div class="alert alert-danger" role="alert"><ul class="mb-0">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+        @endif
+
+        <section class="mfd-card mb-4" aria-labelledby="yieldOverrideTitle">
+            <h2 id="yieldOverrideTitle" class="h5 mb-2">Rainfed vs. Irrigated Yield Difference (Optional MAO Override)</h2>
+            <p class="small text-muted mb-3">
+                iClimate harvest records so far: <strong>Rainfed {{ $farmTypeStats['rainfed_count'] ?? 0 }} / {{ $farmTypeStats['min_harvests'] ?? 10 }}</strong> ({{ $farmTypeStats['rainfed_seasons'] ?? 0 }} / 2 seasons) ·
+                <strong>Irrigated {{ $farmTypeStats['irrigated_count'] ?? 0 }} / {{ $farmTypeStats['min_harvests'] ?? 10 }}</strong> ({{ $farmTypeStats['irrigated_seasons'] ?? 0 }} / 2 seasons).
+                @if (($farmTypeStats['source'] ?? 'none') === 'records')
+                    Computed factors from iClimate harvest records are active and take priority over any MAO override.
+                @else
+                    Until enough harvests are recorded, MAO may enter a rainfed yield difference (%) from MAO records (labeled <em>Set by MAO</em>).
+                @endif
+            </p>
+            <form method="POST" action="{{ route('mao.associations.yield-override.store') }}" class="row g-2 align-items-end">
+                @csrf
+                <div class="col-md-3">
+                    <label for="rainfedDiffPercent" class="form-label small">Rainfed difference vs. Irrigated (%)</label>
+                    <input id="rainfedDiffPercent" type="number" step="0.1" min="-30" max="30" name="rainfed_diff_percent" class="form-control form-control-sm" value="{{ old('rainfed_diff_percent', $override?->rainfed_diff_percent) }}" placeholder="e.g. -15" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="overrideNote" class="form-label small">Source / Note (required)</label>
+                    <input id="overrideNote" type="text" maxlength="500" name="note" class="form-control form-control-sm" value="{{ old('note', $override?->note) }}" placeholder="e.g. MAO 2025 field survey summary" required>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm">Save override</button>
+                </div>
+            </form>
+            @if ($override)
+                <form method="POST" action="{{ route('mao.associations.yield-override.destroy') }}" class="mt-2">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">Clear MAO override</button>
+                </form>
+            @endif
+        </section>
+
         <form class="itd-filters mb-3" method="GET" action="{{ route('mao.associations.farm-types.index') }}">
             <label>Barangay
                 <select name="barangay" data-autosubmit>

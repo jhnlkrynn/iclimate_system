@@ -1488,4 +1488,10 @@ return [
         'results' => ':count result(s)',
     ],
     // ================================================================== end panel revisions
+    'yield_farm_type' => [
+        'split' => 'Rainfed farms: :rainfed t/ha · Irrigated farms: :irrigated t/ha',
+        'basis_records' => 'From :count iClimate harvest records',
+        'basis_mao' => 'Set by MAO',
+        'pending' => 'Rainfed and irrigated estimates will appear once enough harvests are recorded (rainfed: :count of :min)',
+    ],
 ];

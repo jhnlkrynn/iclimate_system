@@ -323,9 +323,16 @@ final class BarangayYieldForecastService
         }
         $modelValue = round((float) ($result['yield_tons_per_hectare'] ?? $result['predicted_yield']), 2);
         $adjustment = app(YieldLocalAdjustment::class)->forRequest($barangay, $farmType, $season, $modelValue);
-        $finalYield = $adjustment['adjusted_yield'];
+        $farmTypeAdj = app(YieldFarmTypeAdjustment::class)->forRequest($farmType, $season, $adjustment['adjusted_yield']);
+        $finalYield = $farmTypeAdj['adjusted_yield'];
         $modelInput = is_array($result['model_input'] ?? null) ? $result['model_input'] : [];
         $modelInput['local_adjustment'] = $adjustment;
+        $modelInput['farm_type_adjustment'] = [
+            'model_value' => $farmTypeAdj['model_value'],
+            'factor' => $farmTypeAdj['factor'],
+            'basis' => $farmTypeAdj['basis'],
+            'source' => $farmTypeAdj['source'],
+        ];
         $modelInput['farm_type'] = $farmType;
 
         $this->store->saveBarangay($barangay, [

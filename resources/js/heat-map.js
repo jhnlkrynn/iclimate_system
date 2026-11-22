@@ -123,7 +123,22 @@ export function initHeatMap() {
                 .replace(':value', Number(lianWide.t_ha).toFixed(2))
                 .replace(':compare', cmpText);
             const noteText = copy.note || "The model uses Lian's weather, so all barangays share this estimate. Barangay-level estimates need more local harvest records.";
-            view.innerHTML = `<h2 class="hmx-title">${escapeHtml(title)}</h2><div class="hmx-summary"><div class="hmx-text" data-heat-map-yield-lian><strong>${escapeHtml(cardText)}</strong><p class="hmx-hint mt-1 mb-0">${escapeHtml(noteText)}</p></div>${mineCard}</div><p class="hmx-source" data-heat-map-yield-source>${escapeHtml(payload.source || 'Based on trained model')}${updated ? ` · updated ${escapeHtml(updated)}` : ''}</p>`;
+            const split = lianWide.farm_type_split || null;
+            let splitHtml = '';
+            if (split) {
+                if (split.active) {
+                    const splitText = (copy.split || 'Rainfed farms: :rainfed t/ha · Irrigated farms: :irrigated t/ha')
+                        .replace(':rainfed', Number(split.rainfed_t_ha).toFixed(1))
+                        .replace(':irrigated', Number(split.irrigated_t_ha).toFixed(1));
+                    splitHtml = `<p class="hmx-hint mt-1 mb-0" data-heat-map-yield-split>${escapeHtml(splitText)}${split.basis ? ` (${escapeHtml(split.basis)})` : ''}</p>`;
+                } else {
+                    const pendingText = (copy.pending || 'Rainfed and irrigated estimates will appear once enough harvests are recorded (rainfed: :count of :min)')
+                        .replace(':count', String(split.rainfed_count ?? 0))
+                        .replace(':min', String(split.min_harvests ?? 10));
+                    splitHtml = `<p class="hmx-hint mt-1 mb-0" data-heat-map-yield-pending>${escapeHtml(pendingText)}</p>`;
+                }
+            }
+            view.innerHTML = `<h2 class="hmx-title">${escapeHtml(title)}</h2><div class="hmx-summary"><div class="hmx-text" data-heat-map-yield-lian><strong>${escapeHtml(cardText)}</strong>${splitHtml}<p class="hmx-hint mt-1 mb-0">${escapeHtml(noteText)}</p></div>${mineCard}</div><p class="hmx-source" data-heat-map-yield-source>${escapeHtml(payload.source || 'Based on trained model')}${updated ? ` · updated ${escapeHtml(updated)}` : ''}</p>`;
         } else {
             const countLines = ['low', 'moderate', 'high', 'unavailable'].filter((level) => Number(counts[level]) > 0).map((level) => `<li class="is-${escapeHtml(level)}"><span class="hmx-dot" style="--hmx-color:${escapeHtml(data.colors?.[level] || '#9CA3AF')}"></span>${escapeHtml(String(counts[level]))}: ${escapeHtml(rows.find((row) => row.level === level)?.label || level)}</li>`).join('');
             const season = rows.find((row) => row.yield?.season)?.yield.season;

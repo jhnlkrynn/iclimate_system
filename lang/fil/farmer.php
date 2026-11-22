@@ -1498,4 +1498,10 @@ return [
         'results' => ':count na resulta',
     ],
     // ================================================================== end panel revisions
+    'yield_farm_type' => [
+        'split' => 'Bukid na sahod-ulan: :rainfed t/ha · Bukid na may patubig: :irrigated t/ha',
+        'basis_records' => 'Mula sa :count tala ng ani sa iClimate',
+        'basis_mao' => 'Itinakda ng MAO',
+        'pending' => 'Lalabas ang magkahiwalay na tantiya para sa sahod-ulan at may patubig kapag sapat na ang naitalang ani (sahod-ulan: :count sa :min)',
+    ],
 ];
