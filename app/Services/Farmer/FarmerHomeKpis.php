@@ -108,21 +108,59 @@ class FarmerHomeKpis
 
         if ($farm === null) {
             $area = $this->knownArea($user, null);
+            $profile = $user->farmerProfile;
 
-            return $area === null ? null : $tile + ['value' => $this->number($area), 'unit' => 'ha', 'note' => $this->farmNote($user->farmerProfile?->farm_type, 1)];
+            return $area === null ? null : $tile + ['value' => $this->number($area), 'unit' => 'ha', 'note' => $this->farmNote($profile?->farm_type, 1),
+                'detail' => $this->detail(__('farmer.kpis.farm.label'), [
+                    __('farmer.kpis.detail.barangay') => $user->registeredBarangay() ?: __('farms.no_barangay'),
+                    __('farmer.kpis.detail.size') => $this->number($area).' ha',
+                    __('farmer.kpis.detail.farm_type') => $this->typeLabel($profile?->farm_type),
+                    __('farmer.kpis.detail.measured') => __('farmer.kpis.detail.method.profile'),
+                ], link: route('profile.edit'))];
         }
 
-        $note = $this->farmNote($farm->farm_type, ActiveFarm::farms($user)->count());
+        $farms = ActiveFarm::farms($user)->count();
+        $note = $this->farmNote($farm->farm_type, $farms);
+        // The summary panel: the farm's name, place, size, type and how the size was found.
+        $detail = fn (string $size): array => $this->detail(__('farmer.kpis.farm.label'), array_filter([
+            __('farmer.kpis.detail.farm_name') => (string) $farm->farm_name,
+            __('farmer.kpis.detail.barangay') => $farm->barangay ?: __('farms.no_barangay'),
+            __('farmer.kpis.detail.size') => $size,
+            __('farmer.kpis.detail.farm_type') => $this->typeLabel($farm->farm_type),
+            __('farmer.kpis.detail.measured') => __('farmer.kpis.detail.method.'.(in_array($farm->farm_size_method, Farm::SIZE_METHODS, true) ? $farm->farm_size_method : Farm::SIZE_UNKNOWN)),
+            __('farmer.kpis.detail.farms') => $farms > 1 ? __('farmer.kpis.farm.farms', ['count' => $farms]) : null,
+        ], fn ($value): bool => $value !== null && $value !== ''), link: route('farmer.farms.edit', $farm));
         if (($known = $farm->knownHectares()) !== null) {
-            return $tile + ['value' => $this->number($known), 'unit' => 'ha', 'note' => $note];
+            return $tile + ['value' => $this->number($known), 'unit' => 'ha', 'note' => $note, 'detail' => $detail($this->number($known).' ha')];
         }
         if ($farm->estimateRange() !== null) {
             // An estimate is shown as the range the farmer picked, and says it is an estimate.
-            return $tile + ['value' => FarmSize::rangeLabel((string) $farm->farm_size_estimate_range), 'unit' => null,
-                'note' => trim(__('farms.size.estimated').($note !== null ? ' · '.$note : ''))];
+            $range = FarmSize::rangeLabel((string) $farm->farm_size_estimate_range);
+
+            return $tile + ['value' => $range, 'unit' => null,
+                'note' => trim(__('farms.size.estimated').($note !== null ? ' · '.$note : '')), 'detail' => $detail($range)];
         }
 
         return null;
+    }
+
+    /** "Irrigated" / "Rainfed", or "Not added yet". */
+    private function typeLabel(?string $type): string
+    {
+        return in_array($type, FarmerPlantingSchedule::FARM_TYPES, true) ? __('farmer.kpis.farm.type.'.strtolower($type)) : __('farms.size.not_added');
+    }
+
+    /**
+     * What a tile's summary panel shows (dashboards/farmer/detail.blade.php): fact rows, an optional progress bar and
+     * explanation, when the figure was last updated, and the page with the full details. Built from the same records
+     * the tile itself reads, so opening a panel asks the server nothing.
+     *
+     * @param  array<string, string>  $rows
+     * @return array<string, mixed>
+     */
+    private function detail(string $title, array $rows, ?string $text = null, ?int $progress = null, mixed $updatedAt = null, ?string $link = null): array
+    {
+        return ['title' => $title, 'rows' => $rows, 'text' => $text, 'progress' => $progress, 'updated_at' => $updatedAt, 'link' => $link];
     }
 
     /** "Irrigated" / "Rainfed", and "2 farms" when the farmer has more than one. */
@@ -174,12 +212,28 @@ class FarmerHomeKpis
         $harvest = ($date = $plan->harvestDateForPlanning()) ? CarbonImmutable::parse($date->toDateString()) : null;
         $day = fn (CarbonImmutable $d): string => $d->locale(app()->getLocale())->translatedFormat($d->year === $today->year ? 'M j' : 'M j, Y');
         $tile = ['key' => 'crop', 'icon' => 'sprout', 'href' => route('farmer.my-farm')];
+        $variety = $plan->varietyLabel();
+        $long = fn (CarbonImmutable $d): string => $d->locale(app()->getLocale())->translatedFormat('M j, Y');
+        // The summary panel: the crop, its two dates, and where the harvest date comes from.
+        $facts = fn (array $more): array => [
+            __('farmer.kpis.detail.crop') => $variety ? __('farmer.kpis.detail.rice').' · '.$variety : __('farmer.kpis.detail.rice'),
+            __('farmer.kpis.detail.planting_date') => $long($planted),
+            __('farmer.kpis.detail.harvest_date') => $harvest !== null ? $long($harvest) : __('farms.size.not_added'),
+        ] + $more;
+        $basis = $harvest === null ? null : __('farmer.kpis.detail.harvest_basis.'.match (true) {
+            (bool) $plan->harvest_date_manual => 'manual',
+            $plan->scheduled_harvest_date !== null && $variety !== null => 'variety',
+            $plan->scheduled_harvest_date !== null => 'plan',
+            default => 'month',
+        });
+        $link = route('farmer.planting-schedules.edit', $plan);
 
         if ($planted->gt($today)) {
             $days = (int) $today->diffInDays($planted);
 
             return $tile + ['label' => __('farmer.kpis.crop.to_planting'), 'value' => (string) $days, 'unit' => trans_choice('farmer.kpis.days', $days),
-                'note' => __('farmer.kpis.crop.planting_on', ['date' => $day($planted)])];
+                'note' => __('farmer.kpis.crop.planting_on', ['date' => $day($planted)]),
+                'detail' => $this->detail(__('farmer.kpis.crop.to_planting'), $facts([__('farmer.kpis.detail.days_to_planting') => $days.' '.trans_choice('farmer.kpis.days', $days)]), $basis, link: $link)];
         }
         if ($harvest === null) {
             return null;
@@ -188,16 +242,21 @@ class FarmerHomeKpis
             $late = (int) $harvest->diffInDays($today);
 
             return $late > self::OVERDUE_DAYS ? null : $tile + ['label' => __('farmer.kpis.crop.passed'), 'value' => (string) $late, 'unit' => trans_choice('farmer.kpis.days_ago', $late),
-                'note' => __('farmer.kpis.crop.record')];
+                'note' => __('farmer.kpis.crop.record'),
+                'detail' => $this->detail(__('farmer.kpis.crop.passed'), $facts([__('farmer.kpis.detail.days_since') => $late.' '.trans_choice('farmer.kpis.days_ago', $late)]),
+                    __('farmer.kpis.crop.record'), 100, link: $link)];
         }
 
         $days = (int) $today->diffInDays($harvest);
         $total = (int) $planted->diffInDays($harvest);
+        $progress = $total > 0 ? max(0, min(100, (int) round(($total - $days) / $total * 100))) : null;
 
         return $tile + ['label' => __('farmer.kpis.crop.to_harvest'), 'value' => (string) $days, 'unit' => trans_choice('farmer.kpis.days', $days),
             // The variety the date comes from, when the farmer recorded one ("Harvest around Feb 16 · NSIC Rc 480 (GSR 8)").
-            'note' => __('farmer.kpis.crop.harvest_on', ['date' => $day($harvest)]).(($variety = $plan->varietyLabel()) ? ' · '.$variety : ''),
-            'progress' => $total > 0 ? max(0, min(100, (int) round(($total - $days) / $total * 100))) : null];
+            'note' => __('farmer.kpis.crop.harvest_on', ['date' => $day($harvest)]).($variety ? ' · '.$variety : ''),
+            'progress' => $progress,
+            'detail' => $this->detail(__('farmer.kpis.crop.to_harvest'), $facts([__('farmer.kpis.detail.days_left') => $days.' '.trans_choice('farmer.kpis.days', $days)]),
+                $basis, $progress, link: $link)];
     }
 
     /**
@@ -213,10 +272,21 @@ class FarmerHomeKpis
             return null;
         }
         $tons = (float) $harvest['yield'] * $area;
+        $value = number_format($tons, $tons < 10 ? 2 : 1);
+        $unit = trans_choice('farmer.kpis.tons', $tons == 1.0 ? 1 : 2);
+        $note = __('farmer.kpis.expected.note', ['yield' => number_format((float) $harvest['yield'], 2), 'area' => $this->number($area)]);
 
         return ['key' => 'expected', 'icon' => 'yield', 'href' => route('weather-predictions.index'), 'label' => __('farmer.kpis.expected.label'),
-            'value' => number_format($tons, $tons < 10 ? 2 : 1), 'unit' => trans_choice('farmer.kpis.tons', $tons == 1.0 ? 1 : 2),
-            'note' => __('farmer.kpis.expected.note', ['yield' => number_format((float) $harvest['yield'], 2), 'area' => $this->number($area)])];
+            'value' => $value, 'unit' => $unit, 'note' => $note,
+            'detail' => $this->detail(__('farmer.kpis.expected.label'), array_filter([
+                __('farmer.kpis.detail.estimated_tons') => $value.' '.$unit,
+                __('farmer.kpis.detail.yield_per_ha') => number_format((float) $harvest['yield'], 2).' t/ha',
+                __('farmer.kpis.detail.size') => $this->number($area).' ha',
+                __('farmer.kpis.detail.computation') => $note.' = '.$value.' '.$unit,
+                __('farmer.kpis.detail.season') => (string) ($harvest['season'] ?? ''),
+                __('farmer.kpis.detail.compared') => (string) ($harvest['compare_label'] ?? ''),
+            ], fn (string $v): bool => $v !== ''), __('farmer.kpis.detail.expected_how'), updatedAt: $harvest['ran_at'] ?? null,
+                link: route('weather-predictions.index').'#yield')];
     }
 
     /**
@@ -234,9 +304,15 @@ class FarmerHomeKpis
         $rainy = $days->filter(fn (array $d): bool => $d['rain_key'] !== 'none')->count();
         $heavy = $days->filter(fn (array $d): bool => $d['rain_key'] === 'heavy')->count();
 
+        $note = $heavy > 0 ? trans_choice('farmer.kpis.rain.heavy', $heavy, ['count' => $heavy]) : __('farmer.kpis.rain.no_heavy');
+        $rows = [];
+        foreach ($days as $d) {
+            $rows[(string) ($d['label'] ?? '')] = trim((string) ($d['condition'] ?? '').(! empty($d['rain']) ? ' · '.$d['rain'] : ''));
+        }
+
         return ['key' => 'rain', 'icon' => 'rain', 'href' => route('weather-predictions.index'), 'label' => __('farmer.kpis.rain.label', ['days' => $days->count()]),
-            'value' => (string) $rainy, 'unit' => __('farmer.kpis.rain.of', ['days' => $days->count()]),
-            'note' => $heavy > 0 ? trans_choice('farmer.kpis.rain.heavy', $heavy, ['count' => $heavy]) : __('farmer.kpis.rain.no_heavy')];
+            'value' => (string) $rainy, 'unit' => __('farmer.kpis.rain.of', ['days' => $days->count()]), 'note' => $note,
+            'detail' => $this->detail(__('farmer.kpis.rain.label', ['days' => $days->count()]), $rows, $note, link: route('weather-predictions.index').'#weather')];
     }
 
     // ------------------------------------------------------------ the figures about the farmer's place
@@ -255,7 +331,30 @@ class FarmerHomeKpis
         }
 
         return ['key' => 'risk', 'icon' => 'alert', 'href' => route('heat-map.index'), 'label' => __('farmer.kpis.risk.label'),
-            'value' => (string) $risk['label'], 'unit' => null, 'note' => (string) ($risk['barangay'] ?? $place['barangay'] ?? '')];
+            'value' => (string) $risk['label'], 'unit' => null, 'note' => (string) ($risk['barangay'] ?? $place['barangay'] ?? ''),
+            'detail' => self::riskDetail($risk, (string) ($place['barangay'] ?? ''))];
+    }
+
+    /**
+     * The barangay risk summary panel. The risk tile and the Barangay Risk card (risk.blade.php) open the same one.
+     *
+     * @param  array<string, mixed>  $risk  the page's barangay risk card (FarmerDashboardService::riskStatus)
+     * @return array<string, mixed>
+     */
+    public static function riskDetail(array $risk, string $barangay = ''): array
+    {
+        return [
+            'title' => __('farmer.kpis.risk.label'),
+            'badge' => ['tone' => (string) ($risk['tone'] ?? 'info'), 'label' => (string) ($risk['label'] ?? '')],
+            'rows' => array_filter([
+                __('farmer.kpis.detail.barangay') => (string) ($risk['barangay'] ?? $barangay),
+                __('farmer.kpis.detail.risk_level') => (string) ($risk['label'] ?? ''),
+            ], fn (string $v): bool => $v !== ''),
+            'text' => (string) ($risk['meaning'] ?? ''),
+            'progress' => null,
+            'updated_at' => $risk['updated_at'] ?? null,
+            'link' => route('heat-map.index'),
+        ];
     }
 
     /**
@@ -271,8 +370,14 @@ class FarmerHomeKpis
         }
         $count = SampleData::without(PlantingAdvisory::query(), 'planting_advisories')->active()->forBarangay($place['barangay'] ?? null)->count();
 
+        $note = $count > 0 ? __('farmer.kpis.advisories.note') : __('farmer.kpis.advisories.none');
+
         return ['key' => 'advisories', 'icon' => 'advisory', 'href' => route('planting-advisories.index'), 'label' => __('farmer.kpis.advisories.label'),
-            'value' => (string) $count, 'unit' => null, 'note' => $count > 0 ? __('farmer.kpis.advisories.note') : __('farmer.kpis.advisories.none')];
+            'value' => (string) $count, 'unit' => null, 'note' => $note,
+            'detail' => $this->detail(__('farmer.kpis.advisories.label'), [
+                __('farmer.kpis.detail.in_effect') => (string) $count,
+                __('farmer.kpis.detail.barangay') => (string) ($place['barangay'] ?? '') ?: __('farmer.place_default'),
+            ], $note, link: route('planting-advisories.index'))];
     }
 
     /**
@@ -291,8 +396,14 @@ class FarmerHomeKpis
         $hottest = max($days);
         $on = array_search($hottest, $days, true);
 
+        $rows = [];
+        foreach ($days as $i => $temperature) {
+            $rows[(string) ($forecast['labels'][$i] ?? $i)] = (int) round((float) $temperature).'°C';
+        }
+
         return ['key' => 'hot', 'icon' => 'temperature', 'href' => route('weather-predictions.index'), 'label' => __('farmer.kpis.hot.label'),
-            'value' => (string) (int) round((float) $hottest), 'unit' => '°C', 'note' => (string) ($forecast['labels'][$on] ?? '')];
+            'value' => (string) (int) round((float) $hottest), 'unit' => '°C', 'note' => (string) ($forecast['labels'][$on] ?? ''),
+            'detail' => $this->detail(__('farmer.kpis.hot.label'), $rows, __('farmer.kpis.detail.hot_how'), link: route('weather-predictions.index').'#weather')];
     }
 
     /**
@@ -308,9 +419,20 @@ class FarmerHomeKpis
         $end = CarbonImmutable::parse($season['end']->toDateString());
         $days = (int) $today->diffInDays($end);
 
+        $start = CarbonImmutable::parse($season['start']->toDateString());
+        $total = (int) $start->diffInDays($end);
+        $label = __('farmer.kpis.season.'.strtolower($season['season']));
+        $long = fn (CarbonImmutable $d): string => $d->locale(app()->getLocale())->translatedFormat('M j, Y');
+
         return ['key' => 'season', 'icon' => 'calendar', 'href' => route('farmer.my-farm'),
-            'label' => __('farmer.kpis.season.'.strtolower($season['season'])), 'value' => (string) $days, 'unit' => trans_choice('farmer.kpis.days', $days),
-            'note' => __('farmer.kpis.season.ends', ['date' => $end->locale(app()->getLocale())->translatedFormat('M j')])];
+            'label' => $label, 'value' => (string) $days, 'unit' => trans_choice('farmer.kpis.days', $days),
+            'note' => __('farmer.kpis.season.ends', ['date' => $end->locale(app()->getLocale())->translatedFormat('M j')]),
+            'detail' => $this->detail($label, [
+                __('farmer.kpis.detail.season_start') => $long($start),
+                __('farmer.kpis.detail.season_end') => $long($end),
+                __('farmer.kpis.detail.days_left') => $days.' '.trans_choice('farmer.kpis.days', $days),
+            ], __('farmer.kpis.detail.season_how'), $total > 0 ? max(0, min(100, (int) round(($total - $days) / $total * 100))) : null,
+                link: route('farmer.my-farm'))];
     }
 
     /**
@@ -327,7 +449,11 @@ class FarmerHomeKpis
         $usual = $this->seasonYield->usual((int) $now->month);
 
         return $usual === null ? null : ['key' => 'usual', 'icon' => 'yield', 'href' => route('weather-predictions.index'), 'label' => __('farmer.kpis.usual.label'),
-            'value' => number_format($usual, 2), 'unit' => 't/ha', 'note' => __('farmer.kpis.usual.note')];
+            'value' => number_format($usual, 2), 'unit' => 't/ha', 'note' => __('farmer.kpis.usual.note'),
+            'detail' => $this->detail(__('farmer.kpis.usual.label'), [
+                __('farmer.kpis.detail.yield_per_ha') => number_format($usual, 2).' t/ha',
+                __('farmer.kpis.detail.month') => $now->locale(app()->getLocale())->translatedFormat('F'),
+            ], __('farmer.kpis.usual.note'), link: route('weather-predictions.index').'#yield')];
     }
 
     /**

@@ -224,6 +224,40 @@ class FarmerHomeKpisTest extends TestCase
         $this->assertStringContainsString('May patubig', $fil);
     }
 
+    public function test_each_tile_opens_a_summary_panel_about_its_own_figure_with_a_link_to_the_right_page(): void
+    {
+        $farmer = $this->farmer();
+        $farm = $this->farm($farmer);
+        $plan = $this->plan($farmer, '2026-07-28', '2026-11-05');
+
+        $tiles = $this->tiles($farmer, $farm, ['state' => 'ok', 'yield' => 4.2, 'season' => 'Wet season 2026']);
+
+        $farmDetail = $tiles['farm']['detail'];
+        $this->assertSame(['North Farm', 'Prenza', '1.5 ha', 'Irrigated', 'Entered by you'], array_values($farmDetail['rows']));
+        $this->assertSame(route('farmer.farms.edit', $farm), $farmDetail['link']);
+
+        $crop = $tiles['crop']['detail'];
+        $this->assertSame(['Rice', 'Jul 28, 2026', 'Nov 5, 2026', '30 days'], array_values($crop['rows']));
+        $this->assertSame(70, $crop['progress']);
+        $this->assertSame(route('farmer.planting-schedules.edit', $plan), $crop['link']);
+
+        $expected = $tiles['expected']['detail'];
+        $this->assertSame('6.30 tons', $expected['rows']['Estimated harvest']);
+        $this->assertSame('4.20 t/ha × 1.5 ha = 6.30 tons', $expected['rows']['Computation']);
+        $this->assertSame(route('weather-predictions.index').'#yield', $expected['link']);
+
+        // On the page: the tile asks for the panel, its <template> is rendered with it (so the timed refresh keeps it
+        // current), and without scripts the tile's link is the full-details page, not My Farm.
+        $html = $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('#<a class="fh-kpi" href="'.preg_quote(route('farmer.planting-schedules.edit', $plan), '#').'" data-fh-kpi="crop"\s+data-fh-detail-open="kpi-crop" aria-haspopup="dialog"#', $html);
+        $this->assertSame(1, preg_match('#<template data-fh-detail="kpi-crop">(.*?)</template>#s', $html, $m));
+        $text = (string) preg_replace('/\s+/', ' ', html_entity_decode(strip_tags(str_replace('<', ' <', $m[1]))));
+        $this->assertStringContainsString('Planting date Jul 28, 2026', $text);
+        $this->assertStringContainsString('Expected harvest date Nov 5, 2026', $text);
+        $this->assertStringContainsString('View full details', $text);
+        $this->assertStringContainsString('data-fh-drawer', $html);
+    }
+
     public function test_a_farmer_with_nothing_saved_still_gets_real_figures_about_their_place_and_no_empty_tiles(): void
     {
         $html = $this->actingAs($this->farmer())->get(route('farmer.dashboard'))->assertOk()->getContent();

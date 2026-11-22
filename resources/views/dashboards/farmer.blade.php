@@ -30,5 +30,18 @@
             <p class="fh-words">{{ __('farmer.survey.home_text') }}</p>
             <a class="mfd-btn" href="{{ route('farmer.survey.show') }}" style="align-self: flex-start">{{ __('farmer.survey.open') }}</a>
         </section>
+
+        {{-- Farmer – Naicel (2026-11-22): the one summary panel the cards open (a drawer from the right; a sheet from
+             the bottom on a phone). farmer-dashboard.js fills it from the card's <template> (detail.blade.php) and
+             closes it with the X, a click outside it or Esc. --}}
+        <div class="fh-drawer" data-fh-drawer hidden>
+            <div class="fh-drawer-backdrop" data-fh-drawer-close></div>
+            <div class="fh-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="fhDrawerTitle" tabindex="-1" data-fh-drawer-panel>
+                <button type="button" class="fh-drawer-x" data-fh-drawer-close aria-label="{{ __('farmer.kpis.detail.close') }}">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+                </button>
+                <div class="fh-drawer-body" data-fh-drawer-body></div>
+            </div>
+        </div>
     </div>
 </x-app-layout>
