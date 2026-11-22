@@ -103,7 +103,6 @@ export function initFarmerDashboard() {
     root.addEventListener('click', (e) => {
         if (e.target.closest('[data-mfd-refresh]')) refresh({ force: true });
     });
-    initCardDrawer(root);
     // The yield estimate is made in the background (PrepareFarmerYieldEstimate): while the card is a placeholder, ask for
     // that card alone, a little less often each time and only while the tab is visible, and stop once it is filled.
     const harvestPending = () => !!$('[data-mfd-load="harvest"]');
@@ -130,80 +129,3 @@ export function initFarmerDashboard() {
     scheduleHarvest();
 }
 
-/**
- * Farmer – Naicel (2026-11-22): a card's summary panel. A card (a key-figure tile, or the Weather / Barangay Risk /
- * Expected Yield card) carries data-fh-detail-open="<key>"; its panel is a <template data-fh-detail="<key>"> rendered
- * with the card (dashboards/farmer/detail.blade.php), so it is already on the page and stays current with the timed
- * refresh. Opening asks the server nothing. Closes with the X, a click outside the panel, or Esc; focus stays inside
- * while it is open and goes back to the card after. A Ctrl/Cmd/Shift or middle click on a tile still opens its
- * "full details" page, as a plain link would.
- */
-function initCardDrawer(root) {
-    const drawer = root.querySelector('[data-fh-drawer]');
-    if (!drawer) return;
-    // Out of the page's animated sections, so `position: fixed` is always the screen.
-    document.body.appendChild(drawer);
-    const panel = drawer.querySelector('[data-fh-drawer-panel]');
-    const body = drawer.querySelector('[data-fh-drawer-body]');
-    let opener = null;
-    let closeTimer = null;
-
-    const focusables = () => Array.from(panel.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'))
-        .filter((el) => el.offsetParent !== null || el === document.activeElement);
-
-    function open(key, trigger) {
-        const template = root.querySelector('template[data-fh-detail="' + CSS.escape(key) + '"]');
-        if (!template) return false;
-        clearTimeout(closeTimer);
-        body.replaceChildren(template.content.cloneNode(true));
-        const title = body.querySelector('[data-fh-drawer-title]');
-        if (title) title.id = 'fhDrawerTitle';
-        opener = trigger;
-        drawer.hidden = false;
-        document.documentElement.classList.add('fh-drawer-lock');
-        requestAnimationFrame(() => {
-            drawer.classList.add('is-open');
-            panel.focus({ preventScroll: true });
-        });
-        return true;
-    }
-
-    function close() {
-        if (drawer.hidden) return;
-        drawer.classList.remove('is-open');
-        document.documentElement.classList.remove('fh-drawer-lock');
-        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        closeTimer = setTimeout(() => { drawer.hidden = true; body.replaceChildren(); }, reduce ? 0 : 220);
-        // The card may have been redrawn by a refresh while the panel was open: focus its new copy.
-        const key = opener?.dataset.fhDetailOpen;
-        const target = opener?.isConnected ? opener : (key ? root.querySelector('[data-fh-detail-open="' + CSS.escape(key) + '"]') : null);
-        opener = null;
-        target?.focus({ preventScroll: true });
-    }
-
-    root.addEventListener('click', (e) => {
-        const trigger = e.target.closest('[data-fh-detail-open]');
-        if (!trigger || !root.contains(trigger)) return;
-        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;   // open the page in a new tab, as before
-        if (open(trigger.dataset.fhDetailOpen, trigger)) e.preventDefault();
-    });
-
-    drawer.addEventListener('click', (e) => {
-        if (e.target.closest('[data-fh-drawer-close]')) close();
-    });
-
-    document.addEventListener('keydown', (e) => {
-        if (drawer.hidden) return;
-        if (e.key === 'Escape') {
-            e.preventDefault();
-            close();
-        } else if (e.key === 'Tab') {
-            const items = focusables();
-            if (items.length === 0) { e.preventDefault(); return; }
-            const first = items[0];
-            const last = items[items.length - 1];
-            if (e.shiftKey && (document.activeElement === first || document.activeElement === panel)) { e.preventDefault(); last.focus(); }
-            else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-        }
-    });
-}
