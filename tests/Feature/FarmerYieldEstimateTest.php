@@ -84,9 +84,11 @@ class FarmerYieldEstimateTest extends TestCase
     /** The yield card's visible words. */
     private function card(string $html): string
     {
-        $this->assertSame(1, preg_match('#<section class="fh-card"[^>]*data-fh-harvest[^>]*>(.*?)</section>#s', $html, $m), 'yield card');
+        $this->assertSame(1, preg_match('#<section class="fh-card[^"]*"[^>]*data-fh-harvest[^>]*>(.*?)</section>#s', $html, $m), 'yield card');
+        // The card's summary panel (a <template>) and the button that opens it are not part of the card's visible words.
+        $visible = preg_replace(['#<template\b.*?</template>#s', '#<button[^>]*class="fh-card-open"[^>]*>.*?</button>#s'], '', $m[1]);
 
-        return trim((string) preg_replace('/\s+/', ' ', html_entity_decode(strip_tags($m[1]))));
+        return trim((string) preg_replace('/\s+/', ' ', html_entity_decode(strip_tags((string) $visible))));
     }
 
     private function home(User $farmer): string

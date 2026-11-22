@@ -35,6 +35,19 @@ class OffsiteBackupTest extends TestCase
         parent::tearDown();
     }
 
+    /**
+     * The service refuses a key file that group or others can read (chmod 600 is required). Windows ignores chmod, so
+     * the key always looks readable by everyone there and every send is refused; such a test can only run on a file
+     * system with owner-only permissions (the Linux server).
+     */
+    private function requireOwnerOnlyKeyFile(): void
+    {
+        clearstatcache(true, $this->root.'/keys/backup.key');
+        if ((fileperms($this->root.'/keys/backup.key') & 0o077) !== 0) {
+            $this->markTestSkipped('This file system ignores chmod 600 (Windows), so the key file cannot be made owner-only.');
+        }
+    }
+
     private function backup(string $name = 'iclimate_2026-11-20_0315.backup'): string
     {
         $path = $this->root.'/backups/'.$name;
@@ -45,6 +58,7 @@ class OffsiteBackupTest extends TestCase
 
     public function test_the_newest_backup_is_encrypted_verified_copied_and_recorded(): void
     {
+        $this->requireOwnerOnlyKeyFile();
         $original = $this->backup();
 
         $this->artisan('iclimate:backup-offsite')->expectsOutputToContain('Encrypted copy sent: iclimate_2026-11-20_0315.backup.enc')->assertSuccessful();
@@ -83,6 +97,7 @@ class OffsiteBackupTest extends TestCase
 
     public function test_old_copies_are_pruned_but_the_newest_is_kept(): void
     {
+        $this->requireOwnerOnlyKeyFile();
         $old = $this->root.'/target/iclimate_2026-10-01_0315.backup.enc';
         file_put_contents($old, 'old');
         file_put_contents($old.'.sha256', 'x');
@@ -103,6 +118,7 @@ class OffsiteBackupTest extends TestCase
 
     public function test_a_target_inside_the_backup_directory_is_refused(): void
     {
+        $this->requireOwnerOnlyKeyFile();       // the key is checked first, so on Windows the refusal names the key instead
         $this->backup();
         config(['backup.offsite.target' => $this->root.'/backups/offsite']);
         $this->artisan('iclimate:backup-offsite')->expectsOutputToContain('must not be inside the backup directory')->assertFailed();
