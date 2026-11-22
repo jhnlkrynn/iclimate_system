@@ -15,7 +15,7 @@
     </section>
     @endif
 @else
-<section class="fh-card" aria-labelledby="fhHarvestTitle" data-fh-harvest @if ($h['state'] === 'loading') data-mfd-load="harvest" @endif>
+<section @class(['fh-card', 'fh-card-opens' => $h['state'] === 'ok']) aria-labelledby="fhHarvestTitle" data-fh-harvest @if ($h['state'] === 'loading') data-mfd-load="harvest" @endif>
     <h2 id="fhHarvestTitle" class="fh-kicker">{{ __('farmer.home.harvest.title') }}</h2>
     <p class="fh-muted">{{ $h['season'] }}</p>
     @if ($h['state'] === 'ok')
@@ -27,6 +27,24 @@
         @endif
         @if (! empty($h['size_note']))<p class="fh-muted">{{ $h['size_note'] }}</p>@endif
         <x-updated-at :at="$h['ran_at']" :label="__('farmer.home.updated')" />
+        {{-- 2026-11-22: the card opens its summary panel; with a known farm size it is the same panel as the
+             "Expected harvest this season" tile (tons), otherwise the estimate per hectare alone. --}}
+        @php $expectedTile = collect($f['kpis'] ?? [])->first(fn (array $tile): bool => $tile['key'] === 'expected' && ! empty($tile['detail'])); @endphp
+        <button type="button" class="fh-card-open" data-fh-detail-open="{{ $expectedTile ? 'kpi-expected' : 'harvest' }}" aria-haspopup="dialog"><span class="mfd-sr-only">{{ __('farmer.kpis.detail.open', ['card' => __('farmer.home.harvest.title')]) }}</span></button>
+        @unless ($expectedTile)
+            @include('dashboards.farmer.detail', ['key' => 'harvest', 'd' => [
+                'title' => __('farmer.home.harvest.title'),
+                'rows' => array_filter([
+                    __('farmer.kpis.detail.yield_per_ha') => number_format($h['yield'], 2).' t/ha',
+                    __('farmer.kpis.detail.season') => (string) ($h['season'] ?? ''),
+                    __('farmer.kpis.detail.compared') => (string) ($h['compare_label'] ?? ''),
+                    __('farmer.kpis.detail.size') => (string) ($h['size_note'] ?? ''),
+                ], fn (string $v): bool => $v !== ''),
+                'text' => __('farmer.kpis.detail.harvest_how'),
+                'updated_at' => $h['ran_at'] ?? null,
+                'link' => route('weather-predictions.index').'#yield',
+            ]])
+        @endunless
     @elseif ($h['state'] === 'loading')
         <div class="ic-skel-lines" role="status"><span></span><span></span><span class="visually-hidden">{{ __('farmer.home.harvest.preparing') }}</span></div>
         <p class="fh-muted">{{ __('farmer.home.harvest.preparing') }}</p>
