@@ -22,7 +22,8 @@ class BackupDatabase extends Command
             $this->error('Backup failed: '.$exception->getMessage());
 
             return self::FAILURE;
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'BackupDatabase::handle');
             // Unexpected errors are not printed: their messages can contain connection details.
             $this->error('Backup failed unexpectedly. See the application log.');
 
@@ -35,7 +36,8 @@ class BackupDatabase extends Command
             try {
                 $removed = $backups->prune();
                 $this->line($removed.' old '.($removed === 1 ? 'backup' : 'backups').' removed (keeping the last '.$backups->retentionDays().' days).');
-            } catch (Throwable) {
+            } catch (Throwable $caught) {
+                \App\Support\SilentFailure::log($caught, 'BackupDatabase::handle');
                 $this->warn('The backup was saved, but old backups could not be cleaned up.');
             }
         }

@@ -883,3 +883,5 @@ html.fh-drawer-lock, html.fh-drawer-lock body { overflow: hidden; }
     .fh-drawer-backdrop, .fh-drawer-panel { transition: none; }
 }
 html[data-theme="dark"] .fh-drawer { --ink: #e8ece9; --muted: #a9b4ae; --line: #33403a; --card: #1b2420; --subtle: #233029; --brand: var(--sage-300, #8cc5a4); }
+/* 2026-11-23 (audit M-8): the "panels" slot only holds the summary panels' <template>s; it takes no room on the page. */
+.mfd[data-farmer-dashboard] .mfd-slot[data-slot="panels"] { display: none !important; }

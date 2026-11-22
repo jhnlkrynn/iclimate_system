@@ -25,6 +25,7 @@ class DemoFarmers extends Command
                 allowRemote: (bool) $this->option('allow-remote'),
             );
         } catch (\Throwable $e) {
+            \App\Support\SilentFailure::log($e, 'DemoFarmers::handle');
             $this->error($e->getMessage());
 
             return self::FAILURE;

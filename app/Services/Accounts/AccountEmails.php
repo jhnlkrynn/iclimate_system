@@ -105,6 +105,7 @@ final class AccountEmails
 
                 return $log;
             } catch (Throwable $e) {
+                \App\Support\SilentFailure::log($e, 'AccountEmails::send');
                 report($e);   // no queue to take it: send it now instead
             }
         }
@@ -113,6 +114,7 @@ final class AccountEmails
             Mail::to($recipient)->sendNow($mail);
             $log?->forceFill(['status' => AccountEmail::STATUS_SENT, 'sent_at' => now(), 'error' => null])->save();
         } catch (Throwable $e) {
+            \App\Support\SilentFailure::log($e, 'AccountEmails::send');
             report($e);
             $log?->forceFill(['status' => AccountEmail::STATUS_FAILED, 'error' => mb_substr($e->getMessage(), 0, 500)])->save();
         }

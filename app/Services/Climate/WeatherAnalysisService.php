@@ -59,7 +59,7 @@ class WeatherAnalysisService
      */
     public function months(): Collection
     {
-        return rescue(fn () => ClimateHistory::months(), collect(), false)
+        return rescue(fn () => ClimateHistory::months(), collect(), fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'WeatherAnalysisService::months'))
             ->map(function (object $m): object {
                 $year = (int) substr($m->record_date, 0, 4);
                 $month = (int) substr($m->record_date, 5, 2);

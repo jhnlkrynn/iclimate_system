@@ -41,6 +41,7 @@ class RunDatabaseMaintenance implements ShouldQueue
             }
             $state = 'done';
         } catch (Throwable $e) {
+            \App\Support\SilentFailure::log($e, 'RunDatabaseMaintenance::handle');
             $state = 'failed';
             $message = $e->getMessage();
         }

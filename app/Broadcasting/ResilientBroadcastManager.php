@@ -60,6 +60,7 @@ class ResilientBroadcastManager extends BroadcastManager
             $this->openCircuit($event, $exception);
             $this->deferRetry($event, $exception);
         } catch (Throwable $exception) {
+            \App\Support\SilentFailure::log($exception, 'ResilientBroadcastManager::queue');
             Log::error('Realtime update rejected before delivery; not retried. Fix the event or channel.', [
                 'event' => $event::class, 'reason' => self::safeReason($exception),
             ]);
@@ -76,7 +77,8 @@ class ResilientBroadcastManager extends BroadcastManager
 
         try {
             $this->openUntil = (int) $this->app['cache']->get(self::OPEN_UNTIL_KEY, 0);
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'ResilientBroadcastManager::circuitIsOpen');
             return false;
         }
 
@@ -90,7 +92,8 @@ class ResilientBroadcastManager extends BroadcastManager
 
         try {
             $this->app['cache']->put(self::OPEN_UNTIL_KEY, $this->openUntil, $seconds);
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'ResilientBroadcastManager::openCircuit');
             // The in-process copy still protects this request.
         }
 
@@ -127,6 +130,7 @@ class ResilientBroadcastManager extends BroadcastManager
                     new RetryBroadcastEvent(clone $event),
                 );
         } catch (Throwable $queueFailure) {
+            \App\Support\SilentFailure::log($queueFailure, 'ResilientBroadcastManager::deferRetry');
             Log::error('Realtime update could not be delivered or queued for retry; clients recover by polling.', [
                 'event' => $event::class,
                 'reason' => $exception ? self::safeReason($exception) : 'Reverb unavailable',
@@ -143,7 +147,8 @@ class ResilientBroadcastManager extends BroadcastManager
             $cache->add($key, 0, 120);
 
             return (int) $cache->increment($key);
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'ResilientBroadcastManager::countInWindow');
             return 1;
         }
     }

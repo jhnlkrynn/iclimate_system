@@ -61,7 +61,8 @@ class SystemSettings
             // Outside a running application (a plain unit test of a rule) there is no settings file: the defaults apply.
             try {
                 $path = self::path();
-            } catch (\Throwable) {
+            } catch (\Throwable $caught) {
+                \App\Support\SilentFailure::log($caught, 'SystemSettings::all');
                 return self::DEFAULTS;
             }
             $stored = is_file($path) ? json_decode((string) @file_get_contents($path), true) : null;

@@ -82,6 +82,7 @@ class DatabaseBackupService
                     '--file='.$partial,
                 ]));
         } catch (Throwable $exception) {
+            \App\Support\SilentFailure::log($exception, 'DatabaseBackupService::backup');
             $this->discard($partial);
             $this->logFailure('process_error', null, $exception::class);
 
@@ -156,6 +157,7 @@ class DatabaseBackupService
                 ->timeout(max(30, (int) config('backup.timeout_seconds', 900)))
                 ->run(array_merge([(string) config('backup.mysqldump_binary', 'mysqldump')], $dumpOptions)));
         } catch (Throwable $exception) {
+            \App\Support\SilentFailure::log($exception, 'DatabaseBackupService::backupMysql');
             $this->discard($partial);
             $this->logFailure('process_error', null, $exception::class);
 
@@ -341,7 +343,8 @@ class DatabaseBackupService
                 $this->backupFiles($real),
                 fn (array $file): bool => $file['size'] > 0 && $this->hasBackupHeader($file['path']),
             ));
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'DatabaseBackupService::status');
             return ['state' => 'unavailable', 'last' => null, 'size' => null, 'count' => 0];
         }
 
@@ -381,7 +384,8 @@ class DatabaseBackupService
                 $this->backupFiles($real),
                 fn (array $file): bool => $file['size'] > 0 && $this->hasBackupHeader($file['path']),
             ));
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'DatabaseBackupService::latestValidBackup');
             return null;
         }
 

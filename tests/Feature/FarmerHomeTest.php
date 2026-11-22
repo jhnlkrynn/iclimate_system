@@ -172,7 +172,7 @@ class FarmerHomeTest extends TestCase
         $html = $this->home()->getContent();
 
         preg_match_all('/data-slot="([a-z]+)"/', $html, $m);
-        $this->assertSame(['message', 'typhoon', 'kpis', 'weather', 'risk', 'harvest', 'week'], $m[1]);   // + kpis (2026-10-08, FarmerHomeKpisTest)
+        $this->assertSame(['message', 'typhoon', 'kpis', 'weather', 'risk', 'harvest', 'week', 'panels'], $m[1]);   // + kpis (2026-10-08, FarmerHomeKpisTest)
         $this->assertMatchesRegularExpression('/data-slot="typhoon"\s+hidden/', $html, 'no typhoon: the check-in is hidden');
         foreach (['Today', 'Weather today', 'Barangay risk', 'Expected yield this season', 'Next 7 days', 'Latest planting advice'] as $title) {
             $this->assertStringContainsString($title, $this->text($html));
@@ -476,7 +476,7 @@ class FarmerHomeTest extends TestCase
 
         $json = $this->actingAs($farmer)->getJson(route('farmer.dashboard.live'))->assertOk()->json();
 
-        $this->assertSame(['message', 'typhoon', 'kpis', 'weather', 'risk', 'harvest', 'week'], array_keys($json['slots']));
+        $this->assertSame(['message', 'typhoon', 'kpis', 'weather', 'risk', 'harvest', 'week', 'panels'], array_keys($json['slots']));
     }
 
     public function test_the_language_choice_is_saved_and_the_numbers_stay(): void

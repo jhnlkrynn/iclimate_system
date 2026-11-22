@@ -234,6 +234,7 @@ final class FarmerDashboardService
         try {
             $w = $this->weather->current($force);
         } catch (Throwable $e) {
+            \App\Support\SilentFailure::log($e, 'FarmerDashboardService::weather');
             Log::warning('Farmer dashboard weather failed.', ['source' => 'weather service', 'exception' => $e::class, 'message' => $e->getMessage()]);
 
             return ['state' => 'nodata'];
@@ -385,7 +386,7 @@ final class FarmerDashboardService
         $now = CarbonImmutable::now(self::TIMEZONE);
 
         if (($payload['weather']['state'] ?? null) === 'ok') {
-            $fetched = rescue(fn () => $this->weather->lastFetchedAt(), null, false)?->timezone(self::TIMEZONE);
+            $fetched = rescue(fn () => $this->weather->lastFetchedAt(), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'FarmerDashboardService::withLatestFetchTimes'))?->timezone(self::TIMEZONE);
             $shown = $payload['weather']['updated_at'] ?? null;
             if ($fetched && (! $shown || $fetched->greaterThan($shown)) && ! $fetched->greaterThan($now->addMinute())) {
                 $payload['weather']['updated_at'] = $fetched;
@@ -767,7 +768,7 @@ final class FarmerDashboardService
         }
 
         $now = CarbonImmutable::now(self::TIMEZONE);
-        $month = rescue(fn () => ! empty($stored['target_month']) ? CarbonImmutable::parse($stored['target_month'].'-01', self::TIMEZONE) : null, null, false);
+        $month = rescue(fn () => ! empty($stored['target_month']) ? CarbonImmutable::parse($stored['target_month'].'-01', self::TIMEZONE) : null, null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'FarmerDashboardService::currentEstimate'));
 
         return $month === null || \App\Support\RiceSeason::window($month)['start']->equalTo(\App\Support\RiceSeason::window($now)['start']) ? $stored : null;
     }
@@ -782,6 +783,7 @@ final class FarmerDashboardService
                 ->active()->forBarangay($barangay)->ofType(PlantingAdvisory::TYPE_PLANTING)
                 ->latest('valid_from')->latest('id')->first();
         } catch (Throwable $e) {
+            \App\Support\SilentFailure::log($e, 'FarmerDashboardService::latestPlantingAdvisory');
             Log::warning('Farmer dashboard advisories failed.', ['source' => 'planting advisories', 'exception' => $e::class]);
 
             return null;
@@ -815,7 +817,8 @@ final class FarmerDashboardService
             $response = SchemaCache::hasTable('typhoon_safety_responses')
                 ? TyphoonSafetyResponse::query()->where('user_id', $user->id)->where('event_key', $event['key'])->first()
                 : null;
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'FarmerDashboardService::typhoonCheckIn');
             return null;
         }
 

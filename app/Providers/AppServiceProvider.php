@@ -345,6 +345,7 @@ class AppServiceProvider extends ServiceProvider
 
             return;
         } catch (\PDOException $e) {
+            \App\Support\SilentFailure::log($e, 'AppServiceProvider::createMysqlDatabaseForMigrations');
             // Only attempt CREATE DATABASE when MySQL/MariaDB specifically reports Unknown database (1049).
             if ((int) ($e->errorInfo[1] ?? 0) !== 1049) {
                 return;

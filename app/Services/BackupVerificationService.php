@@ -75,7 +75,8 @@ class BackupVerificationService
                 ->run([$binary, '--list', $backup['path']]);
         } catch (ProcessTimedOutException) {
             return $this->fail('timeout', $identity, $record);
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'BackupVerificationService::verify');
             return $this->fail('pg_restore_unavailable', $identity, $record);
         }
 

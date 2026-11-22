@@ -88,7 +88,8 @@ class LoginRequest extends FormRequest
             // Never "remember me": the sign-in lasts only while the browser is open, so the next visit starts at the
             // landing sign-in card. A stale "remember" field from an old form is ignored.
             $authenticated = Auth::attempt($this->only('email', 'password'), false);
-        } catch (RuntimeException) {
+        } catch (RuntimeException $caught) {
+            \App\Support\SilentFailure::log($caught, 'LoginRequest::authenticate');
             $authenticated = false;
         }
 
@@ -156,7 +157,8 @@ class LoginRequest extends FormRequest
 
         try {
             return $user !== null && \Illuminate\Support\Facades\Hash::check((string) $this->input('password'), (string) $user->password) ? $user : null;
-        } catch (RuntimeException) {
+        } catch (RuntimeException $caught) {
+            \App\Support\SilentFailure::log($caught, 'LoginRequest::deletedAccount');
             return null;
         }
     }

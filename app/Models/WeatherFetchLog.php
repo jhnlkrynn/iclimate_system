@@ -38,7 +38,8 @@ class WeatherFetchLog extends Model
                 'status' => $ok ? self::SUCCESS : self::FAILED,
                 'error_message' => $error === null ? null : mb_substr(preg_replace('#https?://\S+#', '[url]', $error) ?? $error, 0, 500),
             ]);
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'WeatherFetchLog::record');
             // Logging is best effort.
         }
     }

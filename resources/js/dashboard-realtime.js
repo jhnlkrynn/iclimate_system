@@ -151,4 +151,7 @@ export function initDashboardRealtime({ root, refresh, areas = null }) {
 // The MAO dashboard swaps its own root after a server-rendered refresh. Keep a
 // small bridge so the replacement root can subscribe again without reloading
 // the application shell or importing the module a second time.
-window.iClimateInitDashboardRealtime = initDashboardRealtime;
+// (Guarded so the module can also be imported by the Node unit tests in tests/Frontend, which have no window.)
+if (typeof window !== 'undefined') {
+    window.iClimateInitDashboardRealtime = initDashboardRealtime;
+}

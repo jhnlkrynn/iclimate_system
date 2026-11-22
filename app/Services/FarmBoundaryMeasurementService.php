@@ -6,6 +6,27 @@ class FarmBoundaryMeasurementService
 {
     private const EARTH_RADIUS_METERS = 6371008.8;
 
+    /**
+     * A ring "closed" GeoJSON-style repeats its first point at the end. That last point is not a corner of the farm,
+     * so it is dropped; otherwise it would count as a duplicate and the outline be refused with the "lines cross"
+     * message (audit 2026-11-23, L-6). Any other repeated point is still refused by isValidPolygon().
+     *
+     * @param  array<int, array{lat: float|int, lng: float|int}>  $coordinates
+     * @return array<int, array{lat: float|int, lng: float|int}>
+     */
+    public function normalize(array $coordinates): array
+    {
+        $coordinates = array_values($coordinates);
+        $count = count($coordinates);
+        if ($count >= 4
+            && (float) $coordinates[0]['lat'] === (float) $coordinates[$count - 1]['lat']
+            && (float) $coordinates[0]['lng'] === (float) $coordinates[$count - 1]['lng']) {
+            array_pop($coordinates);
+        }
+
+        return $coordinates;
+    }
+
     /** @param array<int, array{lat: float|int, lng: float|int}> $coordinates */
     public function isValidPolygon(array $coordinates): bool
     {

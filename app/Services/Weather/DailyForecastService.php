@@ -62,7 +62,8 @@ final class DailyForecastService
     {
         try {
             $w = $this->lian->current();
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'DailyForecastService::lianDays');
             return [[], null];
         }
         if (! ($w['success'] ?? false)) {
@@ -77,7 +78,7 @@ final class DailyForecastService
     private function barangayDays(string $barangay): array
     {
         $canonical = LianBarangays::canonicalName($barangay);
-        $record = $canonical ? rescue(fn () => $this->barangays->cachedForBarangay($canonical), null, false) : null;
+        $record = $canonical ? rescue(fn () => $this->barangays->cachedForBarangay($canonical), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'DailyForecastService::barangayDays')) : null;
         if (! is_array($record)) {
             return [[], null];
         }

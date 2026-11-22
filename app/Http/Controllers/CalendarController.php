@@ -178,7 +178,7 @@ class CalendarController extends Controller
             ->when($isFarmer || $barangay, fn ($query) => $query->where(fn ($q) => $q->whereNull('target_barangay')->orWhere('target_barangay', '')->orWhere('target_barangay', $barangay)))
             ->get()
             ->map(function (PlantingAdvisory $advisory): ?array {
-                $date = rescue(fn () => Carbon::parse((string) data_get($advisory->metadata, 'mao_activity_date'))->startOfDay(), null, false);
+                $date = rescue(fn () => Carbon::parse((string) data_get($advisory->metadata, 'mao_activity_date'))->startOfDay(), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'CalendarController::activityEvents'));
                 $activity = trim((string) data_get($advisory->metadata, 'mao_activity'));
 
                 return $date && $activity !== '' ? [
@@ -217,8 +217,8 @@ class CalendarController extends Controller
         $windows = [];
         foreach (range($from->year - 1, $to->year) as $year) {
             foreach ((array) config('farm_calendar.planting_windows', []) as $season => $range) {
-                $start = rescue(fn () => Carbon::parse($year.'-'.$range['from'])->startOfDay(), null, false);
-                $end = rescue(fn () => Carbon::parse($year.'-'.$range['until'])->startOfDay(), null, false);
+                $start = rescue(fn () => Carbon::parse($year.'-'.$range['from'])->startOfDay(), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'CalendarController::plantingWindows'));
+                $end = rescue(fn () => Carbon::parse($year.'-'.$range['until'])->startOfDay(), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'CalendarController::plantingWindows'));
                 if (! $start || ! $end) {
                     continue;
                 }

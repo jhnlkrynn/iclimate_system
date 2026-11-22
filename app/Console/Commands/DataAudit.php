@@ -136,7 +136,8 @@ class DataAudit extends Command
             }
 
             return DB::table($table)->select($columns)->groupBy($columns)->havingRaw('count(*) > 1')->get()->count();
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'DataAudit::dupes');
             return 0;
         }
     }

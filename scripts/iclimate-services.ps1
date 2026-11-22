@@ -61,6 +61,13 @@ if ($WebServer -eq 'apache') {
 # the backup or an advisory fetch be skipped. Its own output ("Running [command] ... DONE") is not kept: each
 # command writes storage\logs\automation-<command>.log, and failures go to the application log.
 $Services['scheduler'] = @{ Command = "`"$Php`" artisan schedule:work"; Match = 'artisan schedule:(run|work)'; Log = 'NUL' }
+# The live-update server (Laravel Reverb), as production runs it (deploy/hostinger/iclimate-reverb.service). Without it
+# every queued live update failed against port 8080 and wrote a full stack trace to the log (audit 2026-11-23, L-4).
+# Only when the app is set to broadcast through Reverb.
+if ((Get-EnvSetting 'BROADCAST_CONNECTION' 'null').ToLower() -eq 'reverb') {
+    $ReverbPort = Get-EnvSetting 'REVERB_SERVER_PORT' '8080'
+    $Services['reverb'] = @{ Command = "`"$Php`" artisan reverb:start --host=127.0.0.1 --port=$ReverbPort"; Match = 'artisan reverb:start'; Log = 'reverb.log' }
+}
 # --max-time: the worker ends itself every hour and the supervisor starts a fresh one, so it never runs old code
 # for long. --timeout is the fallback for jobs without their own limit; it stays below retry_after (config/queue.php).
 $Services['queue'] = @{ Command = "`"$Php`" artisan queue:work --queue=analytics,default,broadcasts --tries=2 --timeout=300 --max-time=3600"; Match = 'artisan queue:work'; Log = 'queue.log' }

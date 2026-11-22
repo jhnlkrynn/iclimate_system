@@ -146,15 +146,37 @@ class PythonServiceFailureTest extends TestCase
         $this->weather();
     }
 
-    public function test_predict_bad_input_rejected_by_the_service_is_reported_as_unavailable(): void
+    public function test_predict_bad_input_rejected_by_the_service_is_reported_as_refused_input_not_an_outage(): void
     {
-        // A 422 (the service refused the input) is reported to the caller as "unavailable or returned an error": the
-        // caller cannot tell refused input from an outage (audit finding).
+        // Audit M-2 (fixed 2026-11-23): a 422 says which input was refused, is not retried locally and does not count
+        // as a service failure.
         Http::fake([self::URL.'/predict' => Http::response(['detail' => 'Out-of-range numeric feature: rainfall'], 422)]);
+        $key = 'metrics:python-service:failures:'.\App\Support\BusinessClock::today()->toDateString();
+        $failuresBefore = \Illuminate\Support\Facades\Cache::get($key);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('unavailable or returned an error');
-        $this->weather();
+        try {
+            $this->weather();
+            $this->fail('Expected the refused input to be reported.');
+        } catch (RuntimeException $e) {
+            $this->assertSame('The Farming AI API refused the input: Out-of-range numeric feature: rainfall', $e->getMessage());
+        }
+        $this->assertSame($failuresBefore, \Illuminate\Support\Facades\Cache::get($key), 'refused input is not a service failure');
+        Http::assertSentCount(1);
+    }
+
+    public function test_rice_yield_bad_input_is_not_re_run_through_the_local_fallback(): void
+    {
+        // Before the fix the same input went to python_scripts/predict.py and the error read "... local rice-yield
+        // inference also failed"; now the service's own reason comes back at once.
+        Http::fake([self::URL.'/predict' => Http::response(['detail' => 'Missing required feature: area'], 422)]);
+
+        try {
+            app(PythonService::class)->farmingAssistant(['prediction_type' => 'rice_yield', 'features' => ['rainfall' => 200]]);
+            $this->fail('Expected the refused input to be reported.');
+        } catch (RuntimeException $e) {
+            $this->assertSame('The Farming AI API refused the input: Missing required feature: area', $e->getMessage());
+            $this->assertNull($e->getPrevious(), 'no local fallback ran');
+        }
     }
 
     // ------------------------------------------------------------------ the real service, when one is running

@@ -95,7 +95,8 @@ class SampleDataDetector
                         }
                     }
                 }
-            } catch (Throwable) {
+            } catch (Throwable $caught) {
+                \App\Support\SilentFailure::log($caught, 'SampleDataDetector::scanBatches');
                 // table missing on this database — nothing to detect there
             }
         }
@@ -123,7 +124,8 @@ class SampleDataDetector
                 ->map(fn ($id) => (int) $id)
                 ->values()
                 ->all();
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'SampleDataDetector::sampleIds');
             return [];
         }
     }
@@ -155,7 +157,8 @@ class SampleDataDetector
                 ->map(fn ($id) => (int) $id)
                 ->values()
                 ->all();
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'SampleDataDetector::underTrainedRunIds');
             return [];
         }
     }
@@ -172,7 +175,8 @@ class SampleDataDetector
             return BuildMemo::remember('sample-data:implausible-climate', fn (): array => ClimateRecord::query()
                 ->whereNotIn('id', ClimateRecord::query()->plausible()->select('id'))
                 ->pluck('id')->map(fn ($id) => (int) $id)->all());
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'SampleDataDetector::implausibleClimateIds');
             return [];
         }
     }
@@ -207,7 +211,8 @@ class SampleDataDetector
     {
         try {
             $total = Aggregates::fetch(['total' => Aggregates::count(DB::table($table))])['total'];
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'SampleDataDetector::summary');
             return ['total' => 0, 'sample' => 0, 'implausible' => 0, 'verified' => 0];
         }
 

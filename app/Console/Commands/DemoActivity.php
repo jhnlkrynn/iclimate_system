@@ -16,6 +16,7 @@ class DemoActivity extends Command
         try {
             $report = $seeder->run((bool) $this->option('reset'), (bool) $this->option('allow-remote'));
         } catch (\Throwable $e) {
+            \App\Support\SilentFailure::log($e, 'DemoActivity::handle');
             $this->error($e->getMessage());
             return self::FAILURE;
         }

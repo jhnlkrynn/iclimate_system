@@ -91,9 +91,11 @@ test('A2 every dashboard card opens only its own summary panel and nothing leave
         const drawer = page.locator('#fhDrawer');
         await expect(drawer).toHaveClass(/is-open/);
         await expect(page).toHaveURL(/\/farmer\/dashboard$/);
-        await expect(drawer.locator(`[data-panel-section="${key}"]`)).toBeVisible();
-        await expect(drawer.locator('[data-panel-section]:visible')).toHaveCount(1);
-        await expect(drawer.locator(`[data-panel-section="${key}"] .fh-drawer-more`)).toHaveAttribute('href', /\/(farmer|planting|weather|heat-map)/);
+        // The drawer shows exactly this card's panel (copied from its template in the "panels" slot).
+        const body = drawer.locator('[data-fh-drawer-body]');
+        await expect(body).toHaveAttribute('data-panel', key);
+        await expect(body.locator('[data-panel-title]')).toHaveCount(1);
+        await expect(body.locator('.fh-drawer-more')).toHaveAttribute('href', /\/(farmer|planting|weather|heat-map)/);
         await closeWith[i % 3]();
         await expect(drawer).toBeHidden();
     }

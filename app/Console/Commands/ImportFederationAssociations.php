@@ -24,6 +24,7 @@ class ImportFederationAssociations extends Command
         try {
             $summary = $importer->import($this->argument('path'));
         } catch (Throwable $e) {
+            \App\Support\SilentFailure::log($e, 'ImportFederationAssociations::handle');
             $this->error('Import failed: '.$e->getMessage());
 
             return self::FAILURE;

@@ -485,7 +485,7 @@ class AIOrchestratorService
             $record = $this->barangayWeatherService->getCurrentWeather($barangay) ?? [];
 
             if (($record['status'] ?? 'unavailable') === 'unavailable' && $this->timings->remainingSeconds() > 8) {
-                return rescue(fn (): array => $this->barangayWeatherService->latestForBarangay($barangay), $record, false);
+                return rescue(fn (): array => $this->barangayWeatherService->latestForBarangay($barangay), $record, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'AIOrchestratorService::barangayWeather'));
             }
 
             $this->barangayWeatherService->refreshIfDue($barangay);
@@ -1124,7 +1124,8 @@ class AIOrchestratorService
         if (isset($entities['target_date']) && is_string($entities['target_date'])) {
             try {
                 return CarbonImmutable::parse($entities['target_date'])->startOfMonth();
-            } catch (Throwable) {
+            } catch (Throwable $caught) {
+                \App\Support\SilentFailure::log($caught, 'AIOrchestratorService::targetMonth');
                 return \App\Support\BusinessClock::now()->toImmutable()->addMonthNoOverflow()->startOfMonth();
             }
         }

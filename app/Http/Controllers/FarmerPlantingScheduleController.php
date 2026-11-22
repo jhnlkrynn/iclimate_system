@@ -198,6 +198,7 @@ class FarmerPlantingScheduleController extends Controller
                 ]);
             });
         } catch (Throwable $e) {
+            \App\Support\SilentFailure::log($e, 'FarmerPlantingScheduleController::applyFromDashboard');
             report($e);
 
             return $failed;

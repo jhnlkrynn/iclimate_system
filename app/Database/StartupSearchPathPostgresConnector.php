@@ -45,6 +45,7 @@ class StartupSearchPathPostgresConnector extends PostgresConnector
         try {
             $connection = parent::connect($config);
         } catch (\PDOException $exception) {
+            \App\Support\SilentFailure::log($exception, 'StartupSearchPathPostgresConnector::connect');
             // SQLSTATE class 08: the server could not be reached (a wrong password or database is not remembered).
             if (str_contains($exception->getMessage(), 'SQLSTATE[08')) {
                 self::$unreachable[$server] = [microtime(true), $exception];

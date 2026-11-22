@@ -103,6 +103,16 @@ class PythonService
             throw new RuntimeException('The Farming AI API could not be reached.', previous: $exception);
         }
 
+        // Audit 2026-11-23 (M-2): a 4xx means the service is up and refused the input (e.g. an impossible value). That
+        // is not an outage: running the same input through the local fallback would be refused the same way, and
+        // counting it as a failure would make a healthy service look down.
+        if ($response->clientError()) {
+            $detail = $response->json('detail');
+            $detail = is_string($detail) ? $detail : null;
+
+            throw new RuntimeException('The Farming AI API refused the input'.($detail !== null ? ': '.$detail : '.'));
+        }
+
         if (! $response->successful()) {
             if ($this->isRiceYield($payload)) {
                 try {

@@ -12,14 +12,15 @@ function setup(t, { desktop = true, auto = false } = {}) {
     const button = { innerHTML: '<svg></svg><span>Refresh PAGASA</span>', disabled: false, setAttribute() {} };
     const form = { action: 'http://localhost/planting-advisories/refresh-pagasa', dataset: {}, querySelector: () => button };
     const details = [{ dataset: {}, open: !desktop }, { dataset: { forceOpen: 'true' }, open: false }];
-    const updated = { querySelectorAll: () => details };
+    // The swapped-in page body (its dataset/innerHTML are read by reloadPage since the live-refresh work).
+    const updated = { querySelectorAll: () => details, dataset: {}, innerHTML: '<p>new</p>' };
     let replaced = 0;
     let autoPromise;
     const modal = { dataset: {}, querySelector: () => ({}), addEventListener() {} };
     globalThis.document = {
         body: { appendChild() {} },
         querySelector: selector => ({ '[data-fad-modal]': modal, '[data-fad-refresh-status]': status,
-            '.fad': { replaceWith() { replaced++; } }, '[data-fad-auto-refresh]': auto ? {} : null,
+            '.fad': { replaceWith() { replaced++; }, dataset: {}, innerHTML: '<p>old</p>', contains: () => false }, '[data-fad-auto-refresh]': auto ? {} : null,
             '[data-fad-refresh]': form })[selector],
         getElementById: () => ({}),
         addEventListener: (type, callback, capture) => listeners.push({ type, callback, capture }),

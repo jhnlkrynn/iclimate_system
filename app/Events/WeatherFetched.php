@@ -24,11 +24,11 @@ class WeatherFetched implements ShouldBroadcastNow
     /** Never lets a broadcast problem (Reverb down) fail the fetch that just succeeded; pages then catch up by polling. */
     public static function announce(string $kind, \DateTimeInterface|string|null $fetchedAt): void
     {
-        $time = $fetchedAt instanceof \DateTimeInterface ? \Illuminate\Support\Carbon::instance($fetchedAt) : (filled($fetchedAt) ? rescue(fn () => \Illuminate\Support\Carbon::parse($fetchedAt), null, false) : null);
+        $time = $fetchedAt instanceof \DateTimeInterface ? \Illuminate\Support\Carbon::instance($fetchedAt) : (filled($fetchedAt) ? rescue(fn () => \Illuminate\Support\Carbon::parse($fetchedAt), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'WeatherFetched::announce')) : null);
         if ($time === null) {
             return;
         }
-        rescue(fn () => self::dispatch($kind, $time->copy()->utc()->toIso8601String()), null, false);
+        rescue(fn () => self::dispatch($kind, $time->copy()->utc()->toIso8601String()), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'WeatherFetched::announce'));
     }
 
     public function broadcastOn(): array

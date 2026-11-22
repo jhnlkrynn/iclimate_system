@@ -71,7 +71,7 @@ final class MaoStamp
         if (! $value) {
             return null;
         }
-        $date = $value instanceof CarbonInterface ? $value : rescue(fn () => Carbon::parse($value), null, false);
+        $date = $value instanceof CarbonInterface ? $value : rescue(fn () => Carbon::parse($value), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'MaoStamp::format'));
 
         return $date?->copy()->timezone(LianLocation::TIMEZONE)->format('M j, Y, g:i A');
     }

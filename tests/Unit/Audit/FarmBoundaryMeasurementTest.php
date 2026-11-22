@@ -99,13 +99,28 @@ class FarmBoundaryMeasurementTest extends TestCase
         $this->assertFalse($this->m->isValidPolygon($square));
     }
 
-    public function test_a_ring_closed_by_repeating_the_first_point_is_refused(): void
+    public function test_a_ring_closed_by_repeating_the_first_point_is_accepted_after_normalizing(): void
     {
-        // GeoJSON-style closed rings repeat the first point at the end. The service treats that as a duplicate point,
-        // so a client that sends a closed ring gets the "lines cross" error (documented in the audit).
+        // Audit L-6 (fixed 2026-11-23): a GeoJSON-style closed ring repeats its first point at the end. Both save paths
+        // (FarmController::saveMap, FarmBoundaryController::save) normalize first, so it is measured like the open ring.
         $square = $this->rectangle(100, 100);
-        $square[] = $square[0];
+        $closed = [...$square, $square[0]];
 
-        $this->assertFalse($this->m->isValidPolygon($square));
+        $this->assertFalse($this->m->isValidPolygon($closed), 'the raw closed ring still counts a duplicate point');
+        $this->assertSame($square, $this->m->normalize($closed));
+        $this->assertTrue($this->m->isValidPolygon($this->m->normalize($closed)));
+        $this->assertSame($this->m->measure($square), $this->m->measure($this->m->normalize($closed)));
+    }
+
+    public function test_normalizing_leaves_an_open_ring_and_a_triangle_alone(): void
+    {
+        $square = $this->rectangle(100, 100);
+        $this->assertSame($square, $this->m->normalize($square));
+
+        // Three points where the last equals the first is not a closed triangle but a line: nothing is dropped, and it
+        // is refused as before.
+        $line = [$square[0], $square[1], $square[0]];
+        $this->assertSame($line, $this->m->normalize($line));
+        $this->assertFalse($this->m->isValidPolygon($line));
     }
 }

@@ -34,6 +34,7 @@ class WarmDashboardCache extends Command
                 $warm();
                 $this->line(ucfirst($label).' prepared in '.round(microtime(true) - $started, 1).' s.');
             } catch (Throwable $exception) {
+                \App\Support\SilentFailure::log($exception, 'WarmDashboardCache::handle');
                 $failed++;
                 $this->warn(ucfirst($label).' could not be prepared.');
                 report($exception);

@@ -48,7 +48,7 @@ class DashboardDataCorrectnessTest extends TestCase
 
     private function panel(string $page, string $section): string
     {
-        $this->assertSame(1, preg_match('#data-panel-section="'.$section.'" hidden>(.*?)</div>\s*(?=<div class="fh-drawer-body"|</div>\s*</div>)#s', $page, $m), "panel {$section}");
+        $this->assertSame(1, preg_match('#<template data-panel-template="'.$section.'">(.*?)</template>#s', $page, $m), "panel {$section}");
 
         return $this->text($m[1]);
     }

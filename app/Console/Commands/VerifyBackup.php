@@ -17,7 +17,8 @@ class VerifyBackup extends Command
     {
         try {
             $result = $verifier->verify(! $this->option('no-record'));
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'VerifyBackup::handle');
             // Messages can carry paths or connection details, so none are printed.
             $this->error('Backup verification could not run. See the application log.');
 

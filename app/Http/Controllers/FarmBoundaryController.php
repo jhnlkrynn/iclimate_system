@@ -69,10 +69,10 @@ class FarmBoundaryController extends Controller
             'boundary_coordinates.min' => __('farmer.popup.map.required'),
         ]);
 
-        $coordinates = array_map(fn (array $point): array => [
+        $coordinates = $measurement->normalize(array_map(fn (array $point): array => [
             'lat' => round((float) $point['lat'], 7),
             'lng' => round((float) $point['lng'], 7),
-        ], $validated['boundary_coordinates']);
+        ], $validated['boundary_coordinates']));
 
         // The whole outline must lie inside the official Lian boundary, and its barangay is worked out here from the
         // official barangay boundaries: nothing the browser says about where the farm is gets trusted.

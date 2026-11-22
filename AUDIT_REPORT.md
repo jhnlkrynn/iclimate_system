@@ -39,6 +39,67 @@ Fix items 1–4 (see the improvement list at the end) and this becomes a "yes, a
 
 ---
 
+## Fixes applied after the audit (2026-11-23)
+
+The owner's instruction was to work through the fix order **without changing the model or the heat map**. So nothing
+in `python_scripts/`, `storage/models/`, or the heat-map/risk-map code was changed.
+
+| Finding | Status | What was done |
+|---|---|---|
+| C-1 wording | **Fixed** | The panel text and the Predictions page (en + fil) now say the estimate is Lian-wide, the same per hectare for every farm, does not use barangay or farm type, and has not been checked against enough real harvests (`lang/*/farmer.php` `kpis.detail.expected_how`, `harvest_how`, `predictions.yield_profile`). |
+| C-1 model / H-3 reproducibility | **Not done** | These need the model to be retrained. That is excluded by the owner's instruction. |
+| C-2 missing weather | **Fixed for now** | `php artisan iclimate:fetch-climate-archive` loaded 142 months (2015-01 to 2026-10) into `storage/app/climate/open-meteo-archive-monthly.json`. The yield model's past-month inputs are complete again, and a real farmer's estimate runs (4.09 t/ha for 2027-03 instead of "not produced"). **Still to do:** this copy's scheduler must run so the 01:10 job keeps the file current (the Windows autostart runs an old copy, see L-4). The stale pre-2026-11-20 `yield_predictions` were left alone because they feed the heat map. |
+| H-1 demo farmers | **Waiting for owner decision** | Deleting the 713 demo accounts is permanent, and it would change heat-map figures (they count farms). Not done without confirmation. |
+| H-2 monthly forecast | **Not done** | Model code, excluded. |
+| H-4 dump in git | **Fixed** | `.gitignore` now ignores `/storage/backups/`, `/*.sql`, `*.sql.gz` and `*.dump`. The empty root `backup-2026-11-22.sql` was removed. |
+| M-1 null climate value → 500 | **Not done** | It is inside the ML service, so excluded. |
+| M-2 refused input looks like an outage | **Fixed** | `PythonService::farmingAssistant` reports a 4xx as "The Farming AI API refused the input: …", does not re-run it through local `predict.py`, and does not count it as a service failure. Covered by 2 tests. |
+| M-3 silent errors | **Fixed outside the model / ML / heat map** | A fresh scan found 381 silently handled failures (140 `rescue(..., false)`, 241 catch blocks that neither log, report nor rethrow). **177 fixed in 83 files**: they now call `App\Support\SilentFailure::log()`, which writes one warning per place and error type per hour. The return values and fallbacks are unchanged, so nothing users see changes. **204 skipped**: 186 touch the model, the ML service or the heat map (by file, or because the surrounding code deals with yield, predictions, risk, the heat map, forecasts or models), and 18 catch a specific exception that is normal flow (validation, lock timeout, backup already reported, …). Covered by `SilentFailureTest`. |
+| M-4 capacity | **Not done** | Needs the production server (php-fpm workers) and a multi-worker ML service (model code). |
+| M-5 risk validation | **Not done** | Heat-map / risk logic, excluded. |
+| M-6 Filipino | **Fixed** | All 130 missing strings were translated (`lang/fil/rice_varieties.php`, `lang/fil/user_deletion.php`). The new `TranslationParityTest` fails if any English string or `:placeholder` lacks its Filipino counterpart, in any language file. |
+| M-7 certifi | **Fixed** | `.venv` now has `certifi 2026.10.18`, and `pip-audit` reports no known vulnerabilities. Only certifi was installed (`--no-deps`), so the model's libraries are unchanged. |
+| M-8 stale panels | **Fixed** | The panels moved into a dashboard slot (`dashboards/farmer/panels.blade.php`, `FARMER_SLOTS` + `panels`). The timed refresh now updates them with the cards, and an open panel shows the new numbers at once. |
+| L-1 dead code | **Not done** | It is model scripts and model files, so excluded. |
+| L-2 frontend test | **Fixed** | Added the `.js` extensions (`farmer-advisories.js`, `live-page.js`) and guarded a `window` assignment (`dashboard-realtime.js`). Updated the out-of-date test fakes. `npm run test:js` now runs `tests/Frontend` too: **31 / 31 pass**. |
+| L-3 Playwright on Windows | **Fixed** | `playwright.config.mjs` passes the port through `env`. `npx playwright test` starts its own server on Windows when Git Bash and PHP 8.2+ are on the PATH. |
+| L-4 local environment | **Partly fixed** | **Log flood fixed:** the live-update server (Laravel Reverb) was never started locally, so every queued live update failed against port 8080 with a full stack trace (1,826 `Pusher error` entries). `scripts/iclimate-services.ps1` now starts Reverb (as production does, `deploy/hostinger/iclimate-reverb.service`) when `BROADCAST_CONNECTION=reverb`, and the stale package list was regenerated (`php artisan package:discover`) so the `reverb:*` commands exist. No new errors were logged afterwards. **Windows autostart:** switched to this copy (task `iClimate Services`); the old copy's task was removed. **MariaDB root password:** not changed, see the steps below. **MariaDB 10.4 (local) vs 10.11 (production):** not upgraded; all 109 migrations and the MySQL-only tests pass on 10.4, but production behaviour should be confirmed on 10.11 before release. |
+| L-5 framework upgrades | **Deferred** | After launch, as recommended. |
+| L-6 closed map ring | **Fixed** | `FarmBoundaryMeasurementService::normalize()` drops a final point that repeats the first. It is used by both save paths (`FarmController::saveMap`, `FarmBoundaryController::save`). |
+| L-7 `.env.example` | **Fixed** | `SESSION_SECURE_COOKIE=true`, with a comment. |
+
+**MariaDB root password (for the owner to do).**
+1. Set it: `C:\xampp\mysql\bin\mysqladmin.exe -u root password "NEW_PASSWORD"` (or run
+   `ALTER USER 'root'@'localhost' IDENTIFIED BY 'NEW_PASSWORD';` in phpMyAdmin).
+2. Update phpMyAdmin: in `C:\xampp\phpMyAdmin\config.inc.php`, set `$cfg['Servers'][$i]['password'] = 'NEW_PASSWORD';`
+   (it logs in with `auth_type = 'config'`, user `root`). Better: set `auth_type` to `'cookie'` so phpMyAdmin asks for
+   the password. Also set `AllowNoPassword` to `false`.
+3. Update the projects that log in as root: `DB_PASSWORD=` in `C:\xampp\htdocs\evenly_system\.env` and
+   `C:\xampp\htdocs\iclimate_system_new\.env` (both use `DB_USERNAME=root`). Then run `php artisan config:clear` in each.
+4. **Nothing to change for this project:** it logs in as `iclimate_app`, not root. The same goes for the old copy
+   (`C:\xampp\htdocs\iclimate_system`). The XAMPP Control Panel's "Admin" button just opens phpMyAdmin (step 2).
+
+**Still open (not to be done without the owner; the model and heat map are off-limits):**
+- C-1 / H-3: retrain the yield model reproducibly (barangay and farm-type inputs, year hold-out, baselines, saved metadata).
+- H-2: the monthly weather forecast (train offline, one implementation, honest rainfall skill).
+- M-1: a null value in the climate records → HTTP 500 in the ML service.
+- M-5: validate the risk levels against recorded incidents.
+- L-1: unused ML scripts and model files.
+- M-4: load-test the production setup (php-fpm workers, multi-worker ML service).
+- L-5: framework upgrades (Laravel 13, PHPUnit 13, Guzzle 8), after launch.
+- H-1: the 713 demo farmers stay, by the owner's decision (2026-11-23). They are still counted in MAO figures and barangay
+  averages.
+- New, seen once this copy's scheduler ran: the scheduled health check logs `ERROR iClimate health FAIL backup: no valid
+  backup in the backup directory`. Point the backup directory at a real backup, or run `php artisan iclimate:backup-database`.
+
+**Checks after the fixes:**
+- Full Laravel suite (see the commit message for the final count).
+- Python 121 passed, 3 xfailed (unchanged, since the ML code was not touched).
+- JavaScript 31 / 31.
+- Browser: farmer flows, signed-in page sweep, top bar and mobile navigation, at both sizes: 20 passed, 2 skipped (single-size checks).
+
+---
+
 ## 1. Test results
 
 ### 1.1 Summary

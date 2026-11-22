@@ -216,6 +216,6 @@ final class FederationAssociationImporter
         $normalized = preg_replace('/([A-Za-z]+)\.(\d)/', '$1 $2', $normalized) ?? $normalized;
         $normalized = str_replace('.', '', $normalized);
 
-        return rescue(fn (): string => CarbonImmutable::parse($normalized)->toDateString(), null, false);
+        return rescue(fn (): string => CarbonImmutable::parse($normalized)->toDateString(), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'FederationAssociationImporter::parseDate'));
     }
 }

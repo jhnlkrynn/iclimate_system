@@ -29,6 +29,7 @@ class ImportRiceVarieties extends Command
         try {
             $summary = $importer->import($path);
         } catch (Throwable $e) {
+            \App\Support\SilentFailure::log($e, 'ImportRiceVarieties::handle');
             $this->error('Import failed: '.$e->getMessage());
 
             return self::FAILURE;

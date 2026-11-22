@@ -92,6 +92,7 @@ class RecentRainService
 
             return $daily;
         } catch (Throwable $e) {
+            \App\Support\SilentFailure::log($e, 'RecentRainService::fetch');
             Log::warning('Farmer dashboard rain history failed.', ['source' => self::SOURCE.' past_days', 'message' => $e->getMessage()]);
 
             return null;

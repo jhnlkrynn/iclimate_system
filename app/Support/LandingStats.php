@@ -20,7 +20,8 @@ final class LandingStats
     {
         try {
             return Cache::remember(self::CACHE_KEY, BusinessClock::now()->endOfDay(), fn (): array => self::count());
-        } catch (\Throwable) {
+        } catch (\Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'LandingStats::get');
             return null;
         }
     }

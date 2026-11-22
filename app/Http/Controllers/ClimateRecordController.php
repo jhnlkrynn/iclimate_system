@@ -114,10 +114,10 @@ class ClimateRecordController extends CrudController
     {
         [$rows] = app(ClimateRecordHistory::class)->records(plausibleOnly: false);
         // Manuscript – Naicel (2026-10-08): which entered rows the MAO validated; the station dataset is a published source.
-        $verified = rescue(fn () => ClimateRecord::query()->whereNotNull('verified_at')->pluck('verified_at', 'id'), collect(), false);
+        $verified = rescue(fn () => ClimateRecord::query()->whereNotNull('verified_at')->pluck('verified_at', 'id'), collect(), fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'ClimateRecordController::staffIndex'));
         // Panel revision 4.4 C: who validated each record, and when.
         $validatedBy = rescue(fn () => ClimateRecord::query()->whereNotNull('verified_at')->with('verifier:id,name')->get(['id', 'verified_by', 'verified_at'])
-            ->mapWithKeys(fn (ClimateRecord $r) => [$r->id => trim(($r->verifier?->name ?? '').' · '.\App\Support\MaoStamp::format($r->verified_at), ' ·')]), collect(), false);
+            ->mapWithKeys(fn (ClimateRecord $r) => [$r->id => trim(($r->verifier?->name ?? '').' · '.\App\Support\MaoStamp::format($r->verified_at), ' ·')]), collect(), fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'ClimateRecordController::staffIndex'));
 
         $display = $rows->map(fn (object $row): object => (object) [
             'id' => $row->id,

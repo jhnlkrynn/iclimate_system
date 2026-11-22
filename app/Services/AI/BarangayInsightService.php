@@ -198,6 +198,7 @@ class BarangayInsightService
         try {
             $reply = $this->groq->barangayInsight($context, $language);
         } catch (Throwable $exception) {
+            \App\Support\SilentFailure::log($exception, 'BarangayInsightService::insight');
             Log::warning('Barangay AI insight failed.', ['barangay' => $data['barangay'], 'message' => $exception->getMessage()]);
             $reply = null;
         }

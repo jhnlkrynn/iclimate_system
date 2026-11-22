@@ -70,11 +70,11 @@ class MaoHomeService
 
         return [
             'generated_at' => $now,
-            'season' => rescue(fn (): string => $this->seasonLabel($now), '', false),
+            'season' => rescue(fn (): string => $this->seasonLabel($now), '', fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'MaoHomeService::payload')),
             // The same season as its parts, so the page can write it in the MAO's language (lang mao.dashboard.season).
-            'season_parts' => rescue(fn (): ?array => $this->seasonParts(RiceSeason::window($now)), null, false),
+            'season_parts' => rescue(fn (): ?array => $this->seasonParts(RiceSeason::window($now)), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'MaoHomeService::payload')),
             // Panel revision 4.1: every registered farmer account (not a sample, not only those with a profile).
-            'farmers' => rescue(fn (): int => $this->farmerAccounts()->count(), null, false),
+            'farmers' => rescue(fn (): int => $this->farmerAccounts()->count(), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'MaoHomeService::payload')),
             'farmer_kpi' => rescue(fn (): array => $this->farmerKpi(), null, false),
             'scope' => ['filtered' => $this->scope !== null, 'barangays' => $this->scope ?? []],
             'area' => $this->areaPlanted($now),
@@ -82,9 +82,9 @@ class MaoHomeService
             // MAO Dashboard – Naicel (2026-10-08): four more figures and one more chart, all from saved records.
             'plans' => rescue(fn (): ?array => $this->farmersWithPlan($now), null, false),
             'harvests' => rescue(fn (): ?array => $this->harvestsDue($now), null, false),
-            'production' => rescue(fn (): ?array => $this->latestProduction(), null, false),
+            'production' => rescue(fn (): ?array => $this->latestProduction(), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'MaoHomeService::payload')),
             'advisories' => rescue(fn (): ?int => SchemaCache::hasTable('planting_advisories')
-                ? SampleData::without(PlantingAdvisory::query(), 'planting_advisories')->active()->count() : null, null, false),
+                ? SampleData::without(PlantingAdvisory::query(), 'planting_advisories')->active()->count() : null, null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'MaoHomeService::payload')),
             'by_barangay' => rescue(fn (): array => $this->farmersByBarangay(), ['state' => 'nodata'], false),
             // end MAO Dashboard – Naicel
             'risk' => [
@@ -265,7 +265,7 @@ class MaoHomeService
     private function latestProduction(): ?array
     {
         // Demo records are not production, and a figure is only as good as the records behind it (RecordProvenance).
-        $classes = rescue(fn (): array => \App\Support\RecordProvenance::riceClasses(), [], false);
+        $classes = rescue(fn (): array => \App\Support\RecordProvenance::riceClasses(), [], fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'MaoHomeService::latestProduction'));
         $class = fn ($row): string => $classes[$row->id] ?? \App\Support\RecordProvenance::UNVERIFIED;
         $rows = app(\App\Support\DashboardData::class)->riceRows()->whereNotNull('year')
             ->filter(fn ($row): bool => $class($row) !== \App\Support\RecordProvenance::DEMO)
@@ -323,7 +323,8 @@ class MaoHomeService
             $plans = $this->scoped(FarmerPlantingSchedule::query())
                 ->whereBetween('planting_date', [$season['start']->toDateString(), $season['end']->toDateString()])
                 ->get(['farm_area_hectares']);
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'MaoHomeService::areaPlanted');
             return ['hectares' => null, 'plans' => 0];
         }
 
@@ -388,7 +389,7 @@ class MaoHomeService
      */
     private function actions(): array
     {
-        $event = rescue(fn () => $this->typhoon->activeEvent(), null, false);
+        $event = rescue(fn () => $this->typhoon->activeEvent(), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'MaoHomeService::actions'));
 
         return [
             // Manuscript – Naicel (2026-10-08): farmer sign-ups waiting for approval (shown only when there are some).
@@ -396,14 +397,14 @@ class MaoHomeService
                 'key' => 'farmer-approvals',
                 'label' => 'Farmer sign-ups to approve',
                 // Shown only while someone is waiting (null hides the action).
-                'count' => rescue(fn (): ?int => $this->scoped(\App\Models\User::query()->where('role', \App\Models\User::ROLE_FARMER)->where('status', \App\Models\User::STATUS_PENDING), 'users.barangay')->count() ?: null, null, false),
+                'count' => rescue(fn (): ?int => $this->scoped(\App\Models\User::query()->where('role', \App\Models\User::ROLE_FARMER)->where('status', \App\Models\User::STATUS_PENDING), 'users.barangay')->count() ?: null, null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'MaoHomeService::actions')),
                 'href' => route('mao.farmer-approvals.index'),
                 'action' => 'Review',
             ],
             [
                 'key' => 'advisories',
                 'label' => 'Advisories to approve',
-                'count' => rescue(fn (): int => PlantingAdvisory::query()->pendingReview()->count(), null, false),
+                'count' => rescue(fn (): int => PlantingAdvisory::query()->pendingReview()->count(), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'MaoHomeService::actions')),
                 'href' => route('planting-advisories.index', ['show' => 'pending']),
                 'action' => 'Review',
             ],
@@ -411,7 +412,7 @@ class MaoHomeService
             ...(\App\Http\Middleware\FieldReportsUi::enabled() ? [[
                 'key' => 'field-reports',
                 'label' => 'Unresolved field reports',
-                'count' => rescue(fn (): int => FieldReport::query()->where('status', '!=', FieldReport::STATUS_RESOLVED)->count(), null, false),
+                'count' => rescue(fn (): int => FieldReport::query()->where('status', '!=', FieldReport::STATUS_RESOLVED)->count(), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'MaoHomeService::actions')),
                 'href' => route('field-reports.index', ['unresolved' => 1]),
                 'action' => 'Open',
             ]] : []),
@@ -420,7 +421,7 @@ class MaoHomeService
                 'label' => '"Needs Help" check-ins',
                 'count' => rescue(fn (): int => $event && SchemaCache::hasTable('typhoon_safety_responses')
                     ? TyphoonSafetyResponse::query()->where('event_key', $event['key'])->where('status', TyphoonSafetyResponse::STATUS_NEEDS_HELP)->count()
-                    : 0, null, false),
+                    : 0, null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'MaoHomeService::actions')),
                 'href' => route('planting-advisories.index').'#check-ins',
                 'action' => 'Open',
             ],

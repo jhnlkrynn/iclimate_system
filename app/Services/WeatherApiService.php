@@ -170,7 +170,8 @@ class WeatherApiService
 
         try {
             $fresh = \Illuminate\Support\Carbon::parse($weather['fetched_at'])->gt(now()->subMinutes(60));
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'WeatherApiService::recentSnapshot');
             return null;
         }
 

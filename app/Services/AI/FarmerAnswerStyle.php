@@ -128,7 +128,8 @@ class FarmerAnswerStyle
                 $ahead = (int) \App\Support\BusinessClock::today()->diffInDays($date, false);
                 $label = $ahead === 0 ? 'Today' : ($ahead === 1 ? 'Tomorrow' : $date->format('l'));
             }
-        } catch (\Throwable) {
+        } catch (\Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'FarmerAnswerStyle::day');
             $label = null;
         }
 

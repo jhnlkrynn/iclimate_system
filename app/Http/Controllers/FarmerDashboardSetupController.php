@@ -53,6 +53,7 @@ class FarmerDashboardSetupController extends Controller
                 }
             });
         } catch (Throwable $e) {
+            \App\Support\SilentFailure::log($e, 'FarmerDashboardSetupController::farmSize');
             report($e);
 
             return response()->json(['message' => __('farmer.popup.failed')], 500);
@@ -122,6 +123,7 @@ class FarmerDashboardSetupController extends Controller
                 }
             });
         } catch (Throwable $e) {
+            \App\Support\SilentFailure::log($e, 'FarmerDashboardSetupController::profile');
             report($e);
 
             return response()->json(['message' => __('farmer.popup.failed')], 500);

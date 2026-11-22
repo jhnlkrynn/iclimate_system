@@ -229,7 +229,8 @@ class DataProvenanceService
                 $obs->count(),
                 'Recorded values, unchanged. '.$data['excluded_sentinel_count'].' missing-value marker(s) (-999) left out, not zero-filled.',
             );
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'DataProvenanceService::ambulongHistory');
             return $this->entry('Monthly climate history', self::HISTORICAL, 'Ambulong monthly record', 'database/data/Ambulong Monthly Data.csv', null, null, null, null, 'The file could not be read.');
         }
     }

@@ -29,6 +29,7 @@ class BarangayInsightController extends Controller
         try {
             $insight = $insights->forBarangay($barangay, $language);
         } catch (Throwable $exception) {
+            \App\Support\SilentFailure::log($exception, 'BarangayInsightController::__invoke');
             Log::error('Barangay AI insight endpoint failed.', ['barangay' => $barangay, 'message' => $exception->getMessage()]);
 
             return response()->json([

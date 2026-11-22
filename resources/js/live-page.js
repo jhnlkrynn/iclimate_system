@@ -10,7 +10,7 @@
  *
  * Nothing is replaced while someone is using it (typing, a selected row, an open menu); it catches up right after.
  */
-import { initDashboardRealtime } from './dashboard-realtime';
+import { initDashboardRealtime } from './dashboard-realtime.js';
 
 const POLL_MS = 60_000;
 const BUSY_RETRY_MS = 4_000;

@@ -79,7 +79,7 @@ class FarmerAccountReviewService
             $query = User::query()->lockForUpdate();
             $farmer = $userId === null ? $query->where('email', strtolower(trim((string) $request->input('email'))))->first() : $query->find($userId);
             if ($userId === null) {
-                $matches = $farmer && rescue(fn () => Hash::check((string) $request->input('password'), $farmer->password), false, false);
+                $matches = $farmer && rescue(fn () => Hash::check((string) $request->input('password'), $farmer->password), false, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'FarmerAccountReviewService::resubmit'));
                 if (! $matches) {
                     throw ValidationException::withMessages(['email' => trans('auth.failed')]);
                 }

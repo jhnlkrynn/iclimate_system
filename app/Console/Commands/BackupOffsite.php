@@ -25,6 +25,7 @@ class BackupOffsite extends Command
         try {
             $result = $offsite->copyLatest();
         } catch (Throwable $e) {
+            \App\Support\SilentFailure::log($e, 'BackupOffsite::handle');
             Log::error('Off-host backup failed.', ['reason' => $e->getMessage()]);
             $this->error('Off-host backup failed: '.$e->getMessage());
 

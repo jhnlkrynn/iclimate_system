@@ -69,7 +69,7 @@ class DashboardController extends Controller
     /** The IT refresh button re-renders the plain-language staff dashboard card. */
 
     /** The Farmer Home parts (partials under dashboards/farmer), in page order; the page and the refresh render the same list. */
-    public const FARMER_SLOTS = ['message', 'typhoon', 'kpis', 'weather', 'risk', 'harvest', 'week'];   // Farmer – Naicel (2026-10-08): + kpis
+    public const FARMER_SLOTS = ['message', 'typhoon', 'kpis', 'weather', 'risk', 'harvest', 'week', 'panels'];   // Farmer – Naicel (2026-10-08): + kpis; 2026-11-23: + panels (the cards' summary panels, audit M-8)
 
     /** ?retry=harvest-check: the yield card's placeholder asks whether the background estimate is saved yet (reads only). */
     private const FARMER_RETRY = [
@@ -178,7 +178,7 @@ class DashboardController extends Controller
             'language' => ['required', 'string', Rule::in(array_keys(\App\Support\MaoLanguage::SUPPORTED))],
         ]);
         FarmerLanguage::store($request, $request->user(), $validated['language']);
-        rescue(fn () => app(\App\Services\Mao\MaoMissingDataNotifier::class)->sync($request->user()->refresh()), null, false);
+        rescue(fn () => app(\App\Services\Mao\MaoMissingDataNotifier::class)->sync($request->user()->refresh()), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'DashboardController::maoLanguage'));
 
         // Back to the page the switch was used on (it is in the top bar of every page).
         return redirect()->back(302, [], route('mao.dashboard'));
@@ -512,7 +512,7 @@ class DashboardController extends Controller
 
     private function maoOperationsSafety(TyphoonSafetyService $typhoonSafety): array
     {
-        $event = rescue(fn () => $typhoonSafety->activeEvent(), null, false);
+        $event = rescue(fn () => $typhoonSafety->activeEvent(), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'DashboardController::maoOperationsSafety'));
         $responses = $this->hasTyphoonSafetyTable() && $event
             ? TyphoonSafetyResponse::query()->with('farmer')->where('event_key', $event['key'])->latest('responded_at')->get()
             : collect();
@@ -530,10 +530,10 @@ class DashboardController extends Controller
     private function maoOperationsRecentData(DashboardKpiService $kpis, array $recent, array $environment, array $weatherFeedbackFilters): array
     {
         return [
-            'maoKpis' => rescue(fn () => $kpis->mao(), [], false),
+            'maoKpis' => rescue(fn () => $kpis->mao(), [], fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'DashboardController::maoOperationsRecentData')),
             'weatherFeedbackFilters' => $weatherFeedbackFilters,
-            'weatherFeedbackSummary' => rescue(fn () => app(WeatherFeedbackSummaryService::class)->summarize($weatherFeedbackFilters), [], false),
-            'farmerOrganizationSummary' => rescue(fn () => app(FarmerOrganizationSummaryService::class)->summarize()['farmerOrganizationSummary'] ?? [], [], false),
+            'weatherFeedbackSummary' => rescue(fn () => app(WeatherFeedbackSummaryService::class)->summarize($weatherFeedbackFilters), [], fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'DashboardController::maoOperationsRecentData')),
+            'farmerOrganizationSummary' => rescue(fn () => app(FarmerOrganizationSummaryService::class)->summarize()['farmerOrganizationSummary'] ?? [], [], fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'DashboardController::maoOperationsRecentData')),
             'latestClimate' => $environment['latestClimate'],
             'recentClimateRecords' => $recent['recentClimateRecords'],
             'recentRiceProductions' => $recent['recentRiceProductions'],

@@ -127,6 +127,7 @@ class PagasaAdvisoryService
                         Log::info('PAGASA source checked.', ['url' => $source['url'], 'status' => $response->status(),
                             'bulletins' => count($bulletins), 'relevant_to_lian' => $relevant]);
                     } catch (Throwable $exception) {
+                        \App\Support\SilentFailure::log($exception, 'PagasaAdvisoryService::fetchAndStore');
                         $summary['errors'][] = 'Unable to read PAGASA '.$source['url'].': '.$exception->getMessage();
                         Log::warning('PAGASA fetch or parsing failed.', ['url' => $source['url'], 'error' => $exception->getMessage()]);
                     }

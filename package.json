@@ -5,7 +5,7 @@
         "build": "node scripts/security/harden-picomatch.mjs --check && vite build",
         "dev": "node scripts/security/harden-picomatch.mjs --check && vite",
         "test:browser": "playwright test",
-        "test:js": "node scripts/security/harden-picomatch.mjs --check && node --test tests/js/*.test.mjs",
+        "test:js": "node scripts/security/harden-picomatch.mjs --check && node --test tests/js/*.test.mjs tests/Frontend/*.test.mjs",
         "postinstall": "node scripts/security/harden-picomatch.mjs"
     },
     "devDependencies": {

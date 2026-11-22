@@ -216,7 +216,8 @@ class AdvisoryWeatherService
 
                 return $payload;
             }
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'AdvisoryWeatherService::forecast');
             // fall through to the last good copy
         } finally {
             rescue(fn () => $lock->release(), report: false);

@@ -42,3 +42,10 @@ Thumbs.db
 # Playwright browser test output
 /test-results
 /playwright-report
+
+# Database dumps hold farmers' personal data (names, RSBSA numbers): never commit them (audit 2026-11-23, H-4).
+# The deploy/ and docs/ .sql files are account-setup and audit-query templates without data, so they stay tracked.
+/storage/backups/
+/*.sql
+*.sql.gz
+*.dump

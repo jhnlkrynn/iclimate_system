@@ -32,113 +32,45 @@
         </section>
 
         {{-- Farmer – Naicel (2026-11-22): the one summary panel the cards open. Every card is a <button data-panel="…">
-             (kpis, weather, risk and harvest partials); clicking one shows only its section below. A drawer from the
-             right with a dark overlay (a sheet from the bottom on a phone); closes with the X, the overlay or Esc.
-             The sections use only the data this page already has ($f), so opening one asks the server nothing. --}}
-        @php
-            $panels = [];
-            $panelFor = ['farm' => 'farm-size', 'crop' => 'days-to-harvest', 'expected' => 'expected-harvest'];
-            // The figures in the tiles: farm size, days to harvest, expected harvest, rain, risk, advisories, ...
-            foreach ($f['kpis'] ?? [] as $tile) {
-                if (! empty($tile['detail'])) {
-                    $panels[$panelFor[$tile['key']] ?? $tile['key']] = $tile['detail'];
-                }
-            }
-            // Weather today: current conditions, today's all-day forecast, wind, and when it was read.
-            $w = $f['weather'] ?? ['state' => 'nodata'];
-            if ($w['state'] === 'ok') {
-                $todayForecast = collect($f['week']['days'] ?? [])->first(fn (array $d): bool => $d['is_today'] ?? false);
-                $panels['weather'] = [
-                    'title' => __('farmer.home.weather.title'),
-                    'rows' => array_filter([
-                        __('farmer.kpis.detail.conditions') => $w['condition'],
-                        __('farmer.kpis.detail.temperature') => number_format($w['temperature'], 0).'°C',
-                        __('farmer.kpis.detail.all_day') => trim(($todayForecast['condition'] ?? '').(($todayForecast['rain'] ?? null) ? ' · '.$todayForecast['rain'] : '')) ?: ($w['rain'] ?: null),
-                        __('farmer.kpis.detail.rain') => $w['rain'] ?: __('farmer.home.rain.none'),
-                        __('farmer.kpis.detail.wind') => $w['wind'] ?: __('farmer.kpis.detail.wind_calm'),
-                        __('farmer.kpis.detail.source') => $w['provider'] ?? null,
-                    ], fn ($v): bool => $v !== null && $v !== ''),
-                    'text' => ($w['stale'] ?? false) ? __('farmer.kpis.detail.weather_stale') : null,
-                    'updated_at' => $w['updated_at'],
-                    'link' => route('weather-predictions.index').'#weather',
-                ];
-            }
-            // Barangay risk: the Barangay Risk card's rating (the risk tile, when shown, has the same one).
-            if (($f['risk']['state'] ?? null) === 'ok' && ! isset($panels['risk'])) {
-                $panels['risk'] = \App\Services\Farmer\FarmerHomeKpis::riskDetail($f['risk'], (string) ($f['barangay'] ?? ''));
-            }
-            // Expected harvest: the tile's tons when the farm size is known; otherwise the yield card's t/ha alone.
-            $h = $f['harvest'] ?? ['state' => 'nodata'];
-            if ($h['state'] === 'ok' && ! isset($panels['expected-harvest'])) {
-                $panels['expected-harvest'] = [
-                    'title' => __('farmer.home.harvest.title'),
-                    'rows' => array_filter([
-                        __('farmer.kpis.detail.yield_per_ha') => number_format($h['yield'], 2).' t/ha',
-                        __('farmer.kpis.detail.season') => (string) ($h['season'] ?? ''),
-                        __('farmer.kpis.detail.compared') => (string) ($h['compare_label'] ?? ''),
-                        __('farmer.kpis.detail.size') => (string) ($h['size_note'] ?? ''),
-                    ], fn (string $v): bool => $v !== ''),
-                    'text' => __('farmer.kpis.detail.harvest_how'),
-                    'updated_at' => $h['ran_at'] ?? null,
-                    'link' => route('weather-predictions.index').'#yield',
-                ];
-            }
-        @endphp
+             (kpis, weather, risk and harvest partials). A drawer from the right with a dark overlay (a sheet from the
+             bottom on a phone); closes with the X, the overlay or Esc. 2026-11-23 (audit M-8): what a panel shows comes
+             from the "panels" slot (dashboards/farmer/panels.blade.php), which the timed refresh updates with the cards,
+             so an open panel never shows older numbers than its card after the next refresh. --}}
         <div class="fh-drawer" id="fhDrawer" data-fh-drawer hidden>
             <div class="fh-drawer-backdrop" data-fh-drawer-close></div>
-            <div class="fh-drawer-panel" role="dialog" aria-modal="true" tabindex="-1" data-fh-drawer-panel>
+            <div class="fh-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="fhDrawerTitle" tabindex="-1" data-fh-drawer-panel>
                 <button type="button" class="fh-drawer-x" data-fh-drawer-close aria-label="{{ __('farmer.kpis.detail.close') }}">
                     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
                 </button>
-                @foreach ($panels as $key => $d)
-                    <div class="fh-drawer-body" data-panel-section="{{ $key }}" hidden>
-                        <h2 class="fh-drawer-title" id="fhPanel-{{ $key }}">{{ $d['title'] }}</h2>
-                        @if (! empty($d['badge']['label']))
-                            <p class="fh-risk-badge is-{{ $d['badge']['tone'] }}">{{ $d['badge']['label'] }}</p>
-                        @endif
-                        @if (! empty($d['rows']))
-                            <dl class="fh-drawer-facts">
-                                @foreach ($d['rows'] as $label => $value)
-                                    <div><dt>{{ $label }}</dt><dd>{{ $value }}</dd></div>
-                                @endforeach
-                            </dl>
-                        @endif
-                        @if (($d['progress'] ?? null) !== null)
-                            <div class="fh-drawer-progress">
-                                <span class="fh-kpi-bar" role="img" aria-label="{{ __('farmer.kpis.crop.progress', ['percent' => $d['progress']]) }}"><span style="width: {{ $d['progress'] }}%"></span></span>
-                                <span class="fh-muted">{{ __('farmer.kpis.crop.progress', ['percent' => $d['progress']]) }}</span>
-                            </div>
-                        @endif
-                        @if (! empty($d['text']))
-                            <p class="fh-words">{{ $d['text'] }}</p>
-                        @endif
-                        @if (! empty($d['updated_at']))
-                            <x-updated-at :at="$d['updated_at']" :label="__('farmer.home.updated')" />
-                        @endif
-                        @if (! empty($d['link']))
-                            <a class="fh-link fh-drawer-more" href="{{ $d['link'] }}">{{ __('farmer.kpis.detail.view_full') }} <span aria-hidden="true">→</span></a>
-                        @endif
-                    </div>
-                @endforeach
+                <div class="fh-drawer-body" data-fh-drawer-body></div>
             </div>
         </div>
         <script @nonce>
-            // The summary panel: a card click opens it at that card's section; X, the overlay or Esc closes it. On its own
+            // The summary panel: a card click opens it with that card's panel; X, the overlay or Esc closes it. On its own
             // (not part of farmer-dashboard.js), so nothing else on the page can stop the cards from working.
             (function () {
                 var drawer = document.getElementById('fhDrawer');
                 if (!drawer) return;
                 document.body.appendChild(drawer);        // out of the animated page sections, so it always covers the screen
                 var panel = drawer.querySelector('[data-fh-drawer-panel]');
+                var body = drawer.querySelector('[data-fh-drawer-body]');
                 var opener = null;
                 var timer = null;
 
+                // Fill the drawer from the card's template, which the timed refresh keeps current.
+                function fill(key) {
+                    var template = document.querySelector('template[data-panel-template="' + key + '"]');
+                    if (!template) return false;
+                    body.replaceChildren(template.content.cloneNode(true));
+                    body.dataset.panel = key;
+                    var title = body.querySelector('[data-panel-title]');
+                    if (title) title.id = 'fhDrawerTitle';
+                    return true;
+                }
+
                 function open(key, card) {
-                    var section = drawer.querySelector('[data-panel-section="' + key + '"]');
-                    if (!section) return;
+                    if (!fill(key)) return;
                     clearTimeout(timer);
-                    drawer.querySelectorAll('[data-panel-section]').forEach(function (s) { s.hidden = s !== section; });
-                    panel.setAttribute('aria-labelledby', 'fhPanel-' + key);
                     opener = card;
                     drawer.hidden = false;
                     document.documentElement.classList.add('fh-drawer-lock');
@@ -149,7 +81,7 @@
                     if (drawer.hidden) return;
                     drawer.classList.remove('is-open');
                     document.documentElement.classList.remove('fh-drawer-lock');
-                    timer = setTimeout(function () { drawer.hidden = true; }, 220);
+                    timer = setTimeout(function () { drawer.hidden = true; body.replaceChildren(); delete body.dataset.panel; }, 220);
                     // The card may have been redrawn by the timed refresh meanwhile: focus its new copy.
                     var key = opener && opener.dataset.panel;
                     var card = opener && opener.isConnected ? opener : (key ? document.querySelector('[data-panel="' + key + '"]') : null);
@@ -174,6 +106,13 @@
                     if (e.shiftKey && (document.activeElement === first || document.activeElement === panel)) { e.preventDefault(); last.focus(); }
                     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
                 });
+
+                // A refresh while a panel is open: show the new numbers in it at once.
+                var slot = document.querySelector('.mfd-slot[data-slot=panels]');
+                if (slot && 'MutationObserver' in window) {
+                    new MutationObserver(function () { if (!drawer.hidden && body.dataset.panel) fill(body.dataset.panel); })
+                        .observe(slot, { childList: true });
+                }
             })();
         </script>
     </div>

@@ -122,7 +122,8 @@ final class MaoDashboardService
                 ->where('sender_id', '!=', $user->id)
                 ->whereNull('read_at')
                 ->count();
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'MaoDashboardService::forUser');
             $unread = 0;      // a failed count adds no item; it is never shown as a number
         }
 
@@ -157,7 +158,8 @@ final class MaoDashboardService
             // The very cache entry the header bell and sidebar badge read, so all three always show one number.
             return (int) \Illuminate\Support\Facades\Cache::remember('sidebar:unread-notifications:'.$user->id, now()->addSeconds(20),
                 fn () => SampleData::without(Notification::query(), 'notifications')->where('user_id', $user->id)->where('is_read', false)->count());
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'MaoDashboardService::unreadNotifications');
             return 0;
         }
     }
@@ -169,7 +171,8 @@ final class MaoDashboardService
     {
         try {
             $w = $this->weather->current($force);
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'MaoDashboardService::weather');
             return ['state' => 'error'];
         }
 
@@ -333,7 +336,8 @@ final class MaoDashboardService
                 'active' => PlantingAdvisory::query()->active()->count(),
                 'pending' => PlantingAdvisory::query()->pendingReview()->count(),
             ];
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'MaoDashboardService::advisories');
             return ['state' => 'error'];
         }
     }
@@ -387,7 +391,8 @@ final class MaoDashboardService
     {
         try {
             return $this->overview->climateSnapshot();
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'MaoDashboardService::climate');
             return null;
         }
     }
@@ -401,7 +406,8 @@ final class MaoDashboardService
             $s = $this->farmers->summarize()['farmerOrganizationSummary'];
             $covered = FarmerProfile::query()->whereNotNull('barangay')->distinct()->pluck('barangay')
                 ->map(fn ($b) => LianBarangays::canonicalName((string) $b))->filter()->unique()->count();
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'MaoDashboardService::farmerCoverage');
             return ['state' => 'error'];
         }
 
@@ -512,7 +518,8 @@ final class MaoDashboardService
                 'planting_soon' => FarmerPlantingSchedule::query()->whereBetween('planting_date', [$today, $soon])->count(),
                 'harvest_soon' => FarmerPlantingSchedule::query()->whereNull('harvested_on')->whereBetween('scheduled_harvest_date', [$today, $soon])->count(),
             ];
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'MaoDashboardService::plantingSchedules');
             return null;
         }
     }
@@ -625,7 +632,8 @@ final class MaoDashboardService
                 $items[] = ['severity' => 'action', 'icon' => 'report', 'title' => number_format($reports).' Field '.($reports === 1 ? 'Report' : 'Reports').' Unresolved',
                     'detail' => 'Issues reported from the field.', 'action' => 'Review', 'href' => route('field-reports.index')];
             }
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'MaoDashboardService::attention');
             // an unreadable count adds no item
         }
 
@@ -647,7 +655,8 @@ final class MaoDashboardService
             $needsHelp = SchemaCache::hasTable('typhoon_safety_responses')
                 ? TyphoonSafetyResponse::query()->where('event_key', $event['key'])->where('status', TyphoonSafetyResponse::STATUS_NEEDS_HELP)->count()
                 : 0;
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'MaoDashboardService::typhoonItem');
             return null;
         }
 

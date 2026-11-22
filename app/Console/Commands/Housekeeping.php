@@ -69,7 +69,8 @@ class Housekeeping extends Command
                     $files++;
                     $bytes += $size;
                 }
-            } catch (Throwable) {
+            } catch (Throwable $caught) {
+                \App\Support\SilentFailure::log($caught, 'Housekeeping::pruneFileCache');
                 // A file in use or removed meanwhile is simply skipped.
             }
         }

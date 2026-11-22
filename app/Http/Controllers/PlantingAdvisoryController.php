@@ -152,12 +152,12 @@ class PlantingAdvisoryController extends Controller
      */
     private function typhoonCheckIns(): array
     {
-        $event = rescue(fn () => app(TyphoonSafetyService::class)->activeEvent(), null, false);
+        $event = rescue(fn () => app(TyphoonSafetyService::class)->activeEvent(), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'PlantingAdvisoryController::typhoonCheckIns'));
         if (! $event || ! SchemaCache::hasTable('typhoon_safety_responses')) {
             return ['event' => null];
         }
-        $responses = rescue(fn () => TyphoonSafetyResponse::query()->with('farmer.farmerProfile:id,user_id,barangay')->where('event_key', $event['key'])->latest('responded_at')->get(), collect(), false);
-        $farmers = rescue(fn (): int => User::query()->where('role', User::ROLE_FARMER)->where('status', User::STATUS_ACTIVE)->count(), 0, false);
+        $responses = rescue(fn () => TyphoonSafetyResponse::query()->with('farmer.farmerProfile:id,user_id,barangay')->where('event_key', $event['key'])->latest('responded_at')->get(), collect(), fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'PlantingAdvisoryController::typhoonCheckIns'));
+        $farmers = rescue(fn (): int => User::query()->where('role', User::ROLE_FARMER)->where('status', User::STATUS_ACTIVE)->count(), 0, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'PlantingAdvisoryController::typhoonCheckIns'));
 
         return [
             'event' => $event,
@@ -212,7 +212,7 @@ class PlantingAdvisoryController extends Controller
             PlantingAdvisory::SEVERITY_MODERATE => 'moderate',
             default => 'low',
         };
-        $activityDate = rescue(fn () => filled(data_get($advisory->metadata, 'mao_activity_date')) ? Carbon::parse(data_get($advisory->metadata, 'mao_activity_date')) : null, null, false);
+        $activityDate = rescue(fn () => filled(data_get($advisory->metadata, 'mao_activity_date')) ? Carbon::parse(data_get($advisory->metadata, 'mao_activity_date')) : null, null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'PlantingAdvisoryController::listItem'));
 
         return [
             'advisory' => $advisory,

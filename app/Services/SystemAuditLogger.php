@@ -28,7 +28,8 @@ class SystemAuditLogger
                 'action' => $action,
                 'details' => self::details($request, $context),
             ]);
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'SystemAuditLogger::record');
             report(new \RuntimeException('Unable to write system audit log for action: '.$action));
         }
     }

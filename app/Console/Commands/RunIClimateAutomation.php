@@ -92,7 +92,8 @@ class RunIClimateAutomation extends Command
                 'action' => 'iclimate.automation',
                 'details' => json_encode(['context' => $details], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
             ]);
-        } catch (\Throwable) {
+        } catch (\Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'RunIClimateAutomation::recordAutomation');
             // Dispatch must remain successful if optional audit bookkeeping is unavailable.
         }
     }

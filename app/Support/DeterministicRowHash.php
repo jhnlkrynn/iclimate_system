@@ -71,7 +71,8 @@ final class DeterministicRowHash
                     : 'time:'.($precision > 0
                         ? substr($formatted, 0, 20 + $precision).'Z'
                         : substr($formatted, 0, 19).'Z');
-            } catch (\Throwable) {
+            } catch (\Throwable $caught) {
+                \App\Support\SilentFailure::log($caught, 'DeterministicRowHash::value');
                 // Keep an unparseable value visible in the hash rather than silently treating it as equal.
             }
         }

@@ -51,6 +51,7 @@ class SendTestMail extends Command
         try {
             Mail::to($to)->sendNow($mail);
         } catch (Throwable $e) {
+            \App\Support\SilentFailure::log($e, 'SendTestMail::content');
             $this->error('Sending failed: '.$e->getMessage());
             $this->line('Check MAIL_HOST, MAIL_PORT, MAIL_SCHEME, MAIL_USERNAME and MAIL_PASSWORD (for Gmail, an App Password).');
 

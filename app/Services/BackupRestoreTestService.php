@@ -135,7 +135,8 @@ class BackupRestoreTestService
         } catch (RestoreTestFailed $failure) {
             $result['reason'] = $failure->reason;
             $this->logFailure($failure->reason, $result['backup']);
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'BackupRestoreTestService::run');
             $result['reason'] = 'unexpected_error';
             $this->logFailure('unexpected_error', $result['backup']);
         } finally {
@@ -155,7 +156,8 @@ class BackupRestoreTestService
     {
         try {
             $result = $this->docker(['version', '--format', '{{.Server.Version}}'], $this->timeout('docker_timeout_seconds', 20));
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'BackupRestoreTestService::assertDockerAvailable');
             throw new RestoreTestFailed('docker_unavailable');
         }
 
@@ -177,7 +179,8 @@ class BackupRestoreTestService
                 '-e', 'POSTGRES_DB='.$database,
                 (string) config('backup.restore_test_image', 'postgres:17'),
             ], $this->timeout('restore_start_timeout_seconds', 300), ['POSTGRES_PASSWORD' => $password]);
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'BackupRestoreTestService::startContainer');
             throw new RestoreTestFailed('container_start_failed');
         }
 
@@ -203,7 +206,8 @@ class BackupRestoreTestService
                 if ($result->successful()) {
                     return;
                 }
-            } catch (Throwable) {
+            } catch (Throwable $caught) {
+                \App\Support\SilentFailure::log($caught, 'BackupRestoreTestService::waitUntilReady');
                 // Not ready yet; keep waiting until the deadline.
             }
 
@@ -219,7 +223,8 @@ class BackupRestoreTestService
     {
         try {
             $result = $this->docker(['cp', $hostPath, $container.':'.self::IN_CONTAINER_FILE], $this->timeout('restore_timeout_seconds', 900));
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'BackupRestoreTestService::copyBackup');
             throw new RestoreTestFailed('copy_failed');
         }
 
@@ -255,7 +260,8 @@ class BackupRestoreTestService
             ], $this->timeout('restore_timeout_seconds', 900));
         } catch (ProcessTimedOutException) {
             throw new RestoreTestFailed('restore_timeout');
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'BackupRestoreTestService::restore');
             throw new RestoreTestFailed('restore_failed');
         }
 
@@ -294,7 +300,8 @@ class BackupRestoreTestService
 
             try {
                 $result = $this->docker(['exec', $container, 'psql', '-U', $user, '-d', $database, '-At', '-c', 'select count(*) from '.$qualified], 60);
-            } catch (Throwable) {
+            } catch (Throwable $caught) {
+                \App\Support\SilentFailure::log($caught, 'BackupRestoreTestService::coreRowCounts');
                 continue;
             }
 
@@ -314,7 +321,8 @@ class BackupRestoreTestService
             $check = $this->docker(['ps', '-a', '-q', '--filter', 'name=^'.$container.'$'], 30);
 
             $gone = $check->successful() && trim($check->output()) === '';
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'BackupRestoreTestService::removeContainer');
             $gone = false;
         }
 
@@ -370,7 +378,8 @@ class BackupRestoreTestService
     {
         try {
             $result = $this->docker($arguments, $this->timeout('restore_timeout_seconds', 900));
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'BackupRestoreTestService::step');
             throw new RestoreTestFailed($reason);
         }
 

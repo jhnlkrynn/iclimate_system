@@ -30,13 +30,14 @@ class MobileAuthController extends Controller
         // A deleted account (hidden from User::query()) with its own password: no sign-in, no reason, only that the
         // account is no longer active. The web login page shows the reason; the app does not.
         if ($user === null && ($deleted = User::withDeleted()->where('email', $credentials['email'])->where('status', User::STATUS_DELETED)->first())
-            && rescue(fn () => Hash::check($credentials['password'], $deleted->password), false, false)) {
+            && rescue(fn () => Hash::check($credentials['password'], $deleted->password), false, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'MobileAuthController::login'))) {
             throw ValidationException::withMessages(['email' => [trans('user_deletion.no_longer_active', [], $deleted->mailLocale())]]);
         }
 
         try {
             $passwordMatches = $user && Hash::check($credentials['password'], $user->password);
-        } catch (RuntimeException) {
+        } catch (RuntimeException $caught) {
+            \App\Support\SilentFailure::log($caught, 'MobileAuthController::login');
             $passwordMatches = false;
         }
 
@@ -115,7 +116,7 @@ class MobileAuthController extends Controller
             return $user->load('farmerProfile');
         });
         // MAO – Naicel (2026-10-09): a sign-up that waits for approval goes to every MAO's notification bell.
-        rescue(fn () => app(\App\Services\Mao\FarmerApprovalNotifier::class)->sync(), null, false);
+        rescue(fn () => app(\App\Services\Mao\FarmerApprovalNotifier::class)->sync(), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'MobileAuthController::register'));
 
         return response()->json([
             'message' => $user->status === User::STATUS_PENDING ? 'Registration received. You can log in once the Municipal Agriculture Office approves it.' : 'Registration successful.',   // Manuscript – Naicel
@@ -135,7 +136,7 @@ class MobileAuthController extends Controller
             'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::defaults(), new \App\Rules\NotKnownDefaultPassword, 'different:current_password'],
         ]);
         $user = User::query()->where('email', $data['email'])->first();
-        $matches = $user && rescue(fn () => Hash::check($data['current_password'], $user->password), false, false);
+        $matches = $user && rescue(fn () => Hash::check($data['current_password'], $user->password), false, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'MobileAuthController::changePassword'));
         if (! $matches) {
             throw ValidationException::withMessages(['email' => ['These credentials do not match our records.']]);
         }

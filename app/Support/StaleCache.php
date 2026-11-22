@@ -269,6 +269,7 @@ final class StaleCache
                     $afterRebuild();
                 }
             } catch (Throwable $exception) {
+                \App\Support\SilentFailure::log($exception, 'StaleCache::refreshAfterResponse');
                 // The page was already answered from the last good copy; keep it and say why it is not newer.
                 Log::warning('Dashboard data could not be rebuilt after the response; the last good copy stays.', [
                     'key' => $key,

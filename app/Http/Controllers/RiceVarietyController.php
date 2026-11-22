@@ -186,6 +186,7 @@ class RiceVarietyController extends Controller
         try {
             $summary = $importer->import($path);
         } catch (\Throwable $e) {
+            \App\Support\SilentFailure::log($e, 'RiceVarietyController::import');
             report($e);
             SystemAuditLogger::record('Rice Variety Import Failed', $request, ['file' => basename($path), 'error' => mb_substr($e->getMessage(), 0, 250)]);
 

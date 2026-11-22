@@ -25,7 +25,10 @@ export default defineConfig({
         { name: 'mobile-375', use: { browserName: 'chromium', viewport: { width: 375, height: 740 }, isMobile: true, hasTouch: true } },
     ],
     webServer: {
-        command: 'PLAYWRIGHT_PORT=' + port + ' bash tests/Browser/serve.sh',
+        // The port goes in through `env`, not a `VAR=value command` prefix, so the command also starts from Windows
+        // (Git Bash's bash and php on PATH) as well as macOS/Linux (audit 2026-11-23, L-3).
+        command: 'bash tests/Browser/serve.sh',
+        env: { PLAYWRIGHT_PORT: String(port) },
         url: baseURL + '/login',
         timeout: 180_000,
         reuseExistingServer: false,

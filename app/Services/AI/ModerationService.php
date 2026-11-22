@@ -116,7 +116,8 @@ class ModerationService
                 'reason_code' => (string) ($result['reason_code'] ?? 'blocked_term'),
                 'blocked' => true,
             ]);
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'ModerationService::record');
             // Logging must never turn a blocked message into an error page.
         }
     }

@@ -31,6 +31,7 @@ class TrackUserActivity
                 $request->attributes->set(self::ATTRIBUTE, $user->id);
             }
         } catch (QueryException $exception) {
+            \App\Support\SilentFailure::log($exception, 'TrackUserActivity::handle');
             Log::warning('Unable to track user activity.', [
                 'message' => $exception->getMessage(),
             ]);
@@ -51,6 +52,7 @@ class TrackUserActivity
         try {
             User::whereKey($userId)->update(['last_active_at' => now()]);
         } catch (QueryException $exception) {
+            \App\Support\SilentFailure::log($exception, 'TrackUserActivity::terminate');
             Log::warning('Unable to track user activity.', ['message' => $exception->getMessage()]);
         }
     }

@@ -153,7 +153,7 @@ class MaoMissingDataNotifier
                 ->exists(),
         ];
 
-        return array_values(array_filter(self::ITEMS, fn (string $item): bool => (bool) rescue($checks[$item], false, false)));
+        return array_values(array_filter(self::ITEMS, fn (string $item): bool => (bool) rescue($checks[$item], false, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'MaoMissingDataNotifier::missing'))));
     }
 
     /**

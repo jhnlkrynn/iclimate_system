@@ -53,7 +53,7 @@ final class PasswordChange
     public static function hasSharedPassword(User $user): bool
     {
         foreach (DefaultPasswords::known() as $known) {
-            if (rescue(fn () => \Illuminate\Support\Facades\Hash::check($known, (string) $user->password), false, false)) {
+            if (rescue(fn () => \Illuminate\Support\Facades\Hash::check($known, (string) $user->password), false, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'PasswordChange::hasSharedPassword'))) {
                 return true;
             }
         }

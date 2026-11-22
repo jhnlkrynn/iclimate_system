@@ -59,13 +59,13 @@ class FarmerHomeKpis
      */
     public function for(User $user, ?Farm $farm, ?Farm $onlyFarm, array $harvest, array $week, CarbonImmutable $now, ?array $place = null): array
     {
-        $area = rescue(fn (): ?float => $this->knownArea($user, $farm), null, false);
+        $area = rescue(fn (): ?float => $this->knownArea($user, $farm), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'FarmerHomeKpis::for'));
 
         $tiles = array_values(array_filter([
-            rescue(fn (): ?array => $this->farmTile($user, $farm), null, false),
-            rescue(fn (): ?array => $this->cropTile($user, $onlyFarm, $now), null, false),
-            rescue(fn (): ?array => $this->expectedTile($harvest, $area), null, false),
-            rescue(fn (): ?array => $this->rainTile($week), null, false),
+            rescue(fn (): ?array => $this->farmTile($user, $farm), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'FarmerHomeKpis::for')),
+            rescue(fn (): ?array => $this->cropTile($user, $onlyFarm, $now), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'FarmerHomeKpis::for')),
+            rescue(fn (): ?array => $this->expectedTile($harvest, $area), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'FarmerHomeKpis::for')),
+            rescue(fn (): ?array => $this->rainTile($week), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'FarmerHomeKpis::for')),
         ]));
 
         // Fill the row with the figures about the farmer's place, in this order, until there are MAX_TILES.
@@ -74,7 +74,7 @@ class FarmerHomeKpis
                 if (count($tiles) >= self::MAX_TILES) {
                     break;
                 }
-                $tile = rescue(fn (): ?array => $this->{$filler}($place, $now), null, false);
+                $tile = rescue(fn (): ?array => $this->{$filler}($place, $now), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'FarmerHomeKpis::for'));
                 if ($tile !== null) {
                     $tiles[] = $tile;
                 }
@@ -83,7 +83,7 @@ class FarmerHomeKpis
 
         return [
             'tiles' => $tiles,
-            'compare' => rescue(fn (): array => $this->compare($user, $onlyFarm, $harvest, $now), ['state' => 'nodata'], false),
+            'compare' => rescue(fn (): array => $this->compare($user, $onlyFarm, $harvest, $now), ['state' => 'nodata'], fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'FarmerHomeKpis::for')),
         ];
     }
 

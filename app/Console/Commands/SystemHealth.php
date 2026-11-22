@@ -170,7 +170,8 @@ class SystemHealth extends Command
     {
         try {
             [$status, $detail] = $probe();
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'SystemHealth::check');
             [$status, $detail] = ['FAIL', $onError];   // the exception text can carry hosts or credentials: not shown
         }
         $this->results[] = ['check' => $name, 'status' => $status, 'detail' => $detail];
@@ -199,6 +200,7 @@ class SystemHealth extends Command
             \Illuminate\Support\Facades\Mail::raw($body, fn ($m) => $m->to($to)->subject('[iClimate] Health check FAILED: '.implode(', ', array_column($failures, 'check'))));
             $this->line('alert sent to the operator address');
         } catch (Throwable $e) {
+            \App\Support\SilentFailure::log($e, 'SystemHealth::notifyOperator');
             Log::warning('iClimate health alert e-mail could not be sent.', ['exception' => $e::class]);
         }
     }

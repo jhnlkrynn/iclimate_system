@@ -64,6 +64,7 @@ class ClimateRecordHistory
             $query = ClimateRecord::query();
             $entered = ($plausibleOnly ? $query->plausible() : $query)->get(['id', 'record_date', 'rainfall', 'temperature', 'humidity', 'wind_speed', 'season', 'source']);
         } catch (QueryException $exception) {
+            \App\Support\SilentFailure::log($exception, 'ClimateRecordHistory::records');
             Log::warning('Climate records: climate_records could not be read.', ['message' => $exception->getMessage()]);
             $unavailable[] = 'entered climate records';
         }
@@ -82,6 +83,7 @@ class ClimateRecordHistory
                 $rows->push($this->row(null, $date, 'month', $obs['rainfall'] ?? null, $obs['temperature'] ?? null, $obs['humidity'] ?? null, $obs['season'] ?? null, self::AMBULONG_SOURCE, $obs['wind_speed'] ?? null));
             }
         } catch (Throwable $exception) {
+            \App\Support\SilentFailure::log($exception, 'ClimateRecordHistory::records');
             Log::warning('Climate records: Ambulong monthly record could not be read.', ['message' => $exception->getMessage()]);
             $unavailable[] = 'the Ambulong station record';
         }

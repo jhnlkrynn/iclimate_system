@@ -33,13 +33,13 @@ final class QueueWorkerHeartbeat
             return;
         }
         self::$lastBeat = $now;
-        rescue(fn () => Cache::put(self::KEY, $now, self::ALIVE_FOR * 5), null, false);
+        rescue(fn () => Cache::put(self::KEY, $now, self::ALIVE_FOR * 5), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'QueueWorkerHeartbeat::beat'));
     }
 
     /** Unix time of the last beat, or null when no worker has run recently enough to leave one. */
     public static function lastBeat(): ?int
     {
-        $value = rescue(fn () => Cache::get(self::KEY), null, false);
+        $value = rescue(fn () => Cache::get(self::KEY), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'QueueWorkerHeartbeat::lastBeat'));
 
         return is_numeric($value) ? (int) $value : null;
     }
@@ -79,7 +79,8 @@ final class QueueWorkerHeartbeat
                 ->where('payload', 'like', '%'.$class.'"%')   // "displayName":"App\\Jobs\\<Class>"
                 ->when($needle !== '', fn ($q) => $q->where('payload', 'like', '%'.addcslashes($needle, '%_\\').'%'))
                 ->exists();
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'QueueWorkerHeartbeat::alreadyWaiting');
             return false;
         }
     }

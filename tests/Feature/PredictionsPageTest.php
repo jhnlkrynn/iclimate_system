@@ -285,7 +285,10 @@ class PredictionsPageTest extends TestCase
         $this->assertStringContainsString('Preliminary estimate', $text);
         $this->assertStringContainsString('Accuracy not verified', $text);
         $this->assertStringNotContainsString('Compared with the usual Lian yield', $text);
-        $this->assertStringContainsString('From your farm size (1.50 ha) and farm type (Irrigated', $text);
+        // Audit 2026-11-23 (C-1): the farm on file is named, and the card says the per-hectare estimate is the same for
+        // every farm in Lian (the model has no farm-type input; size only scales the total).
+        $this->assertStringContainsString('Farm on file: 1.50 ha, Irrigated', $text);
+        $this->assertStringContainsString('the same for every farm in Lian', $text);
         $this->assertStringContainsString(\App\Support\RiceSeason::current() === 'Wet' ? 'Wet season' : 'Dry season', $text);
     }
 

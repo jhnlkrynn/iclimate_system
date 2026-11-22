@@ -51,6 +51,7 @@ class GroqChatService
                     ],
                 ]);
         } catch (Throwable $exception) {
+            \App\Support\SilentFailure::log($exception, 'GroqChatService::healthCheck');
             return [
                 'ok' => false,
                 'message' => 'Groq request failed: '.$exception->getMessage(),
@@ -145,6 +146,7 @@ class GroqChatService
                     ],
                 ]));
         } catch (Throwable $exception) {
+            \App\Support\SilentFailure::log($exception, 'GroqChatService::answer');
             $this->recordFailure();
 
             Log::warning('Groq assistant request failed.', [
@@ -305,6 +307,7 @@ PROMPT,
                     ],
                 ]));
         } catch (Throwable $exception) {
+            \App\Support\SilentFailure::log($exception, 'GroqChatService::classifyIntent');
             $this->recordFailure();
 
             Log::warning('Groq intent classification failed.', ['message' => $exception->getMessage()]);
@@ -396,6 +399,7 @@ PROMPT,
                     ],
                 ]));
         } catch (Throwable $exception) {
+            \App\Support\SilentFailure::log($exception, 'GroqChatService::groundedResponse');
             $this->recordFailure();
 
             Log::warning('Groq grounded response failed.', ['message' => $exception->getMessage()]);
@@ -484,6 +488,7 @@ PROMPT,
                     ],
                 ], fn ($value) => $value !== null)));
         } catch (Throwable $exception) {
+            \App\Support\SilentFailure::log($exception, 'GroqChatService::barangayInsight');
             $this->recordFailure();
 
             Log::warning('Groq barangay insight request failed.', ['message' => $exception->getMessage()]);

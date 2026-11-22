@@ -23,7 +23,7 @@ trait StoresInstantsInUtc
         if (in_array($key, static::UTC_INSTANT_COLUMNS, true) && $value !== null && $value !== '') {
             $instant = $value instanceof DateTimeInterface
                 ? Carbon::instance($value)
-                : (is_string($value) && preg_match('/(Z|[+-]\d{2}:?\d{2})$/', $value) ? rescue(fn () => Carbon::parse($value), null, false) : null);
+                : (is_string($value) && preg_match('/(Z|[+-]\d{2}:?\d{2})$/', $value) ? rescue(fn () => Carbon::parse($value), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'StoresInstantsInUtc::setAttribute')) : null);
             if ($instant !== null) {
                 $value = $instant->copy()->setTimezone(config('app.timezone'));
             }

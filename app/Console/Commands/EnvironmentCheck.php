@@ -35,6 +35,7 @@ class EnvironmentCheck extends Command
                 $row = DB::selectOne('select version() as v, @@session.time_zone as z');
                 $this->line('Connectivity: PASS (server '.$row->v.', session zone '.$row->z.')');
             } catch (Throwable $exception) {
+                \App\Support\SilentFailure::log($exception, 'EnvironmentCheck::handle');
                 $this->error('Connectivity: FAIL ('.class_basename($exception).')');
                 $result['violations'][] = 'The database could not be reached.';
             }

@@ -528,6 +528,7 @@ class SystemHealthService
         try {
             $result = $check();
         } catch (Throwable $exception) {
+            \App\Support\SilentFailure::log($exception, 'SystemHealthService::guard');
             // Only the exception class is logged: messages can contain hosts or credentials.
             Log::warning('System health check failed.', ['check' => $key, 'exception' => $exception::class]);
 

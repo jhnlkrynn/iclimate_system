@@ -40,6 +40,7 @@ class WarmDashboardCaches extends Command
                 return self::FAILURE;
             }
         } catch (Throwable $exception) {
+            \App\Support\SilentFailure::log($exception, 'WarmDashboardCaches::handle');
             $this->error('Dashboard warm-up failed: '.$exception->getMessage());
 
             return self::FAILURE;

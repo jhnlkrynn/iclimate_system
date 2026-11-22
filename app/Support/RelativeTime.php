@@ -24,7 +24,7 @@ final class RelativeTime
             return null;
         }
 
-        $time = $at instanceof CarbonInterface ? $at : rescue(fn () => Carbon::parse($at), null, false);
+        $time = $at instanceof CarbonInterface ? $at : rescue(fn () => Carbon::parse($at), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'RelativeTime::format'));
         if ($time === null) {
             return null;
         }

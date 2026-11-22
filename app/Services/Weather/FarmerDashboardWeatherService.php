@@ -69,7 +69,7 @@ class FarmerDashboardWeatherService
         $stored = Cache::get($this->cacheKey().'.last_successful');
         $at = is_array($stored) ? self::fetchTimeOf($stored) : null;
 
-        return $at ? rescue(fn () => \Carbon\CarbonImmutable::parse($at), null, false) : null;
+        return $at ? rescue(fn () => \Carbon\CarbonImmutable::parse($at), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'FarmerDashboardWeatherService::lastFetchedAt')) : null;
     }
 
     /** The same time the farmer's weather card shows (FarmerDashboardService::weather). */
@@ -148,6 +148,7 @@ class FarmerDashboardWeatherService
 
             return $weather;
         } catch (Throwable $exception) {
+            \App\Support\SilentFailure::log($exception, 'FarmerDashboardWeatherService::current');
             Log::warning('Farmer dashboard weather fetch failed.', [
                 'message' => $exception->getMessage(),
             ]);
@@ -223,7 +224,8 @@ class FarmerDashboardWeatherService
 
         try {
             return \Illuminate\Support\Carbon::parse($fetched)->gt(now()->subMinutes(max(1, $minutes)));
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'FarmerDashboardWeatherService::youngerThan');
             return false;
         }
     }
@@ -383,6 +385,7 @@ class FarmerDashboardWeatherService
             try {
                 return $this->normalizeWeatherApi($this->requestWeatherApi());
             } catch (Throwable $exception) {
+                \App\Support\SilentFailure::log($exception, 'FarmerDashboardWeatherService::fetchNormalizedWeather');
                 $errors[] = 'WeatherAPI: '.$exception->getMessage();
                 Log::warning('WeatherAPI fetch failed; trying Open-Meteo fallback.', [
                     'message' => $exception->getMessage(),
@@ -393,6 +396,7 @@ class FarmerDashboardWeatherService
         try {
             return $this->normalizeOpenMeteo($this->requestOpenMeteo(), fallback: $errors !== []);
         } catch (Throwable $exception) {
+            \App\Support\SilentFailure::log($exception, 'FarmerDashboardWeatherService::fetchNormalizedWeather');
             $errors[] = 'Open-Meteo: '.$exception->getMessage();
             throw new RuntimeException('All weather providers failed. '.implode(' | ', $errors));
         }
@@ -654,7 +658,8 @@ class FarmerDashboardWeatherService
 
             try {
                 $hour = Carbon::parse($time, $this->timezone())->timezone($this->timezone());
-            } catch (Throwable) {
+            } catch (Throwable $caught) {
+                \App\Support\SilentFailure::log($caught, 'FarmerDashboardWeatherService::hourlyRainfallToDate');
                 continue;
             }
 

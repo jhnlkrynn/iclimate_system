@@ -17,7 +17,8 @@ class ClimateSnapshot
                 // wind, future-dated) so this public-facing hero widget never
                 // surfaces a data-entry error as if it were real weather.
                 return ClimateRecord::query()->plausible()->latest('record_date')->first();
-            } catch (Throwable) {
+            } catch (Throwable $caught) {
+                \App\Support\SilentFailure::log($caught, 'ClimateSnapshot::latest');
                 return null;
             }
         });

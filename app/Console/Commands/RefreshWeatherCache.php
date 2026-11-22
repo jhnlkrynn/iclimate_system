@@ -27,7 +27,8 @@ class RefreshWeatherCache extends Command
         try {
             $reading = $current->current(force: true);
             $this->line('Current reading: '.(($reading['success'] ?? false) ? 'refreshed' : 'provider unavailable, kept the last good reading'));
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'RefreshWeatherCache::handle');
             $failed++;
             $this->warn('Current reading could not be refreshed.');
         }

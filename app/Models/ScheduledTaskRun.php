@@ -57,7 +57,8 @@ class ScheduledTaskRun extends Model
             if (SchemaCache::hasTable('scheduled_task_runs')) {
                 $fn();
             }
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'ScheduledTaskRun::safely');
             // A bookkeeping failure must never stop a scheduled task.
         }
     }

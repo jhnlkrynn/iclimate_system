@@ -254,14 +254,17 @@ class FarmerHomeKpisTest extends TestCase
         $this->assertMatchesRegularExpression('#<button type="button" class="fh-kpi" data-fh-kpi="crop" data-panel="days-to-harvest" aria-haspopup="dialog" aria-controls="fhDrawer">#', $html);
         $this->assertStringNotContainsString('<a class="fh-kpi"', $html);
         $this->assertSame(1, substr_count($html, 'id="fhDrawer"'), 'one summary panel');
-        $this->assertSame(1, preg_match('#<div class="fh-drawer-body" data-panel-section="days-to-harvest" hidden>(.*?)</div>\s*(?=<div class="fh-drawer-body"|</div>\s*</div>)#s', $html, $m));
+        // 2026-11-23 (audit M-8): the panel content is a <template> in the "panels" slot, so the timed refresh updates it.
+        $this->assertSame(1, preg_match('#<template data-panel-template="days-to-harvest">(.*?)</template>#s', $html, $m));
         $text = (string) preg_replace('/\s+/', ' ', html_entity_decode(strip_tags(str_replace('<', ' <', $m[1]))));
         $this->assertStringContainsString('Planting date Jul 28, 2026', $text);
         $this->assertStringContainsString('Expected harvest date Nov 5, 2026', $text);
         $this->assertStringContainsString('Days left 30 days', $text);
         $this->assertStringContainsString('href="'.route('farmer.planting-schedules.edit', $plan).'"', $m[1]);
         $this->assertStringContainsString('View full details', $text);
-        $this->assertStringContainsString('data-panel-section="farm-size"', $html);
+        $this->assertStringContainsString('data-panel-template="farm-size"', $html);
+        $slots = $this->actingAs($farmer)->getJson(route('farmer.dashboard.live'))->assertOk()->json('slots');
+        $this->assertStringContainsString('<template data-panel-template="days-to-harvest">', $slots['panels'], 'the timed refresh sends the panels too');
         // The script that opens and closes it (with the page's CSP nonce when strict CSP is on).
         $this->assertMatchesRegularExpression('#<script(?: nonce="[^"]+")?>\s*// The summary panel#', $html);
     }

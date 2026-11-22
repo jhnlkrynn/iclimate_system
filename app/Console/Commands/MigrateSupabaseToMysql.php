@@ -61,6 +61,7 @@ class MigrateSupabaseToMysql extends Command
                 $report = $migration->migrate();
             }
         } catch (Throwable $exception) {
+            \App\Support\SilentFailure::log($exception, 'MigrateSupabaseToMysql::handle');
             $this->error('Migration did not complete: '.$this->safeMessage($exception));
             return self::FAILURE;
         }

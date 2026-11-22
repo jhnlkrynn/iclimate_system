@@ -194,6 +194,7 @@ class CommunityFeedController extends Controller
                 ]);
             }
         } catch (\Throwable $exception) {
+            \App\Support\SilentFailure::log($exception, 'CommunityFeedController::storeAttachments');
             foreach ($storedPaths as $path) {
                 Storage::disk('public')->delete($path);
             }

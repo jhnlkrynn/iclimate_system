@@ -38,7 +38,8 @@ class AuthenticatedSessionController extends Controller
         // so the login widget never shows a different temperature.
         try {
             $shared = $weather->current();
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'AuthenticatedSessionController::weatherSnapshot');
             $shared = [];
         }
 

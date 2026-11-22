@@ -161,6 +161,6 @@ final class HarvestTiming
             return Carbon::instance($value);
         }
 
-        return is_string($value) && $value !== '' ? rescue(fn () => Carbon::parse(substr($value, 0, 10)), null, false) : null;
+        return is_string($value) && $value !== '' ? rescue(fn () => Carbon::parse(substr($value, 0, 10)), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'HarvestTiming::date')) : null;
     }
 }

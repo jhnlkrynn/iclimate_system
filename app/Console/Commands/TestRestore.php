@@ -23,7 +23,8 @@ class TestRestore extends Command
 
         try {
             $result = $restoreTest->run();
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'TestRestore::handle');
             $this->error('Restore test FAILED: it stopped unexpectedly. See the application log.');
 
             return self::FAILURE;

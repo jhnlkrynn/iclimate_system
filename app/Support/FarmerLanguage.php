@@ -60,7 +60,8 @@ final class FarmerLanguage
     {
         try {
             return SchemaCache::hasColumn('users', 'preferred_language');
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'FarmerLanguage::hasColumn');
             return false;
         }
     }

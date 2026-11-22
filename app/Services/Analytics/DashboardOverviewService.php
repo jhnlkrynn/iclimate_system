@@ -100,7 +100,8 @@ class DashboardOverviewService
     {
         try {
             $weatherYears = $this->ambulong->load()['observations']->pluck('year');
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'DashboardOverviewService::availableYears');
             $weatherYears = collect();
         }
 
@@ -898,7 +899,8 @@ class DashboardOverviewService
 
                 return ['checked_at' => now()->toIso8601String()] + $health->summarize($checks) + ['items' => collect($checks)->map(fn (array $c) => ['title' => $c['title'], 'status' => strtolower($c['status'])])->all()];
             });
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'DashboardOverviewService::systemStatus');
             return ['headline' => 'System checks are unavailable.', 'healthy' => 0, 'needs_attention' => 0, 'unavailable' => 0, 'items' => []];
         }
     }
@@ -907,7 +909,8 @@ class DashboardOverviewService
     {
         try {
             return $this->ambulong->load()['observations']->count();
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'DashboardOverviewService::ambulongRows');
             return 0;
         }
     }
@@ -1127,7 +1130,8 @@ class DashboardOverviewService
 
         try {
             $observations = $this->ambulong->load()['observations']->where('year', $year);
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'DashboardOverviewService::readMonthlyWeather');
             $observations = collect();
         }
         foreach ($observations as $row) {

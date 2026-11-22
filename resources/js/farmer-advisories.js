@@ -3,7 +3,7 @@
 // The pop-up body is the link's own page rendered without the layout (?modal=1), fetched once per page load.
 // The list, its filters and the scroll position are never touched, so closing returns the farmer to the same place.
 
-import { initLiveRefresh } from './live-page';
+import { initLiveRefresh } from './live-page.js';
 
 // The data the Advisories page shows (CacheScope areas): its list, chips, announcements and the weather check.
 const LIVE_AREAS = ['advisories', 'advisory-feedback', 'community-posts', 'weather', 'typhoon'];

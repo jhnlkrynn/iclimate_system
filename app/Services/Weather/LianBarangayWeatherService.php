@@ -267,7 +267,8 @@ class LianBarangayWeatherService
 
         try {
             $acquired = $wait ? $lock->block(20) : $lock->get();
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'LianBarangayWeatherService::refreshAll');
             $acquired = false;
         }
 
@@ -300,7 +301,7 @@ class LianBarangayWeatherService
     {
         $lastAttempt = $this->store()['status']['last_attempt_at'] ?? null;
 
-        return rescue(fn () => $lastAttempt !== null && Carbon::parse($lastAttempt)->gt(now()->subSeconds($seconds)), false, false);
+        return rescue(fn () => $lastAttempt !== null && Carbon::parse($lastAttempt)->gt(now()->subSeconds($seconds)), false, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'LianBarangayWeatherService::attemptedWithin'));
     }
 
     /**
@@ -353,6 +354,7 @@ class LianBarangayWeatherService
         try {
             $results = $this->fetchBatch($targets);
         } catch (Throwable $exception) {
+            \App\Support\SilentFailure::log($exception, 'LianBarangayWeatherService::fetchAndStore');
             $error = $exception->getMessage();
             $method = 'concurrent';
             Log::info('Lian barangay weather: batched request failed, retrying each barangay concurrently.', ['message' => $error]);
@@ -592,7 +594,7 @@ class LianBarangayWeatherService
     /** @return array{records: array<string, array<string, mixed>>, status: array<string, mixed>} */
     private function store(): array
     {
-        $store = rescue(fn () => Cache::get(self::STORE_KEY), null, false);
+        $store = rescue(fn () => Cache::get(self::STORE_KEY), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'LianBarangayWeatherService::store'));
 
         return [
             'records' => is_array($store['records'] ?? null) ? $store['records'] : [],
@@ -604,7 +606,7 @@ class LianBarangayWeatherService
     private function readRecord(string $barangay, float $latitude, float $longitude, mixed $record): array
     {
         $usable = is_array($record) && is_numeric($record['temperature_c'] ?? null) && ! empty($record['fetched_at'])
-            && rescue(fn () => Carbon::parse($record['fetched_at'])->gt(now()->subHours(self::KEEP_HOURS)), false, false);
+            && rescue(fn () => Carbon::parse($record['fetched_at'])->gt(now()->subHours(self::KEEP_HOURS)), false, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'LianBarangayWeatherService::readRecord'));
 
         return $usable ? $this->withFreshness($record) : $this->unavailableRecord($barangay, $latitude, $longitude);
     }
@@ -614,7 +616,8 @@ class LianBarangayWeatherService
     {
         try {
             $age = max(0, (int) floor(Carbon::parse($record['fetched_at'])->diffInSeconds(now(), false) / 60));
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'LianBarangayWeatherService::withFreshness');
             $age = PHP_INT_MAX;
         }
 
@@ -632,7 +635,7 @@ class LianBarangayWeatherService
         $record['message'] = $status === 'stale'
             ? 'Weather update is temporarily delayed. Showing the last available barangay weather.'
             : 'Latest available weather for this barangay\'s location. Treat it as decision support, not a rain-gauge reading.';
-        $record['next_refresh_at'] = rescue(fn () => Carbon::parse($record['fetched_at'])->addMinutes($this->refreshMinutes())->toIso8601String(), null, false);
+        $record['next_refresh_at'] = rescue(fn () => Carbon::parse($record['fetched_at'])->addMinutes($this->refreshMinutes())->toIso8601String(), null, fn (\Throwable $e): bool => \App\Support\SilentFailure::log($e, 'LianBarangayWeatherService::withFreshness'));
 
         return $record;
     }
@@ -773,7 +776,8 @@ class LianBarangayWeatherService
 
         try {
             return Carbon::parse($value, (string) config('services.open_meteo.timezone', 'Asia/Manila'));
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'LianBarangayWeatherService::localTime');
             return null;
         }
     }
@@ -809,7 +813,8 @@ class LianBarangayWeatherService
         try {
             $start = Carbon::parse($observedAt, 'Asia/Manila')->startOfHour();
             $end = $start->copy()->addHours(24);
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'LianBarangayWeatherService::next24Hours');
             return array_slice($values, 0, 24);
         }
 
@@ -819,7 +824,8 @@ class LianBarangayWeatherService
                     $hour = Carbon::parse($time, 'Asia/Manila');
 
                     return $hour->gte($start) && $hour->lt($end);
-                } catch (Throwable) {
+                } catch (Throwable $caught) {
+                    \App\Support\SilentFailure::log($caught, 'LianBarangayWeatherService::next24Hours');
                     return false;
                 }
             })

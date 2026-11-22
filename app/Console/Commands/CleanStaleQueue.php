@@ -94,7 +94,8 @@ class CleanStaleQueue extends Command
             ]]) : null;
 
             return is_object($command) && ! $command instanceof \__PHP_Incomplete_Class ? $command : null;
-        } catch (Throwable) {
+        } catch (Throwable $caught) {
+            \App\Support\SilentFailure::log($caught, 'CleanStaleQueue::command');
             return null;
         }
     }
