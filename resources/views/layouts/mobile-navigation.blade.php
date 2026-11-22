@@ -128,7 +128,16 @@
     <div class="mobile-more-backdrop" data-mobile-more-close></div>
     <section class="mobile-more-sheet" id="mobileMoreSheet" role="dialog" aria-modal="true" aria-labelledby="mobileMoreTitle" tabindex="-1">
         <div class="mobile-more-handle" aria-hidden="true"></div>
-        <div class="mobile-more-head"><h2 id="mobileMoreTitle">{{ $isFarmer && ($navLocale ?? 'en') === 'fil' ? 'Higit pa' : 'More' }}</h2><button type="button" class="mobile-more-close" data-mobile-more-close>Close</button></div>
+        <div class="mobile-more-head">
+            <div class="d-flex align-items-center gap-2 min-w-0">
+                <x-user-avatar :user="$mobileUser" :size="40" />
+                <div class="min-w-0">
+                    <h2 id="mobileMoreTitle" class="mb-0 text-truncate">{{ $mobileUser->name }}</h2>
+                    <div class="small text-muted text-truncate">{{ $mobileUser->isMao() ? $mobileUser->positionLabel() : $mobileUser->roleLabel() }}</div>
+                </div>
+            </div>
+            <button type="button" class="mobile-more-close" data-mobile-more-close>Close</button>
+        </div>
         <div class="mobile-more-scroll">
             @foreach ($mobileMoreGroups as [$groupLabel, $links])
                 @if ($links !== [])

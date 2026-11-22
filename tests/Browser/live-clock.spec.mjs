@@ -39,5 +39,17 @@ for (const [role, dashboard] of accounts) {
             await expect(topbar.locator('.ic-lang')).toBeHidden();
             await expect(topbar.locator('.ic-topbar-farm-wrap')).toBeHidden();
         }
+
+        const avatarBtn = topbar.locator('.ic-avatar-btn');
+        await expect(avatarBtn).toBeVisible();
+        await expect(avatarBtn).toHaveAttribute('aria-label', /^Account menu for /);
+        await expect(avatarBtn.locator('.ic-user-avatar-initials')).toBeVisible();
+
+        await avatarBtn.click();
+        const menu = topbar.locator('.ic-account-menu');
+        await expect(menu).toBeVisible();
+        await expect(menu.locator('.ic-account-logout')).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(menu).toBeHidden();
     });
 }

@@ -261,7 +261,7 @@
                                    data-other-id="{{ $other?->id }}">
                                     <div class="d-flex gap-2 align-items-start">
                                         <div class="avatar-wrap">
-                                            <div class="avatar">{{ str($other?->name ?? 'U')->substr(0, 1)->upper() }}</div>
+                                            <x-user-avatar :user="$other" :size="40" class="avatar" />
                                             <span class="avatar-status {{ $other?->isOnline() ? 'online' : '' }}"></span>
                                         </div>
                                         <div class="flex-grow-1" style="min-width:0;">
@@ -314,7 +314,7 @@
                         <a class="msg-back-link" href="{{ route('messages.index') }}">&larr; Back to Messages</a>
                         <div class="d-flex gap-2 align-items-center">
                             <div class="avatar-wrap">
-                                <div class="avatar">{{ str($other?->name ?? 'U')->substr(0, 1)->upper() }}</div>
+                                <x-user-avatar :user="$other" :size="40" class="avatar" />
                                 <span class="avatar-status {{ $other?->isOnline() ? 'online' : '' }}" id="headerStatusDot"></span>
                             </div>
                             <div>

@@ -545,6 +545,24 @@ class User extends Authenticatable
         return $this->avatar_path ? \Illuminate\Support\Facades\Storage::disk('public')->url($this->avatar_path) : null;
     }
 
+    /** One- or two-letter initials from the user's name (first + last, or one letter for a single name). */
+    public function initials(): string
+    {
+        $parts = preg_split('/\s+/u', trim((string) $this->name), -1, PREG_SPLIT_NO_EMPTY);
+        if (! is_array($parts) || $parts === []) {
+            return 'U';
+        }
+
+        $first = mb_substr($parts[0], 0, 1, 'UTF-8');
+        if (count($parts) === 1) {
+            return mb_strtoupper($first, 'UTF-8');
+        }
+
+        $last = mb_substr($parts[count($parts) - 1], 0, 1, 'UTF-8');
+
+        return mb_strtoupper($first.$last, 'UTF-8');
+    }
+
     public function aiLanguageCode(): ?string
     {
         return match ($this->ai_language) {

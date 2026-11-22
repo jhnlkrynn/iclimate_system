@@ -17,7 +17,7 @@
             <section class="itp-section" aria-labelledby="accountSummaryTitle">
                 <div class="itp-section-head"><h2 id="accountSummaryTitle">Profile Summary</h2></div>
                 <div class="mfd-card itp-account">
-                    <div class="itp-avatar" aria-hidden="true">@if ($account->avatarUrl())<img src="{{ $account->avatarUrl() }}" alt="">@else<svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6" fill="currentColor"/><path d="M4.8 20c.9-3.9 3.6-6.1 7.2-6.1s6.3 2.2 7.2 6.1" fill="currentColor"/></svg>@endif</div>
+                    <x-user-avatar :user="$account" :size="56" class="itp-avatar" />
                     <div class="itp-account-id">
                         <span class="itp-account-name">{{ $account->name }}</span>
                         <span class="itp-account-email">{{ $account->email }}</span>

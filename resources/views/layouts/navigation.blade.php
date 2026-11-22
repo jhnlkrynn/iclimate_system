@@ -107,15 +107,11 @@
 
         <div class="dropdown">
             <button class="ic-avatar-btn" type="button" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" aria-label="Account menu for {{ $user->name }}">
-                @if ($avatarUrl)
-                    <img src="{{ $avatarUrl }}" alt="">
-                @else
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6" fill="currentColor"/><path d="M4.8 20c.9-3.9 3.6-6.1 7.2-6.1s6.3 2.2 7.2 6.1" fill="currentColor"/></svg>
-                @endif
+                <x-user-avatar :user="$user" :size="40" class="ic-avatar-inner" />
             </button>
             <div class="dropdown-menu dropdown-menu-end ic-account-menu">
                 <div class="ic-account-head">
-                    <span class="ic-account-avatar" aria-hidden="true">@if ($avatarUrl)<img src="{{ $avatarUrl }}" alt="">@else<svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6" fill="currentColor"/><path d="M4.8 20c.9-3.9 3.6-6.1 7.2-6.1s6.3 2.2 7.2 6.1" fill="currentColor"/></svg>@endif</span>
+                    <x-user-avatar :user="$user" :size="44" class="ic-account-avatar" />
                     <span class="ic-account-id">
                         <strong>{{ $user->name }}</strong>
                         <span>{{ $isMaoNav ? $user->positionLabel() : $user->roleLabel() }}{{ $navBarangay ? ' · '.$navBarangay : '' }}</span>
