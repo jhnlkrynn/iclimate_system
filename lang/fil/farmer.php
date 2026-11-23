@@ -760,6 +760,7 @@ return [
             'title' => 'Mensahe ngayon',
             'headline_good' => 'Magandang panahon',
             'headline_bad' => 'Masamang panahon',
+            'headline_alert' => 'Babala sa panahon',
             'headline_info' => 'Ngayong araw',
             'good_reason' => ':condition, :temperature°C, at :risk na panganib sa barangay kaya ang kondisyon para sa karaniwang gawain sa bukid.',
             'source_label' => 'Pinagmulan',

@@ -173,15 +173,15 @@
   </section>
 
   <section class="form-section" aria-labelledby="sectionAgreement">
-    <h2 class="sr-only" id="sectionAgreement">Agreement</h2>
+    <h2 class="sr-only" id="sectionAgreement">{{ __('privacy.title') }}</h2>
 
     <div class="form-group">
+      <p class="small text-muted mb-2" id="agreeTerms-note">{{ __('privacy.signup_summary') }} <a href="{{ route('privacy.notice') }}" target="_blank" rel="noopener noreferrer">{{ __('privacy.link') }}</a>.</p>
       <div class="terms-row">
-        <input type="checkbox" id="agreeTerms" aria-describedby="agreeTerms-note agreeTerms-error" required/>
-        <label for="agreeTerms" title="Your information is used to provide climate and agricultural services through iClimate.">I agree to the Terms of use and Privacy policy.</label>
+        <input type="checkbox" id="agreeTerms" name="privacy_agreed" value="1" aria-describedby="agreeTerms-note agreeTerms-error" @checked(old('privacy_agreed')) required/>
+        <label for="agreeTerms">{{ __('privacy.agree_label') }}</label>
       </div>
-      <p class="sr-only" id="agreeTerms-note">Your information is used to provide climate and agricultural services through iClimate.</p>
-      <p class="field-error" id="agreeTerms-error" hidden></p>
+      <p class="field-error" id="agreeTerms-error" @unless($formErrors->has('privacy_agreed')) hidden @endunless>{{ $formErrors->first('privacy_agreed') }}</p>
     </div>
   </section>
 

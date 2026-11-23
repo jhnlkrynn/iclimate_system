@@ -185,7 +185,7 @@ final class FarmerDashboardService
             // Which farm the page is about (null: no farms at all, or before the farms table exists).
             'farm' => $farm !== null ? ['id' => $farm->getKey(), 'name' => $farm->farm_name, 'barangay' => $farm->barangay] : null,
             'has_farms' => $farm !== null || ! ActiveFarm::available(),
-            'message' => $this->message($week, $risk, $typhoon, $advisory),
+            'message' => $this->message($this->barangayMessageDays($barangay, $week, $now), $risk, $typhoon, $advisory),
             'weather' => $weather,
             'risk' => $risk,
             'harvest' => $harvest,
@@ -460,15 +460,66 @@ final class FarmerDashboardService
     // ------------------------------------------------------------------ 1. Mensahe Ngayon
 
     /**
+     * Use the farmer's barangay 7-day forecast (LianBarangayWeatherService) so the banner and Barangay risk card
+     * share the same forecast source and period; fall back to the Lian-wide week when barangay data is absent.
+     *
+     * @param  array<string, mixed>  $fallbackWeek
+     * @return array<string, mixed>
+     */
+    private function barangayMessageDays(?string $barangay, array $fallbackWeek, CarbonImmutable $now): array
+    {
+        if (! $barangay) {
+            return $fallbackWeek;
+        }
+
+        $records = rescue(fn (): array => app(\App\Services\Weather\LianBarangayWeatherService::class)->savedForecasts(), [], false);
+        $daily = is_array($records[$barangay]['daily'] ?? null) ? $records[$barangay]['daily'] : [];
+        if ($daily === []) {
+            return $fallbackWeek;
+        }
+
+        $today = $now->toDateString();
+        $end = $now->addDays(self::WEEK_DAYS - 1)->toDateString();
+        $heavyLimit = (float) config('farmer_dashboard.heavy_rain_mm', self::HEAVY_RAIN_MM);
+        $windLimit = (float) config('farmer_dashboard.strong_wind_kmh', self::STRONG_WIND_KMH);
+
+        $days = [];
+        foreach ($daily as $day) {
+            $date = (string) ($day['date'] ?? '');
+            if ($date === '' || $date < $today || $date > $end) {
+                continue;
+            }
+            $rain = is_numeric($day['rainfall'] ?? null) ? (float) $day['rainfall'] : null;
+            $wind = is_numeric($day['wind_speed_max'] ?? null) ? (float) $day['wind_speed_max'] : null;
+            $days[] = [
+                'is_today' => $date === $today,
+                'heavy' => $rain !== null && $rain >= $heavyLimit,
+                'strong_wind' => $wind !== null && $wind >= $windLimit,
+            ];
+        }
+
+        return $days === [] ? $fallbackWeek : ['state' => 'ok', 'days' => $days];
+    }
+
+    /**
      * One main message, the most important first: typhoon, high risk, heavy rain or strong wind today or tomorrow, the
      * Heat Map's planting rule, else a calm reminder. A cheerful planting line is never shown next to a warning: not
      * next to a Moderate rating, and not when the latest planting advisory (shown below it) says to hold off.
      *
-     * @return array{key: string, tone: string, icon: string, text: string}
+     * @return array{key: string, tone: string, icon: string, text: string, headline?: string}
      */
     private function message(array $week, array $risk, ?array $typhoon, ?array $advisory): array
     {
-        $make = fn (string $key, string $tone, string $icon, array $params = []): array => ['key' => $key, 'tone' => $tone, 'icon' => $icon, 'text' => __('farmer.home.message.'.$key, $params)];
+        $isLowRisk = ($risk['state'] ?? null) === 'ok' && ($risk['key'] ?? null) === 'low';
+        $make = function (string $key, string $tone, string $icon, array $params = []) use ($isLowRisk): array {
+            $item = ['key' => $key, 'tone' => $tone, 'icon' => $icon, 'text' => __('farmer.home.message.'.$key, $params)];
+            // When crop risk is Low, keep weather/advisory alerts visible without the contradictory "Bad weather" headline.
+            if ($isLowRisk && $tone === 'watch') {
+                $item['headline'] = __('farmer.home.message.headline_alert');
+            }
+
+            return $item;
+        };
 
         if ($typhoon !== null) {
             return $make('typhoon', 'danger', 'storm');
@@ -476,7 +527,7 @@ final class FarmerDashboardService
         if (in_array($risk['key'] ?? null, ['high', 'severe'], true)) {
             return $make('risk_high', 'danger', 'map');
         }
-        foreach (array_slice($week['days'], 0, self::MESSAGE_LOOKAHEAD_DAYS + 1) as $day) {
+        foreach (array_slice($week['days'] ?? [], 0, self::MESSAGE_LOOKAHEAD_DAYS + 1) as $day) {
             $when = __('farmer.home.message.'.($day['is_today'] ? 'today' : 'tomorrow'));
             if ($day['heavy']) {
                 return $make('heavy_rain', 'watch', 'rain', ['when' => $when]);

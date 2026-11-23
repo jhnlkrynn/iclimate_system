@@ -63,7 +63,7 @@ class FarmerAccountRequestsTest extends TestCase
             'name' => 'New association farmer', 'email' => 'new-chairman@lian-farmers.ph',
             'password' => 'SecurePassword!23', 'password_confirmation' => 'SecurePassword!23',
             'contact_number' => '09170000000', 'barangay' => 'Prenza', 'farm_type' => 'Irrigated',
-            'role' => 'association_chairman', 'is_chairman' => true,
+            'role' => 'association_chairman', 'is_chairman' => true, 'privacy_agreed' => true,
         ])->assertCreated()->assertJsonPath('user.status', User::STATUS_PENDING)->assertJsonPath('user.role', User::ROLE_FARMER);
         $farmer = User::where('email', 'new-chairman@lian-farmers.ph')->sole();
         $this->assertGuest();
@@ -76,10 +76,9 @@ class FarmerAccountRequestsTest extends TestCase
         $this->assertSame(2, Notification::where('category', FarmerApprovalNotifier::CATEGORY_PREFIX.$farmer->id)->count());
     }
 
-    public function test_every_mao_can_search_review_and_view_details_across_barangays_without_head_permission(): void
+    public function test_unscoped_mao_can_search_review_and_view_details_across_barangays_without_head_permission(): void
     {
         $mao = User::factory()->maoPersonnel()->create(['is_mao_head' => false]);
-        MaoUserBarangay::query()->create(['user_id' => $mao->id, 'barangay' => 'Kapito']);
         $farmer = $this->pending();
         SystemSettings::set(['permissions' => ['farmer_management' => []]], null);
         $this->actingAs($mao)->get(route('mao.farmer-approvals.index', ['search' => $farmer->name, 'barangay' => 'Prenza']))

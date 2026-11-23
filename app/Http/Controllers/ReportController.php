@@ -171,8 +171,17 @@ class ReportController extends CrudController
         abort_unless($request->filled('report'), 404);
         $report = $this->reportHistory()->findOrFail($request->integer('report'));
         $columns = $this->displayColumns($report->savedColumns(), $report->typeKey(), forExport: true);
-        $records = $this->displayRows(collect($report->savedRecords()), $report->typeKey());
+        $records = Report::maskExportRows(
+            $this->displayRows(collect($report->savedRecords()), $report->typeKey()),
+            $report->typeKey(),
+            $request->user()
+        );
         $filename = Str::slug($report->title).'.csv';
+        SystemAuditLogger::record('Exported Report CSV', $request, [
+            'report_id' => $report->id,
+            'report_type' => $report->typeKey(),
+            'columns' => array_keys($columns),
+        ]);
 
         return response()->streamDownload(function () use ($records, $columns) {
             $handle = fopen('php://output', 'w');

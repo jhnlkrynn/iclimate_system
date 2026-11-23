@@ -244,7 +244,7 @@ class DefaultPasswordLockdownTest extends TestCase
     {
         $this->postJson('/api/mobile/register', [
             'name' => 'New farmer', 'email' => 'new-farmer@lian-farmers.ph', 'password' => self::DEFAULT, 'password_confirmation' => self::DEFAULT,
-            'contact_number' => '09170000000', 'barangay' => 'Prenza', 'farm_type' => 'Irrigated',
+            'contact_number' => '09170000000', 'barangay' => 'Prenza', 'farm_type' => 'Irrigated', 'privacy_agreed' => true,
         ])->assertUnprocessable()->assertJsonValidationErrors('password');
     }
 

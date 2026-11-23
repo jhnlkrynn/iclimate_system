@@ -87,10 +87,14 @@ class MobileAuthController extends Controller
             'barangay' => ['required', 'string', 'max:255', \Illuminate\Validation\Rule::in(\App\Support\LianBarangays::all())],
             'farm_area' => ['nullable', 'numeric', 'min:0'],
             'farm_type' => ['required', 'string', 'in:Rainfed,Irrigated'],
+            'privacy_agreed' => ['required', 'accepted'],
+        ], [
+            'privacy_agreed.required' => __('privacy.agree_required'),
+            'privacy_agreed.accepted' => __('privacy.agree_required'),
         ]);
 
         $user = DB::transaction(function () use ($validated): User {
-            $user = User::create([
+            $attributes = [
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
@@ -100,7 +104,11 @@ class MobileAuthController extends Controller
                 'barangay' => $validated['barangay'],
                 // Manuscript – Naicel: Pending until the MAO approves the sign-up.
                 'status' => User::STATUS_PENDING,
-            ]);
+            ];
+            if (\App\Support\SchemaCache::hasColumn('users', 'privacy_agreed_at')) {
+                $attributes['privacy_agreed_at'] = now();
+            }
+            $user = User::create($attributes);
 
             FarmerProfile::create([
                 'user_id' => $user->id,

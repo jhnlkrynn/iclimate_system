@@ -271,7 +271,7 @@ class LandingPageTest extends TestCase
 
         $this->withSession($session)->from('/')->post(route('register'), [
             '_auth_form' => 'register', 'name' => 'New Farmer', 'email' => 'landing-farmer@example.com',
-            'password' => 'Password123!', 'password_confirmation' => 'Password123!', 'barangay' => 'Balibago', 'captcha_answer' => '7',
+            'password' => 'Password123!', 'password_confirmation' => 'Password123!', 'barangay' => 'Balibago', 'captcha_answer' => '7', 'privacy_agreed' => '1',
         ])->assertRedirect('/')->assertSessionHasNoErrors()->assertSessionHas('success');
 
         $this->assertSame(User::ROLE_FARMER, User::query()->where('email', 'landing-farmer@example.com')->sole()->role);

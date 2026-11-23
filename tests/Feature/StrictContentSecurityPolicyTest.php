@@ -54,7 +54,8 @@ class StrictContentSecurityPolicyTest extends TestCase
         config(['security.csp_strict' => false]);
         $response = $this->get('/login');
         $csp = (string) $response->headers->get('Content-Security-Policy');
-        $this->assertStringContainsString("default-src 'self' https: data: blob: ws: wss: 'unsafe-inline' 'unsafe-eval'", $csp);
+        $this->assertStringContainsString("default-src 'self' https: data: blob: ws: wss: 'unsafe-inline'", $csp);
+        $this->assertStringNotContainsString("'unsafe-eval'", $csp);
         $this->assertStringNotContainsString('nonce-', $csp);
         $this->assertStringNotContainsString('nonce="', $response->getContent());
     }

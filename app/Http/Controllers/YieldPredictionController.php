@@ -142,6 +142,16 @@ class YieldPredictionController extends Controller
             'useful' => ['required', 'boolean'],
         ]);
 
+        if (! \Illuminate\Support\Facades\Schema::hasColumn('yield_prediction_requests', 'useful')) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Feedback is not available until database migrations finish.'], 503);
+            }
+
+            return redirect()->route('analysis.yield')->withErrors([
+                'useful' => 'Feedback is not available until database migrations finish.',
+            ]);
+        }
+
         $record->forceFill(['useful' => (bool) $data['useful']])->save();
 
         if ($request->expectsJson()) {
@@ -219,9 +229,8 @@ class YieldPredictionController extends Controller
             }
         }
 
-        $prediction = YieldPredictionRequest::query()->create([
+        $attributes = [
             'user_id' => $user->getKey(),
-            'farm_id' => $data['farm_id'] ?? null,
             'scope' => $scope,
             'barangay' => $data['barangay'] ?? null,
             'season' => $data['season'],
@@ -229,7 +238,12 @@ class YieldPredictionController extends Controller
             'area_hectares' => $data['area_hectares'] ?? null,
             'target_month' => $targetMonth->toDateString(),
             'status' => YieldPredictionRequest::QUEUED,
-        ]);
+        ];
+        if (\Illuminate\Support\Facades\Schema::hasColumn('yield_prediction_requests', 'farm_id')) {
+            $attributes['farm_id'] = $data['farm_id'] ?? null;
+        }
+
+        $prediction = YieldPredictionRequest::query()->create($attributes);
         SystemAuditLogger::forModel('requested', $prediction, $request, ['scope' => $scope]);
         RunYieldPredictionRequest::start($prediction);
 
@@ -252,6 +266,10 @@ class YieldPredictionController extends Controller
         string $targetDate,
         ?string $forecastHash,
     ): ?YieldPredictionRequest {
+        if (! \Illuminate\Support\Facades\Schema::hasColumn('yield_prediction_requests', 'farm_id')) {
+            return null;
+        }
+
         $latest = YieldPredictionRequest::query()
             ->where('user_id', $userId)
             ->where('farm_id', $farmId)

@@ -159,6 +159,7 @@ class User extends Authenticatable
         'area_covered_ha',
         'is_mao_head',
         'must_change_password',
+        'privacy_agreed_at',
     ];
 
     // ------------------------------------------------------------ Panel revision 4.4: MAO personnel
@@ -612,6 +613,7 @@ class User extends Authenticatable
             'is_mao_head' => 'boolean',
             'must_change_password' => 'boolean',
             'deleted_at' => 'datetime',
+            'privacy_agreed_at' => 'datetime',
         ];
     }
 }

@@ -83,7 +83,7 @@ class SecurityHeaders
     public static function loosePolicy(): array
     {
         return [
-            "default-src 'self' https: data: blob: ws: wss: 'unsafe-inline' 'unsafe-eval'",
+            "default-src 'self' https: data: blob: ws: wss: 'unsafe-inline'",
             "frame-ancestors 'self'",
             "base-uri 'self'",
             "form-action 'self'",

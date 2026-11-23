@@ -33,12 +33,12 @@ class DevelopmentDemoSeeder extends Seeder
         $farmer = User::query()->updateOrCreate(['email' => 'farmer@iclimate.com'], [
             'name' => 'Default Farmer', 'password' => Hash::make($defaultPassword), 'role' => User::ROLE_FARMER,
             'contact_number' => '09170000001', 'address' => 'Lian, Batangas', 'barangay' => 'Matabungkay',
-            'status' => User::STATUS_ACTIVE, 'email_verified_at' => now(),
+            'status' => User::STATUS_ACTIVE, 'email_verified_at' => now(), 'privacy_agreed_at' => now(),
         ]);
         $mao = User::query()->updateOrCreate(['email' => 'mao@iclimate.com'], [
             'name' => 'Default MAO Personnel', 'password' => Hash::make($defaultPassword), 'role' => User::ROLE_MAO,
             'contact_number' => '09170000002', 'address' => 'Municipal Agriculture Office, Lian, Batangas',
-            'barangay' => null, 'status' => User::STATUS_ACTIVE, 'email_verified_at' => now(),
+            'barangay' => null, 'status' => User::STATUS_ACTIVE, 'email_verified_at' => now(), 'privacy_agreed_at' => now(),
         ]);
 
         FarmerProfile::query()->updateOrCreate(['user_id' => $farmer->id], [

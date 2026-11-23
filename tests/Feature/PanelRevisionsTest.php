@@ -38,7 +38,7 @@ class PanelRevisionsTest extends TestCase
         config(['iclimate.mao_allow_skip_password_change' => true]);
         $this->seed(MaoPersonnelSeeder::class);
         // The flow itself is tested below; the other tests act as personnel who already chose their password.
-        User::query()->where('role', User::ROLE_MAO)->update(['must_change_password' => false]);
+        User::query()->where('role', User::ROLE_MAO)->update(['must_change_password' => false, 'privacy_agreed_at' => now()]);
     }
 
     private function mao(string $email): User

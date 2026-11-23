@@ -222,6 +222,7 @@ class AuthenticationTest extends TestCase
         config(['iclimate.staff_account_password' => 'Staff-Seed-2027!']);
         $this->seed(StaffLoginAccountSeeder::class);
         $this->seed(StaffLoginAccountSeeder::class);
+        User::query()->where('email', 'mao@gmail.com')->update(['privacy_agreed_at' => now()]);
 
         $this->assertSame(0, User::query()->where('email', 'it@gmail.com')->count());
         $this->assertSame(1, User::query()->where('email', 'mao@gmail.com')->count());

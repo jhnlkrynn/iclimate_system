@@ -36,10 +36,13 @@ class RegisteredUserController extends Controller
             'other_organizations.*' => ['integer', 'distinct', 'exists:farmer_organizations,id'],
             'barangay' => ['required', 'string', Rule::in($this->manualBarangays())],
             'captcha_answer' => ['required', 'string', 'max:20'],
+            'privacy_agreed' => ['required', 'accepted'],
         ], [
             'barangay.required' => 'Please choose your farm location before selecting an association.',
             'captcha_answer.required' => 'Please answer the security check before creating an account.',
             'captcha_answer.max' => 'The security check answer is too long.',
+            'privacy_agreed.required' => __('privacy.agree_required'),
+            'privacy_agreed.accepted' => __('privacy.agree_required'),
             'other_organizations.max' => 'Please choose 20 other organizations or fewer.',
             'other_organizations.*.integer' => 'Please choose your other organizations from the list.',
             'other_organizations.*.distinct' => 'An organization was chosen twice. Please choose each one only once.',
@@ -60,7 +63,7 @@ class RegisteredUserController extends Controller
         $farmType = $organization?->farm_type ?? FarmerProfile::FARM_TYPE_IRRIGATED;
 
         $user = DB::transaction(function () use ($validated, $organization, $barangay, $farmType): User {
-            $user = User::create([
+            $attributes = [
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'role' => User::ROLE_FARMER,
@@ -68,7 +71,11 @@ class RegisteredUserController extends Controller
                 'barangay' => $barangay,
                 // Manuscript – Naicel: Pending until the MAO approves the sign-up (config iclimate.farmer_approval).
                 'status' => User::STATUS_PENDING,
-            ]);
+            ];
+            if (\App\Support\SchemaCache::hasColumn('users', 'privacy_agreed_at')) {
+                $attributes['privacy_agreed_at'] = now();
+            }
+            $user = User::create($attributes);
 
             $profile = FarmerProfile::create([
                 'user_id' => $user->id,

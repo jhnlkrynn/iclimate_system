@@ -48,6 +48,7 @@
             </div>
 
             <div class="mfd-card is-danger">@include('profile.partials.delete-user-form')</div>
+            <p class="small text-muted mt-2 mb-0"><a href="{{ route('privacy.notice') }}">{{ __('privacy.link') }}</a></p>
         </div>
     @else
     <section class="page-hero">
@@ -113,6 +114,9 @@
                     @include('profile.partials.delete-user-form')
                 </div>
             </div>
+        </div>
+        <div class="col-12">
+            <p class="small text-muted mb-0"><a href="{{ route('privacy.notice', ['lang' => \App\Support\FarmerLanguage::resolve(request())]) }}">{{ __('privacy.link', [], \App\Support\FarmerLanguage::resolve(request())) }}</a></p>
         </div>
     </div>
     @endif
