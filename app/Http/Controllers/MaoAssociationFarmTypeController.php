@@ -57,6 +57,12 @@ class MaoAssociationFarmTypeController extends Controller
 
     public function saveOverride(Request $request): RedirectResponse
     {
+        if (! Schema::hasTable('farm_type_yield_overrides')) {
+            return back()->withInput()->withErrors([
+                'override' => 'Farm-type yield overrides are not available yet because the database migration has not been run.',
+            ]);
+        }
+
         $data = $request->validate([
             'rainfed_diff_percent' => ['required', 'numeric', 'min:-30', 'max:30'],
             'note' => ['required', 'string', 'max:500'],
