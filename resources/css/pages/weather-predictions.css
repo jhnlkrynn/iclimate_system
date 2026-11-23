@@ -158,3 +158,71 @@ html[data-theme="dark"] body .ytr-facts dt, html[data-theme="dark"] body .ytr-so
 html[data-theme="dark"] body .ytr-inputs li, html[data-theme="dark"] body .ytr-checks li { border-bottom-color: var(--dk-border-strong, var(--sage-800)); }
 html[data-theme="dark"] body .wpx.is-farmer .wpx-range a.is-active { background: var(--sage-200); color: var(--sage-300); }
 /* ------------------------------------------------------------ end farmers */
+
+@media (prefers-reduced-motion: no-preference) {
+    @keyframes wpxRainDrop {
+        0% { opacity: 0; transform: translateY(-2px); }
+        35% { opacity: 1; }
+        100% { opacity: 0; transform: translateY(3px); }
+    }
+    @keyframes wpxThunderFlash {
+        0%, 88%, 94%, 100% { opacity: 0.35; }
+        90%, 96% { opacity: 1; }
+    }
+    @keyframes wpxCloudDrift {
+        0%, 100% { transform: translateX(-2px); }
+        50% { transform: translateX(2px); }
+    }
+    @keyframes wpxSunSpin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    @keyframes wpxSunPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.04); }
+    }
+    @keyframes wpxWindSlide {
+        0% { opacity: 0.4; transform: translateX(-2px); }
+        50% { opacity: 1; transform: translateX(2px); }
+        100% { opacity: 0.4; transform: translateX(-2px); }
+    }
+    @keyframes wpxFadeUp {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: none; }
+    }
+
+    .wpx .ic-w-drop { animation: wpxRainDrop 1.6s ease-in infinite; }
+    .wpx .ic-w-drop-2 { animation-delay: 0.4s; }
+    .wpx .ic-w-drop-3 { animation-delay: 0.8s; }
+    .wpx .ic-w-bolt { animation: wpxThunderFlash 4s ease-in-out infinite; }
+    .wpx .ic-w-cloud-drift { animation: wpxCloudDrift 4s ease-in-out infinite; }
+    .wpx .ic-w-rays { transform-origin: 12px 12px; animation: wpxSunSpin 12s linear infinite; }
+    .wpx .ic-w-sun { transform-origin: 12px 12px; animation: wpxSunPulse 3s ease-in-out infinite; }
+    .wpx .ic-w-wind { animation: wpxWindSlide 2s ease-in-out infinite; }
+    .wpx .ic-w-wind-2 { animation-delay: 0.3s; }
+    .wpx .ic-w-wind-3 { animation-delay: 0.6s; }
+
+    .wpx .wpx-answer,
+    .wpx .wpx-panel,
+    .wpx .wpx-day {
+        animation: wpxFadeUp 300ms cubic-bezier(.22, .61, .36, 1) both;
+    }
+    .wpx .wpx-day:nth-child(2) { animation-delay: 40ms; }
+    .wpx .wpx-day:nth-child(3) { animation-delay: 80ms; }
+    .wpx .wpx-day:nth-child(4) { animation-delay: 120ms; }
+    .wpx .wpx-day:nth-child(5) { animation-delay: 160ms; }
+    .wpx .wpx-day:nth-child(6) { animation-delay: 200ms; }
+    .wpx .wpx-day:nth-child(7) { animation-delay: 240ms; }
+    .wpx .wpx-day:nth-child(n+8) { animation-delay: 280ms; }
+
+    .wpx .wpx-day {
+        transition: transform 180ms ease, box-shadow 180ms ease, border-color 200ms ease;
+    }
+    .wpx .wpx-day:hover,
+    .wpx .wpx-day.is-today,
+    .wpx .wpx-day.is-selected {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgb(36 74 52 / .10);
+        border-color: var(--sage-700);
+    }
+}

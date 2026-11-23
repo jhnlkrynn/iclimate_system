@@ -36,6 +36,7 @@ const purgePlugin = purgecss({
             /^itd-/,
             /^itp-/,
             /^ic-/,
+            /^ic-w-/,
             /^rf-/,
             /^wpx-/,
             /^fad-/,
