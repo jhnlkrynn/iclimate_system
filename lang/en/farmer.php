@@ -19,15 +19,6 @@ return [
         'afternoon' => 'Good afternoon, :name!',
         'evening' => 'Good evening, :name!',
     ],
-    'nav' => [
-        'open_menu' => 'Open menu',
-        'account_menu' => 'Account menu for :name',
-        'close' => 'Close',
-        'logout_title' => 'Log out of iClimate?',
-        'logout_message' => 'Your current session will close, and you will return to the home page.',
-        'logout_cancel' => 'Stay logged in',
-        'logout_confirm' => 'Log out',
-    ],
     'place' => ':barangay, Lian, Batangas',
     'place_default' => 'Lian, Batangas',
 
@@ -769,6 +760,13 @@ return [
         'varieties' => 'Rice Varieties',
         'messages' => 'Messages',
         'logout' => 'Log out',
+        'open_menu' => 'Open menu',
+        'account_menu' => 'Account menu for :name',
+        'close' => 'Close',
+        'logout_title' => 'Log out of iClimate?',
+        'logout_message' => 'Your current session will close, and you will return to the home page.',
+        'logout_cancel' => 'Stay logged in',
+        'logout_confirm' => 'Log out',
     ],
 
     'home' => [
