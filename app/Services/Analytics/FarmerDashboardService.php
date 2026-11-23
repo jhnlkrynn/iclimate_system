@@ -497,7 +497,7 @@ final class FarmerDashboardService
             $planting = 'possible';                                    // never "good" next to a Moderate rating
         }
         if (in_array($planting, ['good', 'possible'], true) && ($advisory['cautions'] ?? false)) {
-            $planting = $isLowRisk ? null : 'caution';                 // the planting advisory below says to wait
+            $planting = 'caution';                                     // the planting advisory below says to wait
         }
         if ($planting !== null) {
             $tone = in_array($planting, ['good', 'possible'], true) ? 'good' : 'watch';

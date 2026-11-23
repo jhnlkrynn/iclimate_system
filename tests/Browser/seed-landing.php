@@ -33,6 +33,7 @@ foreach ($accounts as $email => $role) {
         'contact_number' => '09170000000',
         'barangay' => 'Prenza',
         'status' => User::STATUS_ACTIVE,
+        'privacy_agreed_at' => now(),
     ]);
 }
 
@@ -62,7 +63,7 @@ FarmerPlantingSchedule::query()->create([
 // Irrigated, one Rainfed) and Prenza (Irrigated only). Luyahan has none.
 User::query()->create([
     'name' => 'Farm Tester', 'email' => 'farms@browser.test', 'email_verified_at' => now(), 'password' => Hash::make('password'),
-    'role' => User::ROLE_FARMER, 'contact_number' => '09170000001', 'barangay' => 'Kapito', 'status' => User::STATUS_ACTIVE,
+    'role' => User::ROLE_FARMER, 'contact_number' => '09170000001', 'barangay' => 'Kapito', 'status' => User::STATUS_ACTIVE, 'privacy_agreed_at' => now(),
 ]);
 foreach ([
     ['Saluysoy Farmers Association', 'Kapito', 'Irrigated'],
@@ -77,7 +78,7 @@ foreach ([
 foreach (['desktop-1280' => 'Delia Desktop', 'mobile-375' => 'Mona Mobile'] as $project => $name) {
     User::query()->create([
         'name' => $name, 'email' => 'delete.'.$project.'@lian-farmers.ph', 'email_verified_at' => now(), 'password' => Hash::make('password'),
-        'role' => User::ROLE_FARMER, 'contact_number' => '09170000002', 'barangay' => 'Prenza', 'status' => User::STATUS_ACTIVE,
+        'role' => User::ROLE_FARMER, 'contact_number' => '09170000002', 'barangay' => 'Prenza', 'status' => User::STATUS_ACTIVE, 'privacy_agreed_at' => now(),
     ]);
 }
 
@@ -87,7 +88,7 @@ foreach (['desktop-1280', 'mobile-375', 'tablet-768'] as $project) {
         User::create(['name' => ucfirst($kind).' '.$project, 'email' => $kind.'-'.$project.'@browser.test',
             'password' => Hash::make(ucfirst($kind).'-'.$project.'!23'), 'role' => User::ROLE_FARMER,
             'status' => $status, 'barangay' => 'Prenza', 'contact_number' => '09170000003',
-            'email_verified_at' => now()]);
+            'email_verified_at' => now(), 'privacy_agreed_at' => now()]);
     }
     \App\Models\FarmerOrganization::create(['name' => 'Workflow '.$project, 'barangay' => 'Balibago', 'farm_type' => 'Rainfed']);
 }
