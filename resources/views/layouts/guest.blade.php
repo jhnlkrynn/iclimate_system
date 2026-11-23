@@ -19,7 +19,12 @@
         $gxEyebrow = 'Almost There';
         $gxHeadline = 'Verify your <em>email</em>';
         $gxSub = 'Check your inbox for a verification link to activate your iClimate account.';
+    } elseif (request()->routeIs('privacy.consent', 'privacy.notice')) {
+        $gxEyebrow = __('privacy.eyebrow');
+        $gxHeadline = 'Data Privacy <em>Notice</em>';
+        $gxSub = __('privacy.notice_intro');
     }
+    $isPrivacyPage = request()->routeIs('privacy.consent', 'privacy.notice');
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -80,6 +85,10 @@
       .login-panel-left { display: none; }
       .login-panel-right { padding: 32px 24px; min-height: 100vh; }
     }
+    @media (max-width: 767.98px) {
+      .login-panel-right.is-privacy { padding: 16px; }
+    }
+    .login-form-wrap.is-privacy { max-width: 640px; }
   </style>
     @include('partials.global-loader')
 </head>
@@ -109,17 +118,19 @@
   </div>
 
   <!-- -- RIGHT PANEL ---------------------------------- -->
-  <div class="login-panel-right">
-    <div class="login-form-wrap">
+  <div class="login-panel-right {{ $isPrivacyPage ? 'is-privacy' : '' }}">
+    <div class="login-form-wrap {{ $isPrivacyPage ? 'is-privacy' : '' }}">
 
-      <a href="{{ url('/') }}" class="back-link-top">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11 7H3M6 10L3 7l3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Back to Home
-      </a>
+      @unless ($isPrivacyPage)
+        <a href="{{ url('/') }}" class="back-link-top">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11 7H3M6 10L3 7l3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Back to Home
+        </a>
 
-      <div class="login-form-header">
-        <h1>{{ str_replace(['<em>', '</em>'], '', strip_tags($gxHeadline)) }}</h1>
-      </div>
+        <div class="login-form-header">
+          <h1>{{ str_replace(['<em>', '</em>'], '', strip_tags($gxHeadline)) }}</h1>
+        </div>
+      @endunless
 
       {{ $slot }}
 

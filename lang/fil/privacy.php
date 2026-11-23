@@ -2,14 +2,17 @@
 
 return [
     'title' => 'Abiso sa Pagkapribado ng Datos (RA 10173)',
+    'eyebrow' => 'Ligtas na pag-access sa account',
     'link' => 'Abiso sa Pagkapribado ng Datos',
-    'agree_label' => 'Sumasang-ayon ako sa Abiso sa Pagkapribado ng Datos (RA 10173) at Mga Tuntunin sa Paggamit.',
+    'agree_label' => 'Nabasa ko at sumasang-ayon ako sa Abiso sa Pagkapribado ng Datos',
     'agree_required' => 'Mangyaring sumang-ayon sa Abiso sa Pagkapribado ng Datos bago gumawa ng account.',
     'consent_title' => 'Abiso sa Pagkapribado ng Datos (RA 10173)',
     'consent_intro' => 'Bago magpatuloy, mangyaring basahin at sumang-ayon sa Abiso sa Pagkapribado ng Datos upang maitala ang iyong pahintulot.',
-    'consent_button' => 'Sumasang-ayon ako at magpatuloy',
+    'notice_intro' => 'Basahin kung paano kinokolekta, ginagamit, at pinoprotektahan ng iClimate ang iyong personal na impormasyon sa ilalim ng RA 10173.',
+    'consent_button' => 'Sumang-ayon at magpatuloy',
     'consent_required' => 'Mangyaring basahin at sumang-ayon sa Abiso sa Pagkapribado ng Datos bago magpatuloy.',
     'consent_logout' => 'Mag-log out',
+    'back_home' => 'Bumalik sa Home',
     'signup_summary' => 'Alinsunod sa Data Privacy Act of 2012 (RA 10173), kinokolekta ng iClimate ang iyong pangalan, email, numero ng telepono, barangay, at mga tala ng bukid/pagtatanim para sa abiso sa panahon, tantiya ng ani, at tulong ng MAO. Ang mga awtorisadong tauhan ng MAO at ang MAO Head lamang ang makakakita ng iyong tala. Pinananatili ang datos habang aktibo ang account (may 30-araw na palugit ang mga binurang account).',
     'sections' => [
         'collected_title' => 'Anong impormasyon ang kinokolekta',
@@ -20,7 +23,7 @@ return [
         'access_body' => 'Ikaw, ang mga awtorisadong tauhan ng MAO para sa iyong barangay, at ang MAO Head ang makakakita ng iyong personal na tala. Ang mga ulat na ini-export para sa pag-aaral ng modelo ay walang pangalan at naka-hash ang farm ID.',
         'retention_title' => 'Gaano katagal ito itinatago',
         'retention_body' => 'Pinananatili ang tala ng account at bukid habang aktibo ang iyong account. Kapag binura ang account, inaalis ito sa aktibong listahan at itinatago nang 30 araw para sa posibleng pagbabalik bago tuluyang isara.',
-        'contact_title' => 'Sino ang kokontakin',
+        'contact_title' => 'Ang iyong mga karapatan / pakikipag-ugnayan',
         'contact_body' => 'Para sa mga tanong, pagwawasto, o kahilingan sa pagbura ng datos, makipag-ugnayan sa Municipal Agriculture Office, Lian, Batangas (:email).',
     ],
 ];

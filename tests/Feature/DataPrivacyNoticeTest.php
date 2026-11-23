@@ -82,7 +82,7 @@ class DataPrivacyNoticeTest extends TestCase
             ->assertOk()
             ->assertSee('Data Privacy Notice (RA 10173)')
             ->assertSee('What information we collect')
-            ->assertSee('Who to contact');
+            ->assertSee('Your rights / contact');
 
         $this->get(route('privacy.notice', ['lang' => 'fil']))
             ->assertOk()

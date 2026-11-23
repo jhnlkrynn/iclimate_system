@@ -2,14 +2,17 @@
 
 return [
     'title' => 'Data Privacy Notice (RA 10173)',
+    'eyebrow' => 'Secure account access',
     'link' => 'Data Privacy Notice',
-    'agree_label' => 'I agree to the Data Privacy Notice (RA 10173) and Terms of Use.',
+    'agree_label' => 'I have read and agree to the Data Privacy Notice',
     'agree_required' => 'Please agree to the Data Privacy Notice before creating an account.',
-    'consent_title' => 'Data Privacy Notice Update (RA 10173)',
+    'consent_title' => 'Data Privacy Notice (RA 10173)',
     'consent_intro' => 'Before continuing, please review and agree to the Data Privacy Notice so we can record your consent.',
-    'consent_button' => 'I agree and continue',
+    'notice_intro' => 'Review how iClimate collects, uses, and protects your personal information under RA 10173.',
+    'consent_button' => 'Agree and continue',
     'consent_required' => 'Please review and agree to the Data Privacy Notice before continuing.',
     'consent_logout' => 'Log out',
+    'back_home' => 'Back to Home',
     'signup_summary' => 'In compliance with the Data Privacy Act of 2012 (RA 10173), iClimate collects your name, email, contact number, barangay, and farm/planting records to deliver weather advisories, yield estimates, and MAO support. Authorized MAO personnel (for their assigned barangays) and the MAO Head can view your records. Active accounts are kept while in service (deleted accounts enter a 30-day restore window).',
     'sections' => [
         'collected_title' => 'What information we collect',
@@ -18,9 +21,9 @@ return [
         'purpose_body' => 'Your data is used solely to provide barangay-level weather risk alerts, rice planting and harvest advisories, yield estimates, and Municipal Agriculture Office (MAO) coordination in Lian, Batangas.',
         'access_title' => 'Who can see your information',
         'access_body' => 'Your personal records are visible only to you, authorized MAO Personnel assigned to your barangay, and the MAO Head. Anonymized harvest records exported for model evaluation omit personal names and hash farm IDs.',
-        'retention_title' => 'How long it is kept',
+        'retention_title' => 'How long we keep it',
         'retention_body' => 'Account and farm records are retained while your account is active. When an account is deleted, it is removed from active views and retained for a 30-day recovery window before permanent closure.',
-        'contact_title' => 'Who to contact',
+        'contact_title' => 'Your rights / contact',
         'contact_body' => 'For data privacy questions, corrections, or deletion requests, contact the Municipal Agriculture Office, Lian, Batangas (:email).',
     ],
 ];

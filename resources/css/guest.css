@@ -1,3 +1,203 @@
 /* Authentication pages use their own compact inline design system. Keep the public entrypoint free of dashboard,
    map, chart, and authenticated-page styles. */
 @import './ui-tokens.css';
+
+.ic-privacy-card {
+    background: #ffffff;
+    border: 1px solid var(--sage-200);
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 640px;
+    width: 100%;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.ic-privacy-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.ic-privacy-eyebrow {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--palette-muted, #55645b);
+    margin: 0 0 6px;
+}
+
+.ic-privacy-title {
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    color: var(--palette-ink, #1f2937);
+    margin: 0 0 8px;
+}
+
+.ic-privacy-intro {
+    font-size: 15px;
+    color: var(--palette-muted, #55645b);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.ic-privacy-flags {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.ic-privacy-flag-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 36px;
+    padding: 0 8px;
+    border-radius: 8px;
+    border: 1px solid var(--sage-200);
+    background: #ffffff;
+    text-decoration: none;
+    transition: border-color 0.15s ease;
+}
+
+.ic-privacy-flag-btn .ic-flag {
+    width: 24px;
+    height: 16px;
+    border-radius: 2px;
+    display: block;
+}
+
+.ic-privacy-flag-btn[aria-pressed="false"] .ic-flag {
+    opacity: 0.5;
+    filter: grayscale(0.35);
+}
+
+.ic-privacy-flag-btn:hover .ic-flag {
+    opacity: 1;
+    filter: none;
+}
+
+.ic-privacy-flag-btn[aria-pressed="true"] {
+    border-color: var(--sage-700);
+}
+
+.ic-privacy-flag-btn:focus-visible {
+    outline: 2px solid var(--sage-500);
+    outline-offset: 2px;
+}
+
+.ic-privacy-scroll {
+    max-height: 55vh;
+    overflow-y: auto;
+    padding-right: 6px;
+    margin-top: 20px;
+    border-top: 1px solid var(--sage-100);
+    padding-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.ic-privacy-section h2 {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--palette-ink, #1f2937);
+    margin: 0 0 6px;
+}
+
+.ic-privacy-section p {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #4a5c52;
+    margin: 0;
+}
+
+.ic-privacy-sticky {
+    position: sticky;
+    bottom: 0;
+    background: #ffffff;
+    border-top: 1px solid var(--sage-200);
+    padding-top: 20px;
+    margin-top: 20px;
+}
+
+.ic-privacy-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1.45;
+    color: var(--palette-ink, #1f2937);
+    margin-bottom: 16px;
+}
+
+.ic-privacy-check input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    accent-color: var(--sage-700);
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.ic-privacy-submit {
+    width: 100%;
+    padding: 12px 18px;
+    border-radius: 10px;
+    border: none;
+    background: var(--sage-700);
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.ic-privacy-submit:hover:not(:disabled) {
+    background: var(--sage-800);
+}
+
+.ic-privacy-submit:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.ic-privacy-error {
+    color: #b84a4a;
+    font-size: 14px;
+    margin: 0 0 12px;
+}
+
+.ic-privacy-footer-link {
+    display: block;
+    width: 100%;
+    text-align: center;
+    margin-top: 12px;
+    font-size: 14px;
+    color: var(--palette-muted, #55645b);
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.ic-privacy-footer-link:hover {
+    color: var(--palette-ink, #1f2937);
+    text-decoration: underline;
+}
+
+@media (max-width: 767.98px) {
+    .ic-privacy-card {
+        padding: 16px;
+    }
+    .ic-privacy-title {
+        font-size: 24px;
+    }
+}

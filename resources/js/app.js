@@ -794,3 +794,12 @@ function bindChartTabs() {
         applyMode();
     });
 }
+
+document.querySelectorAll('[data-privacy-agree-form]').forEach((form) => {
+    const checkbox = form.querySelector('[data-privacy-agree-checkbox]');
+    const submit = form.querySelector('[data-privacy-agree-submit]');
+    if (!checkbox || !submit) return;
+    const sync = () => { submit.disabled = !checkbox.checked; };
+    checkbox.addEventListener('change', sync);
+    sync();
+});
