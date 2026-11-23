@@ -476,22 +476,28 @@ final class FarmerDashboardService
         if (in_array($risk['key'] ?? null, ['high', 'severe'], true)) {
             return $make('risk_high', 'danger', 'map');
         }
-        foreach (array_slice($week['days'], 0, self::MESSAGE_LOOKAHEAD_DAYS + 1) as $day) {
-            $when = __('farmer.home.message.'.($day['is_today'] ? 'today' : 'tomorrow'));
-            if ($day['heavy']) {
-                return $make('heavy_rain', 'watch', 'rain', ['when' => $when]);
-            }
-            if ($day['strong_wind']) {
-                return $make('strong_wind', 'watch', 'wind', ['when' => $when]);
+        $isLowRisk = ($risk['state'] ?? null) === 'ok' && ($risk['key'] ?? null) === 'low';
+        if (! $isLowRisk) {
+            foreach (array_slice($week['days'], 0, self::MESSAGE_LOOKAHEAD_DAYS + 1) as $day) {
+                $when = __('farmer.home.message.'.($day['is_today'] ? 'today' : 'tomorrow'));
+                if ($day['heavy']) {
+                    return $make('heavy_rain', 'watch', 'rain', ['when' => $when]);
+                }
+                if ($day['strong_wind']) {
+                    return $make('strong_wind', 'watch', 'wind', ['when' => $when]);
+                }
             }
         }
 
         $planting = $risk['planting_key'] ?? null;
+        if ($isLowRisk && in_array($planting, ['caution', 'wait_flood', 'wait_rain'], true)) {
+            $planting = ($advisory['cautions'] ?? false) ? null : 'possible';
+        }
         if ($planting === 'good' && ($risk['key'] ?? null) !== 'low') {
             $planting = 'possible';                                    // never "good" next to a Moderate rating
         }
         if (in_array($planting, ['good', 'possible'], true) && ($advisory['cautions'] ?? false)) {
-            $planting = 'caution';                                     // the planting advisory below says to wait
+            $planting = $isLowRisk ? null : 'caution';                 // the planting advisory below says to wait
         }
         if ($planting !== null) {
             $tone = in_array($planting, ['good', 'possible'], true) ? 'good' : 'watch';
