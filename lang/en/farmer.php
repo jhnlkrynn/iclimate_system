@@ -185,7 +185,28 @@ return [
     ],
 
     // Weather words from the weather service, said simply.
-    'conditions' => [],
+    'conditions' => [
+        'clear' => 'Clear',
+        'clear_night' => 'Clear night',
+        'mainly_clear' => 'Mainly clear',
+        'mostly_clear' => 'Mostly clear',
+        'mostly_sunny' => 'Mostly sunny',
+        'sunny' => 'Sunny',
+        'partly_cloudy' => 'Partly cloudy',
+        'cloudy' => 'Cloudy',
+        'overcast' => 'Overcast',
+        'foggy' => 'Foggy',
+        'fog' => 'Fog',
+        'mist' => 'Mist',
+        'rain' => 'Rain',
+        'light_rain' => 'Light rain',
+        'moderate_rain' => 'Moderate rain',
+        'heavy_rain' => 'Heavy rain',
+        'rain_showers' => 'Rain showers',
+        'heavy_rain_showers' => 'Heavy rain showers',
+        'thunderstorm' => 'Thunderstorm',
+        'weather_temporarily_unavailable' => 'Weather temporarily unavailable',
+    ],
 
     // ------------------------------------------------------------------ My Farm Today (the numbers)
     'today' => [
