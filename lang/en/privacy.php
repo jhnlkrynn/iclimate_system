@@ -13,6 +13,14 @@ return [
     'consent_required' => 'Please review and agree to the Data Privacy Notice before continuing.',
     'consent_logout' => 'Log out',
     'back_home' => 'Back to Home',
+    'read_full' => 'Read the full Data Privacy Notice',
+    'short_sections' => [
+        'collected_body' => 'Your name, email, contact number, barangay, optional RSBSA number, and farm/planting records.',
+        'purpose_body' => 'Used solely for weather risk alerts, rice planting advisories, yield estimates, and MAO coordination.',
+        'access_body' => 'Visible only to you, authorized MAO personnel for your barangay, and the MAO Head.',
+        'retention_body' => 'Kept while your account is active; deleted accounts enter a 30-day recovery window.',
+        'contact_body' => 'Contact :office (:address · :hours · :email) for questions, corrections, or deletion requests.',
+    ],
     'signup_summary' => 'In compliance with the Data Privacy Act of 2012 (RA 10173), iClimate collects your name, email, contact number, barangay, and farm/planting records to deliver weather advisories, yield estimates, and MAO support. Authorized MAO personnel (for their assigned barangays) and the MAO Head can view your records. Active accounts are kept while in service (deleted accounts enter a 30-day restore window).',
     'sections' => [
         'collected_title' => 'What information we collect',

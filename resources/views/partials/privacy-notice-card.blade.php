@@ -1,7 +1,8 @@
 @php
     $locale = request()->query('lang') === 'fil' ? 'fil' : (app()->getLocale() === 'fil' ? 'fil' : 'en');
-    $officeEmail = config('iclimate.office_email', 'mao.lian@batangas.gov.ph');
+    $officeEmail = config('iclimate.office_email', \App\Support\MaoContact::EMAIL);
     $routeName = $showConsent ? 'privacy.consent' : 'privacy.notice';
+    $sectionPrefix = $showConsent ? 'privacy.short_sections' : 'privacy.sections';
 @endphp
 <div class="ic-privacy-card">
     <div class="ic-privacy-top">
@@ -22,31 +23,41 @@
         </div>
     </div>
 
-    <div class="ic-privacy-scroll" tabindex="0" aria-label="{{ __('privacy.consent_title', [], $locale) }}">
+    <div class="ic-privacy-grid">
         <section class="ic-privacy-section">
             <h2>{{ __('privacy.sections.collected_title', [], $locale) }}</h2>
-            <p>{{ __('privacy.sections.collected_body', [], $locale) }}</p>
+            <p>{{ __($sectionPrefix.'.collected_body', [], $locale) }}</p>
         </section>
         <section class="ic-privacy-section">
             <h2>{{ __('privacy.sections.purpose_title', [], $locale) }}</h2>
-            <p>{{ __('privacy.sections.purpose_body', [], $locale) }}</p>
+            <p>{{ __($sectionPrefix.'.purpose_body', [], $locale) }}</p>
         </section>
         <section class="ic-privacy-section">
             <h2>{{ __('privacy.sections.access_title', [], $locale) }}</h2>
-            <p>{{ __('privacy.sections.access_body', [], $locale) }}</p>
+            <p>{{ __($sectionPrefix.'.access_body', [], $locale) }}</p>
         </section>
         <section class="ic-privacy-section">
             <h2>{{ __('privacy.sections.retention_title', [], $locale) }}</h2>
-            <p>{{ __('privacy.sections.retention_body', [], $locale) }}</p>
+            <p>{{ __($sectionPrefix.'.retention_body', [], $locale) }}</p>
         </section>
-        <section class="ic-privacy-section">
+        <section class="ic-privacy-section ic-privacy-section--full">
             <h2>{{ __('privacy.sections.contact_title', [], $locale) }}</h2>
-            <p>{{ __('privacy.sections.contact_body', ['email' => $officeEmail], $locale) }}</p>
+            @if ($showConsent)
+                <p>{{ __('privacy.short_sections.contact_body', ['office' => \App\Support\MaoContact::OFFICE, 'address' => \App\Support\MaoContact::ADDRESS, 'hours' => \App\Support\MaoContact::HOURS, 'email' => $officeEmail], $locale) }}</p>
+            @else
+                <p>{{ __('privacy.sections.contact_body', ['email' => $officeEmail], $locale) }} ({{ \App\Support\MaoContact::ADDRESS }} · {{ \App\Support\MaoContact::HOURS }})</p>
+            @endif
         </section>
     </div>
 
     @if ($showConsent)
-        <div class="ic-privacy-sticky">
+        <div class="ic-privacy-full-wrap">
+            <a href="{{ route('privacy.notice', ['lang' => $locale]) }}" target="_blank" rel="noopener noreferrer" class="ic-privacy-full-link">
+                {{ __('privacy.read_full', [], $locale) }}
+            </a>
+        </div>
+
+        <div class="ic-privacy-agree-band">
             <form method="POST" action="{{ route('privacy.consent.store') }}" data-privacy-agree-form>
                 @csrf
                 <label class="ic-privacy-check" for="privacyAgreed">
@@ -64,8 +75,6 @@
             </form>
         </div>
     @else
-        <div class="ic-privacy-sticky">
-            <a href="{{ url('/') }}" class="ic-privacy-footer-link">{{ __('privacy.back_home', [], $locale) }}</a>
-        </div>
+        <a href="{{ url('/') }}" class="ic-privacy-footer-link">{{ __('privacy.back_home', [], $locale) }}</a>
     @endif
 </div>

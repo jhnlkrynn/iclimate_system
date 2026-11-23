@@ -13,6 +13,14 @@ return [
     'consent_required' => 'Mangyaring basahin at sumang-ayon sa Abiso sa Pagkapribado ng Datos bago magpatuloy.',
     'consent_logout' => 'Mag-log out',
     'back_home' => 'Bumalik sa Home',
+    'read_full' => 'Basahin ang buong Abiso sa Pagkapribado ng Datos',
+    'short_sections' => [
+        'collected_body' => 'Pangalan, email, numero ng telepono, barangay, opsyonal na RSBSA number, at tala ng bukid.',
+        'purpose_body' => 'Ginagamit lamang para sa babala sa panahon, payo sa pagtatanim, tantiya ng ani, at koordinasyon ng MAO.',
+        'access_body' => 'Makikita lamang ninyo, ng awtorisadong tauhan ng MAO para sa inyong barangay, at ng MAO Head.',
+        'retention_body' => 'Pinananatili habang aktibo ang account; may 30-araw na palugit ang mga binurang account.',
+        'contact_body' => 'Makipag-ugnayan sa :office (:address · :hours · :email) para sa tanong, pagwawasto, o pagbura ng datos.',
+    ],
     'signup_summary' => 'Alinsunod sa Data Privacy Act of 2012 (RA 10173), kinokolekta ng iClimate ang iyong pangalan, email, numero ng telepono, barangay, at mga tala ng bukid/pagtatanim para sa abiso sa panahon, tantiya ng ani, at tulong ng MAO. Ang mga awtorisadong tauhan ng MAO at ang MAO Head lamang ang makakakita ng iyong tala. Pinananatili ang datos habang aktibo ang account (may 30-araw na palugit ang mga binurang account).',
     'sections' => [
         'collected_title' => 'Anong impormasyon ang kinokolekta',

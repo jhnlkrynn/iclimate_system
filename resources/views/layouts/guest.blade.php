@@ -88,7 +88,9 @@
     @media (max-width: 767.98px) {
       .login-panel-right.is-privacy { padding: 16px; }
     }
-    .login-form-wrap.is-privacy { max-width: 640px; }
+    .login-panel-left.is-privacy { background: var(--sage-50); border-right: 1px solid var(--sage-200); }
+    .login-panel-right.is-privacy { padding: 20px 32px; }
+    .login-form-wrap.is-privacy { max-width: 720px; }
   </style>
     @include('partials.global-loader')
 </head>
@@ -97,10 +99,12 @@
 <div class="login-layout">
 
   <!-- -- LEFT PANEL ------------------------------------ -->
-  <div class="login-panel-left">
-    <div class="lpl-blob lpl-blob-1"></div>
-    <div class="lpl-blob lpl-blob-2"></div>
-    <div class="lpl-grid"></div>
+  <div class="login-panel-left {{ $isPrivacyPage ? 'is-privacy' : '' }}">
+    @unless ($isPrivacyPage)
+      <div class="lpl-blob lpl-blob-1"></div>
+      <div class="lpl-blob lpl-blob-2"></div>
+      <div class="lpl-grid"></div>
+    @endunless
 
     <div class="lpl-inner">
       <a href="{{ url('/') }}" class="lpl-logo">
