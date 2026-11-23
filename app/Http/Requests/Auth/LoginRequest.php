@@ -112,6 +112,7 @@ class LoginRequest extends FormRequest
         }
 
         if ($authenticated && ! config('auth.default_password_lockdown', true)
+            && config('auth.force_default_password_change', true)
             && \App\Services\Accounts\PasswordChange::isShared($user = Auth::user(), (string) $this->input('password'))
             && ! $user->must_change_password) {
             $user->forceFill(['must_change_password' => true])->saveQuietly();

@@ -135,4 +135,17 @@ return [
 
     'default_password_lockdown' => filter_var(env('DEFAULT_PASSWORD_LOCKDOWN', true), FILTER_VALIDATE_BOOL),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Force Default Password Change
+    |--------------------------------------------------------------------------
+    |
+    | When false (alongside DEFAULT_PASSWORD_LOCKDOWN=false), users signing in
+    | with a default/seeded password—or with must_change_password=true—are
+    | logged in normally without being redirected to password.first-change.
+    |
+    */
+
+    'force_default_password_change' => filter_var(env('FORCE_DEFAULT_PASSWORD_CHANGE', true), FILTER_VALIDATE_BOOL),
+
 ];

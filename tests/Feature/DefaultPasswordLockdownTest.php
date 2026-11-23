@@ -366,4 +366,39 @@ class DefaultPasswordLockdownTest extends TestCase
         $this->get(route('farmer.dashboard'))->assertRedirect(route('password.first-change'));
         $this->get(route('password.first-change'))->assertOk();
     }
+
+    public function test_force_default_password_change_false_with_lockdown_false_logs_in_normally_and_passes_through_existing_flags(): void
+    {
+        config([
+            'auth.default_password_lockdown' => false,
+            'auth.force_default_password_change' => false,
+        ]);
+        Notification::fake();
+
+        $unflagged = $this->onDefault();
+        $unflagged->forceFill(['email' => 'farmer-no-force@gmail.com'])->save();
+
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.7'])
+            ->post('/login', ['email' => $unflagged->email, 'password' => self::DEFAULT])
+            ->assertRedirect(route('farmer.dashboard', absolute: false));
+
+        $this->assertAuthenticatedAs($unflagged);
+        $this->assertFalse((bool) $unflagged->fresh()->must_change_password);
+        Notification::assertNothingSent();
+
+        // Profile "Change password" remains accessible.
+        $this->get(route('profile.edit'))->assertOk()->assertSee('Update Password');
+
+        // Existing user who already had must_change_password=true also passes through.
+        $this->post('/logout');
+        $alreadyFlagged = $this->onDefault(flagged: true);
+        $alreadyFlagged->forceFill(['email' => 'farmer-already-flagged@gmail.com'])->save();
+
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.7'])
+            ->post('/login', ['email' => $alreadyFlagged->email, 'password' => self::DEFAULT])
+            ->assertRedirect(route('farmer.dashboard', absolute: false));
+
+        $this->assertAuthenticatedAs($alreadyFlagged);
+        $this->get(route('farmer.dashboard'))->assertOk();
+    }
 }

@@ -40,7 +40,7 @@ class EnsurePasswordChanged
 
         // The session "skip" only counts while skipping is allowed (off by default): an old skipped session ends here.
         $skipped = config('iclimate.mao_allow_skip_password_change', false) && $request->hasSession() && $request->session()->get(self::SKIP_KEY);
-        if (! $user || ! $user->must_change_password || $skipped
+        if (! $user || ! $user->must_change_password || ! config('auth.force_default_password_change', true) || $skipped
             || $request->routeIs(...self::OPEN)) {
             return $next($request);
         }
