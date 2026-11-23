@@ -136,7 +136,7 @@
                     <div class="small text-muted text-truncate">{{ $mobileUser->isMao() ? $mobileUser->positionLabel() : $mobileUser->roleLabel() }}</div>
                 </div>
             </div>
-            <button type="button" class="mobile-more-close" data-mobile-more-close>Close</button>
+            <button type="button" class="mobile-more-close" data-mobile-more-close>{{ __('farmer.nav.close') }}</button>
         </div>
         <div class="mobile-more-scroll">
             @foreach ($mobileMoreGroups as [$groupLabel, $links])

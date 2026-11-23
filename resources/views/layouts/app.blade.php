@@ -368,12 +368,12 @@
             <div class="ic-logout-card">
                 <div class="ic-logout-body">
                     <div class="ic-logout-icon" aria-hidden="true">?</div>
-                    <h2 id="icLogoutTitle" class="ic-logout-title">Log out of iClimate?</h2>
-                    <p class="ic-logout-message">Your current session will close, and you will return to the home page.</p>
+                    <h2 id="icLogoutTitle" class="ic-logout-title">{{ __('farmer.nav.logout_title') }}</h2>
+                    <p class="ic-logout-message">{{ __('farmer.nav.logout_message') }}</p>
                 </div>
                 <div class="ic-logout-actions">
-                    <button type="button" class="ic-logout-cancel" data-logout-cancel>Stay logged in</button>
-                    <button type="button" class="ic-logout-confirm-btn" data-logout-confirm-submit>Log out</button>
+                    <button type="button" class="ic-logout-cancel" data-logout-cancel>{{ __('farmer.nav.logout_cancel') }}</button>
+                    <button type="button" class="ic-logout-confirm-btn" data-logout-confirm-submit>{{ __('farmer.nav.logout_confirm') }}</button>
                 </div>
             </div>
         </div>

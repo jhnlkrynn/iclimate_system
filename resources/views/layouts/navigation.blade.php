@@ -32,7 +32,7 @@
 {{-- Top bar of every signed-in page (all roles): single 64px white row, sage-200 bottom border. --}}
 <nav class="topbar ic-topbar" aria-label="Top bar">
     <div class="ic-topbar-left">
-        <button class="ic-icon-btn ic-topbar-menu-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-expanded="false" aria-label="Open menu">
+        <button class="ic-icon-btn ic-topbar-menu-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-expanded="false" aria-label="{{ __('farmer.nav.open_menu') }}">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3.5 6h13M3.5 10h13M3.5 14h13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         </button>
         <a class="ic-topbar-brand gov-brand" href="{{ route($user->dashboardRoute()) }}" aria-label="iClimate – Municipal Agriculture Office of Lian, dashboard">
@@ -106,7 +106,7 @@
         @endif
 
         <div class="dropdown">
-            <button class="ic-avatar-btn" type="button" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" aria-label="Account menu for {{ $user->name }}">
+            <button class="ic-avatar-btn" type="button" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" aria-label="{{ __('farmer.nav.account_menu', ['name' => $user->name]) }}">
                 <x-user-avatar :user="$user" :size="40" class="ic-avatar-inner" />
             </button>
             <div class="dropdown-menu dropdown-menu-end ic-account-menu">
