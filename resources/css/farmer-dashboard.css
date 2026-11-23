@@ -885,3 +885,121 @@ html.fh-drawer-lock, html.fh-drawer-lock body { overflow: hidden; }
     .fh-drawer-backdrop, .fh-drawer-panel { transition: none; }
 }
 html[data-theme="dark"] .fh-drawer { --ink: #e8ece9; --muted: #a9b4ae; --line: #33403a; --card: #1b2420; --subtle: #233029; --brand: var(--sage-300, #8cc5a4); }
+
+/* ================================================================== SUBTLE DASHBOARD & WEATHER ANIMATIONS (CSS ONLY) */
+@media (prefers-reduced-motion: no-preference) {
+    /* 1. Weather icons (Weather today + Next 7 days) */
+    @keyframes fhRainDrop {
+        0% { opacity: 0; transform: translateY(-2px); }
+        35% { opacity: 1; }
+        100% { opacity: 0; transform: translateY(3px); }
+    }
+    @keyframes fhThunderFlash {
+        0%, 88%, 94%, 100% { opacity: 0.35; }
+        90%, 96% { opacity: 1; }
+    }
+    @keyframes fhCloudDrift {
+        0%, 100% { transform: translateX(-2px); }
+        50% { transform: translateX(2px); }
+    }
+    @keyframes fhSunSpin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    @keyframes fhSunPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.04); }
+    }
+    @keyframes fhWindSlide {
+        0% { opacity: 0.4; transform: translateX(-2px); }
+        50% { opacity: 1; transform: translateX(2px); }
+        100% { opacity: 0.4; transform: translateX(-2px); }
+    }
+
+    .mfd[data-farmer-dashboard] .ic-w-drop { animation: fhRainDrop 1.6s ease-in infinite; }
+    .mfd[data-farmer-dashboard] .ic-w-drop-2 { animation-delay: 0.4s; }
+    .mfd[data-farmer-dashboard] .ic-w-drop-3 { animation-delay: 0.8s; }
+    .mfd[data-farmer-dashboard] .ic-w-bolt { animation: fhThunderFlash 4s ease-in-out infinite; }
+    .mfd[data-farmer-dashboard] .ic-w-cloud-drift { animation: fhCloudDrift 4s ease-in-out infinite; }
+    .mfd[data-farmer-dashboard] .ic-w-rays { transform-origin: 12px 12px; animation: fhSunSpin 12s linear infinite; }
+    .mfd[data-farmer-dashboard] .ic-w-sun { transform-origin: 12px 12px; animation: fhSunPulse 3s ease-in-out infinite; }
+    .mfd[data-farmer-dashboard] .ic-w-wind { animation: fhWindSlide 2s ease-in-out infinite; }
+    .mfd[data-farmer-dashboard] .ic-w-wind-2 { animation-delay: 0.3s; }
+    .mfd[data-farmer-dashboard] .ic-w-wind-3 { animation-delay: 0.6s; }
+
+    /* 2. Page load: staggered card fade-up, KPI reveal, progress bars & gauge draw */
+    @keyframes fhCardFadeUp {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: none; }
+    }
+    @keyframes fhNumberReveal {
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: none; }
+    }
+    @keyframes fhGrowX {
+        from { transform: scaleX(0); }
+        to { transform: scaleX(1); }
+    }
+    @keyframes fhGrowY {
+        from { transform: scaleY(0); }
+        to { transform: scaleY(1); }
+    }
+    @keyframes fhGaugeDraw {
+        from { stroke-dasharray: 0 100; }
+    }
+
+    .mfd[data-farmer-dashboard] .fh-message,
+    .mfd[data-farmer-dashboard] .fh-card,
+    .mfd[data-farmer-dashboard] .fh-kpi {
+        animation: fhCardFadeUp 300ms cubic-bezier(.22, .61, .36, 1) both;
+    }
+    .mfd[data-farmer-dashboard] .fh-kpis .fh-kpi:nth-child(2),
+    .mfd[data-farmer-dashboard] .fh-row > :nth-child(2),
+    .mfd[data-farmer-dashboard] .fh-charts > :nth-child(2) { animation-delay: 40ms; }
+    .mfd[data-farmer-dashboard] .fh-kpis .fh-kpi:nth-child(3),
+    .mfd[data-farmer-dashboard] .fh-row > :nth-child(3),
+    .mfd[data-farmer-dashboard] .fh-charts > :nth-child(3) { animation-delay: 80ms; }
+    .mfd[data-farmer-dashboard] .fh-kpis .fh-kpi:nth-child(4),
+    .mfd[data-farmer-dashboard] .fh-charts > :nth-child(4) { animation-delay: 120ms; }
+
+    .mfd[data-farmer-dashboard] .fh-big,
+    .mfd[data-farmer-dashboard] [data-fh-kpi-value] {
+        display: inline-block;
+        animation: fhNumberReveal 600ms cubic-bezier(.22, .61, .36, 1) both;
+    }
+    .mfd[data-farmer-dashboard] .fh-kpi-bar > span {
+        transform-origin: left center;
+        animation: fhGrowX 500ms cubic-bezier(.22, .61, .36, 1) both;
+    }
+    .mfd[data-farmer-dashboard] .fh-pill-fill {
+        transform-origin: bottom center;
+        animation: fhGrowY 500ms cubic-bezier(.22, .61, .36, 1) both;
+    }
+    .mfd[data-farmer-dashboard] .fh-pill:nth-child(2) .fh-pill-fill { animation-delay: 40ms; }
+    .mfd[data-farmer-dashboard] .fh-pill:nth-child(3) .fh-pill-fill { animation-delay: 80ms; }
+    .mfd[data-farmer-dashboard] .fh-pill:nth-child(4) .fh-pill-fill { animation-delay: 120ms; }
+    .mfd[data-farmer-dashboard] .fh-pill:nth-child(5) .fh-pill-fill { animation-delay: 160ms; }
+    .mfd[data-farmer-dashboard] .fh-pill:nth-child(6) .fh-pill-fill { animation-delay: 200ms; }
+    .mfd[data-farmer-dashboard] .fh-pill:nth-child(7) .fh-pill-fill { animation-delay: 240ms; }
+    .mfd[data-farmer-dashboard] .ic-gauge-fill {
+        animation: fhGaugeDraw 700ms cubic-bezier(.22, .61, .36, 1) both;
+    }
+
+    /* 3. Interaction: subtle 2px hover lift and easing border on forecast days */
+    .mfd[data-farmer-dashboard] .fh-card-opens,
+    .mfd[data-farmer-dashboard] .fh-kpi {
+        transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    }
+    .mfd[data-farmer-dashboard] .fh-card-opens:hover,
+    .mfd[data-farmer-dashboard] .fh-kpi:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgb(var(--sage-800-rgb, 36 74 52) / .10);
+    }
+    .mfd[data-farmer-dashboard] .fh-day {
+        transition: border-color 200ms ease, background-color 200ms ease;
+    }
+    .mfd[data-farmer-dashboard] .fh-day.is-today,
+    .mfd[data-farmer-dashboard] .fh-day.is-selected {
+        border-color: var(--sage-700);
+    }
+}

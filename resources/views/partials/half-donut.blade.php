@@ -13,7 +13,7 @@
         @foreach ($segments as $segment)
             @if ($gaugeTotal > 0 && $segment['value'] > 0)
                 @php $part = round($segment['value'] / $gaugeTotal * 100, 2); @endphp
-                <path d="{{ $gaugeArc }}" fill="none" stroke="{{ $segment['color'] }}" stroke-width="26" pathLength="100"
+                <path class="ic-gauge-fill" d="{{ $gaugeArc }}" fill="none" stroke="{{ $segment['color'] }}" stroke-width="26" pathLength="100"
                     stroke-dasharray="{{ $part }} 100" stroke-dashoffset="-{{ $gaugeOffset }}" />
                 @php $gaugeOffset += $part; @endphp
             @endif

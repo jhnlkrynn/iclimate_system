@@ -11,14 +11,14 @@
         'map' => '<path d="M12 21s6-5.2 6-10a6 6 0 1 0-12 0c0 4.8 6 10 6 10Z"/><circle cx="12" cy="11" r="2.2"/>',
         'advisory' => '<path d="M6 3h9l3 3v15H6z"/><path d="M9 11h6M9 15h6M9 7h3"/>',
         'message' => '<path d="M4 5h16v11H9l-5 4z"/>',
-        'rain' => '<path d="M7 14a4 4 0 1 1 .9-7.9A5.5 5.5 0 0 1 18.5 7a3.5 3.5 0 0 1-.5 7"/><path d="M8 17l-1 3M12 17l-1 3M16 17l-1 3"/>',
+        'rain' => '<path class="ic-w-cloud" d="M7 14a4 4 0 1 1 .9-7.9A5.5 5.5 0 0 1 18.5 7a3.5 3.5 0 0 1-.5 7"/><path class="ic-w-drop ic-w-drop-1" d="M8 17l-1 3"/><path class="ic-w-drop ic-w-drop-2" d="M12 17l-1 3"/><path class="ic-w-drop ic-w-drop-3" d="M16 17l-1 3"/>',
         'report' => '<path d="M5 4h14v16H5z"/><path d="M9 9h6M9 13h6M9 17h3"/>',
-        'storm' => '<path d="M7 14a4 4 0 1 1 .9-7.9A5.5 5.5 0 0 1 18.5 7a3.5 3.5 0 0 1-.5 7"/><path d="M12 14l-2 4h4l-2 4"/>',
+        'storm' => '<path class="ic-w-cloud" d="M7 14a4 4 0 1 1 .9-7.9A5.5 5.5 0 0 1 18.5 7a3.5 3.5 0 0 1-.5 7"/><path class="ic-w-drop ic-w-drop-1" d="M7.5 17l-1 3"/><path class="ic-w-drop ic-w-drop-2" d="M16.5 17l-1 3"/><path class="ic-w-bolt" d="M12 14l-2 4h4l-2 4"/>',
         'temperature' => '<path d="M10 14V5a2 2 0 1 1 4 0v9a4 4 0 1 1-4 0Z"/>',
         'humidity' => '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z"/>',
-        'sun' => '<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>',
+        'sun' => '<g class="ic-w-sun"><circle cx="12" cy="12" r="4"/><path class="ic-w-rays" d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></g>',
         'moon' => '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/>',
-        'cloud-sun' => '<path d="M12 3v1.5M5.2 6.2l1 1M3 12h1.5M18.8 6.2l-1 1"/><path d="M7.5 12a4 4 0 0 1 7.4-1.6"/><path d="M7 20a4 4 0 1 1 .9-7.9A5.5 5.5 0 0 1 18.5 13a3.5 3.5 0 0 1-.5 7Z"/>',
+        'cloud-sun' => '<g class="ic-w-rays"><path d="M12 3v1.5M5.2 6.2l1 1M3 12h1.5M18.8 6.2l-1 1"/></g><path d="M7.5 12a4 4 0 0 1 7.4-1.6"/><path class="ic-w-cloud ic-w-cloud-drift" d="M7 20a4 4 0 1 1 .9-7.9A5.5 5.5 0 0 1 18.5 13a3.5 3.5 0 0 1-.5 7Z"/>',
         'fog' => '<path d="M7 12a4 4 0 1 1 .9-7.9A5.5 5.5 0 0 1 18.5 5a3.5 3.5 0 0 1-.5 7"/><path d="M4 16h16M6 20h12"/>',
         'check' => '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
         'refresh' => '<path d="M20 11a8 8 0 0 0-14.5-3.5L4 9"/><path d="M4 4v5h5"/><path d="M4 13a8 8 0 0 0 14.5 3.5L20 15"/><path d="M20 20v-5h-5"/>',
@@ -30,7 +30,7 @@
         'clock' => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
         'plus' => '<path d="M12 5v14M5 12h14"/>',
         'sparkle' => '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/>',
-        'wind' => '<path d="M3 9h11a3 3 0 1 0-3-3M3 15h15a3 3 0 1 1-3 3M3 12h8"/>',
+        'wind' => '<path class="ic-w-wind ic-w-wind-1" d="M3 9h11a3 3 0 1 0-3-3"/><path class="ic-w-wind ic-w-wind-2" d="M3 15h15a3 3 0 1 1-3 3"/><path class="ic-w-wind ic-w-wind-3" d="M3 12h8"/>',
     ];
 @endphp
 <svg class="mtd-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $paths[$name] ?? '' !!}</svg>
