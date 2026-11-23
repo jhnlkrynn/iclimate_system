@@ -346,7 +346,8 @@ class RiceVarietyController extends Controller
             $rules['maturity_seed_production'.$part] = ['nullable', 'integer', 'gt:0', 'max:250'];
         }
 
-        $validator = validator($request->all(), $rules, [], $this->attributeNames());
+        $allowedKeys = array_values(array_unique(array_map(fn (string $key): string => strtok($key, '.'), array_keys($rules))));
+        $validator = validator($request->only($allowedKeys), $rules, [], $this->attributeNames());
         $validator->after(function (Validator $v) use ($request): void {
             foreach ([...array_map(fn ($c) => 'maturity_'.$c, [...RiceVariety::COMBOS, 'seed_production']), ...array_map(fn ($c) => 'height_'.$c, RiceVariety::COMBOS), ...array_map(fn ($c) => 'tillers_'.$c, RiceVariety::COMBOS)] as $field) {
                 $values = array_map(fn (string $s) => is_numeric($request->input($field.$s)) ? (float) $request->input($field.$s) : null, ['_min' => '_min', '' => '', '_max' => '_max']);
