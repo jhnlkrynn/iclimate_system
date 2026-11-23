@@ -108,7 +108,7 @@ class PreMigrationCompatibilityTest extends TestCase
 
         $this->postJson('/api/mobile/register', [
             'name' => 'Early farmer', 'email' => 'early-farmer@lian-farmers.ph', 'password' => 'SecurePassword!23', 'password_confirmation' => 'SecurePassword!23',
-            'contact_number' => '09170000000', 'barangay' => 'Prenza', 'farm_type' => 'Irrigated',
+            'contact_number' => '09170000000', 'barangay' => 'Prenza', 'farm_type' => 'Irrigated', 'privacy_agreed' => true,
         ])->assertCreated()->assertJsonPath('user.status', User::STATUS_PENDING);
 
         $farmer = User::query()->where('email', 'early-farmer@lian-farmers.ph')->sole();

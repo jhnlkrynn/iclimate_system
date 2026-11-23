@@ -30,6 +30,10 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/privacy-notice', function () {
+    return view('privacy-notice');
+})->name('privacy.notice');
+
 // The home page's "Send us a message" form: delivered to MAO staff as a notification.
 Route::post('/contact', \App\Http\Controllers\ContactMessageController::class)
     ->middleware('throttle:3,10,post-contact')

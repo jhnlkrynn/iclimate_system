@@ -80,7 +80,7 @@ class RejectionAndFarmRestoreTest extends TestCase
             ]])
             ->from('/')->post('/register', [
                 'name' => 'New Person', 'email' => $email, 'password' => 'Password123!', 'password_confirmation' => 'Password123!',
-                'barangay' => 'Balibago', 'captcha_answer' => '7',
+                'barangay' => 'Balibago', 'captcha_answer' => '7', 'privacy_agreed' => '1',
             ]);
 
         $signUp('Closed.Farmer@gmail.com')->assertSessionHasErrors(['email' => $notice]);
@@ -90,7 +90,7 @@ class RejectionAndFarmRestoreTest extends TestCase
 
         $this->postJson('/api/mobile/register', [
             'name' => 'App Person', 'email' => 'closed.farmer@gmail.com', 'password' => 'Password123!', 'password_confirmation' => 'Password123!',
-            'contact_number' => '09170000000', 'barangay' => 'Balibago', 'farm_type' => 'Rainfed',
+            'contact_number' => '09170000000', 'barangay' => 'Balibago', 'farm_type' => 'Rainfed', 'privacy_agreed' => true,
         ])->assertStatus(422)->assertJsonPath('errors.email.0', $notice);
     }
 

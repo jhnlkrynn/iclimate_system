@@ -39,7 +39,7 @@ class Phase1AccountsTest extends TestCase
     {
         $this->withSession($this->captchaSession('register', '7'))->post('/register', [
             'name' => 'New Farmer', 'email' => 'new@example.com', 'password' => 'Password123!',
-            'password_confirmation' => 'Password123!', 'barangay' => 'Balibago', 'captcha_answer' => '7',
+            'password_confirmation' => 'Password123!', 'barangay' => 'Balibago', 'captcha_answer' => '7', 'privacy_agreed' => '1',
         ])->assertRedirect('/');
 
         $this->assertSame(User::STATUS_PENDING, User::query()->where('email', 'new@example.com')->value('status'));
@@ -51,7 +51,7 @@ class Phase1AccountsTest extends TestCase
 
         $this->withSession($this->captchaSession('register', '7'))->post('/register', [
             'name' => 'New Farmer', 'email' => 'new@example.com', 'password' => 'Password123!',
-            'password_confirmation' => 'Password123!', 'barangay' => 'Balibago', 'captcha_answer' => '7',
+            'password_confirmation' => 'Password123!', 'barangay' => 'Balibago', 'captcha_answer' => '7', 'privacy_agreed' => '1',
         ]);
 
         $this->assertSame(User::STATUS_PENDING, User::query()->where('email', 'new@example.com')->value('status'));
@@ -72,7 +72,7 @@ class Phase1AccountsTest extends TestCase
     {
         $this->postJson('/api/mobile/register', [
             'name' => 'App Farmer', 'email' => 'app@example.com', 'password' => 'Password123!', 'password_confirmation' => 'Password123!',
-            'contact_number' => '09170000000', 'barangay' => 'Balibago', 'farm_type' => 'Rainfed',
+            'contact_number' => '09170000000', 'barangay' => 'Balibago', 'farm_type' => 'Rainfed', 'privacy_agreed' => true,
         ])->assertCreated()->assertJsonPath('user.status', User::STATUS_PENDING);
 
         $this->postJson('/api/mobile/login', ['email' => 'app@example.com', 'password' => 'Password123!'])

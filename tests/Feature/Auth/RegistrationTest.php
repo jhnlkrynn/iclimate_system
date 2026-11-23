@@ -53,6 +53,7 @@ class RegistrationTest extends TestCase
             'password_confirmation' => 'Password123!',
             'barangay' => 'Balibago',
             'captcha_answer' => '7',
+            'privacy_agreed' => '1',
         ]);
 
         $this->assertGuest();
@@ -84,6 +85,7 @@ class RegistrationTest extends TestCase
             'farmer_organization_id' => $organization->id,
             'barangay' => 'Binubusan',
             'captcha_answer' => '7',
+            'privacy_agreed' => '1',
         ]);
 
         $this->assertGuest();
@@ -144,6 +146,7 @@ class RegistrationTest extends TestCase
             'password_confirmation' => 'password',
             'barangay' => 'Balibago',
             'captcha_answer' => '7',
+            'privacy_agreed' => '1',
         ]);
 
         $this->assertGuest();
@@ -164,6 +167,7 @@ class RegistrationTest extends TestCase
             'password_confirmation' => 'Password123!',
             'barangay' => 'Balibago',
             'captcha_answer' => '7',
+            'privacy_agreed' => '1',
         ]);
 
         $this->assertGuest();
@@ -199,6 +203,7 @@ class RegistrationTest extends TestCase
             'password_confirmation' => 'Password123!',
             'barangay' => 'Balibago',
             'captcha_answer' => '8',
+            'privacy_agreed' => '1',
         ]);
 
         $this->assertGuest();
@@ -400,6 +405,7 @@ class RegistrationTest extends TestCase
             'password_confirmation' => 'Password123!',
             'barangay' => 'Balibago',
             'captcha_answer' => '7',
+            'privacy_agreed' => '1',
         ];
     }
 

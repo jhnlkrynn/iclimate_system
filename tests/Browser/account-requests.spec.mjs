@@ -6,7 +6,7 @@ async function register(request, project, action) {
     const response = await request.post('/api/mobile/register', {
         data: {
             name, email, password: 'FarmerPassword!23', password_confirmation: 'FarmerPassword!23',
-            contact_number: '09170000001', barangay: 'Prenza', farm_type: 'Irrigated',
+            contact_number: '09170000001', barangay: 'Prenza', farm_type: 'Irrigated', privacy_agreed: true,
         },
     });
     expect(response.status()).toBe(201);
