@@ -5,6 +5,11 @@ return [
     'link' => 'Data Privacy Notice',
     'agree_label' => 'I agree to the Data Privacy Notice (RA 10173) and Terms of Use.',
     'agree_required' => 'Please agree to the Data Privacy Notice before creating an account.',
+    'consent_title' => 'Data Privacy Notice Update (RA 10173)',
+    'consent_intro' => 'Before continuing, please review and agree to the Data Privacy Notice so we can record your consent.',
+    'consent_button' => 'I agree and continue',
+    'consent_required' => 'Please review and agree to the Data Privacy Notice before continuing.',
+    'consent_logout' => 'Log out',
     'signup_summary' => 'In compliance with the Data Privacy Act of 2012 (RA 10173), iClimate collects your name, email, contact number, barangay, and farm/planting records to deliver weather advisories, yield estimates, and MAO support. Authorized MAO personnel (for their assigned barangays) and IT administrators can view your records. Active accounts are kept while in service (deleted accounts enter a 30-day restore window).',
     'sections' => [
         'collected_title' => 'What information we collect',

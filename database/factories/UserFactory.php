@@ -35,6 +35,7 @@ class UserFactory extends Factory
             'address' => fake()->streetAddress(),
             'barangay' => fake()->randomElement(['Binubusan', 'Lumaniag', 'Malaruhatan', 'Matabungkay', 'Prenza']),
             'status' => User::STATUS_ACTIVE,
+            'privacy_agreed_at' => now(),
             'remember_token' => Str::random(10),
         ];
     }

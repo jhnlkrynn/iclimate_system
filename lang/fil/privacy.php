@@ -5,6 +5,11 @@ return [
     'link' => 'Abiso sa Pagkapribado ng Datos',
     'agree_label' => 'Sumasang-ayon ako sa Abiso sa Pagkapribado ng Datos (RA 10173) at Mga Tuntunin sa Paggamit.',
     'agree_required' => 'Mangyaring sumang-ayon sa Abiso sa Pagkapribado ng Datos bago gumawa ng account.',
+    'consent_title' => 'Abiso sa Pagkapribado ng Datos (RA 10173)',
+    'consent_intro' => 'Bago magpatuloy, mangyaring basahin at sumang-ayon sa Abiso sa Pagkapribado ng Datos upang maitala ang iyong pahintulot.',
+    'consent_button' => 'Sumasang-ayon ako at magpatuloy',
+    'consent_required' => 'Mangyaring basahin at sumang-ayon sa Abiso sa Pagkapribado ng Datos bago magpatuloy.',
+    'consent_logout' => 'Mag-log out',
     'signup_summary' => 'Alinsunod sa Data Privacy Act of 2012 (RA 10173), kinokolekta ng iClimate ang iyong pangalan, email, numero ng telepono, barangay, at mga tala ng bukid/pagtatanim para sa abiso sa panahon, tantiya ng ani, at tulong ng MAO. Ang mga awtorisadong tauhan ng MAO at IT administrator lamang ang makakakita ng iyong tala. Pinananatili ang datos habang aktibo ang account (may 30-araw na palugit ang mga binurang account).',
     'sections' => [
         'collected_title' => 'Anong impormasyon ang kinokolekta',
