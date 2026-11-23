@@ -43,7 +43,7 @@
         <section class="ic-privacy-section ic-privacy-section--full">
             <h2>{{ __('privacy.sections.contact_title', [], $locale) }}</h2>
             @if ($showConsent)
-                <p>{{ __('privacy.short_sections.contact_body', ['office' => \App\Support\MaoContact::OFFICE, 'address' => \App\Support\MaoContact::ADDRESS, 'hours' => \App\Support\MaoContact::HOURS, 'email' => $officeEmail], $locale) }}</p>
+                <p>{{ __('privacy.short_sections.contact_body', ['address' => \App\Support\MaoContact::ADDRESS, 'hours' => 'Mon–Fri, 8:00 AM–5:00 PM', 'email' => $officeEmail], $locale) }}</p>
             @else
                 <p>{{ __('privacy.sections.contact_body', ['email' => $officeEmail], $locale) }} ({{ \App\Support\MaoContact::ADDRESS }} · {{ \App\Support\MaoContact::HOURS }})</p>
             @endif
@@ -51,12 +51,6 @@
     </div>
 
     @if ($showConsent)
-        <div class="ic-privacy-full-wrap">
-            <a href="{{ route('privacy.notice', ['lang' => $locale]) }}" target="_blank" rel="noopener noreferrer" class="ic-privacy-full-link">
-                {{ __('privacy.read_full', [], $locale) }}
-            </a>
-        </div>
-
         <div class="ic-privacy-agree-band">
             <form method="POST" action="{{ route('privacy.consent.store') }}" data-privacy-agree-form>
                 @csrf

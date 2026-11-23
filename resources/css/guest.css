@@ -29,13 +29,14 @@ html body .ic-privacy-eyebrow {
     margin: 0 0 4px;
 }
 
-html body .ic-privacy-title {
-    font-size: 24px;
-    font-weight: 600;
-    line-height: 1.25;
-    letter-spacing: -0.02em;
+html body .ic-privacy-card .ic-privacy-title {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    font-size: 24px !important;
+    font-weight: 600 !important;
+    line-height: 1.25 !important;
+    letter-spacing: -0.02em !important;
     color: var(--palette-ink, #1f2937);
-    margin: 0 0 6px;
+    margin: 0 0 6px !important;
 }
 
 html body .ic-privacy-intro {
