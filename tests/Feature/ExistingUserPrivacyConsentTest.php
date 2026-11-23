@@ -43,4 +43,14 @@ class ExistingUserPrivacyConsentTest extends TestCase
                 ->assertRedirect(route($user->dashboardRoute()));
         }
     }
+
+    public function test_seeded_mao_personnel_have_null_privacy_agreed_at_and_are_prompted_on_first_login(): void
+    {
+        $this->seed(\Database\Seeders\MaoPersonnelSeeder::class);
+        $staff = User::query()->where('role', User::ROLE_MAO)->firstOrFail();
+        $staff->forceFill(['must_change_password' => false])->save();
+
+        $this->assertNull($staff->privacy_agreed_at);
+        $this->actingAs($staff)->get(route('mao.dashboard'))->assertRedirect(route('privacy.consent'));
+    }
 }

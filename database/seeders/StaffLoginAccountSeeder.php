@@ -43,9 +43,6 @@ class StaffLoginAccountSeeder extends Seeder
                 'password' => Hash::make($password),
             ]);
             $user->email_verified_at ??= now();
-            if (\App\Support\SchemaCache::hasColumn('users', 'privacy_agreed_at')) {
-                $user->privacy_agreed_at ??= now();
-            }
             $user->save();
         }
     }

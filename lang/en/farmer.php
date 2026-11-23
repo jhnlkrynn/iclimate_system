@@ -749,6 +749,7 @@ return [
             'title' => 'Today\'s message',
             'headline_good' => 'Good weather',
             'headline_bad' => 'Bad weather',
+            'headline_alert' => 'Weather alert',
             'headline_info' => 'Today',
             'good_reason' => ':condition, :temperature°C, and :risk barangay risk make conditions suitable for normal farm work.',
             'source_label' => 'Source',

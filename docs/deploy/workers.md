@@ -73,6 +73,85 @@ Each scheduled command writes its own log to `storage/logs/automation-<command>.
 
 ---
 
+## Python Analytics / ML Service (`127.0.0.1:8010`)
+
+The Python FastAPI service powers rice yield model inference, monthly weather forecasts, and `RunPythonAnalytics` background jobs.
+
+- **What breaks without it:** `RunPythonAnalytics` jobs fail with `ConnectException` (`127.0.0.1:8010`), live yield predictions cannot be generated, and `php artisan iclimate:health` reports `FAIL  ml-service`.
+
+### Local Development
+
+```bash
+cd python_scripts
+uvicorn main:app --host 127.0.0.1 --port 8010 --reload
+```
+
+### Production (`systemd`)
+
+Create `/etc/systemd/system/iclimate-python.service`:
+
+```ini
+[Unit]
+Description=iClimate Python Analytics & ML Service
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+Restart=always
+RestartSec=5
+WorkingDirectory=/var/www/iclimate_system/python_scripts
+ExecStart=/var/www/iclimate_system/python_scripts/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8010
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl enable --now iclimate-python.service
+```
+
+---
+
+## Laravel Reverb WebSocket Server (`:8080`)
+
+Reverb pushes real-time dashboard, weather, and risk invalidation events (`DashboardChanged`, weather/risk updates) to connected browsers.
+
+- **What breaks without it:** Real-time updates stop and queued broadcasts (`RetryBroadcastEvent`) fail with `BroadcastException: Reverb is unavailable`; `php artisan iclimate:health` reports `FAIL  reverb`.
+
+### Local Development
+
+```bash
+php artisan reverb:start
+```
+
+### Production (`systemd`)
+
+Create `/etc/systemd/system/iclimate-reverb.service`:
+
+```ini
+[Unit]
+Description=iClimate Laravel Reverb WebSocket Server
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+Restart=always
+RestartSec=5
+WorkingDirectory=/var/www/iclimate_system
+ExecStart=/usr/bin/php /var/www/iclimate_system/artisan reverb:start --host=127.0.0.1 --port=8080
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl enable --now iclimate-reverb.service
+```
+
+---
+
 ## Health Checks & Failed Jobs
 
 Check whether the queue, scheduler, database, ML service, Reverb, and backups are healthy:

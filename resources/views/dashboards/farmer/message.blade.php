@@ -37,7 +37,7 @@
         @endif
     </div>
     <div class="fh-message-body">
-        <h2 id="fhMessageTitle" class="fh-message-head">{{ __('farmer.home.message.headline_'.$mood) }}</h2>
+        <h2 id="fhMessageTitle" class="fh-message-head">{{ $m['headline'] ?? __('farmer.home.message.headline_'.$mood) }}</h2>
         @unless ($m['key'] === 'plant_good')
             <p class="fh-message-text">{{ $m['text'] }}</p>
         @endunless
