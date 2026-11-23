@@ -5,6 +5,7 @@ namespace App\Services;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 use Throwable;
@@ -85,62 +86,93 @@ class PythonService
                 ->acceptJson()
                 ->post($baseUrl.'/predict', $payload);
         } catch (Throwable $exception) {
+            $httpCause = sprintf('Connection error (%s): %s', $exception::class, $exception->getMessage());
+            Log::warning('FastAPI /predict connection failed.', [
+                'url' => $baseUrl.'/predict',
+                'prediction_type' => $payload['prediction_type'] ?? null,
+                'exception' => $exception::class,
+                'message' => $exception->getMessage(),
+            ]);
+
             if ($this->isRiceYield($payload)) {
                 try {
                     return $this->runLocalRiceYield($payload['features'] ?? [], $timeout, $exception);
                 } catch (Throwable $localException) {
                     Log::warning('Local rice-yield inference failed after FastAPI connection failure.', [
+                        'http_cause' => $httpCause,
                         'exception' => $localException::class,
                         'message' => $localException->getMessage(),
                     ]);
                     self::recordFailure();
-                    throw new RuntimeException('The Farming AI API could not be reached; local rice-yield inference also failed.', previous: $localException);
+                    throw new RuntimeException($httpCause.'; local inference failed: '.$localException->getMessage(), previous: $localException);
                 }
             }
 
             self::recordFailure();
 
-            throw new RuntimeException('The Farming AI API could not be reached.', previous: $exception);
+            throw new RuntimeException('The Farming AI API could not be reached ('.$httpCause.').', previous: $exception);
         }
 
         if (! $response->successful()) {
+            $bodySnippet = Str::limit((string) preg_replace('/\s+/', ' ', trim($response->body())), 200);
+            $httpCause = sprintf('HTTP %d: %s', $response->status(), $bodySnippet !== '' ? $bodySnippet : '(empty body)');
+            Log::warning('FastAPI /predict returned an error response.', [
+                'url' => $baseUrl.'/predict',
+                'prediction_type' => $payload['prediction_type'] ?? null,
+                'http_status' => $response->status(),
+                'body_snippet' => $bodySnippet,
+            ]);
+
             if ($this->isRiceYield($payload)) {
                 try {
                     return $this->runLocalRiceYield($payload['features'] ?? [], $timeout);
                 } catch (Throwable $localException) {
                     Log::warning('Local rice-yield inference failed after FastAPI error response.', [
+                        'http_status' => $response->status(),
+                        'body_snippet' => $bodySnippet,
                         'exception' => $localException::class,
                         'message' => $localException->getMessage(),
                     ]);
                     self::recordFailure();
-                    throw new RuntimeException('The Farming AI API is unavailable; local rice-yield inference also failed.', previous: $localException);
+                    throw new RuntimeException($httpCause.'; local inference failed: '.$localException->getMessage(), previous: $localException);
                 }
             }
 
             self::recordFailure();
 
-            throw new RuntimeException('The Farming AI API is unavailable or returned an error.');
+            throw new RuntimeException('The Farming AI API is unavailable or returned an error ('.$httpCause.').');
         }
 
         $data = $response->json();
 
         if (! is_array($data)) {
+            $bodySnippet = Str::limit((string) preg_replace('/\s+/', ' ', trim($response->body())), 200);
+            $httpCause = sprintf('Invalid JSON response (HTTP %d): %s', $response->status(), $bodySnippet !== '' ? $bodySnippet : '(empty body)');
+            Log::warning('FastAPI /predict returned invalid JSON.', [
+                'url' => $baseUrl.'/predict',
+                'prediction_type' => $payload['prediction_type'] ?? null,
+                'http_status' => $response->status(),
+                'body_snippet' => $bodySnippet,
+            ]);
+
             if ($this->isRiceYield($payload)) {
                 try {
                     return $this->runLocalRiceYield($payload['features'] ?? [], $timeout);
                 } catch (Throwable $localException) {
                     Log::warning('Local rice-yield inference failed after FastAPI invalid response.', [
+                        'http_status' => $response->status(),
+                        'body_snippet' => $bodySnippet,
                         'exception' => $localException::class,
                         'message' => $localException->getMessage(),
                     ]);
                     self::recordFailure();
-                    throw new RuntimeException('The Farming AI API returned an invalid response; local rice-yield inference also failed.', previous: $localException);
+                    throw new RuntimeException($httpCause.'; local inference failed: '.$localException->getMessage(), previous: $localException);
                 }
             }
 
             self::recordFailure();
 
-            throw new RuntimeException('The Farming AI API returned an invalid response.');
+            throw new RuntimeException('The Farming AI API returned an invalid response ('.$httpCause.').');
         }
 
         return $data + ['inference_transport' => 'http', 'api_fallback_used' => false];

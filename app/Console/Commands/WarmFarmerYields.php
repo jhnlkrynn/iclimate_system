@@ -34,18 +34,69 @@ class WarmFarmerYields extends Command
         $inARow = 0;
         $stopped = false;
 
+        $eligibleStatuses = [User::STATUS_ACTIVE, User::STATUS_APPROVED];
+        $statusCounts = User::query()
+            ->where('role', User::ROLE_FARMER)
+            ->selectRaw('status, count(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+        $totalFarmers = (int) $statusCounts->sum();
+        $activeCount = (int) ($statusCounts[User::STATUS_ACTIVE] ?? 0);
+        $approvedCount = (int) ($statusCounts[User::STATUS_APPROVED] ?? 0);
+        $pendingCount = (int) ($statusCounts[User::STATUS_PENDING] ?? 0);
+        $inactiveCount = (int) ($statusCounts[User::STATUS_INACTIVE] ?? 0);
+        $rejectedCount = (int) ($statusCounts[User::STATUS_REJECTED] ?? 0);
+
+        $eligibleFarmers = User::query()->where('role', User::ROLE_FARMER)->whereIn('status', $eligibleStatuses);
+        $eligibleWithFarm = ActiveFarm::available()
+            ? (clone $eligibleFarmers)->whereHas('farms', fn ($q) => $q->active())->count()
+            : (clone $eligibleFarmers)->count();
+        $eligibleWithoutFarm = ActiveFarm::available()
+            ? (clone $eligibleFarmers)->whereDoesntHave('farms', fn ($q) => $q->active())->count()
+            : 0;
+        $totalActiveFarms = ActiveFarm::available()
+            ? Farm::query()->active()->whereHas('user', fn ($q) => $q->where('role', User::ROLE_FARMER)->whereIn('status', $eligibleStatuses))->count()
+            : $eligibleWithFarm;
+
+        $this->line(sprintf(
+            'Farmer filter: %d total (Active: %d, Approved: %d, Pending: %d, Inactive: %d, Rejected: %d); %d eligible with active farm (%d farms), %d without active farm.',
+            $totalFarmers,
+            $activeCount,
+            $approvedCount,
+            $pendingCount,
+            $inactiveCount,
+            $rejectedCount,
+            $eligibleWithFarm,
+            $totalActiveFarms,
+            $eligibleWithoutFarm,
+        ));
+
         $prepare = function (User $farmer, ?Farm $farm) use ($dashboard, $store, $seasonLabel, &$done, &$missing, &$failed, &$inARow, &$stopped): bool {
-            // A farm with no size gets no estimate (nothing is made up), and the service is not asked.
-            if ($farm !== null && $farm->modelArea() === null) {
+            $rawBarangay = $farm !== null ? $farm->barangay : $farmer->registeredBarangay();
+            $validBarangay = \App\Support\LianBarangays::canonicalName($rawBarangay) !== null;
+            $validArea = $farm !== null
+                ? $farm->modelArea() !== null
+                : (is_numeric($farmer->farmerProfile?->farm_area) && (float) $farmer->farmerProfile->farm_area > 0);
+
+            // Invalid/missing barangay or farm size gets no estimate (nothing is made up), and never counts as a service failure.
+            if (! $validBarangay || ! $validArea) {
                 $missing++;
+                $inARow = 0;
+                $reason = ! $validBarangay
+                    ? 'invalid/missing barangay '.json_encode($rawBarangay, JSON_UNESCAPED_UNICODE)
+                    : 'missing/invalid farm area';
+                if ($this->output->isVerbose()) {
+                    $this->line("Skipped invalid farm data (farmer {$farmer->id}".($farm ? ", farm {$farm->id}" : '')."): {$reason}");
+                }
 
                 return true;
             }
+
             try {
                 $result = $dashboard->prepareYieldEstimate($farmer, $farm);
             } catch (Throwable $exception) {
-                $result = ['failed' => true, 'lacks_records' => false];
-                $this->warn("Farmer {$farmer->id}".($farm ? " farm {$farm->id}" : '').': '.$exception->getMessage());
+                $cause = $exception::class.': '.$exception->getMessage();
+                $result = ['failed' => true, 'lacks_records' => false, 'error' => $cause];
             }
 
             if (! ($result['failed'] ?? false)) {
@@ -57,7 +108,19 @@ class WarmFarmerYields extends Command
             } elseif ($result['lacks_records'] ?? false) {
                 $missing++;                                  // farm size or records missing: nothing the service can fix
                 $inARow = 0;
+                if ($this->output->isVerbose()) {
+                    $this->line("Skipped invalid farm data (farmer {$farmer->id}".($farm ? ", farm {$farm->id}" : '').'): '.($result['error'] ?? 'missing model inputs'));
+                }
             } else {
+                $cause = (string) ($result['error'] ?? 'Unknown service failure');
+                \Illuminate\Support\Facades\Log::warning('WarmFarmerYields: farmer yield estimate failed.', [
+                    'user_id' => $farmer->id,
+                    'farm_id' => $farm?->id,
+                    'cause' => $cause,
+                ]);
+                if ($this->output->isVerbose()) {
+                    $this->warn("Farmer {$farmer->id}".($farm ? " farm {$farm->id}" : '').": {$cause}");
+                }
                 $failed++;
                 // Every farmer keeps their last verified estimate; the service is not asked 800 more times.
                 if (++$inARow >= self::STOP_AFTER_SERVICE_FAILURES) {
@@ -71,37 +134,34 @@ class WarmFarmerYields extends Command
         };
 
         if (ActiveFarm::available()) {
-            // Every farm in use of every active farmer: each farm has its own estimate.
+            // Every farm in use of every active/approved farmer: each farm has its own estimate.
             Farm::query()->active()
-                ->whereHas('user', fn ($q) => $q->where('role', User::ROLE_FARMER)->where('status', User::STATUS_ACTIVE))
+                ->whereHas('user', fn ($q) => $q->where('role', User::ROLE_FARMER)->whereIn('status', $eligibleStatuses))
                 ->with('user.farmerProfile')
                 ->orderBy('id')
                 ->each(fn (Farm $farm): bool => $prepare($farm->user, $farm));
         } else {
             User::query()
                 ->where('role', User::ROLE_FARMER)
-                ->where('status', User::STATUS_ACTIVE)
+                ->whereIn('status', $eligibleStatuses)
                 ->with('farmerProfile')
                 ->orderBy('id')
                 ->each(fn (User $farmer): bool => $prepare($farmer, null));
         }
 
-        $this->line("Yield estimates prepared: {$done}, missing farm data: {$missing}".($failed ? ", failed: {$failed}" : ''));
+        $this->line("Yield estimates prepared: {$done}, skipped: invalid farm data: {$missing}".($failed ? ", failed: {$failed}" : ''));
         if ($stopped) {
             $this->warn('The estimate service is not answering; the remaining farmers keep their last estimate until the next run.');
         }
 
-        // The Heat Map's Expected yield layer: the farms' average where a barangay has farm estimates, else its own run.
-        // A service that stopped answering is not asked again for the barangays without farms either.
-        $barangayYields = collect($barangays->prepare(runModel: ! $stopped));
+        // The Heat Map's Expected yield layer: always run the 19 barangay-level estimates even when 0 farmer estimates succeed.
+        $barangayYields = collect($barangays->prepare(runModel: true));
         // This Week / 2 Weeks on the Heat Map: the same runs with that window of the saved barangay forecast.
-        if (! $stopped) {
-            foreach (array_keys(BarangayYieldForecastService::PERIOD_DAYS) as $period) {
-                $result = $barangays->preparePeriod($period);
-                $estimates = collect($result['estimates']);
-                $this->line(sprintf('%s yield estimates: %d farms, %d of %d barangays (%d model calls)', $period === 'week' ? 'This week' : 'Next 2 weeks',
-                    $result['farm_runs'], $estimates->whereNotNull('predicted_yield')->count(), $estimates->count(), $result['model_calls']));
-            }
+        foreach (array_keys(BarangayYieldForecastService::PERIOD_DAYS) as $period) {
+            $result = $barangays->preparePeriod($period);
+            $estimates = collect($result['estimates']);
+            $this->line(sprintf('%s yield estimates: %d farms, %d of %d barangays (%d model calls)', $period === 'week' ? 'This week' : 'Next 2 weeks',
+                $result['farm_runs'], $estimates->whereNotNull('predicted_yield')->count(), $estimates->count(), $result['model_calls']));
         }
         app(\App\Services\Risk\HeatMapLayerService::class)->forgetCache();   // the map's 10-minute answer shows the new estimates
         // Open Heat Maps, dashboards and forecast pages re-read once, only when an estimate really changed.

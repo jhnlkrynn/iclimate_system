@@ -10,6 +10,7 @@ use App\Models\MonthlyWeatherPrediction;
 use App\Models\User;
 use App\Services\Analytics\FarmerDashboardService;
 use App\Services\MachineLearning\MonthlyWeatherRandomForest;
+use App\Services\Prediction\BarangayYieldForecastService;
 use App\Services\Prediction\RiceYieldPredictionService;
 use App\Services\TyphoonSafetyService;
 use Carbon\CarbonImmutable;
@@ -340,11 +341,71 @@ class FarmerYieldEstimateTest extends TestCase
         $this->artisan('iclimate:warm-farmer-yields')->expectsOutputToContain('Yield estimates prepared: 5')->assertSuccessful();
         $farmers->each(fn (User $f) => $this->assertSame(4.4, FarmerDashboardService::storedEstimate($f->id)['yield_tons_per_hectare']));
 
-        // The service goes down: three failures in a row stop the run; every farmer keeps their estimate.
+        // The service goes down: three failures in a row stop the farmer loop, while the 19 barangay-level runs still execute.
         $this->model(null);
         $this->modelCalls = 0;
         $this->artisan('iclimate:warm-farmer-yields')->expectsOutputToContain('not answering')->assertFailed();
-        $this->assertSame(3, $this->modelCalls);
+        $this->assertSame(22, $this->modelCalls);
         $farmers->each(fn (User $f) => $this->assertSame(4.4, FarmerDashboardService::storedEstimate($f->id)['yield_tons_per_hectare']));
+    }
+
+    public function test_warm_up_skips_invalid_barangays_and_areas_without_stopping_and_logs_filter_counts(): void
+    {
+        $this->model(4.6);
+
+        $badNull = $this->farmer(email: 'nullbrgy@example.test');
+        Farm::query()->where('user_id', $badNull->id)->update(['barangay' => null]);
+
+        $badDash = $this->farmer(email: 'dashbrgy@example.test');
+        Farm::query()->where('user_id', $badDash->id)->update(['barangay' => '—']);
+
+        $badArea = $this->farmer(email: 'noarea@example.test');
+        Farm::query()->where('user_id', $badArea->id)->update(['farm_size_hectares' => null, 'farm_size_method' => Farm::SIZE_EXACT]);
+
+        $badDash2 = $this->farmer(email: 'dashbrgy2@example.test');
+        Farm::query()->where('user_id', $badDash2->id)->update(['barangay' => '—']);
+
+        $approved = $this->farmer(email: 'approved@example.test');
+        $approved->forceFill(['status' => User::STATUS_APPROVED])->save();
+
+        $pending = $this->farmer(email: 'pending@example.test');
+        $pending->forceFill(['status' => User::STATUS_PENDING])->save();
+
+        $this->artisan('iclimate:warm-farmer-yields', ['-v' => true])
+            ->expectsOutputToContain('Farmer filter: 6 total (Active: 4, Approved: 1, Pending: 1, Inactive: 0, Rejected: 0); 5 eligible with active farm (5 farms), 0 without active farm.')
+            ->expectsOutputToContain('Skipped invalid farm data')
+            ->expectsOutputToContain('Yield estimates prepared: 1, skipped: invalid farm data: 4')
+            ->assertSuccessful();
+
+        $this->assertSame(4.6, FarmerDashboardService::storedEstimate($approved->id)['yield_tons_per_hectare']);
+        $this->assertNull(FarmerDashboardService::storedEstimate($pending->id));
+    }
+
+    public function test_warm_up_still_runs_barangay_estimates_when_zero_farmer_estimates_succeed_and_prints_cause_with_verbose(): void
+    {
+        $farmers = collect(range(1, 3))->map(fn (int $i) => $this->farmer(email: "fail{$i}@example.test"));
+
+        $this->mock(RiceYieldPredictionService::class, function ($mock): void {
+            $mock->shouldReceive('predictForUser')
+                ->andReturnUsing(function ($date, $type, $area, $user) {
+                    if ($user !== null) {
+                        return ['success' => false, 'api_error' => 'HTTP 503: Service Unavailable', 'missing_inputs' => []];
+                    }
+
+                    return [
+                        'success' => true,
+                        'yield_tons_per_hectare' => 4.2,
+                        'predicted_yield' => 4.2,
+                        'target_month' => $date->format('Y-m'),
+                    ];
+                });
+        });
+
+        $this->artisan('iclimate:warm-farmer-yields', ['-v' => true])
+            ->expectsOutputToContain('Yield estimates prepared: 0, skipped: invalid farm data: 0, failed: 3')
+            ->expectsOutputToContain('HTTP 503: Service Unavailable')
+            ->expectsOutputToContain('not answering')
+            ->expectsOutputToContain('Barangay yield estimates: 19 of 19 (0 from farm averages, 19 from their own model run)')
+            ->assertFailed();
     }
 }

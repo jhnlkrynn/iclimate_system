@@ -149,7 +149,7 @@ final class BarangayYieldForecastService
         $calls = 0;
         if (ActiveFarm::available()) {
             Farm::query()->active()
-                ->whereHas('user', fn ($q) => $q->where('role', User::ROLE_FARMER)->where('status', User::STATUS_ACTIVE))
+                ->whereHas('user', fn ($q) => $q->where('role', User::ROLE_FARMER)->whereIn('status', [User::STATUS_ACTIVE, User::STATUS_APPROVED]))
                 ->with('user.farmerProfile')->orderBy('id')
                 ->each(function (Farm $farm) use ($weather, $now, $label, $period, &$memo, &$runs, &$calls): void {
                     $barangay = LianBarangays::canonicalName($farm->barangay);
@@ -273,7 +273,7 @@ final class BarangayYieldForecastService
         }
 
         return Farm::query()->active()
-            ->whereHas('user', fn ($q) => $q->where('role', User::ROLE_FARMER)->where('status', User::STATUS_ACTIVE))
+            ->whereHas('user', fn ($q) => $q->where('role', User::ROLE_FARMER)->whereIn('status', [User::STATUS_ACTIVE, User::STATUS_APPROVED]))
             ->orderBy('id')
             ->get(['id', 'user_id', 'farm_name', 'barangay'])
             ->filter(fn (Farm $farm): bool => LianBarangays::canonicalName($farm->barangay) === null)

@@ -665,9 +665,11 @@ final class FarmerDashboardService
             Log::warning('Farmer dashboard yield prediction was not produced.', ['source' => 'rice-yield model', 'user_id' => $user->id, 'farm_id' => $farmId, 'reason' => $prediction['api_error'] ?? null, 'missing_inputs' => $prediction['missing_inputs'] ?? []]);
             $lacksRecords = ! empty($prediction['missing_inputs']) || str_contains(strtolower((string) ($prediction['api_error'] ?? '')), 'not enough');
             $withheld = ($prediction['availability'] ?? null) === 'withheld';
+            $error = (string) ($prediction['api_error'] ?? ($withheld ? 'Prediction withheld by gate.' : 'No yield value returned.'));
         } catch (Throwable $e) {
             Log::warning('Farmer dashboard yield prediction failed.', ['source' => 'rice-yield model', 'user_id' => $user->id, 'farm_id' => $farmId, 'exception' => $e::class, 'message' => $e->getMessage()]);
             $lacksRecords = false;
+            $error = $e::class.': '.$e->getMessage();
         }
         $withheld ??= false;
 
@@ -678,7 +680,7 @@ final class FarmerDashboardService
             Cache::forget(self::predictionCacheKey($user->id, $farmId));
         }
         // Missing records do not change soon (30 minutes); a service that could not be reached is tried again sooner.
-        $failed = ['failed' => true, 'lacks_records' => $lacksRecords, 'withheld' => $withheld, 'at' => CarbonImmutable::now(self::TIMEZONE)->toIso8601String()];
+        $failed = ['failed' => true, 'lacks_records' => $lacksRecords, 'withheld' => $withheld, 'error' => $error, 'missing_inputs' => $prediction['missing_inputs'] ?? [], 'at' => CarbonImmutable::now(self::TIMEZONE)->toIso8601String()];
         Cache::put(self::predictionFailureKey($user->id, $farmId), $failed, now()->addMinutes($lacksRecords || $withheld ? self::MISSING_RECORDS_RETRY_MINUTES : self::FAILURE_RETRY_MINUTES));
 
         return $failed;
