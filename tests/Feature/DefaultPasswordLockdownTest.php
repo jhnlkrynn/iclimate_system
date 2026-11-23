@@ -330,4 +330,40 @@ class DefaultPasswordLockdownTest extends TestCase
             ->assertOk()
             ->assertSee('MAO Recovery Code');
     }
+
+    public function test_auth_default_password_lockdown_true_redirects_to_forgot_password_with_reset_link(): void
+    {
+        config(['auth.default_password_lockdown' => true]);
+        Notification::fake();
+        $user = $this->onDefault();
+        $user->forceFill(['email' => 'farmer-lockdown@gmail.com'])->save();
+
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.7'])
+            ->post('/login', ['email' => $user->email, 'password' => self::DEFAULT])
+            ->assertRedirect(route('password.request'))
+            ->assertSessionHas('status', 'We sent a password-reset link to your email. Please open it to set a new password.');
+
+        $this->assertGuest();
+        Notification::assertSentTo($user, \Illuminate\Auth\Notifications\ResetPassword::class);
+    }
+
+    public function test_auth_default_password_lockdown_false_logs_in_and_sends_to_first_login_change_password_page(): void
+    {
+        config(['auth.default_password_lockdown' => false]);
+        Notification::fake();
+        $user = $this->onDefault();
+        $user->forceFill(['email' => 'farmer-first-change@gmail.com'])->save();
+
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.7'])
+            ->post('/login', ['email' => $user->email, 'password' => self::DEFAULT])
+            ->assertRedirect(route('password.first-change'));
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertTrue((bool) $user->fresh()->must_change_password);
+        Notification::assertNothingSent();
+
+        // User stays on the first-login change-password page until they set a new password.
+        $this->get(route('farmer.dashboard'))->assertRedirect(route('password.first-change'));
+        $this->get(route('password.first-change'))->assertOk();
+    }
 }

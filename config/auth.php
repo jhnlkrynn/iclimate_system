@@ -122,4 +122,17 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Default Password Lockdown
+    |--------------------------------------------------------------------------
+    |
+    | When true, accounts signing in with a known default/seeded password are
+    | logged out and sent to password recovery (/forgot-password). When false,
+    | they are signed in and sent to the first-login change-password page.
+    |
+    */
+
+    'default_password_lockdown' => filter_var(env('DEFAULT_PASSWORD_LOCKDOWN', true), FILTER_VALIDATE_BOOL),
+
 ];

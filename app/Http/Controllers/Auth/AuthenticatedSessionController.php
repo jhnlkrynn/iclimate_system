@@ -118,6 +118,10 @@ class AuthenticatedSessionController extends Controller
         // opened on this browser, and it made a landing-page login end on the heat map.
         $request->session()->forget('url.intended');
 
+        if (! config('auth.default_password_lockdown', true) && $user->must_change_password) {
+            return redirect()->route('password.first-change');
+        }
+
         // No "login successful" message: landing on the dashboard already says so.
         return redirect()->route($user->dashboardRoute());
     }

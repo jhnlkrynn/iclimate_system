@@ -63,17 +63,19 @@ final class PasswordChange
 
     public static function lockdown(): bool
     {
-        return (bool) config('iclimate.password_lockdown', true);
+        return (bool) config('auth.default_password_lockdown', true)
+            && (bool) config('iclimate.password_lockdown', true);
     }
 
     /**
-     * Whether a shared password is refused for this request. With the rollout switch off, it is still refused for
-     * any request that does not come from this machine: a published password must never work from the network, even
-     * if a development instance is exposed or production starts with the switch off. (Behind Nginx, PHP-FPM receives
-     * the real client address; no trusted proxies are configured, so X-Forwarded-For cannot fake a loopback address.)
+     * Whether a shared password is refused for this request. When config('auth.default_password_lockdown') is false,
+     * users with a default/seeded password are signed in and routed to password.first-change instead.
      */
     public static function lockdownFor(?\Illuminate\Http\Request $request): bool
     {
+        if (! config('auth.default_password_lockdown', true)) {
+            return false;
+        }
         if (self::lockdown()) {
             return true;
         }

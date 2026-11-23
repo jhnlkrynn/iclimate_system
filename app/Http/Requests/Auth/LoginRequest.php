@@ -111,6 +111,13 @@ class LoginRequest extends FormRequest
             );
         }
 
+        if ($authenticated && ! config('auth.default_password_lockdown', true)
+            && \App\Services\Accounts\PasswordChange::isShared($user = Auth::user(), (string) $this->input('password'))
+            && ! $user->must_change_password) {
+            $user->forceFill(['must_change_password' => true])->saveQuietly();
+            \App\Auth\CachedEloquentUserProvider::forget($user->getKey());
+        }
+
         if (! $authenticated) {
             // A deleted account with its correct password: it is not signed in, but the person is told why (or, for
             // Deceased, only that the account is no longer active). A wrong password says nothing about the account.
