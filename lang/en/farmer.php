@@ -185,7 +185,28 @@ return [
     ],
 
     // Weather words from the weather service, said simply.
-    'conditions' => [],
+    'conditions' => [
+        'clear' => 'Clear',
+        'clear_night' => 'Clear night',
+        'mainly_clear' => 'Mainly clear',
+        'mostly_clear' => 'Mostly clear',
+        'mostly_sunny' => 'Mostly sunny',
+        'sunny' => 'Sunny',
+        'partly_cloudy' => 'Partly cloudy',
+        'cloudy' => 'Cloudy',
+        'overcast' => 'Overcast',
+        'foggy' => 'Foggy',
+        'fog' => 'Fog',
+        'mist' => 'Mist',
+        'rain' => 'Rain',
+        'light_rain' => 'Light Rain',
+        'moderate_rain' => 'Moderate Rain',
+        'heavy_rain' => 'Heavy Rain',
+        'rain_showers' => 'Rain Showers',
+        'heavy_rain_showers' => 'Heavy Rain Showers',
+        'thunderstorm' => 'Thunderstorm',
+        'weather_temporarily_unavailable' => 'Weather temporarily unavailable',
+    ],
 
     // ------------------------------------------------------------------ My Farm Today (the numbers)
     'today' => [
@@ -739,6 +760,13 @@ return [
         'varieties' => 'Rice Varieties',
         'messages' => 'Messages',
         'logout' => 'Log out',
+        'open_menu' => 'Open menu',
+        'account_menu' => 'Account menu for :name',
+        'close' => 'Close',
+        'logout_title' => 'Log out of iClimate?',
+        'logout_message' => 'Your current session will close, and you will return to the home page.',
+        'logout_cancel' => 'Stay logged in',
+        'logout_confirm' => 'Log out',
     ],
 
     'home' => [

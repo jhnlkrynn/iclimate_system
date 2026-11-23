@@ -750,6 +750,13 @@ return [
         'varieties' => 'Mga Binhi ng Palay',
         'messages' => 'Mensahe',
         'logout' => 'Mag-log out',
+        'open_menu' => 'Buksan ang menu',
+        'account_menu' => 'Menu ng account para kay :name',
+        'close' => 'Isara',
+        'logout_title' => 'Mag-log out sa iClimate?',
+        'logout_message' => 'Isasara ang iyong kasalukuyang sesyon at babalik ka sa home page.',
+        'logout_cancel' => 'Manatiling naka-log in',
+        'logout_confirm' => 'Mag-log out',
     ],
 
     'home' => [

@@ -48,7 +48,7 @@ class UserAvatarInitialsTest extends TestCase
             ->assertOk()
             ->getContent();
 
-        $this->assertStringContainsString('aria-label="Account menu for John Luke"', $htmlWithoutAvatar);
+        $this->assertStringContainsString(__('farmer.nav.account_menu', ['name' => 'John Luke']), $htmlWithoutAvatar);
         $this->assertStringContainsString('ic-user-avatar-initials">JL<', $htmlWithoutAvatar);
         $this->assertStringNotContainsString('<circle cx="12" cy="8.5"', $htmlWithoutAvatar);
 
