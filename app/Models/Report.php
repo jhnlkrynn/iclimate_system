@@ -30,6 +30,43 @@ class Report extends Model
 
     public const STATUS_PUBLISHED = 'published';
 
+    /** Mask contact_number and rsbsa_no to the last 4 characters on farmer_registration exports unless MAO Head. */
+    public static function maskSensitiveValue(mixed $value): mixed
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+
+        $text = (string) $value;
+        $length = mb_strlen($text);
+
+        return $length <= 4 ? $text : str_repeat('*', $length - 4).mb_substr($text, -4);
+    }
+
+    /**
+     * @param  iterable<int, mixed>  $rows
+     * @return array<int, mixed>
+     */
+    public static function maskExportRows(iterable $rows, string $typeKey, ?User $user): array
+    {
+        $list = is_array($rows) ? $rows : iterator_to_array($rows);
+        if ($typeKey !== 'farmer_registration' || $user?->isMaoHead()) {
+            return $list;
+        }
+
+        return array_map(function ($row) {
+            foreach (['contact_number', 'rsbsa_no'] as $field) {
+                if (is_array($row) && array_key_exists($field, $row)) {
+                    $row[$field] = self::maskSensitiveValue($row[$field]);
+                } elseif (is_object($row) && property_exists($row, $field)) {
+                    $row->{$field} = self::maskSensitiveValue($row->{$field});
+                }
+            }
+
+            return $row;
+        }, $list);
+    }
+
     protected static function booted(): void
     {
         static::creating(function (self $report): void {

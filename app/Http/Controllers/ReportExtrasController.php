@@ -36,12 +36,16 @@ class ReportExtrasController extends Controller
     public function xlsx(Request $request): BinaryFileResponse
     {
         $report = $this->report($request);
-        [$columns, $rows] = $this->table($report);
+        [$columns, $rows] = $this->table($report, $request->user());
         $path = SimpleXlsx::write($report->report_type, array_values($columns), array_map(
             fn ($row) => array_map(fn ($field) => data_get($row, $field), array_keys($columns)),
             $rows,
         ));
-        SystemAuditLogger::record('Exported Report Excel', $request, ['report_id' => $report->id]);
+        SystemAuditLogger::record('Exported Report Excel', $request, [
+            'report_id' => $report->id,
+            'report_type' => $report->typeKey(),
+            'columns' => array_keys($columns),
+        ]);
 
         return response()->download($path, Str::slug($report->title).'.xlsx', [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -51,10 +55,14 @@ class ReportExtrasController extends Controller
     public function pdf(Request $request): Response
     {
         $report = $this->report($request);
-        [$columns, $rows] = $this->table($report);
+        [$columns, $rows] = $this->table($report, $request->user());
         $total = count($rows);
         $limit = self::pdfRowLimit(count($columns));
-        SystemAuditLogger::record('Exported Report PDF', $request, ['report_id' => $report->id]);
+        SystemAuditLogger::record('Exported Report PDF', $request, [
+            'report_id' => $report->id,
+            'report_type' => $report->typeKey(),
+            'columns' => array_keys($columns),
+        ]);
 
         return Pdf::loadView('reports.pdf', [
             'office' => self::office(),
@@ -101,7 +109,7 @@ class ReportExtrasController extends Controller
     }
 
     /** @return array{0: array<string, string>, 1: array<int, mixed>} the same columns and rows as the CSV export */
-    private function table(Report $report): array
+    private function table(Report $report, ?\App\Models\User $user = null): array
     {
         $columns = $report->savedColumns();
         if ($report->typeKey() === 'climate_records') {
@@ -115,6 +123,6 @@ class ReportExtrasController extends Controller
             return $row;
         }, $report->savedRecords());
 
-        return [$columns, $rows];
+        return [$columns, Report::maskExportRows($rows, $report->typeKey(), $user)];
     }
 }
