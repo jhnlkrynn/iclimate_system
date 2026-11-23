@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Services\Accounts\FarmerAccountReviewService;
 use App\Support\LianBarangays;
+use App\Support\MaoScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -17,26 +18,37 @@ class FarmerApprovalController extends Controller
         abort_unless($request->user()?->isMao() && $request->user()->hasApplicationAccess(), 403);
     }
 
+    private function authorizeFarmerBarangay(Request $request, User $farmer): void
+    {
+        $barangay = $farmer->barangay ?: $farmer->farmerProfile?->barangay;
+        abort_unless(MaoScope::canManageBarangay($barangay, $request->user()), 403);
+    }
+
     public function index(Request $request): View
     {
         $this->authorizeStaff($request);
         $show = in_array($request->query('show'), ['pending', 'approved', 'rejected'], true) ? $request->query('show') : 'pending';
-        $barangay = in_array($request->query('barangay'), LianBarangays::all(), true) ? $request->query('barangay') : null;
+        $allowedBarangays = MaoScope::barangays($request->user()) ?? LianBarangays::all();
+        $barangay = in_array($request->query('barangay'), $allowedBarangays, true) ? $request->query('barangay') : null;
         $search = mb_substr(trim((string) $request->query('search')), 0, 120);
         $query = User::query()->where('role', User::ROLE_FARMER)
             ->with(['farmerProfile', 'accountReviewer:id,name', 'approver:id,name'])
             ->when($barangay, fn ($q) => $q->where('barangay', $barangay))
             ->when($search !== '', fn ($q) => $q->where(fn ($terms) => $terms->where('name', 'like', '%'.$search.'%')->orWhere('email', 'like', '%'.$search.'%')));
+        MaoScope::apply($query, 'barangay', $request->user());
         $query = match ($show) {
             'approved' => $query->where('status', User::STATUS_ACTIVE)->latest('approved_at'),
             'rejected' => $query->where('status', User::STATUS_REJECTED)->latest(FarmerAccountReviewService::available() ? 'reviewed_at' : 'updated_at'),
             default => $query->where('status', User::STATUS_PENDING)->oldest('created_at'),
         };
 
+        $pendingQuery = User::query()->where('role', User::ROLE_FARMER)->where('status', User::STATUS_PENDING);
+        MaoScope::apply($pendingQuery, 'barangay', $request->user());
+
         return view('mao.farmer-approvals', [
-            'show' => $show, 'barangay' => $barangay, 'search' => $search, 'barangays' => LianBarangays::all(),
+            'show' => $show, 'barangay' => $barangay, 'search' => $search, 'barangays' => $allowedBarangays,
             'users' => $query->paginate(CrudController::PER_PAGE)->withQueryString(),
-            'pendingCount' => User::query()->where('role', User::ROLE_FARMER)->where('status', User::STATUS_PENDING)->count(),
+            'pendingCount' => $pendingQuery->count(),
         ]);
     }
 
@@ -44,6 +56,7 @@ class FarmerApprovalController extends Controller
     {
         $this->authorizeStaff($request);
         abort_unless($user->role === User::ROLE_FARMER, 404);
+        $this->authorizeFarmerBarangay($request, $user);
         $user->load(['farmerProfile', 'accountReviewer', 'approver']);
         // Before the review-history migration there is no history to show (the page still opens).
         FarmerAccountReviewService::available() ? $user->load('accountReviews.reviewer') : $user->setRelation('accountReviews', collect());
@@ -54,6 +67,7 @@ class FarmerApprovalController extends Controller
     public function approve(Request $request, User $user, FarmerAccountReviewService $reviews): RedirectResponse
     {
         $this->authorizeStaff($request);
+        $this->authorizeFarmerBarangay($request, $user);
         if (! FarmerAccountReviewService::available()) {
             return back()->with('error', FarmerAccountReviewService::NOT_READY_MESSAGE);
         }
@@ -66,6 +80,7 @@ class FarmerApprovalController extends Controller
     public function reject(Request $request, User $user, FarmerAccountReviewService $reviews): RedirectResponse
     {
         $this->authorizeStaff($request);
+        $this->authorizeFarmerBarangay($request, $user);
         if (! FarmerAccountReviewService::available()) {
             return back()->with('error', FarmerAccountReviewService::NOT_READY_MESSAGE);
         }
@@ -87,6 +102,7 @@ class FarmerApprovalController extends Controller
     {
         $this->authorizeStaff($request);
         abort_unless($user->role === User::ROLE_FARMER && $user->hasApplicationAccess(), 404);
+        $this->authorizeFarmerBarangay($request, $user);
         $data = $request->validate([
             'verification_method' => ['required', Rule::in(array_keys(\App\Services\Accounts\AccountRecovery::VERIFICATION_METHODS))],
             'identity_confirmed' => ['accepted'],
@@ -101,6 +117,7 @@ class FarmerApprovalController extends Controller
     public function reconsider(Request $request, User $user, FarmerAccountReviewService $reviews): RedirectResponse
     {
         $this->authorizeStaff($request);
+        $this->authorizeFarmerBarangay($request, $user);
         if (! FarmerAccountReviewService::available()) {
             return back()->with('error', FarmerAccountReviewService::NOT_READY_MESSAGE);
         }
