@@ -1,4 +1,5 @@
 <x-app-layout>
+    <x-slot:title>{{ __('mao.nav.forecast') }}</x-slot:title>
     @vite('resources/css/pages/weather-predictions.css')
     {{-- One Predictions page for every role (WeatherPredictionController::index): the coming days' weather from the stored
          daily forecast ([This Week] / [Next 2 Weeks]) and this season's expected yield. Farmers read words; MAO and IT also
@@ -16,7 +17,10 @@
     {{-- Same page styling as before: farmers get the farmer page header; MAO and IT keep the staff page header. --}}
     @unless ($isFarmer)
     <div class="mfd itd itp">
-        <x-shared.page-header kicker="Weather and Rice Yield" title="Predictions" lede="The coming days' weather and this season's expected harvest for Lian." />
+        <x-shared.page-header
+            :kicker="app()->getLocale() === 'fil' ? 'Panahon at Ani ng Palay' : 'Weather and Rice Yield'"
+            :title="__('mao.nav.forecast')"
+            :lede="app()->getLocale() === 'fil' ? 'Taya ng panahon sa mga susunod na araw at inaasahang ani ngayong panahon.' : 'The coming days\' weather and this season\'s expected harvest for Lian.'" />
     @endunless
     <div @class(['fad', 'wpx', 'is-farmer' => $isFarmer]) data-predictions>
         {{-- Manuscript – Naicel (2026-10-08): Weather Analysis, Yield Prediction / Impact Analysis, Yield Forecast tabs. --}}
@@ -64,7 +68,7 @@
                 <form class="wpx-filter" method="GET" action="{{ route('weather-predictions.index') }}" data-wpx-filter>
                     <label for="wpxBarangay">{{ __('farmer.predictions.barangay') }}</label>
                     <select id="wpxBarangay" name="barangay">
-                        <option value="">{{ __('farmer.predictions.all_lian') }}</option>
+                        <option value="">{{ ($maoScoped ?? false) ? (app()->getLocale() === 'fil' ? 'Lahat ng naka-assign na barangay' : 'All assigned barangays') : __('farmer.predictions.all_lian') }}</option>
                         @foreach ($barangays as $name)
                             <option value="{{ $name }}" @selected($barangay === $name)>{{ $name }}</option>
                         @endforeach

@@ -19,7 +19,7 @@ class ModuleAccess
     /** key => [label, route-name patterns, supported roles, roles that can never lose it] */
     public const MODULES = [
         'weather_analysis' => ['Weather Analysis', ['analysis.weather'], [self::F, self::M], []],
-        'predictions' => ['Predictions / Forecast', ['weather-predictions.*'], [self::F, self::M], []],
+        'predictions' => ['Predictions / Forecast', ['weather-predictions.*'], [self::M], []],
         'climate_data' => ['Climate Data Management', ['climate-records.*', 'records.*'], [self::M], []],
         'production_data' => ['Production Data Management', ['rice-productions.*', 'historical-rice-productions.*'], [self::M], []],
         'barangays' => ['Barangay / Location Management', ['mao.barangays.*'], [self::M], []],

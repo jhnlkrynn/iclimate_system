@@ -27,7 +27,7 @@
         ],
         // Predictions (Forecast for farmers) and the analysis pages.
         'analysis' => [
-            ['weather-predictions.index', [$role === $farmerRole ? 'Forecast' : 'Predictions', 'Taya ng Panahon'], ['weather-predictions.*'], [$farmerRole, $mao]],
+            ['weather-predictions.index', ['Forecast', 'Taya ng Panahon'], ['weather-predictions.*'], [$mao]],
             ['analysis.weather', ['Weather Analysis', 'Pagsusuri ng Panahon'], ['analysis.weather'], [$farmerRole, $mao]],
             ['analysis.yield', ['Yield Prediction', 'Taya ng Ani'], ['analysis.yield*'], [$farmerRole]],
             ['analysis.impact', 'Impact Analysis', ['analysis.impact*'], [$mao]],

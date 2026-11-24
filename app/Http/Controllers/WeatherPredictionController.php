@@ -16,6 +16,8 @@ use App\Services\Weather\FarmerDashboardWeatherService;
 use App\Services\Weather\MonthlyWeatherCalendarService;
 use App\Services\WeatherApiService;
 use App\Support\LianBarangays;
+use App\Support\MaoLanguage;
+use App\Support\MaoScope;
 use App\Support\PredictionWording;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -42,11 +44,22 @@ class WeatherPredictionController extends Controller
     {
         $user = $request->user();
         $role = $user->role;
+        if ($role === User::ROLE_MAO) {
+            app()->setLocale(MaoLanguage::of($user));
+        }
         $range = $request->query('range') === '2weeks' ? '2weeks' : 'week';
+
+        $scopedBarangays = $role === User::ROLE_MAO ? MaoScope::barangays($user) : null;
+        $requestedBarangay = LianBarangays::canonicalName(is_string($request->query('barangay')) ? $request->query('barangay') : null);
+        if ($scopedBarangays !== null) {
+            $requestedBarangay = $requestedBarangay !== null && in_array($requestedBarangay, $scopedBarangays, true)
+                ? $requestedBarangay
+                : (count($scopedBarangays) === 1 ? $scopedBarangays[0] : null);
+        }
 
         $barangay = match ($role) {
             User::ROLE_FARMER => $user->registeredBarangay(),
-            User::ROLE_MAO => LianBarangays::canonicalName(is_string($request->query('barangay')) ? $request->query('barangay') : null),
+            User::ROLE_MAO => $requestedBarangay,
             default => null,
         };
 
@@ -56,9 +69,10 @@ class WeatherPredictionController extends Controller
         return view('weather-predictions.index', [
             'role' => $role,
             'isFarmer' => $role === User::ROLE_FARMER,
+            'maoScoped' => $scopedBarangays !== null,
             'range' => $range,
             'barangay' => $barangay,
-            'barangays' => $role === User::ROLE_MAO ? LianBarangays::all() : [],
+            'barangays' => $role === User::ROLE_MAO ? ($scopedBarangays ?? LianBarangays::all()) : [],
             'forecast' => $forecast,
             // Farmers (2026-10): one plain answer for the week at the top, and one word per day.
             'plain' => $role === User::ROLE_FARMER ? self::plainForecast($forecast) : null,

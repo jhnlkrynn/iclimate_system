@@ -797,14 +797,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get(
             'weather-predictions',
             [WeatherPredictionController::class, 'index']
-        )->middleware('farmer.language')->name(
+        )->middleware(['farmer.redirect:farmer.dashboard', 'role:'.User::ROLE_MAO])->name(
             'weather-predictions.index'
         );
 
         Route::get(
             'weather-predictions/municipality-yield-status',
             [WeatherPredictionController::class, 'municipalityYieldStatus']
-        )->middleware('farmer.language')->name('weather-predictions.municipality-yield-status');
+        )->middleware(['farmer.redirect:farmer.dashboard', 'role:'.User::ROLE_MAO])->name('weather-predictions.municipality-yield-status');
 
 
         // The Predictions page has no forms since 2026-10 (it shows saved forecasts and estimates); old form posts open it.
@@ -812,7 +812,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'weather-predictions/predict',
             fn () => redirect()->route('weather-predictions.index', [], 303)
         )
-            ->middleware('throttle:20,1,post-weather-predictions-predict')
+            ->middleware(['farmer.redirect:farmer.dashboard', 'role:'.User::ROLE_MAO, 'throttle:20,1,post-weather-predictions-predict'])
             ->name(
                 'weather-predictions.predict'
             );
@@ -857,7 +857,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'rice-yield-predictions/predict',
             fn () => redirect()->to(route('weather-predictions.index').'#yield', 303)
         )
-            ->middleware('throttle:20,1,post-rice-yield-predictions-predict')
+            ->middleware(['farmer.redirect:farmer.dashboard', 'role:'.User::ROLE_MAO, 'throttle:20,1,post-rice-yield-predictions-predict'])
             ->name(
                 'rice-yield-predictions.predict'
             );

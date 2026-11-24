@@ -285,7 +285,7 @@ class FarmerHomeKpis
         $unit = trans_choice('farmer.kpis.tons', $tons == 1.0 ? 1 : 2);
         $note = __('farmer.kpis.expected.note', ['yield' => number_format((float) $harvest['yield'], 2), 'area' => $this->number($area)]);
 
-        return ['key' => 'expected', 'icon' => 'yield', 'href' => route('weather-predictions.index'), 'label' => __('farmer.kpis.expected.label'),
+        return ['key' => 'expected', 'icon' => 'yield', 'href' => route('farmer.my-farm'), 'label' => __('farmer.kpis.expected.label'),
             'value' => $value, 'unit' => $unit, 'note' => $note,
             'detail' => $this->detail(__('farmer.kpis.expected.label'), array_filter([
                 __('farmer.kpis.detail.estimated_tons') => $value.' '.$unit,
@@ -295,7 +295,7 @@ class FarmerHomeKpis
                 __('farmer.kpis.detail.season') => (string) ($harvest['season'] ?? ''),
                 __('farmer.kpis.detail.compared') => (string) ($harvest['compare_label'] ?? ''),
             ], fn (string $v): bool => $v !== ''), __('farmer.kpis.detail.expected_how'), updatedAt: $harvest['ran_at'] ?? null,
-                link: route('weather-predictions.index').'#yield')];
+                link: route('farmer.my-farm'))];
     }
 
     /**
@@ -319,9 +319,9 @@ class FarmerHomeKpis
             $rows[(string) ($d['label'] ?? '')] = trim((string) ($d['condition'] ?? '').(! empty($d['rain']) ? ' · '.$d['rain'] : ''));
         }
 
-        return ['key' => 'rain', 'icon' => 'rain', 'href' => route('weather-predictions.index'), 'label' => __('farmer.kpis.rain.label', ['days' => $days->count()]),
+        return ['key' => 'rain', 'icon' => 'rain', 'href' => route('farmer.dashboard').'#week', 'label' => __('farmer.kpis.rain.label', ['days' => $days->count()]),
             'value' => (string) $rainy, 'unit' => __('farmer.kpis.rain.of', ['days' => $days->count()]), 'note' => $note,
-            'detail' => $this->detail(__('farmer.kpis.rain.label', ['days' => $days->count()]), $rows, $note, link: route('weather-predictions.index').'#weather')];
+            'detail' => $this->detail(__('farmer.kpis.rain.label', ['days' => $days->count()]), $rows, $note, link: route('farmer.dashboard').'#week')];
     }
 
     // ------------------------------------------------------------ the figures about the farmer's place
@@ -410,9 +410,9 @@ class FarmerHomeKpis
             $rows[(string) ($forecast['labels'][$i] ?? $i)] = (int) round((float) $temperature).'°C';
         }
 
-        return ['key' => 'hot', 'icon' => 'temperature', 'href' => route('weather-predictions.index'), 'label' => __('farmer.kpis.hot.label'),
+        return ['key' => 'hot', 'icon' => 'temperature', 'href' => route('farmer.dashboard').'#week', 'label' => __('farmer.kpis.hot.label'),
             'value' => (string) (int) round((float) $hottest), 'unit' => '°C', 'note' => (string) ($forecast['labels'][$on] ?? ''),
-            'detail' => $this->detail(__('farmer.kpis.hot.label'), $rows, __('farmer.kpis.detail.hot_how'), link: route('weather-predictions.index').'#weather')];
+            'detail' => $this->detail(__('farmer.kpis.hot.label'), $rows, __('farmer.kpis.detail.hot_how'), link: route('farmer.dashboard').'#week')];
     }
 
     /**
@@ -457,12 +457,12 @@ class FarmerHomeKpis
         }
         $usual = $this->seasonYield->usual((int) $now->month);
 
-        return $usual === null ? null : ['key' => 'usual', 'icon' => 'yield', 'href' => route('weather-predictions.index'), 'label' => __('farmer.kpis.usual.label'),
+        return $usual === null ? null : ['key' => 'usual', 'icon' => 'yield', 'href' => route('farmer.my-farm'), 'label' => __('farmer.kpis.usual.label'),
             'value' => number_format($usual, 2), 'unit' => 't/ha', 'note' => __('farmer.kpis.usual.note'),
             'detail' => $this->detail(__('farmer.kpis.usual.label'), [
                 __('farmer.kpis.detail.yield_per_ha') => number_format($usual, 2).' t/ha',
                 __('farmer.kpis.detail.month') => $now->locale(app()->getLocale())->translatedFormat('F'),
-            ], __('farmer.kpis.usual.note'), link: route('weather-predictions.index').'#yield')];
+            ], __('farmer.kpis.usual.note'), link: route('farmer.my-farm'))];
     }
 
     /**

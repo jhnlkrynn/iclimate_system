@@ -246,7 +246,7 @@ class FarmerHomeKpisTest extends TestCase
         $expected = $tiles['expected']['detail'];
         $this->assertSame('6.30 tons', $expected['rows']['Estimated harvest']);
         $this->assertSame('4.20 t/ha × 1.5 ha = 6.30 tons', $expected['rows']['Computation']);
-        $this->assertSame(route('weather-predictions.index').'#yield', $expected['link']);
+        $this->assertSame(route('farmer.my-farm'), $expected['link']);
 
         // On the page: the tile is a button for its panel section, the one drawer holds that section (hidden until a
         // card is clicked), and the section's "View full details" link is the planting plan, not My Farm.

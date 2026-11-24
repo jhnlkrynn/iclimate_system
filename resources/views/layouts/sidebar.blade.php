@@ -77,7 +77,6 @@
         $nav = fn (string $key): string => __('farmer.nav.'.$key, [], $farmerLocale);
         $primaryGroup = [
             $navLink($nav('home'), 'dashboard', 'dashboard'),
-            $navLink($nav('forecast'), 'weather', 'weather'),
             $navLink($nav('heat_map'), 'heatmap', 'heatmap'),
             $navLink($nav('advisories'), 'advisories', 'advisories'),
             $navLink($nav('my_farm'), 'my-farm', 'rice-production'),
@@ -99,6 +98,7 @@
         $primaryGroup = [
             $navLink($maoNav('dashboard'), 'dashboard', 'dashboard'),
             $navLink($maoNav('heat_map'), 'heatmap', 'heatmap'),
+            $navLink($maoNav('forecast'), 'weather', 'weather'),
             $navLink($maoNav('advisories'), 'advisories', 'advisories'),
             // "MAO Planner", or "Planner ng MAO" when the MAO's saved language is Filipino.
             $navLink(__('mao.planner.title', [], $maoLocale), 'mao-planner', 'calendar'),
@@ -108,7 +108,6 @@
             $navLink($maoNav('varieties'), 'rice-varieties', 'seedling'),
             // MAO/IT – Naicel (2026-10-07): Field Reports is hidden unless FIELD_REPORTS_UI=true (config/iclimate.php).
             ...(\App\Http\Middleware\FieldReportsUi::enabled() ? [$navLink($maoNav('field_reports'), 'field-reports', 'reports')] : []),
-            $navLink($maoNav('predictions'), 'weather', 'weather'),
             $navLink($maoNav('reports'), 'reports', 'reports'),
             $navLink($maoNav('announcements'), 'community', 'community'),
             $navLink($maoNav('messages'), 'messages', 'messages'),

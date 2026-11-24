@@ -20,12 +20,12 @@
     $mobileTabLinks = $isFarmer
         ? array_values(array_filter([
             $mobileLink('dashboard', $farmerLocale === 'fil' ? 'Ngayon' : 'Today'),
-            $mobileLink('weather', __('farmer.nav.forecast', [], $farmerLocale ?? 'en')),
+            $mobileLink('heatmap', 'Heat Map'),
             $mobileLink('advisories', __('farmer.nav.advisories', [], $farmerLocale ?? 'en')),
             $mobileLink('my-farm', __('farmer.nav.my_farm', [], $farmerLocale ?? 'en')),
         ]))
         : array_values(array_filter($isMao
-            ? [$mobileLink('dashboard'), $mobileLink('heatmap'), $mobileLink('advisories'), $mobileLink('records-and-barangays')]
+            ? [$mobileLink('dashboard'), $mobileLink('heatmap'), $mobileLink('weather'), $mobileLink('advisories')]
             : [$mobileLink('dashboard'), $mobileLink('user-management'), $mobileLink('reports'), $mobileLink('messages')]));
     $mobileBarLabel = function (array $link) use ($isFarmer, $navLocale): string {
         $key = $link[6] ?? '';
@@ -38,7 +38,7 @@
             'advisories' => $isFarmer && $navLocale === 'fil' ? 'Advice' : 'Advisories',
             'records-and-barangays' => 'Records',
             'my-farm' => $isFarmer && $navLocale === 'fil' ? 'Aking Farm' : 'My Farm',
-            'weather' => 'Forecast',
+            'weather' => $navLocale === 'fil' ? 'Panahon' : 'Forecast',
             default => $link[0],
         };
     };
@@ -47,7 +47,7 @@
     if ($isFarmer) {
         $mobileMoreGroups = [
             ['My farm', array_values(array_filter([$mobileLink('my-farm'), $mobileLink('rice-varieties')]))],
-            ['Weather & risk', array_values(array_filter([$mobileLink('weather'), $mobileLink('heatmap'), $mobileLink('advisories')]))],
+            ['Weather & risk', array_values(array_filter([$mobileLink('heatmap'), $mobileLink('advisories')]))],
             ['Talk to the MAO', array_values(array_filter([
                 $mobileLink('messages'),
                 [($farmerLocale ?? 'en') === 'fil' ? 'Impormasyon sa tanggapan' : 'Contact info', $dashboardRoute, [$dashboardRoute], 'community', null, 'farmerMaoContact', 'contact-info'],
@@ -105,7 +105,7 @@
         <span style="width: {{ $mobileProgress !== null ? max(0, min(100, (int) $mobileProgress)) : 0 }}%"></span>
     </div>
     @if ($mobileContextVisible)
-        <a class="mobile-context-strip" href="{{ route('weather-predictions.index') }}" data-mobile-context>{{ $mobileContextText }}</a>
+        <a class="mobile-context-strip" href="{{ route('farmer.dashboard') }}" data-mobile-context>{{ $mobileContextText }}</a>
     @endif
     <div class="mobile-tabs">
         @foreach ($mobileTabLinks as $link)

@@ -64,7 +64,7 @@
                     ], fn ($v): bool => $v !== null && $v !== ''),
                     'text' => ($w['stale'] ?? false) ? __('farmer.kpis.detail.weather_stale') : null,
                     'updated_at' => $w['updated_at'],
-                    'link' => route('weather-predictions.index').'#weather',
+                    'link' => route('farmer.dashboard').'#week',
                 ];
             }
             // Barangay risk: the Barangay Risk card's rating (the risk tile, when shown, has the same one).
@@ -84,7 +84,7 @@
                     ], fn (string $v): bool => $v !== ''),
                     'text' => __('farmer.kpis.detail.harvest_how'),
                     'updated_at' => $h['ran_at'] ?? null,
-                    'link' => route('weather-predictions.index').'#yield',
+                    'link' => route('farmer.my-farm'),
                 ];
             }
         @endphp

@@ -19,6 +19,7 @@ return [
         'account_management' => 'Pamamahala ng account',
         'dashboard' => 'MAO Staff Dashboard',
         'heat_map' => 'Heat Map',
+        'forecast' => 'Taya ng Panahon',
         'advisories' => 'Mga Advisory',
         'records' => 'Mga Tala',
         'farmers' => 'Mga Magsasaka',

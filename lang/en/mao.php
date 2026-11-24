@@ -19,6 +19,7 @@ return [
         'account_management' => 'User management',
         'dashboard' => 'MAO Staff Dashboard',
         'heat_map' => 'Heat Map',
+        'forecast' => 'Forecast',
         'advisories' => 'Advisories',
         'records' => 'Records',
         'farmers' => 'Farmers',
