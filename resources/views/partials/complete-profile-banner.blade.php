@@ -1,8 +1,13 @@
 @props(['dismissible' => true])
-
+@php
+    $bannerUser = auth()->user();
+    $missingLabels = $bannerUser ? \App\Support\FarmerProfileCompletion::missingLabels($bannerUser) : [];
+    $hasFarms = $bannerUser && \App\Support\ActiveFarm::available() && $bannerUser->farms()->active()->exists();
+@endphp
+@if ($missingLabels !== [])
 <div class="mb-4 rounded-xl border border-sage-200 bg-sage-50 px-4 py-3.5 text-ink flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" role="region" aria-label="{{ __('farmer.complete_profile.banner_title') }}" data-complete-profile-banner>
     <div class="min-w-0">
-        <p class="font-semibold text-sm sm:text-base m-0 text-sage-900">{{ __('farmer.complete_profile.banner_text') }}</p>
+        <p class="font-semibold text-sm sm:text-base m-0 text-sage-900">{{ $hasFarms ? implode(' · ', $missingLabels) : __('farmer.complete_profile.banner_text') }}</p>
     </div>
     <div class="flex flex-wrap items-center gap-2 shrink-0">
         <a href="{{ route('farmer.complete-profile.show') }}" class="fad-btn is-compact">{{ __('farmer.complete_profile.banner_button') }}</a>
@@ -14,3 +19,4 @@
         @endif
     </div>
 </div>
+@endif

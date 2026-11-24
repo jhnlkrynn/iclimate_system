@@ -1,15 +1,21 @@
 @php
+    $reviewFlash = session('review');
     $flashType = session('error') || (isset($errors) && $errors->any())
         ? 'error'
-        : (session('success') ? 'success' : (session('status') ? 'info' : null));
+        : ($reviewFlash ? 'review' : (session('success') ? 'success' : (session('status') ? 'info' : null)));
     $flashMessage = session('error')
+        ?: (is_array($reviewFlash) ? ($reviewFlash['message'] ?? null) : $reviewFlash)
         ?: session('success')
         ?: session('status')
         ?: (isset($errors) && $errors->any() ? $errors->first() : null);
+    $isFil = app()->getLocale() === 'fil';
     $flashTitle = match ($flashType) {
-        'error' => 'Action failed',
-        'success' => 'Action successful',
-        'info' => 'Notice',
+        'error' => $isFil ? 'Hindi nagtagumpay' : 'Action failed',
+        'review' => is_array($reviewFlash) && ! empty($reviewFlash['title'])
+            ? $reviewFlash['title']
+            : ($isFil ? 'Ipinadala para sa pagsusuri' : 'Sent for review'),
+        'success' => $isFil ? 'Matagumpay' : 'Action successful',
+        'info' => $isFil ? 'Paalala' : 'Notice',
         default => null,
     };
 @endphp
@@ -18,7 +24,17 @@
         <div id="flashToast" class="flash-toast {{ $flashType }} show" role="alertdialog" aria-live="polite" aria-labelledby="flashToastTitle">
             <div class="flash-toast-accent" aria-hidden="true"></div>
             <div class="flash-toast-body">
-                <div class="flash-toast-icon" aria-hidden="true">{{ $flashType === 'success' ? '✓' : ($flashType === 'error' ? '!' : 'i') }}</div>
+                <div class="flash-toast-icon" aria-hidden="true">
+                    @if ($flashType === 'review')
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                    @elseif ($flashType === 'success')
+                        ✓
+                    @elseif ($flashType === 'error')
+                        !
+                    @else
+                        i
+                    @endif
+                </div>
                 <div class="flash-toast-text">
                     <h2 id="flashToastTitle" class="flash-toast-title">{{ $flashTitle }}</h2>
                     <p class="flash-toast-message">{{ $flashMessage }}</p>
@@ -32,6 +48,7 @@
         .flash-toast-stack { position: fixed; top: 1rem; right: 1rem; z-index: 2400; display: flex; flex-direction: column; gap: .6rem; max-width: min(360px, calc(100vw - 2rem)); }
         .flash-toast { border: 1px solid var(--ic-border, var(--sage-100)); border-radius: 16px; overflow: hidden; background: linear-gradient(145deg, #fff, #f7fbf8); box-shadow: 0 1rem 2.4rem rgb(var(--sage-950-rgb) / .22); animation: flashToastIn .22s ease-out; }
         .flash-toast.success { --toast-accent: var(--ic-green-500, #52b788); }
+        .flash-toast.review { --toast-accent: #d97706; }
         .flash-toast.error { --toast-accent: var(--ic-coral, #d85b45); }
         .flash-toast.info { --toast-accent: var(--iclimate-info, #4B7185); }
         .flash-toast-accent { height: 4px; background: var(--toast-accent); }

@@ -28,10 +28,6 @@
             </div>
         </header>
 
-        @if (session('success'))
-            <div class="frec-note fmf-no-print" role="status">{{ session('success') }}</div>
-        @endif
-
         @if (\App\Support\FarmerProfileCompletion::isIncomplete(auth()->user()))
             @include('partials.complete-profile-banner', ['dismissible' => false])
         @endif
@@ -54,9 +50,9 @@
                                         @if ($f['primary'])<span class="fad-badge is-good">{{ __('farms.primary') }}</span>@endif
                                         @if ($f['current'])<span class="fad-badge is-info">{{ __('farms.current') }}</span>@endif
                                         @if (($f['verification_status'] ?? 'approved') === 'pending')
-                                            <span class="fad-badge is-warn" data-farm-verification-badge="pending">{{ app()->getLocale() === 'fil' ? 'Naghihintay ng pagsusuri ng MAO' : 'Pending MAO review' }}</span>
+                                            <span class="fad-badge is-watch" data-farm-verification-badge="pending">{{ app()->getLocale() === 'fil' ? 'Naghihintay ng pagsusuri ng MAO' : 'Pending MAO review' }}</span>
                                         @elseif (($f['verification_status'] ?? 'approved') === 'rejected')
-                                            <span class="fad-badge is-bad" data-farm-verification-badge="rejected">{{ app()->getLocale() === 'fil' ? 'Tinanggihan' : 'Rejected' }}</span>
+                                            <span class="fad-badge is-danger" data-farm-verification-badge="rejected">{{ app()->getLocale() === 'fil' ? 'Tinanggihan' : 'Rejected' }}</span>
                                         @else
                                             <span class="fad-badge is-good" data-farm-verification-badge="approved">{{ app()->getLocale() === 'fil' ? 'Aprubado' : 'Approved' }}</span>
                                         @endif

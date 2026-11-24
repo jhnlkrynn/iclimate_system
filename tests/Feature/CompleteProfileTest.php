@@ -84,11 +84,10 @@ class CompleteProfileTest extends TestCase
         app(FarmerMissingInfoNotifier::class)->sync($farmer->fresh());
         $this->assertSame(1, Notification::query()->where('user_id', $farmer->id)->where('category', 'setup:complete_profile')->count());
 
-        // Also appears on weather predictions and my-farm.
+        // Also appears on my-farm; weather-predictions redirects farmers to dashboard.
         $this->actingAs($farmer)
             ->get(route('weather-predictions.index'))
-            ->assertOk()
-            ->assertSee('Complete your profile to get weather advice and yield estimates for your farm');
+            ->assertRedirect(route('farmer.dashboard'));
 
         $this->actingAs($farmer)
             ->get(route('farmer.my-farm'))

@@ -37,7 +37,7 @@ final class FarmerProfileCompletion
             } else {
                 $hasAssociationChoice = $farms->contains(
                     fn ($farm): bool => $farm->farmer_organization_id !== null
-                        || in_array($farm->association_status, ['member', 'not_member'], true)
+                        || in_array($farm->association_status, ['member', 'not_member', 'pending_other'], true)
                 ) || $user->farmerProfile?->farmer_organization_id !== null;
                 if (! $hasAssociationChoice) {
                     $missing[] = 'association';
@@ -48,6 +48,51 @@ final class FarmerProfileCompletion
         }
 
         return $missing;
+    }
+
+    /**
+     * Human-readable labels for only the fields that are actually missing.
+     *
+     * @return list<string>
+     */
+    public static function missingLabels(User $user): array
+    {
+        if ($user->role !== User::ROLE_FARMER) {
+            return [];
+        }
+
+        $fil = app()->getLocale() === 'fil';
+        $labels = [];
+
+        if ($user->registeredBarangay() === null) {
+            $labels[] = $fil ? 'Barangay: hindi pa nakatala' : 'Barangay: not set yet';
+        }
+
+        $contact = trim((string) ($user->contact_number ?: $user->farmerProfile?->contact_number));
+        if ($contact === '') {
+            $labels[] = $fil ? 'Numero ng telepono: hindi pa nakatala' : 'Contact number: not set yet';
+        }
+
+        if (ActiveFarm::available()) {
+            $farms = $user->farms()->active()->orderByDesc('is_primary')->orderBy('id')->get(['id', 'farm_name', 'farmer_organization_id', 'association_status']);
+            if ($farms->isEmpty()) {
+                $labels[] = $fil ? 'Walang bukid na nakatala pa' : 'No farm added yet';
+            } else {
+                foreach ($farms as $farm) {
+                    $answered = $farm->farmer_organization_id !== null
+                        || in_array($farm->association_status, ['member', 'not_member', 'pending_other'], true);
+                    if (! $answered) {
+                        $labels[] = $fil
+                            ? "{$farm->farm_name}: hindi pa nasasagot ang samahan"
+                            : "{$farm->farm_name}: association not answered yet";
+                    }
+                }
+            }
+        } elseif ($user->farmerProfile?->farmer_organization_id === null) {
+            $labels[] = $fil ? 'Samahan: hindi pa nasasagot' : 'Association: not answered yet';
+        }
+
+        return $labels;
     }
 
     public static function isIncomplete(User $user): bool

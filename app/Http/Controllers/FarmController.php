@@ -54,7 +54,14 @@ class FarmController extends Controller
         ActiveFarm::select($user, (int) $farm->getKey());
         $this->audit('Added Farm', $request, $farm);
 
-        return redirect()->route('farmer.my-farm')->with('success', __('farms.added', ['name' => $farm->farm_name]));
+        $fil = app()->getLocale() === 'fil';
+
+        return redirect()->route('farmer.my-farm')->with('review', [
+            'title' => $fil ? 'Ipinadala para sa pagsusuri' : 'Sent for review',
+            'message' => $fil
+                ? "{$farm->farm_name} ay ipinadala sa MAO para sa pagsusuri. Aabisuhan ka kapag naaprubahan na ito."
+                : "{$farm->farm_name} was sent to the MAO for review. You'll be notified when it is approved.",
+        ]);
     }
 
     public function edit(Request $request, int $farm): View
@@ -73,18 +80,46 @@ class FarmController extends Controller
     public function update(Request $request, int $farm): RedirectResponse
     {
         $farm = $this->ownFarm($request, $farm);
-        $this->farms->update($farm, $this->validated($request, $farm));
-        $this->audit('Updated Farm', $request, $farm);
+        $wasRejected = $farm->isRejected();
+        $updated = $this->farms->update($farm, $this->validated($request, $farm));
+        $this->audit('Updated Farm', $request, $updated);
 
-        return redirect()->route('farmer.my-farm')->with('success', __('farms.saved', ['name' => $farm->farm_name]));
+        $fil = app()->getLocale() === 'fil';
+        if ($wasRejected) {
+            return redirect()->route('farmer.my-farm')->with('review', [
+                'title' => $fil ? 'Ipinadala para sa pagsusuri' : 'Sent for review',
+                'message' => $fil
+                    ? "{$updated->farm_name} ay ipinadala muli para sa pagsusuri. Aabisuhan ka kapag naaprubahan na ito."
+                    : "{$updated->farm_name} was sent again for review. You'll be notified when it is approved.",
+            ]);
+        }
+        if ($updated->isPendingVerification()) {
+            return redirect()->route('farmer.my-farm')->with('review', [
+                'title' => $fil ? 'Ipinadala para sa pagsusuri' : 'Sent for review',
+                'message' => $fil
+                    ? "Ang mga pagbabago sa {$updated->farm_name} ay ipinadala para sa pagsusuri. Aabisuhan ka kapag naaprubahan na ito."
+                    : "{$updated->farm_name} changes sent for review. You'll be notified when it is approved.",
+            ]);
+        }
+
+        return redirect()->route('farmer.my-farm')->with('success', __('farms.saved', ['name' => $updated->farm_name]));
     }
 
     /** Removes the farm from the list (archived: its plans, map and records stay). */
     public function destroy(Request $request, int $farm): RedirectResponse
     {
         $farm = $this->ownFarm($request, $farm);
+        $wasPending = $farm->isPendingVerification();
         $this->farms->archive($farm);
         $this->audit('Removed Farm', $request, $farm);
+
+        if ($wasPending) {
+            $fil = app()->getLocale() === 'fil';
+
+            return redirect()->route('farmer.my-farm')->with('status', $fil
+                ? "Kinansela ang pagpapasa ng {$farm->farm_name}."
+                : "{$farm->farm_name} submission cancelled.");
+        }
 
         return redirect()->route('farmer.my-farm')->with('success', __('farms.removed', ['name' => $farm->farm_name]));
     }

@@ -243,4 +243,87 @@ class FarmVerificationTest extends TestCase
         $this->assertNull($farm->verified_at);
         $this->assertNull($farm->verified_by);
     }
+
+    public function test_flash_toast_messages_badge_classes_and_profile_completion_banner(): void
+    {
+        $farmer = User::factory()->create([
+            'role' => User::ROLE_FARMER,
+            'status' => User::STATUS_ACTIVE,
+            'barangay' => 'Binubusan',
+            'contact_number' => '09171234567',
+        ]);
+
+        // 1. Add farm -> review toast ("Sent for review"), amber badge (is-watch), no duplicate inline note
+        $addResponse = $this->followingRedirects()->actingAs($farmer)->post(route('farmer.farms.store'), [
+            'farm_name' => 'Farm 2',
+            'barangay' => 'Binubusan',
+            'farm_type' => 'Irrigated',
+            'farm_size_method' => Farm::SIZE_EXACT,
+            'farm_size_value' => 2.0,
+            'farm_size_unit' => Farm::UNIT_HECTARES,
+            'association_status' => Farm::ASSOCIATION_NOT_MEMBER,
+        ]);
+        $addResponse->assertOk();
+        $addResponse->assertSee('Sent for review');
+        $addResponse->assertSee("Farm 2 was sent to the MAO for review. You'll be notified when it is approved.");
+        $addResponse->assertSee('flash-toast review', false);
+        $addResponse->assertSee('fad-badge is-watch', false);
+        $addResponse->assertDontSee('frec-note fmf-no-print', false);
+        $addResponse->assertDontSee('data-complete-profile-banner', false);
+
+        $farm = Farm::query()->where('user_id', $farmer->id)->firstOrFail();
+
+        // 2. Cancel pending submission -> "submission cancelled"
+        $cancelResponse = $this->followingRedirects()->actingAs($farmer)->delete(route('farmer.farms.destroy', $farm));
+        $cancelResponse->assertOk();
+        $cancelResponse->assertSee('Farm 2 submission cancelled.');
+
+        // 3. Rejected farm -> red badge (is-danger), resubmit -> "sent again for review"
+        $rejectedFarm = Farm::query()->create([
+            'user_id' => $farmer->id,
+            'farm_name' => 'Farm 3',
+            'barangay' => 'Binubusan',
+            'farm_type' => 'Rainfed',
+            'farm_size_hectares' => 1.0,
+            'farm_size_method' => Farm::SIZE_EXACT,
+            'association_status' => Farm::ASSOCIATION_NOT_MEMBER,
+            'verification_status' => Farm::VERIFICATION_REJECTED,
+            'rejection_reason' => 'Wrong area',
+        ]);
+        $this->actingAs($farmer)->get(route('farmer.my-farm'))
+            ->assertOk()
+            ->assertSee('fad-badge is-danger', false);
+
+        $resubmit = $this->followingRedirects()->actingAs($farmer)->put(route('farmer.farms.update', $rejectedFarm), [
+            'farm_name' => 'Farm 3',
+            'barangay' => 'Binubusan',
+            'farm_type' => 'Rainfed',
+            'farm_size_method' => Farm::SIZE_EXACT,
+            'farm_size_value' => 1.5,
+            'farm_size_unit' => Farm::UNIT_HECTARES,
+            'association_status' => Farm::ASSOCIATION_NOT_MEMBER,
+        ]);
+        $resubmit->assertOk();
+        $resubmit->assertSee('Farm 3 was sent again for review.');
+
+        // 4. Approved farm edited -> "changes sent for review"
+        $rejectedFarm->forceFill(['verification_status' => Farm::VERIFICATION_APPROVED, 'verified_at' => now()])->save();
+        $editApproved = $this->followingRedirects()->actingAs($farmer)->put(route('farmer.farms.update', $rejectedFarm), [
+            'farm_name' => 'Farm 3',
+            'barangay' => 'Malaruhatan',
+            'farm_type' => 'Rainfed',
+            'farm_size_method' => Farm::SIZE_EXACT,
+            'farm_size_value' => 1.5,
+            'farm_size_unit' => Farm::UNIT_HECTARES,
+            'association_status' => Farm::ASSOCIATION_NOT_MEMBER,
+        ]);
+        $editApproved->assertOk();
+        $editApproved->assertSee('Farm 3 changes sent for review.');
+
+        // 5. Missing association on a farm -> specific label in Complete Profile banner
+        $rejectedFarm->forceFill(['association_status' => null, 'farmer_organization_id' => null])->save();
+        $this->actingAs($farmer)->get(route('farmer.my-farm'))
+            ->assertOk()
+            ->assertSee('Farm 3: association not answered yet');
+    }
 }
