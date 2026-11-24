@@ -28,129 +28,39 @@ class WarmFarmerYields extends Command
             $this->warn('The yield_predictions table does not exist yet (run the migration): estimates stay in the cache only.');
         }
         $seasonLabel = rescue(fn (): string => $seasonYield->seasonLabel(CarbonImmutable::now('Asia/Manila')), null, false);
-        $done = 0;
-        $missing = 0;
-        $failed = 0;
-        $inARow = 0;
-        $stopped = false;
-
         $eligibleStatuses = [User::STATUS_ACTIVE, User::STATUS_APPROVED];
-        $statusCounts = User::query()
-            ->where('role', User::ROLE_FARMER)
-            ->selectRaw('status, count(*) as total')
-            ->groupBy('status')
-            ->pluck('total', 'status');
-        $totalFarmers = (int) $statusCounts->sum();
-        $activeCount = (int) ($statusCounts[User::STATUS_ACTIVE] ?? 0);
-        $approvedCount = (int) ($statusCounts[User::STATUS_APPROVED] ?? 0);
-        $pendingCount = (int) ($statusCounts[User::STATUS_PENDING] ?? 0);
-        $inactiveCount = (int) ($statusCounts[User::STATUS_INACTIVE] ?? 0);
-        $rejectedCount = (int) ($statusCounts[User::STATUS_REJECTED] ?? 0);
+        $this->reportFarmerFilter($eligibleStatuses);
 
-        $eligibleFarmers = User::query()->where('role', User::ROLE_FARMER)->whereIn('status', $eligibleStatuses);
-        $eligibleWithFarm = ActiveFarm::available()
-            ? (clone $eligibleFarmers)->whereHas('farms', fn ($q) => $q->active())->count()
-            : (clone $eligibleFarmers)->count();
-        $eligibleWithoutFarm = ActiveFarm::available()
-            ? (clone $eligibleFarmers)->whereDoesntHave('farms', fn ($q) => $q->active())->count()
-            : 0;
-        $totalActiveFarms = ActiveFarm::available()
-            ? Farm::query()->active()->whereHas('user', fn ($q) => $q->where('role', User::ROLE_FARMER)->whereIn('status', $eligibleStatuses))->count()
-            : $eligibleWithFarm;
-
-        $this->line(sprintf(
-            'Farmer filter: %d total (Active: %d, Approved: %d, Pending: %d, Inactive: %d, Rejected: %d); %d eligible with active farm (%d farms), %d without active farm.',
-            $totalFarmers,
-            $activeCount,
-            $approvedCount,
-            $pendingCount,
-            $inactiveCount,
-            $rejectedCount,
-            $eligibleWithFarm,
-            $totalActiveFarms,
-            $eligibleWithoutFarm,
-        ));
-
-        $prepare = function (User $farmer, ?Farm $farm) use ($dashboard, $store, $seasonLabel, &$done, &$missing, &$failed, &$inARow, &$stopped): bool {
-            $rawBarangay = $farm !== null ? $farm->barangay : $farmer->registeredBarangay();
-            $validBarangay = \App\Support\LianBarangays::canonicalName($rawBarangay) !== null;
-            $validArea = $farm !== null
-                ? $farm->modelArea() !== null
-                : (is_numeric($farmer->farmerProfile?->farm_area) && (float) $farmer->farmerProfile->farm_area > 0);
-
-            // Invalid/missing barangay or farm size gets no estimate (nothing is made up), and never counts as a service failure.
-            if (! $validBarangay || ! $validArea) {
-                $missing++;
-                $inARow = 0;
-                $reason = ! $validBarangay
-                    ? 'invalid/missing barangay '.json_encode($rawBarangay, JSON_UNESCAPED_UNICODE)
-                    : 'missing/invalid farm area';
-                if ($this->output->isVerbose()) {
-                    $this->line("Skipped incomplete profile (farmer {$farmer->id}".($farm ? ", farm {$farm->id}" : '')."): {$reason}");
-                }
-
-                return true;
-            }
-
-            try {
-                $result = $dashboard->prepareYieldEstimate($farmer, $farm);
-            } catch (Throwable $exception) {
-                $cause = $exception::class.': '.$exception->getMessage();
-                $result = ['failed' => true, 'lacks_records' => false, 'error' => $cause];
-            }
-
-            if (! ($result['failed'] ?? false)) {
-                if ($farm !== null) {
-                    rescue(fn () => $store->saveFarm($farm, $result, $seasonLabel), report: true);
-                }
-                $done++;
-                $inARow = 0;
-            } elseif ($result['lacks_records'] ?? false) {
-                $missing++;                                  // farm size or records missing: nothing the service can fix
-                $inARow = 0;
-                if ($this->output->isVerbose()) {
-                    $this->line("Skipped incomplete profile (farmer {$farmer->id}".($farm ? ", farm {$farm->id}" : '').'): '.($result['error'] ?? 'missing model inputs'));
-                }
-            } else {
-                $cause = (string) ($result['error'] ?? 'Unknown service failure');
-                \Illuminate\Support\Facades\Log::warning('WarmFarmerYields: farmer yield estimate failed.', [
-                    'user_id' => $farmer->id,
-                    'farm_id' => $farm?->id,
-                    'cause' => $cause,
-                ]);
-                if ($this->output->isVerbose()) {
-                    $this->warn("Farmer {$farmer->id}".($farm ? " farm {$farm->id}" : '').": {$cause}");
-                }
-                $failed++;
-                // Every farmer keeps their last verified estimate; the service is not asked 800 more times.
-                if (++$inARow >= self::STOP_AFTER_SERVICE_FAILURES) {
-                    $stopped = true;
-
-                    return false;
-                }
-            }
-
-            return true;
-        };
+        $counters = ['done' => 0, 'missing' => 0, 'failed' => 0, 'inARow' => 0, 'stopped' => false];
 
         if (ActiveFarm::available()) {
             // Every farm in use of every active/approved farmer: each farm has its own estimate.
-            Farm::query()->active()
+            $farms = Farm::query()->active()
                 ->whereHas('user', fn ($q) => $q->where('role', User::ROLE_FARMER)->whereIn('status', $eligibleStatuses))
                 ->with('user.farmerProfile')
                 ->orderBy('id')
-                ->each(fn (Farm $farm): bool => $prepare($farm->user, $farm));
+                ->cursor();
+            foreach ($farms as $farm) {
+                if (! $this->prepareFarmerEstimate($dashboard, $store, $seasonLabel, $farm->user, $farm, $counters)) {
+                    break;
+                }
+            }
         } else {
-            User::query()
+            $farmers = User::query()
                 ->where('role', User::ROLE_FARMER)
                 ->whereIn('status', $eligibleStatuses)
                 ->with('farmerProfile')
                 ->orderBy('id')
-                ->each(fn (User $farmer): bool => $prepare($farmer, null));
+                ->cursor();
+            foreach ($farmers as $farmer) {
+                if (! $this->prepareFarmerEstimate($dashboard, $store, $seasonLabel, $farmer, null, $counters)) {
+                    break;
+                }
+            }
         }
 
-        $this->line("Yield estimates prepared: {$done}, skipped: incomplete profile: {$missing}".($failed ? ", failed: {$failed}" : ''));
-        if ($stopped) {
+        $this->line("Yield estimates prepared: {$counters['done']}, skipped: incomplete profile: {$counters['missing']}".($counters['failed'] ? ", failed: {$counters['failed']}" : ''));
+        if ($counters['stopped']) {
             $this->warn('The estimate service is not answering; the remaining farmers keep their last estimate until the next run.');
         }
 
@@ -178,6 +88,110 @@ class WarmFarmerYields extends Command
             $unmatched->each(fn (Farm $farm) => $this->line(sprintf('  farm %d (farmer %d, "%s"): barangay %s', $farm->id, $farm->user_id, $farm->farm_name, json_encode($farm->barangay, JSON_UNESCAPED_UNICODE))));
         }
 
-        return $failed === 0 ? self::SUCCESS : self::FAILURE;
+        return $counters['failed'] === 0 ? self::SUCCESS : self::FAILURE;
+    }
+
+    /** @param array<int, string> $eligibleStatuses */
+    private function reportFarmerFilter(array $eligibleStatuses): void
+    {
+        $statusCounts = User::query()
+            ->where('role', User::ROLE_FARMER)
+            ->selectRaw('status, count(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $eligibleFarmers = User::query()->where('role', User::ROLE_FARMER)->whereIn('status', $eligibleStatuses);
+        $eligibleWithFarm = ActiveFarm::available()
+            ? (clone $eligibleFarmers)->whereHas('farms', fn ($q) => $q->active())->count()
+            : (clone $eligibleFarmers)->count();
+        $eligibleWithoutFarm = ActiveFarm::available()
+            ? (clone $eligibleFarmers)->whereDoesntHave('farms', fn ($q) => $q->active())->count()
+            : 0;
+        $totalActiveFarms = ActiveFarm::available()
+            ? Farm::query()->active()->whereHas('user', fn ($q) => $q->where('role', User::ROLE_FARMER)->whereIn('status', $eligibleStatuses))->count()
+            : $eligibleWithFarm;
+
+        $this->line(sprintf(
+            'Farmer filter: %d total (Active: %d, Approved: %d, Pending: %d, Inactive: %d, Rejected: %d); %d eligible with active farm (%d farms), %d without active farm.',
+            (int) $statusCounts->sum(),
+            (int) ($statusCounts[User::STATUS_ACTIVE] ?? 0),
+            (int) ($statusCounts[User::STATUS_APPROVED] ?? 0),
+            (int) ($statusCounts[User::STATUS_PENDING] ?? 0),
+            (int) ($statusCounts[User::STATUS_INACTIVE] ?? 0),
+            (int) ($statusCounts[User::STATUS_REJECTED] ?? 0),
+            $eligibleWithFarm,
+            $totalActiveFarms,
+            $eligibleWithoutFarm,
+        ));
+    }
+
+    /** @param array{done: int, missing: int, failed: int, inARow: int, stopped: bool} $counters */
+    private function prepareFarmerEstimate(
+        FarmerDashboardService $dashboard,
+        YieldPredictionStore $store,
+        ?string $seasonLabel,
+        User $farmer,
+        ?Farm $farm,
+        array &$counters,
+    ): bool {
+        $rawBarangay = $farm !== null ? $farm->barangay : $farmer->registeredBarangay();
+        $validBarangay = \App\Support\LianBarangays::canonicalName($rawBarangay) !== null;
+        $validArea = $farm !== null
+            ? $farm->modelArea() !== null
+            : (is_numeric($farmer->farmerProfile?->farm_area) && (float) $farmer->farmerProfile->farm_area > 0);
+
+        // Invalid/missing barangay or farm size gets no estimate (nothing is made up), and never counts as a service failure.
+        if (! $validBarangay || ! $validArea) {
+            $counters['missing']++;
+            $counters['inARow'] = 0;
+            $reason = ! $validBarangay
+                ? 'invalid/missing barangay '.json_encode($rawBarangay, JSON_UNESCAPED_UNICODE)
+                : 'missing/invalid farm area';
+            if ($this->output->isVerbose()) {
+                $this->line("Skipped incomplete profile (farmer {$farmer->id}".($farm ? ", farm {$farm->id}" : '')."): {$reason}");
+            }
+
+            return true;
+        }
+
+        try {
+            $result = $dashboard->prepareYieldEstimate($farmer, $farm);
+        } catch (Throwable $exception) {
+            $cause = $exception::class.': '.$exception->getMessage();
+            $result = ['failed' => true, 'lacks_records' => false, 'error' => $cause];
+        }
+
+        if (! ($result['failed'] ?? false)) {
+            if ($farm !== null) {
+                rescue(fn () => $store->saveFarm($farm, $result, $seasonLabel), report: true);
+            }
+            $counters['done']++;
+            $counters['inARow'] = 0;
+        } elseif ($result['lacks_records'] ?? false) {
+            $counters['missing']++;                                  // farm size or records missing: nothing the service can fix
+            $counters['inARow'] = 0;
+            if ($this->output->isVerbose()) {
+                $this->line("Skipped incomplete profile (farmer {$farmer->id}".($farm ? ", farm {$farm->id}" : '').'): '.($result['error'] ?? 'missing model inputs'));
+            }
+        } else {
+            $cause = (string) ($result['error'] ?? 'Unknown service failure');
+            \Illuminate\Support\Facades\Log::warning('WarmFarmerYields: farmer yield estimate failed.', [
+                'user_id' => $farmer->id,
+                'farm_id' => $farm?->id,
+                'cause' => $cause,
+            ]);
+            if ($this->output->isVerbose()) {
+                $this->warn("Farmer {$farmer->id}".($farm ? " farm {$farm->id}" : '').": {$cause}");
+            }
+            $counters['failed']++;
+            // Every farmer keeps their last verified estimate; the service is not asked 800 more times.
+            if (++$counters['inARow'] >= self::STOP_AFTER_SERVICE_FAILURES) {
+                $counters['stopped'] = true;
+
+                return false;
+            }
+        }
+
+        return true;
     }
 }
