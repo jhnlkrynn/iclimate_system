@@ -80,25 +80,19 @@ class Phase5YieldTest extends TestCase
 
     public function test_mao_runs_a_municipal_forecast_using_the_barangay_rice_areas(): void
     {
-        $this->modelReturns(4.0);
-        BarangayProfile::query()->where('barangay', 'Balibago')->update(['farm_area_hectares' => 100]);
-        BarangayProfile::query()->where('barangay', 'San Diego')->update(['farm_area_hectares' => 50]);
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
-        $this->actingAs($mao)->post(route('analysis.forecast.store'), ['scope' => 'municipal', 'season' => 'Wet', 'farm_type' => 'Irrigated'])->assertRedirect();
-
-        $forecast = YieldPredictionRequest::query()->sole();
-        $this->assertSame('municipal', $forecast->scope);
-        $this->assertEquals(150, (float) $forecast->area_hectares);
-        $this->assertEquals(600, (float) $forecast->total_tons);
-        $this->actingAs($mao)->get(route('analysis.forecast'))->assertOk()->assertSee('All of Lian')->assertSee('600 t')->assertSee('data-predicted-vs-actual', false);
+        $this->actingAs($mao)->get(route('analysis.forecast'))->assertRedirect(route('mao.dashboard'));
+        $this->actingAs($mao)->post(route('analysis.forecast.store'), ['scope' => 'municipal', 'season' => 'Wet', 'farm_type' => 'Irrigated'])
+            ->assertRedirect(route('mao.dashboard'));
     }
 
     public function test_a_barangay_forecast_needs_a_barangay(): void
     {
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
-        $this->actingAs($mao)->post(route('analysis.forecast.store'), ['scope' => 'barangay', 'season' => 'Wet', 'farm_type' => 'Irrigated'])->assertSessionHasErrors('barangay');
+        $this->actingAs($mao)->post(route('analysis.forecast.store'), ['scope' => 'barangay', 'season' => 'Wet', 'farm_type' => 'Irrigated'])
+            ->assertRedirect(route('mao.dashboard'));
     }
 
     public function test_target_month_is_the_next_harvest_month_of_the_season(): void

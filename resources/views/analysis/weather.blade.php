@@ -252,7 +252,7 @@
                     @if ($pairs->isEmpty())
                         <p class="mb-0">No month in this choice has both a yield record and weather readings.</p>
                     @else
-                        <p class="small text-muted">Each point is a month with a yield record: that month's rainfall against the municipal average yield. <a href="{{ route('analysis.impact') }}">Run a Weather Impact Analysis</a> to see which variable matters most.</p>
+                        <p class="small text-muted">Each point is a month with a yield record: that month's rainfall against the municipal average yield.</p>
                         <div style="position: relative; height: 260px;"><canvas id="waYieldScatterChart" data-ic-info-bound="true" role="img" aria-label="Rainfall against rice yield, one point per month"></canvas></div>
                         <script type="application/json" data-yield-pairs>@json($pairs->map(fn ($p) => ['x' => $p['rainfall'], 'y' => $p['yield'], 'label' => $p['key']])->filter(fn ($p) => $p['x'] !== null)->values())</script>
                     @endif

@@ -840,21 +840,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // "?refresh=1" queues one recomputation, so it is throttled.
         Route::get(
             'analysis/model-evaluation',
-            [\App\Http\Controllers\ModelEvaluationController::class, 'index']
+            fn () => redirect()->route('mao.dashboard')
         )
             ->middleware(['role:'.User::ROLE_MAO, 'throttle:20,1,get-model-evaluation'])
             ->name('model-evaluation.index');
 
         Route::get(
             'analysis/harvest-training',
-            [\App\Http\Controllers\HarvestTrainingController::class, 'index']
+            fn () => redirect()->route('mao.dashboard')
         )
             ->middleware(['role:'.User::ROLE_MAO])
             ->name('analysis.harvest-training');
 
         Route::get(
             'analysis/harvest-training/export',
-            [\App\Http\Controllers\HarvestTrainingController::class, 'export']
+            fn () => redirect()->route('mao.dashboard')
         )
             ->middleware(['role:'.User::ROLE_MAO])
             ->name('analysis.harvest-training.export');

@@ -98,25 +98,16 @@ class Phase4AnalysisTest extends TestCase
             ->assertSee('data-wa-year-summary', false)
             ->assertDontSee('data-climate-indicators', false)
             ->assertDontSee('waWindTable', false);
-        $this->actingAs($farmer)->get(route('weather-predictions.index'))->assertOk()->assertSee('href="'.route('analysis.weather').'"', false);
+        $this->actingAs($farmer)->get(route('weather-predictions.index'))->assertRedirect(route('farmer.dashboard'));
     }
 
     public function test_impact_analysis_ranks_variables_and_can_be_saved(): void
     {
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
-        $response = $this->actingAs($mao)->get(route('analysis.impact'))->assertOk()->assertSee('data-impact-table', false);
-        $result = $response->viewData('result');
-        $this->assertGreaterThanOrEqual(WeatherAnalysisService::MIN_PAIRS, $result['pairs']);
-        $this->assertNotNull($result['strongest']);
-        $rs = collect($result['variables'])->pluck('r')->filter(fn ($r) => $r !== null)->map(fn ($r) => abs($r))->values();
-        $this->assertSame($rs->sortDesc()->values()->all(), $rs->all());
-
-        $this->actingAs($mao)->post(route('analysis.impact.store'), ['title' => 'Wet seasons', 'season' => 'Wet'])->assertRedirect();
-        $saved = WeatherImpactAnalysis::query()->sole();
-        $this->assertSame('Wet', $saved->filters['season']);
-        $this->assertSame($mao->id, $saved->created_by);
-        $this->actingAs($mao)->get(route('analysis.impact.show', $saved))->assertOk()->assertSee('Wet seasons')->assertSee('data-saved-analysis', false);
+        $this->actingAs($mao)->get(route('analysis.impact'))->assertRedirect(route('mao.dashboard'));
+        $this->actingAs($mao)->post(route('analysis.impact.store'), ['title' => 'Wet seasons', 'season' => 'Wet'])->assertRedirect(route('mao.dashboard'));
+        $this->actingAs($mao)->get(route('analysis.impact.show', 1))->assertRedirect(route('mao.dashboard'));
     }
 
     public function test_impact_levels_and_pearson(): void

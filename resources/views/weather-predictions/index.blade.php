@@ -216,7 +216,6 @@
                         @endif
                     </dl>
                 @endforeach
-                <p class="fad-support"><a href="{{ route('model-evaluation.index') }}">Model Evaluation</a></p>
             </section>
         @endif
     </div>

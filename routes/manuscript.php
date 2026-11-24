@@ -105,9 +105,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('weather', [WeatherAnalysisController::class, 'weather'])
             ->middleware(['role:'.User::ROLE_FARMER.','.User::ROLE_MAO, 'farmer.language'])->name('weather');
         Route::middleware('role:'.User::ROLE_MAO)->group(function () {
-            Route::get('impact', [WeatherAnalysisController::class, 'impact'])->name('impact');
-            Route::post('impact', [WeatherAnalysisController::class, 'store'])->middleware('throttle:20,1,post-analysis-impact')->name('impact.store');
-            Route::get('impact/{analysis}', [WeatherAnalysisController::class, 'show'])->whereNumber('analysis')->name('impact.show');
+            Route::get('impact', fn () => redirect()->route('mao.dashboard'))->name('impact');
+            Route::post('impact', fn () => redirect()->route('mao.dashboard', [], 303))->middleware('throttle:20,1,post-analysis-impact')->name('impact.store');
+            Route::get('impact/{analysis}', fn () => redirect()->route('mao.dashboard'))->whereNumber('analysis')->name('impact.show');
         });
 
         // Phase 5: Yield Prediction (farmer) and Yield Forecast (MAO). The model runs after the response.
@@ -119,8 +119,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('yield/{prediction}/status', [YieldPredictionController::class, 'status'])
             ->whereNumber('prediction')->name('yield.status');
         Route::middleware('role:'.User::ROLE_MAO)->group(function () {
-            Route::get('forecast', [YieldPredictionController::class, 'mao'])->name('forecast');
-            Route::post('forecast', [YieldPredictionController::class, 'maoStore'])->middleware('throttle:20,1,post-analysis-forecast')->name('forecast.store');
+            Route::get('forecast', fn () => redirect()->route('mao.dashboard'))->name('forecast');
+            Route::post('forecast', fn () => redirect()->route('mao.dashboard', [], 303))->middleware('throttle:20,1,post-analysis-forecast')->name('forecast.store');
         });
     });
 

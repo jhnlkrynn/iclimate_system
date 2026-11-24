@@ -25,15 +25,11 @@
             ['mao.activity-log.index', 'Activity Log', ['mao.activity-log.*'], [$mao]],
             ['mao.personnel.index', 'MAO Personnel', ['mao.personnel.*'], [$mao]],
         ],
-        // Predictions (Forecast for farmers) and the analysis pages.
+        // Predictions (Forecast for MAO) and Weather Analysis.
         'analysis' => [
             ['weather-predictions.index', ['Forecast', 'Taya ng Panahon'], ['weather-predictions.*'], [$mao]],
             ['analysis.weather', ['Weather Analysis', 'Pagsusuri ng Panahon'], ['analysis.weather'], [$farmerRole, $mao]],
             ['analysis.yield', ['Yield Prediction', 'Taya ng Ani'], ['analysis.yield*'], [$farmerRole]],
-            ['analysis.impact', 'Impact Analysis', ['analysis.impact*'], [$mao]],
-            ['analysis.forecast', 'Yield Forecast', ['analysis.forecast*'], [$mao]],
-            ['analysis.harvest-training', 'Harvest records for model training', ['analysis.harvest-training*'], [$mao]],
-            ['model-evaluation.index', 'Model Evaluation', ['model-evaluation.*'], [$mao]],
         ],
     ];
     $tabs = array_values(array_filter($groups[$group] ?? [], fn (array $tab): bool => \Illuminate\Support\Facades\Route::has($tab[0]) && in_array($role, $tab[3], true)));

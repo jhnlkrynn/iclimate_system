@@ -54,17 +54,9 @@ class HarvestTrainingPageTest extends TestCase
         $this->actingAs($farmer)->get(route('analysis.harvest-training'))->assertForbidden();
 
         $this->actingAs($mao)->get(route('analysis.harvest-training'))
-            ->assertOk()
-            ->assertSee('Harvest records for model training')
-            ->assertSee('Prenza irrigated: 1 of 15 harvests')
-            ->assertSee('4.75 t/ha');
+            ->assertRedirect(route('mao.dashboard'));
 
-        $csv = $this->actingAs($mao)->get(route('analysis.harvest-training.export'))->assertOk()->streamedContent();
-        $this->assertStringContainsString('farm_hash,barangay,farm_type,season,harvested_on,actual_yield_t_ha,rice_variety_id,rice_variety_name', $csv);
-        $this->assertStringContainsString('Prenza,Irrigated,Wet', $csv);
-        $this->assertStringContainsString('4.75', $csv);
-        $this->assertStringContainsString('NSIC Rc 222', $csv);
-        $this->assertStringNotContainsString('Secret Farmer Name', $csv);
-        $this->assertStringNotContainsString((string) $farm->id.',Prenza', $csv);
+        $this->actingAs($mao)->get(route('analysis.harvest-training.export'))
+            ->assertRedirect(route('mao.dashboard'));
     }
 }

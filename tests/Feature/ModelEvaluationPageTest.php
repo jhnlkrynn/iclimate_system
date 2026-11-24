@@ -45,14 +45,9 @@ class ModelEvaluationPageTest extends TestCase
         $this->completedRun();
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
-        $page = $this->actingAs($mao)->get(route('model-evaluation.index'))->assertOk();
-
-        $page->assertSee('Rice Yield Algorithm Comparison')
-            ->assertSee('Results Under Varying Conditions')
-            ->assertSee('data-breakdown="season"', false)
-            ->assertSee('data-breakdown="irrigation_type"', false)
-            ->assertSee('0.3577')
-            ->assertSee('Model Evaluation');   // the Analysis tab row links the page
+        $this->actingAs($mao)
+            ->get(route('model-evaluation.index'))
+            ->assertRedirect(route('mao.dashboard'));
     }
 
     public function test_farmers_and_guests_cannot_open_it(): void
