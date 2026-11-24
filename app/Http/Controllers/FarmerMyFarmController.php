@@ -63,6 +63,8 @@ class FarmerMyFarmController extends Controller
                 'mapped' => $f->boundary !== null,
                 'primary' => (bool) $f->is_primary,
                 'current' => $current !== null && $f->getKey() === $current->getKey(),
+                'verification_status' => $f->verification_status ?? Farm::VERIFICATION_APPROVED,
+                'rejection_reason' => $f->rejection_reason,
                 // "Samahan: …", "Not a member", "Waiting for MAO review" or not answered yet (null: before the migration).
                 'association' => $associationNames === null ? null : [
                     'state' => $f->associationState(),

@@ -12,6 +12,45 @@
     </dl>
     @if ($farmer->resubmission_note)<p><strong>Submitted corrections</strong> {{ $farmer->resubmission_note }}</p>@endif
     @if ($farmer->rejection_reason)<p><strong>Previous rejection reason</strong> {{ $farmer->rejection_reason }}</p>@endif
+
+    @if ($farmer->relationLoaded('farms') && $farmer->farms->isNotEmpty())
+        <section class="mt-4" data-account-farms>
+            <h2 class="h5">Submitted Farms</h2>
+            @foreach ($farmer->farms as $farm)
+                <article class="border rounded p-3 mb-2">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                        <div>
+                            <strong>{{ $farm->farm_name }}</strong>
+                            <span class="text-muted">· {{ $farm->barangay ?: 'No barangay' }} · {{ \App\Support\FarmSize::describe($farm)['text'] }} · {{ $farm->farm_type ?: 'Not set' }}</span>
+                        </div>
+                        @if ($farm->isApproved())
+                            <span class="badge bg-success">Approved</span>
+                        @elseif ($farm->isRejected())
+                            <span class="badge bg-danger">Rejected</span>
+                        @else
+                            <span class="badge bg-warning text-dark">Pending MAO review</span>
+                        @endif
+                    </div>
+                    @if ($farm->rejection_reason)
+                        <p class="small text-danger mb-2 mt-1">Reason: {{ $farm->rejection_reason }}</p>
+                    @endif
+                    @if (! $farm->isApproved())
+                        <div class="mt-2 d-flex flex-wrap gap-2 align-items-center">
+                            <form method="POST" action="{{ route('mao.farm-verification.approve', $farm) }}">
+                                @csrf
+                                <button type="submit" class="btn btn-sm btn-success">Approve Farm</button>
+                            </form>
+                            <form method="POST" action="{{ route('mao.farm-verification.reject', $farm) }}" class="d-flex gap-1">
+                                @csrf
+                                <input type="text" name="reason" class="form-control form-control-sm" placeholder="Rejection reason (required)" minlength="3" maxlength="500" required>
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Reject Farm</button>
+                            </form>
+                        </div>
+                    @endif
+                </article>
+            @endforeach
+        </section>
+    @endif
     @if ($farmer->hasApplicationAccess())
         <section class="mt-4" data-account-recovery>
             <h2 class="h5">Account recovery</h2>

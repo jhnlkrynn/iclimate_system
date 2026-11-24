@@ -113,6 +113,7 @@
             $navLink($maoNav('messages'), 'messages', 'messages'),
             $navLink($maoNav('mao_office'), 'mao-office', 'system-logs'),   // panel revision 4.4
         ];
+        $primaryGroup[] = ['Farm verification', 'mao.farm-verification.index', ['mao.farm-verification.*'], 'farmer-profiles', ($navCounts['pending_farms'] ?? 0) ?: null, null, null];
         $primaryGroup[] = [$maoNav('association_reports'), 'mao.association-reports.index', ['mao.association-reports.*'], 'reports', null, null, null];
         $primaryGroup[] = ['Climora Feedback', 'mao.climora-feedback.index', ['mao.climora-feedback.*'], 'messages', null, null, null];
         if ($user->isMaoHead()) {

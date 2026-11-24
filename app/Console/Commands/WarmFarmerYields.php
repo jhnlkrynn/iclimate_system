@@ -34,8 +34,8 @@ class WarmFarmerYields extends Command
         $counters = ['done' => 0, 'missing' => 0, 'failed' => 0, 'inARow' => 0, 'stopped' => false];
 
         if (ActiveFarm::available()) {
-            // Every farm in use of every active/approved farmer: each farm has its own estimate.
-            $farms = Farm::query()->active()
+            // Every MAO-approved farm in use of every active/approved farmer: pending/rejected farms are skipped as unverified.
+            $farms = Farm::query()->active()->verified()
                 ->whereHas('user', fn ($q) => $q->where('role', User::ROLE_FARMER)->whereIn('status', $eligibleStatuses))
                 ->with('user.farmerProfile')
                 ->orderBy('id')

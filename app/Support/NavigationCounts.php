@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\Farm;
 use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\DB;
  */
 final class NavigationCounts
 {
-    /** @return array{unread: int, pending: int} */
+    /** @return array{unread: int, pending: int, pending_farms: int} */
     public static function for(User $user): array
     {
         $request = app()->bound('request') ? request() : null;
@@ -33,7 +34,21 @@ final class NavigationCounts
         }
 
         $row = $query->first();
-        $counts = ['unread' => (int) ($row?->unread ?? 0), 'pending' => (int) ($row?->pending ?? 0)];
+        $pendingFarms = 0;
+        if ($user->role === User::ROLE_MAO && SchemaCache::hasTable('farms') && SchemaCache::hasColumn('farms', 'verification_status')) {
+            $scopedBarangays = MaoScope::barangays($user);
+            $pendingFarms = Farm::query()
+                ->active()
+                ->where('verification_status', Farm::VERIFICATION_PENDING)
+                ->when($scopedBarangays !== null, fn ($q) => $q->whereIn('barangay', $scopedBarangays))
+                ->count();
+        }
+
+        $counts = [
+            'unread' => (int) ($row?->unread ?? 0),
+            'pending' => (int) ($row?->pending ?? 0),
+            'pending_farms' => $pendingFarms,
+        ];
         $request?->attributes->set($key, $counts);
 
         return $counts;

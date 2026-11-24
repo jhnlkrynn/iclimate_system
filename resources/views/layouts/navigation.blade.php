@@ -62,7 +62,10 @@
                     </button>
                     <div class="dropdown-menu dropdown-menu-end ic-farm-menu">
                         @foreach ($navFarms as $navOption)
-                            @php($optLabel = $navOption->farm_name.($navOption->barangay ? ' · '.$navOption->barangay : ''))
+                            @php
+                                $optStatus = $navOption->isPendingVerification() ? ' · Pending MAO review' : ($navOption->isRejected() ? ' · Rejected' : '');
+                                $optLabel = $navOption->farm_name.($navOption->barangay ? ' · '.$navOption->barangay : '').$optStatus;
+                            @endphp
                             <form method="POST" action="{{ route('farmer.farms.select') }}">
                                 @csrf
                                 <input type="hidden" name="farm_id" value="{{ $navOption->id }}">

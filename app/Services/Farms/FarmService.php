@@ -8,6 +8,7 @@ use App\Models\FarmerProfile;
 use App\Models\User;
 use App\Support\ActiveFarm;
 use App\Support\LianBarangays;
+use App\Support\SchemaCache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -46,6 +47,12 @@ class FarmService
             $farm->farm_name = trim((string) ($data['farm_name'] ?? '')) ?: $this->defaultName($user);
             // The first farm is the primary farm; a farmer can change that later.
             $farm->is_primary = ! Farm::query()->ownedBy($user)->active()->where('is_primary', true)->exists();
+            if (SchemaCache::hasColumn('farms', 'verification_status')) {
+                $farm->verification_status = Farm::VERIFICATION_PENDING;
+                $farm->verified_by = null;
+                $farm->verified_at = null;
+                $farm->rejection_reason = null;
+            }
             $farm->save();
 
             return $farm;
@@ -55,6 +62,7 @@ class FarmService
         if ($farm->is_primary) {
             $this->mirrorToProfile($user);
         }
+        rescue(fn () => app(FarmVerificationNotifier::class)->submitted($farm), null, false);
 
         return $farm;
     }
@@ -62,16 +70,41 @@ class FarmService
     /** @param  array<string, mixed>  $data */
     public function update(Farm $farm, array $data): Farm
     {
+        $wasRejected = $farm->isRejected();
         $farm->fill($this->attributes($data, $farm));
         FarmAssociations::fill($farm, $data);
         if (array_key_exists('farm_name', $data)) {
             $farm->farm_name = trim((string) $data['farm_name']) ?: $farm->farm_name;
         }
+
+        $needsReverification = SchemaCache::hasColumn('farms', 'verification_status')
+            && ($wasRejected || $farm->isDirty([
+                'barangay',
+                'location_description',
+                'location_method',
+                'latitude',
+                'longitude',
+                'farm_size_hectares',
+                'farm_size_method',
+                'farm_size_estimate_range',
+                'farm_size_unit',
+            ]));
+
+        if ($needsReverification) {
+            $farm->verification_status = Farm::VERIFICATION_PENDING;
+            $farm->verified_by = null;
+            $farm->verified_at = null;
+            $farm->rejection_reason = null;
+        }
+
         $farm->save();
 
         ActiveFarm::forget($farm->user);
         if ($farm->is_primary) {
             $this->mirrorToProfile($farm->user);
+        }
+        if ($needsReverification) {
+            rescue(fn () => app(FarmVerificationNotifier::class)->submitted($farm), null, false);
         }
 
         return $farm;
@@ -142,10 +175,21 @@ class FarmService
             ]);
         }
         $farm->location_method = Farm::LOCATION_BOUNDARY;
+        $needsReverification = SchemaCache::hasColumn('farms', 'verification_status')
+            && (! $farm->isPendingVerification());
+        if ($needsReverification) {
+            $farm->verification_status = Farm::VERIFICATION_PENDING;
+            $farm->verified_by = null;
+            $farm->verified_at = null;
+            $farm->rejection_reason = null;
+        }
         $farm->save();
 
         if ($farm->is_primary) {
             $this->mirrorToProfile($farm->user);
+        }
+        if ($needsReverification) {
+            rescue(fn () => app(FarmVerificationNotifier::class)->submitted($farm), null, false);
         }
     }
 

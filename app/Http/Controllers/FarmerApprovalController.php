@@ -65,6 +65,9 @@ class FarmerApprovalController extends Controller
         abort_unless($user->role === User::ROLE_FARMER, 404);
         $this->authorizeFarmerBarangay($request, $user);
         $user->load(['farmerProfile', 'accountReviewer', 'approver']);
+        if (\App\Support\ActiveFarm::available()) {
+            $user->load(['farms' => fn ($q) => $q->active()->with(['organization', 'boundary', 'verifier'])->orderByDesc('is_primary')->orderBy('id')]);
+        }
         // Before the review-history migration there is no history to show (the page still opens).
         FarmerAccountReviewService::available() ? $user->load('accountReviews.reviewer') : $user->setRelation('accountReviews', collect());
 

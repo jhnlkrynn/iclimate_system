@@ -123,7 +123,9 @@ final class FarmerChatContext
         $incompleteProfile = ! $hasFarm || $farmBarangay === null;
 
         $farmType = $activeFarm?->farm_type ?: ($profile?->farm_type ?: null);
-        $farmArea = $activeFarm?->modelArea() ?? (is_numeric($profile?->farm_area) && (float) $profile->farm_area > 0 ? (float) $profile->farm_area : null);
+        $farmArea = ($activeFarm === null || $activeFarm->isApproved())
+            ? ($activeFarm?->modelArea() ?? (is_numeric($profile?->farm_area) && (float) $profile->farm_area > 0 ? (float) $profile->farm_area : null))
+            : null;
 
         $association = null;
         if ($activeFarm !== null) {

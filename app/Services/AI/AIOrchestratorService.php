@@ -1375,6 +1375,10 @@ class AIOrchestratorService
      */
     private function storedYieldAnswer(FarmerChatContext $farmContext, string $language, array $memory): ?array
     {
+        if ($farmContext->activeFarm !== null && ! $farmContext->activeFarm->isApproved()) {
+            return null;
+        }
+
         $store = app(YieldPredictionStore::class);
         if (! $store->available()) {
             return null;

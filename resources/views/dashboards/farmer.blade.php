@@ -14,6 +14,22 @@
         @if (\App\Support\FarmerProfileCompletion::shouldShowBanner(auth()->user()))
             @include('partials.complete-profile-banner')
         @endif
+        @php
+            $activeDashFarm = \App\Support\ActiveFarm::available() ? \App\Support\ActiveFarm::current(auth()->user()) : null;
+        @endphp
+        @if ($activeDashFarm && $activeDashFarm->isPendingVerification())
+            <div class="alert alert-warning mb-3" role="status" data-farm-pending-notice>
+                {{ app()->getLocale() === 'fil' ? 'Naghihintay ng pagsusuri ng MAO ang iyong bukid.' : 'Your farm is waiting for MAO review.' }}
+            </div>
+        @elseif ($activeDashFarm && $activeDashFarm->isRejected())
+            <div class="alert alert-danger mb-3" role="status" data-farm-rejected-notice>
+                {{ app()->getLocale() === 'fil' ? 'Hindi naaprubahan ang iyong bukid.' : 'Your farm was not approved.' }}
+                @if ($activeDashFarm->rejection_reason)
+                    <strong>{{ $activeDashFarm->rejection_reason }}</strong>
+                @endif
+                <a class="ms-2 underline" href="{{ route('farmer.farms.edit', $activeDashFarm) }}">{{ app()->getLocale() === 'fil' ? 'Ayusin at ipasa muli' : 'Fix and resubmit' }}</a>
+            </div>
+        @endif
 
         {{-- The "is this farm part of an association?" question is asked on My Farm (farmer-records/my-farm). --}}
 

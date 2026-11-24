@@ -53,8 +53,18 @@
                                     <div class="ffm-badges">
                                         @if ($f['primary'])<span class="fad-badge is-good">{{ __('farms.primary') }}</span>@endif
                                         @if ($f['current'])<span class="fad-badge is-info">{{ __('farms.current') }}</span>@endif
+                                        @if (($f['verification_status'] ?? 'approved') === 'pending')
+                                            <span class="fad-badge is-warn" data-farm-verification-badge="pending">{{ app()->getLocale() === 'fil' ? 'Naghihintay ng pagsusuri ng MAO' : 'Pending MAO review' }}</span>
+                                        @elseif (($f['verification_status'] ?? 'approved') === 'rejected')
+                                            <span class="fad-badge is-bad" data-farm-verification-badge="rejected">{{ app()->getLocale() === 'fil' ? 'Tinanggihan' : 'Rejected' }}</span>
+                                        @else
+                                            <span class="fad-badge is-good" data-farm-verification-badge="approved">{{ app()->getLocale() === 'fil' ? 'Aprubado' : 'Approved' }}</span>
+                                        @endif
                                     </div>
                                 </div>
+                                @if (($f['verification_status'] ?? 'approved') === 'rejected' && ! empty($f['rejection_reason']))
+                                    <p class="small text-danger mb-1" data-farm-rejection-reason>{{ app()->getLocale() === 'fil' ? 'Dahilan:' : 'Reason:' }} {{ $f['rejection_reason'] }}</p>
+                                @endif
                                 <p class="ffm-card-place">{{ $f['barangay'] ? __('farms.location_line', ['barangay' => $f['barangay']]) : __('farms.no_barangay') }}@if ($f['location']) · {{ $f['location'] }}@endif</p>
                                 <p class="ffm-card-size">{{ $f['size']['text'] }}@if ($f['size']['note'])<small>{{ $f['size']['note'] }}</small>@endif</p>
                                 @if ($f['association'])
@@ -65,12 +75,16 @@
                                     </p>
                                 @endif
                                 <div class="ffm-card-actions">
-                                    <a class="fad-btn is-quiet is-compact" href="{{ route('farmer.farms.edit', $f['id']) }}">{{ __('farms.edit') }}</a>
+                                    <a class="fad-btn is-quiet is-compact" href="{{ route('farmer.farms.edit', $f['id']) }}">
+                                        {{ ($f['verification_status'] ?? 'approved') === 'rejected' ? (app()->getLocale() === 'fil' ? 'Ayusin at ipasa muli' : 'Fix and resubmit') : __('farms.edit') }}
+                                    </a>
                                     <form method="POST" action="{{ route('farmer.farms.destroy', $f['id']) }}"
                                         data-ic-confirm="{{ count($farms) === 1 ? __('farms.remove_only_confirm', ['name' => $f['name']]) : __('farms.remove_confirm', ['name' => $f['name']]) }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="fad-btn is-quiet is-compact ffm-remove">{{ __('farms.remove') }}</button>
+                                        <button type="submit" class="fad-btn is-quiet is-compact ffm-remove">
+                                            {{ ($f['verification_status'] ?? 'approved') === 'pending' ? (app()->getLocale() === 'fil' ? 'Kanselahin' : 'Cancel submission') : __('farms.remove') }}
+                                        </button>
                                     </form>
                                 </div>
                             </li>

@@ -148,7 +148,7 @@ final class BarangayYieldForecastService
         $runs = 0;
         $calls = 0;
         if (ActiveFarm::available()) {
-            Farm::query()->active()
+            Farm::query()->active()->verified()
                 ->whereHas('user', fn ($q) => $q->where('role', User::ROLE_FARMER)->whereIn('status', [User::STATUS_ACTIVE, User::STATUS_APPROVED]))
                 ->with('user.farmerProfile')->orderBy('id')
                 ->each(function (Farm $farm) use ($weather, $now, $label, $period, &$memo, &$runs, &$calls): void {

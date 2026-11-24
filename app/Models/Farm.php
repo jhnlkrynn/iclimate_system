@@ -68,10 +68,19 @@ class Farm extends Model
     /** Room for every real farm; only stops a runaway form. */
     public const MAX_PER_FARMER = 50;
 
+    public const VERIFICATION_PENDING = 'pending';
+
+    public const VERIFICATION_APPROVED = 'approved';
+
+    public const VERIFICATION_REJECTED = 'rejected';
+
+    public const VERIFICATION_STATUSES = [self::VERIFICATION_PENDING, self::VERIFICATION_APPROVED, self::VERIFICATION_REJECTED];
+
     protected $fillable = [
         'user_id', 'farm_name', 'barangay', 'location_description', 'location_method', 'latitude', 'longitude',
         'farm_size_hectares', 'farm_size_method', 'farm_size_estimate_range', 'farm_size_unit', 'farm_type',
         'is_primary', 'archived_at',
+        'verification_status', 'verified_by', 'verified_at', 'rejection_reason',
     ];
 
     protected static function booted(): void
@@ -103,7 +112,53 @@ class Farm extends Model
             'farm_size_hectares' => 'decimal:4',
             'is_primary' => 'boolean',
             'archived_at' => 'datetime',
+            'verified_at' => 'datetime',
         ];
+    }
+
+    public function verifier(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'verified_by')->withoutGlobalScope(\App\Models\Scopes\HideDeletedUsers::class);
+    }
+
+    public function isApproved(): bool
+    {
+        if (! \App\Support\SchemaCache::hasColumn('farms', 'verification_status')) {
+            return true;
+        }
+
+        return ($this->verification_status ?? self::VERIFICATION_PENDING) === self::VERIFICATION_APPROVED;
+    }
+
+    public function isPendingVerification(): bool
+    {
+        return \App\Support\SchemaCache::hasColumn('farms', 'verification_status')
+            && ($this->verification_status ?? self::VERIFICATION_PENDING) === self::VERIFICATION_PENDING;
+    }
+
+    public function isRejected(): bool
+    {
+        return \App\Support\SchemaCache::hasColumn('farms', 'verification_status')
+            && $this->verification_status === self::VERIFICATION_REJECTED;
+    }
+
+    /** Only MAO-approved farms count for yields, averages, dashboards, and Climora. */
+    public function scopeVerified(Builder $query): Builder
+    {
+        if (! \App\Support\SchemaCache::hasColumn('farms', 'verification_status')) {
+            return $query;
+        }
+
+        return $query->where('verification_status', self::VERIFICATION_APPROVED);
+    }
+
+    public function scopePendingVerification(Builder $query): Builder
+    {
+        if (! \App\Support\SchemaCache::hasColumn('farms', 'verification_status')) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where('verification_status', self::VERIFICATION_PENDING);
     }
 
     public function user(): BelongsTo

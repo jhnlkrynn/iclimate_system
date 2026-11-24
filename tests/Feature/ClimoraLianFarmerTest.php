@@ -194,6 +194,7 @@ class ClimoraLianFarmerTest extends TestCase
             'farm_size_hectares' => 2.0,
             'farm_size_method' => Farm::SIZE_EXACT,
             'is_primary' => true,
+            'verification_status' => Farm::VERIFICATION_APPROVED,
         ]);
 
         config()->set('prediction.rice_yield.gate', 'label');

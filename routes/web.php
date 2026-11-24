@@ -298,6 +298,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('throttle:20,1,post-mao-dashboard-language')->name('mao.dashboard.language');
         Route::get('/mao/climora-feedback', [\App\Http\Controllers\Mao\AiFeedbackController::class, 'index'])
             ->name('mao.climora-feedback.index');
+        Route::prefix('mao/farm-verification')->name('mao.farm-verification.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Mao\FarmVerificationController::class, 'index'])->name('index');
+            Route::post('{farm}/approve', [\App\Http\Controllers\Mao\FarmVerificationController::class, 'approve'])
+                ->whereNumber('farm')->middleware('throttle:60,1,post-mao-farm-approve')->name('approve');
+            Route::post('{farm}/reject', [\App\Http\Controllers\Mao\FarmVerificationController::class, 'reject'])
+                ->whereNumber('farm')->middleware('throttle:60,1,post-mao-farm-reject')->name('reject');
+        });
     });
 
 

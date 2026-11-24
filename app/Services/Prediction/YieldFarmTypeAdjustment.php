@@ -176,6 +176,9 @@ class YieldFarmTypeAdjustment
             $schedules = FarmerPlantingSchedule::query()
                 ->whereNotNull('actual_yield')
                 ->where('actual_yield', '>', 0)
+                ->when(\App\Support\ActiveFarm::available() && SchemaCache::hasColumn('farms', 'verification_status'), function ($q): void {
+                    $q->where(fn ($inner) => $inner->whereNull('farm_id')->orWhereHas('farm', fn ($fq) => $fq->verified()));
+                })
                 ->get(['farm_type', 'season', 'harvested_on', 'planting_date', 'actual_yield']);
 
             foreach ($schedules as $s) {

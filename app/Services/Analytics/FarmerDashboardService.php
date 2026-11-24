@@ -156,7 +156,10 @@ final class FarmerDashboardService
         // A stored barangay that is not one supported official name is never guessed.
         $stored = $farm !== null ? '' : trim((string) ($profile?->barangay ?: $user->barangay));
         $risk = $barangay === null && $stored !== '' ? ['state' => 'unverified', 'stored' => $stored] : $this->riskStatus($barangay);
-        $harvest = $this->harvest($this->prediction($user, $farm, in_array('harvest', $refresh, true)), $farm, fn () => $profile, $now);
+        $prediction = ($farm !== null && ! $farm->isApproved())
+            ? ['state' => 'nodata']
+            : $this->prediction($user, $farm, in_array('harvest', $refresh, true));
+        $harvest = $this->harvest($prediction, $farm, fn () => $profile, $now);
         // Farmer – Naicel (2026-10-09): without an estimate of their own (no farm size yet), the third card of the row
         // shows Lian's usual yield for this month from past records, so the row always has its three cards.
         if ($harvest['state'] !== 'ok' && ! isset($harvest['usual'])) {
@@ -770,8 +773,11 @@ final class FarmerDashboardService
     public function seasonEstimate(User $user, ?Farm $farm = null): array
     {
         $farm ??= ActiveFarm::current($user);
+        $prediction = ($farm !== null && ! $farm->isApproved())
+            ? ['state' => 'nodata']
+            : $this->prediction($user, $farm, false);
 
-        return $this->harvest($this->prediction($user, $farm, false), $farm, fn () => $user->farmerProfile, CarbonImmutable::now(self::TIMEZONE));
+        return $this->harvest($prediction, $farm, fn () => $user->farmerProfile, CarbonImmutable::now(self::TIMEZONE));
     }
 
     /**
@@ -793,7 +799,7 @@ final class FarmerDashboardService
     public static function storedEstimates(?string $barangay = null): \Illuminate\Support\Collection
     {
         if (ActiveFarm::available()) {
-            return Farm::query()->active()
+            return Farm::query()->active()->verified()
                 ->when($barangay !== null, fn ($q) => $q->where('barangay', $barangay))
                 ->whereHas('user', fn ($q) => $q->where('role', User::ROLE_FARMER)->where('status', User::STATUS_ACTIVE))
                 ->get(['id', 'user_id'])
