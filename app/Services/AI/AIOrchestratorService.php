@@ -777,6 +777,10 @@ class AIOrchestratorService
             $answer = $this->appendIncompleteProfileLine($answer, $farmContext, $tagalog);
         }
 
+        if ($tool['success']) {
+            $answer = $this->appendForecastPredictionDisclaimer($answer, $tagalog);
+        }
+
         return $this->textResult($answer, 'weather_forecast', 'Live Weather Forecast', (string) $tool['source'], $language, $memory, [
             'tool_result' => $tool,
         ]);
@@ -834,6 +838,10 @@ class AIOrchestratorService
                 'temperature_c' => $data['temperature'] ?? null,
             ], [], $tagalog);
             $answer = $this->appendIncompleteProfileLine($answer, $farmContext, $tagalog);
+        }
+
+        if ($tool['success']) {
+            $answer = $this->appendForecastPredictionDisclaimer($answer, $tagalog);
         }
 
         return $this->textResult($answer, 'weather_prediction', 'Trained Model', (string) $tool['source'], $language, $memory, [
@@ -1550,6 +1558,19 @@ class AIOrchestratorService
         $line = $tagalog
             ? "Paalala: Kumpletuhin ang iyong farm profile para sa payo sa barangay mo: {$url}"
             : "Tip: Complete your farm profile for barangay-specific advice: {$url}";
+
+        return rtrim($answer)."\n\n".$line;
+    }
+
+    private function appendForecastPredictionDisclaimer(string $answer, bool $tagalog): string
+    {
+        $line = $tagalog
+            ? 'Paalala: Hula lamang ito at maaari pang magbago ang panahon.'
+            : 'Note: This is a forecast only and the weather can still change.';
+
+        if (str_contains($answer, $line)) {
+            return $answer;
+        }
 
         return rtrim($answer)."\n\n".$line;
     }

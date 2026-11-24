@@ -53,9 +53,9 @@
             <div class="wpx-head">
                 <div>
                     <h2 id="wpxWeatherTitle">{{ $isFarmer ? __('farmer.predictions.days_title') : __('farmer.predictions.weather_title') }}</h2>
+                    @include('partials.forecast-prediction-note', ['updatedAt' => $forecast['updated_at'] ?? null, 'locale' => app()->getLocale()])
                     @unless ($isFarmer)
-                    <p class="fad-support">{{ __('farmer.predictions.for_place', ['place' => $forecast['location']]) }}
-                        @if ($forecast['updated_at']) · <x-updated-at :at="$forecast['updated_at']" :label="__('farmer.home.updated')" />@endif</p>
+                    <p class="fad-support">{{ __('farmer.predictions.for_place', ['place' => $forecast['location']]) }}</p>
                     @endunless
                 </div>
                 <nav class="wpx-range" aria-label="{{ __('farmer.predictions.weather_title') }}">
@@ -88,13 +88,14 @@
                     <ol class="wpx-days is-plain" data-days="{{ count($forecast['days']) }}">
                         @foreach ($forecast['days'] as $i => $day)
                             @php $plainDay = $plain['days'][$i]; @endphp
-                            <li @class(['wpx-day', 'is-today' => $i === 0, 'is-estimate' => $day['kind'] === 'estimate', 'is-empty' => $day['kind'] === 'none']) data-kind="{{ $day['kind'] }}">
+                            <li @class(['wpx-day', 'is-today' => $i === 0, 'is-estimate' => $day['kind'] === 'estimate', 'is-less-certain' => $range === '2weeks' && $i >= 7, 'is-empty' => $day['kind'] === 'none']) data-kind="{{ $day['kind'] }}">
                                 <span class="wpx-day-name">{{ match ($i) { 0 => __('farmer.predictions.today'), 1 => __('farmer.predictions.tomorrow'), default => $day['date']->locale(app()->getLocale())->translatedFormat('D') } }}</span>
                                 <span class="wpx-day-date">{{ $day['date']->locale(app()->getLocale())->translatedFormat('M j') }}</span>
                                 <span class="wpx-day-icon is-{{ $plainDay['icon'] }}" aria-hidden="true">@include('dashboards.mao.icon', ['name' => $plainDay['icon']])</span>
                                 <span class="wpx-day-words">{{ $plainDay['word'] }}</span>
                                 @if ($day['kind'] !== 'none' && $day['high'] !== null)<span class="wpx-day-temp">{{ $num($day['high']) }}°</span>@endif
                                 @if ($day['kind'] === 'estimate')<span class="wpx-badge">{{ __('farmer.predictions.estimate_badge') }}</span>@endif
+                                @if ($range === '2weeks' && $i >= 7)<span class="wpx-certain-badge" data-less-certain>{{ __('farmer.predictions.less_certain') }}</span>@endif
                             </li>
                         @endforeach
                     </ol>
@@ -133,13 +134,14 @@
                 @else
                 <ol class="wpx-days" data-days="{{ count($forecast['days']) }}">
                     @foreach ($forecast['days'] as $i => $day)
-                        <li @class(['wpx-day', 'is-today' => $i === 0, 'is-estimate' => $day['kind'] === 'estimate', 'is-empty' => $day['kind'] === 'none']) data-kind="{{ $day['kind'] }}">
+                        <li @class(['wpx-day', 'is-today' => $i === 0, 'is-estimate' => $day['kind'] === 'estimate', 'is-less-certain' => $range === '2weeks' && $i >= 7, 'is-empty' => $day['kind'] === 'none']) data-kind="{{ $day['kind'] }}">
                             <span class="wpx-day-name">{{ $i === 0 ? __('farmer.predictions.today') : $day['date']->locale(app()->getLocale())->translatedFormat('D, M j') }}</span>
                             @if ($day['kind'] === 'none')
                                 <span class="wpx-day-words">{{ $noData }}</span>
                             @else
                                 <span class="wpx-day-icon" aria-hidden="true">@include('dashboards.mao.icon', ['name' => $day['icon']])</span>
                                 @if ($day['kind'] === 'estimate')<span class="wpx-badge">{{ __('farmer.predictions.estimate_badge') }}</span>@endif
+                                @if ($range === '2weeks' && $i >= 7)<span class="wpx-certain-badge" data-less-certain>{{ __('farmer.predictions.less_certain') }}</span>@endif
                                 <span class="wpx-day-words">{{ $day['kind'] === 'estimate' ? __('farmer.predictions.estimate') : $day['condition'] }}</span>
                                 @if ($day['rain_words'])<span class="wpx-day-rain">{{ $day['rain_words'] }}</span>@endif
                                 @if ($day['high'] !== null)<span class="wpx-day-temp">{{ $num($day['high']) }}° / {{ $num($day['low']) }}°</span>@endif

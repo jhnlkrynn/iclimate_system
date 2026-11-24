@@ -243,6 +243,35 @@ html body #mobileSidebar .sidebar-foot { font-size: .75rem; }
 .ic-photo-ok { margin: 10px 0 0; color: #16794a; font-size: .875rem; }
 .itp-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; display: block; }
 
+/* ================================================================== FORECAST PREDICTION NOTE */
+.ic-forecast-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 6px 0 10px;
+    font-size: .85rem;
+    line-height: 1.45;
+    color: var(--sage-700, #3f5745);
+}
+.ic-forecast-note-icon {
+    flex: none;
+    margin-top: 2px;
+    color: var(--sage-600, #4e6f56);
+    display: inline-flex;
+}
+.ic-forecast-note-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 10px;
+    min-width: 0;
+}
+.ic-forecast-note-meta {
+    color: var(--ic-muted, #64748b);
+    font-size: .8rem;
+    white-space: normal;
+}
+
 @media (max-width: 575.98px) {
     html[data-theme] body .topbar.ic-topbar { margin: 8px 8px 0; top: 8px; padding: 0 6px; height: 60px; }
     .ic-topbar-brand img { height: 38px; }

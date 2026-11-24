@@ -125,6 +125,9 @@
                                 <li class="is-{{ $line['level'] }}"><span class="hmx-dot" style="--hmx-color: {{ $colors[$line['level']] }}"></span>{{ $line['text'] }}</li>
                             @endforeach
                         </ul>
+                        @if (in_array($key, ['week', '2weeks'], true))
+                            @include('partials.forecast-prediction-note', ['updatedAt' => $r['updated_at'] ?? null, 'locale' => $locale])
+                        @endif
                         @if ($ownBarangay && isset($r['barangays'][$ownBarangay]))
                             @php $own = $r['barangays'][$ownBarangay]; @endphp
                             <button type="button" class="hmx-own" data-heat-map-pick="{{ $ownBarangay }}">

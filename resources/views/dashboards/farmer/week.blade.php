@@ -5,6 +5,7 @@
 @endphp
 <section class="fh-card fh-week" aria-labelledby="fhWeekTitle" data-fh-week>
     <h2 id="fhWeekTitle" class="fh-kicker">{{ __('farmer.home.week.title') }}</h2>
+    @include('partials.forecast-prediction-note', ['updatedAt' => $f['weather']['updated_at'] ?? null, 'locale' => $f['locale'] ?? app()->getLocale()])
     @if ($week['state'] === 'ok')
         <ol class="fh-days">
             @foreach ($week['days'] as $day)
