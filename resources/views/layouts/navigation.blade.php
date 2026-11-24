@@ -98,6 +98,14 @@
             </div>
         @endif
 
+        @if (($isFarmerNav || $isMaoNav) && \Illuminate\Support\Facades\Route::has('messages.index'))
+            @php($messagesLabel = $isFarmerNav ? __('farmer.nav.messages', [], $navLocale ?? 'en') : __('mao.nav.messages', [], $navLocale ?? 'en'))
+            <a class="ic-icon-btn position-relative {{ request()->routeIs('messages.*') ? 'is-active' : '' }}" href="{{ route('messages.index') }}"
+                title="{{ $messagesLabel }}" aria-label="{{ $messagesLabel }}" @if (request()->routeIs('messages.*')) aria-current="page" @endif>
+                <svg width="22" height="22" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3.5 5.5h13a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="m3.5 6.5 6.5 4.5 6.5-4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+        @endif
+
         @if ($showNavBell)
             <a class="ic-icon-btn position-relative" href="{{ route('notifications.index') }}" data-ic-notifications aria-haspopup="dialog"
                 data-feed-url="{{ route('notifications.feed') }}" data-index-url="{{ route('notifications.index') }}" data-mark-all-url="{{ route('notifications.mark-all-read') }}"
@@ -129,6 +137,12 @@
                     <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="2.2" stroke="currentColor" stroke-width="1.4"/><path d="M9 2.5v1.6M9 13.9v1.6M2.5 9h1.6M13.9 9h1.6M4.4 4.4l1.1 1.1M12.5 12.5l1.1 1.1M13.6 4.4l-1.1 1.1M5.5 12.5l-1.1 1.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
                     Settings
                 </a>
+                @if ($isMaoNav && \Illuminate\Support\Facades\Route::has('mao.activity-log.index'))
+                    <a @class(['dropdown-item', 'active' => request()->routeIs('mao.activity-log.*', 'mao.personnel.*')]) href="{{ route('mao.activity-log.index') }}">
+                        <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true"><rect x="3" y="3" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M6 7h6M6 10h6M6 13h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                        {{ __('mao.nav.mao_office', [], $navLocale ?? 'en') }}
+                    </a>
+                @endif
                 <div class="dropdown-divider"></div>
                 @include('layouts.partials.logout-form', ['variant' => 'menu', 'label' => 'Log out'])
             </div>

@@ -218,7 +218,7 @@ class ManuscriptReportBuilder
         $levels = collect($records)->countBy('weekly_risk');
 
         return [
-            ['barangay' => 'Barangay', 'weekly_risk' => 'This Week\'s Risk', 'mao_classification' => 'MAO Classification', 'flood_prone' => 'Flood-prone', 'drought_prone' => 'Drought-prone', 'rice_area' => 'Rice Area (ha)', 'farmers' => 'Farmers'],
+            ['barangay' => 'Barangay', 'weekly_risk' => 'This Week\'s Risk', 'mao_classification' => 'MAO Classification', 'flood_prone' => 'Flood-prone', 'drought_prone' => 'Drought-prone', 'farmers' => 'Farmers'],
             $records,
             [
                 ['label' => 'High / Moderate / Low this week', 'value' => ($levels['High'] ?? 0).' / '.($levels['Moderate'] ?? 0).' / '.($levels['Low'] ?? 0)],

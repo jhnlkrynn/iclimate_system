@@ -30,7 +30,7 @@ class RiceProductionController extends CrudController
     protected bool $printable = true;
 
     // Manuscript – Naicel (2026-10-08): Area Planted / Area Harvested and Validated.
-    protected array $columns = ['barangay' => 'Barangay', 'production_month' => 'Production Month', 'season' => 'Season', 'irrigation_type' => 'Irrigation', 'yield_per_hectare' => 'Yield (t/ha)', 'area_hectares' => 'Area Planted (ha)', 'area_harvested_hectares' => 'Area Harvested (ha)', 'total_production' => 'Total Harvest (t)', 'year' => 'Year', 'verification' => 'Validated', 'verified_by_label' => 'Validated by'];
+    protected array $columns = ['barangay' => 'Barangay', 'production_month' => 'Production Month', 'season' => 'Season', 'irrigation_type' => 'Irrigation', 'yield_per_hectare' => 'Yield (t/ha)', 'area_hectares' => 'Area Planted (ha)', 'area_harvested_hectares' => 'Area Harvested (ha)', 'total_production' => 'Total Harvest (t)', 'year' => 'Year', 'verification' => 'Validated'];
 
     protected array $searchable = ['barangay', 'season', 'irrigation_type', 'year', 'remarks'];
 

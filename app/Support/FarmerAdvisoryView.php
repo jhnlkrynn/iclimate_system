@@ -144,17 +144,26 @@ class FarmerAdvisoryView
         return $this->quickSummary()[0] ?? ($this->farmEffects()[0] ?? 'Weather conditions may affect rice fields.');
     }
 
-    /** "What to do": the first sentence that is an action, not an opening statement of what is happening. */
-    public function farmerAction(): string
+    /** "What to do": 1-3 simple, physical actions from AdvisoryActionRules (or explicit custom recommended_action). */
+    public function farmerAction(string $locale = 'en', ?string $cropStage = null): string
     {
-        $actions = $this->actions();
-        foreach ($actions as $sentence) {
-            if (preg_match(self::ACTION_START, $sentence)) {
-                return $sentence;
+        $lang = $locale === 'fil' ? 'fil' : 'en';
+        $rawRecommended = trim((string) $this->advisory->recommended_action);
+        $storedEn = data_get($this->advisory->metadata, 'actions_en');
+        $rules = app(\App\Services\Advisories\AdvisoryActionRules::class);
+
+        // Respect an explicit custom recommended_action (that differs from stored rule output and isn't the old vague line).
+        if ($cropStage === null && $lang === 'en' && $rawRecommended !== ''
+            && ! str_contains(strtolower($rawRecommended), 'check field moisture')
+            && (! is_array($storedEn) || $rawRecommended !== $rules->toActionString($storedEn))) {
+            foreach ($this->sentences($rawRecommended) as $sentence) {
+                if (preg_match(self::ACTION_START, $sentence)) {
+                    return $sentence;
+                }
             }
         }
 
-        return $actions[0] ?? 'Check your field before doing farm work.';
+        return $rules->toActionString($this->actions($lang, $cropStage));
     }
 
     public function farmerSourceLabel(): string
@@ -225,22 +234,18 @@ class FarmerAdvisoryView
         return $this->unique($lines);
     }
 
-    /** What to do: the recommended action, plus any farm guidance written into the message. */
-    public function actions(): array
+    /** What to do: 1-3 simple, physical actions (stored in metadata or computed via AdvisoryActionRules). */
+    public function actions(string $locale = 'en', ?string $cropStage = null): array
     {
-        [, $guidance] = $this->messageParts();
-        $recommended = $this->sentences((string) $this->advisory->recommended_action);
+        $lang = $locale === 'fil' ? 'fil' : 'en';
+        $stored = data_get($this->advisory->metadata, 'actions_'.$lang);
 
-        $actions = $this->unique(array_merge($recommended, $guidance));
-        if ($actions === []) {
-            $actions = ['Check your field before doing any farm work.', 'Ask the Municipal Agriculture Office if you are unsure what to do.'];
+        if ($cropStage === null && is_array($stored) && $stored !== []) {
+            return array_slice(array_values(array_filter(array_map('strval', $stored))), 0, 3);
         }
 
-        if (! preg_grep('/monitor|update|pagasa|advisor/i', $actions)) {
-            $actions[] = 'Keep checking for new advisories and PAGASA updates.';
-        }
-
-        return $actions;
+        return app(\App\Services\Advisories\AdvisoryActionRules::class)
+            ->forAdvisory($this->advisory, $lang, $cropStage);
     }
 
     /** Short safety reminder that replaces the long disclaimer. */

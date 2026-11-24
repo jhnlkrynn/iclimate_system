@@ -29,7 +29,7 @@ return [
         'reports' => 'Reports',
         'announcements' => 'Announcements',
         'messages' => 'Messages',
-        'mao_office' => 'MAO Office',
+        'mao_office' => 'Activity Logs',
     ],
     'dashboard' => [
         'office' => 'Municipal Agriculture Office',

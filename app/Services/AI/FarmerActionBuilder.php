@@ -85,15 +85,19 @@ final class FarmerActionBuilder
                 : 'Severe risk alert: prioritize safety, clear field canals, and hold off on fertilizer today.';
         }
 
-        // 2. Active PlantingAdvisory recommended_action (if concise and not duplicating typhoon).
+        // 2. Active PlantingAdvisory actions via AdvisoryActionRules (concise, stage-aware, and not duplicating typhoon).
+        $actionRules = app(\App\Services\Advisories\AdvisoryActionRules::class);
         foreach ($advisories as $advisory) {
             if (count($actions) >= 3) {
                 break;
             }
-            $rec = trim((string) $advisory->recommended_action);
-            if ($rec !== '' && ! self::isDuplicate($actions, $rec)) {
-                $actions[] = rtrim($rec, '.').'.';
-                break;
+            foreach ($actionRules->forAdvisory($advisory, $tagalog ? 'fil' : 'en', $stage) as $rec) {
+                if (count($actions) >= 3) {
+                    break;
+                }
+                if (! self::isDuplicate($actions, $rec)) {
+                    $actions[] = $rec;
+                }
             }
         }
 

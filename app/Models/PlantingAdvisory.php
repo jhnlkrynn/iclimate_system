@@ -307,14 +307,16 @@ class PlantingAdvisory extends Model
             $location = $this->target_barangay ?: 'Lian and Batangas';
 
             return match ($this->severity) {
-                self::SEVERITY_CRITICAL => "PAGASA Alert: Heavy rainfall and flood risk in {$location}. Secure crops and pause field work.",
-                self::SEVERITY_HIGH => "PAGASA Warning: Moderate to heavy rain expected in {$location}. Delay spraying and check drainage.",
-                self::SEVERITY_MODERATE => "PAGASA Notice: Rainshowers and thunderstorms over {$location}. Check field water before irrigating.",
-                default => "PAGASA Update: Light to moderate rains expected in {$location}. Check field moisture before irrigating or applying fertilizer.",
+                self::SEVERITY_CRITICAL => "PAGASA Alert: Heavy rainfall and flood risk in {$location}. Open canals and pause field work.",
+                self::SEVERITY_HIGH => "PAGASA Warning: Moderate to heavy rain expected in {$location}. Delay spraying and drain canals.",
+                self::SEVERITY_MODERATE => "PAGASA Notice: Rainshowers and thunderstorms over {$location}. Clean canals before rain arrives.",
+                default => "PAGASA Update: Light to moderate rains expected in {$location}. Hold off on spraying if rain is near.",
             };
         }
 
-        return $raw ?: (string) str($this->content)->limit(160);
+        $resolved = $raw ?: (string) str($this->content)->limit(160);
+
+        return \App\Services\Advisories\AdvisoryActionRules::toSentenceCase($resolved);
     }
 
     public function displayMessage(): string

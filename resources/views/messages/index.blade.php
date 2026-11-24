@@ -193,7 +193,7 @@
             </div>
             <div class="fad-hero-actions">
                 <span class="fmsg-private">@include('dashboards.mao.icon', ['name' => 'check'])<span>Private conversations</span></span>
-                <a href="{{ route('community-feed.index') }}" class="fad-btn is-light">Community Feed</a>
+                <a href="{{ route('planting-advisories.index') }}#announcements" class="fad-btn is-light">Announcements</a>
             </div>
         </header>
     @endif
@@ -216,7 +216,7 @@
         <x-shared.page-header kicker="Private Conversations" title="Messages" lede="Send private messages to MAO staff and farmers, and review your conversations.">
             <span class="mfd-pill is-good">@include('dashboards.mao.icon', ['name' => 'check'])<span>Private Channel</span></span>
             <div class="itd-header-actions">
-                <a href="{{ route('community-feed.index') }}" class="mfd-btn is-quiet">@include('dashboards.mao.icon', ['name' => 'farmers'])Announcements</a>
+                <a href="{{ route('mao.planner.index') }}#announcements" class="mfd-btn is-quiet">@include('dashboards.mao.icon', ['name' => 'farmers'])MAO Planner</a>
             </div>
         </x-shared.page-header>
         @endif

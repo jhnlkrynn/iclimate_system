@@ -117,16 +117,19 @@ class LocalFarmGuidanceService
         if (! $author) {
             return $weather;
         }
+        $actionRules = app(AdvisoryActionRules::class);
+        $actions = $actionRules->metadataFor($barangay.' Farm Weather Guidance: '.$title.' '.$summary, $severity);
+
         PlantingAdvisory::query()->updateOrCreate(['generation_key' => 'local-current:'.$barangay], [
             'title' => $barangay.' Farm Weather Guidance: '.$title, 'content' => $summary, 'summary' => $summary, 'message' => $summary,
-            'recommended_action' => $guidance['message'], 'type' => 'Climate', 'advisory_type' => 'climate',
+            'recommended_action' => $actionRules->toActionString($actions['actions_en']), 'type' => 'Climate', 'advisory_type' => 'climate',
             'severity' => $severity, 'priority' => ['low' => 25, 'moderate' => 55, 'high' => 80][$severity], 'target_barangay' => $barangay, 'target_scope' => 'barangay',
             'source' => 'Open-Meteo + iClimate Local Guidance', 'source_url' => $weather['source_url'],
             'generated_automatically' => true, 'requires_review' => false, 'status' => PlantingAdvisory::STATUS_PUBLISHED,
             'valid_from' => now(), 'valid_until' => now()->addHours(6),
             'published_at' => now(), 'posted_by' => $author,
             'metadata' => ['source_type' => 'iclimate', 'is_official' => false, 'scope_type' => 'barangay',
-                'scope_name' => $barangay.', Lian', 'fetched_at' => now()->toIso8601String(), 'weather_basis' => $weather],
+                'scope_name' => $barangay.', Lian', 'fetched_at' => now()->toIso8601String(), 'weather_basis' => $weather, ...$actions],
         ]);
 
         return $weather;

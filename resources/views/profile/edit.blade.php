@@ -48,7 +48,7 @@
             </div>
 
             <div class="mfd-card is-danger">@include('profile.partials.delete-user-form')</div>
-            <p class="small text-muted mt-2 mb-0"><a href="{{ route('privacy.notice') }}">{{ __('privacy.link') }}</a></p>
+            <p class="itp-privacy-foot mb-0"><a href="{{ route('privacy.notice') }}">{{ __('privacy.link') }}</a></p>
         </div>
     @else
     <section class="page-hero">

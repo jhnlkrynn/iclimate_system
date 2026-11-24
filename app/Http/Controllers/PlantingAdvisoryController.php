@@ -95,9 +95,11 @@ class PlantingAdvisoryController extends Controller
             ->when($show === 'all', fn ($query) => $query->limit(self::ALL_VIEW_LIMIT))
             ->get();
         if ($show === 'active') {
-            // Each provider check stores its own copy of an unchanged advisory; the list shows it once.
-            $rows = $rows->unique(fn (PlantingAdvisory $a): string => $a->title.'|'.$a->displaySummary().'|'.$a->target_barangay)->values();
+            // Merge duplicate/near-identical advisories sharing the same source, validity window, and barangay.
+            $rows = self::dedupeAdvisories($rows);
         }
+
+        $cropStage = $isFarmer ? $this->farmerCropStage($request->user()) : null;
 
         $typeOf = fn (PlantingAdvisory $a): string => strtolower((string) ($a->advisory_type ?: $a->type)) ?: PlantingAdvisory::TYPE_PLANTING;
         $counts = $rows->countBy($typeOf);
@@ -123,7 +125,7 @@ class PlantingAdvisoryController extends Controller
                     str_contains(strtolower((string) data_get($a->metadata, 'scope_name')), 'national') => 5,
                     default => ['barangay' => 1, 'municipality' => 2, 'province' => 3, 'regional' => 4, 'national' => 5][data_get($a->metadata, 'scope_type', 'municipality')] ?? 2,
                 }])
-                ->map(fn (PlantingAdvisory $a): array => $this->listItem($a, $locale))->values(),
+                ->map(fn (PlantingAdvisory $a): array => $this->listItem($a, $locale, $cropStage))->values(),
             'types' => $types,
             'type' => $type,
             'show' => $show,
@@ -201,7 +203,7 @@ class PlantingAdvisoryController extends Controller
      *
      * @return array<string, mixed>
      */
-    private function listItem(PlantingAdvisory $advisory, string $locale): array
+    private function listItem(PlantingAdvisory $advisory, string $locale, ?string $cropStage = null): array
     {
         $view = new FarmerAdvisoryView($advisory);
         $tz = BusinessClock::timezone();
@@ -227,12 +229,76 @@ class PlantingAdvisoryController extends Controller
                 default => null,
             },
             'recommendation' => self::oneSentence($view->farmerEffect()),
-            'action' => self::oneSentence($view->farmerAction()),
+            'action' => $view->farmerAction($locale, $cropStage),
             'activity' => filled(data_get($advisory->metadata, 'mao_activity')) ? (string) data_get($advisory->metadata, 'mao_activity') : null,
             'activity_date' => $activityDate?->format('M j, Y'),
             'official' => $view->isPagasa(),
             'source' => $view->farmerSourceLabel(),
         ];
+    }
+
+    /**
+     * Merge duplicate or near-identical advisories with the same source, validity dates, and target barangay.
+     *
+     * @param  \Illuminate\Support\Collection<int, PlantingAdvisory>  $rows
+     * @return \Illuminate\Support\Collection<int, PlantingAdvisory>
+     */
+    public static function dedupeAdvisories(\Illuminate\Support\Collection $rows): \Illuminate\Support\Collection
+    {
+        $kept = collect();
+        $signatures = [];
+
+        foreach ($rows as $row) {
+            $bucket = implode('|', [
+                strtolower(trim((string) $row->source)),
+                $row->valid_from?->toDateString() ?? '',
+                $row->valid_until?->toDateString() ?? '',
+                strtolower(trim((string) $row->target_barangay)),
+                strtolower(trim((string) data_get($row->metadata, 'scope_type', ''))),
+                strtolower(trim((string) data_get($row->metadata, 'scope_name', ''))),
+            ]);
+            $norm = preg_replace('/\b(will have|will be|skies|the|and|with|over|of|in)\b/', ' ', strtolower($row->title.' '.$row->displaySummary()));
+            $norm = trim((string) preg_replace('/[^a-z0-9]+/', ' ', (string) $norm));
+
+            $duplicate = false;
+            foreach ($signatures[$bucket] ?? [] as $prevNorm) {
+                if ($norm === $prevNorm) {
+                    $duplicate = true;
+                    break;
+                }
+                similar_text($norm, $prevNorm, $pct);
+                if ($pct >= 78.0) {
+                    $duplicate = true;
+                    break;
+                }
+            }
+
+            if ($duplicate) {
+                continue;
+            }
+
+            $signatures[$bucket][] = $norm;
+            $kept->push($row);
+        }
+
+        return $kept->values();
+    }
+
+    private function farmerCropStage(User $farmer): ?string
+    {
+        if (! SchemaCache::hasTable('farmer_planting_schedules')) {
+            return null;
+        }
+
+        return rescue(function () use ($farmer): ?string {
+            $plan = \App\Models\FarmerPlantingSchedule::query()
+                ->where('user_id', $farmer->id)
+                ->whereNull('harvested_on')
+                ->latest('planting_date')
+                ->first();
+
+            return $plan?->currentStageLabel() ?? null;
+        }, null, false);
     }
 
     /** The first sentence of a text, so every row stays one line of advice. */
@@ -661,12 +727,20 @@ class PlantingAdvisoryController extends Controller
             $metadata['mao_activity_date'] = Carbon::parse($data['mao_activity_date'])->toDateString();
         }
 
+        $actionRules = app(\App\Services\Advisories\AdvisoryActionRules::class);
+        $actions = $actionRules->metadataFor($data['title'].' '.$data['message'], $data['severity']);
+        $metadata = array_merge($metadata, $actions);
+        $recommended = trim((string) ($data['recommended_action'] ?? ''));
+        if ($recommended === '' || str_contains(strtolower($recommended), 'check field moisture')) {
+            $recommended = $actionRules->toActionString($actions['actions_en']);
+        }
+
         return [
             'title' => $data['title'],
             'content' => $data['message'],
             'message' => $data['message'],
             'summary' => str($data['message'])->limit(180)->toString(),
-            'recommended_action' => $data['recommended_action'] ?? null,
+            'recommended_action' => $recommended,
             'type' => str($data['advisory_type'])->headline()->toString(),
             'advisory_type' => $data['advisory_type'],
             'target_barangay' => $data['target_barangay'] ?? null,

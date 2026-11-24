@@ -23,7 +23,7 @@
             <div class="table-responsive mfd-card p-0">
                 <table class="table table-sm align-middle mb-0">
                     <thead>
-                        <tr><th>Barangay</th><th>Location</th><th>Rice area (MAO)</th><th>Registered</th><th>Classification</th><th>Prone to</th><th class="text-end">Edit</th></tr>
+                        <tr><th>Barangay</th><th>Location</th><th>Registered</th><th class="text-end">Edit</th></tr>
                     </thead>
                     <tbody>
                         @foreach ($rows as $row)
@@ -31,14 +31,7 @@
                             <tr id="b-{{ $slug }}" data-barangay-row="{{ $row->barangay }}">
                                 <td><strong>{{ \App\Services\Risk\HeatMapPanel::displayName($row->barangay) }}</strong></td>
                                 <td class="small">{{ $p->latitude !== null ? number_format((float) $p->latitude, 4).', '.number_format((float) $p->longitude, 4) : '—' }}</td>
-                                <td>{{ $p->farm_area_hectares !== null ? rtrim(rtrim(number_format((float) $p->farm_area_hectares, 2), '0'), '.').' ha' : '—' }}</td>
                                 <td class="small">{{ $row->farmers }} {{ \Illuminate\Support\Str::plural('farmer', $row->farmers) }}@if ($row->registered_area) · {{ rtrim(rtrim(number_format($row->registered_area, 2), '0'), '.') }} ha @endif</td>
-                                <td>
-                                    @if ($p->risk_classification)
-                                        <span @class(['badge', 'text-bg-success' => $p->risk_classification === 'Low', 'text-bg-warning' => $p->risk_classification === 'Moderate', 'text-bg-danger' => $p->risk_classification === 'High'])>{{ $p->risk_classification }}</span>
-                                    @else — @endif
-                                </td>
-                                <td class="small">{{ collect(['Flood' => $p->flood_prone, 'Drought' => $p->drought_prone])->filter()->keys()->implode(', ') ?: '—' }}</td>
                                 <td class="text-end">
                                     <details>
                                         <summary class="btn btn-outline-primary btn-sm">Edit</summary>

@@ -26,7 +26,20 @@ class MaoAssociationReportController extends Controller
             'yieldReports' => fn ($q) => $period ? $q->where('reporting_period_id', $period->id) : $q->whereRaw('1 = 0'),
             'chairmanAssignments' => fn ($q) => $q->where('status', \App\Models\AssociationChairmanAssignment::STATUS_ACTIVE)->with('user:id,name'),
         ])->orderBy('barangay')->orderBy('name')->get();
-        return view('mao.association-reports.index', compact('associations', 'period', 'periods'));
+
+        $farmersByBarangay = User::query()
+            ->where('role', User::ROLE_FARMER)
+            ->where('status', User::STATUS_ACTIVE)
+            ->with('farmerProfile:id,user_id,barangay')
+            ->orderBy('name')
+            ->get(['id', 'name', 'barangay'])
+            ->groupBy(fn (User $farmer): string => \App\Support\LianBarangays::canonicalName($farmer->registeredBarangay()) ?? '')
+            ->map(fn ($group) => $group->map(fn (User $farmer): array => [
+                'id' => $farmer->id,
+                'name' => $farmer->name,
+            ])->values());
+
+        return view('mao.association-reports.index', compact('associations', 'period', 'periods', 'farmersByBarangay'));
     }
 
     public function storePeriod(Request $request)
@@ -61,6 +74,13 @@ class MaoAssociationReportController extends Controller
         \Illuminate\Support\Facades\DB::transaction(function () use ($data, $association, $request): void {
             $user = User::query()->lockForUpdate()->findOrFail($data['user_id']);
             abort_unless($user->role === User::ROLE_FARMER && $user->hasApplicationAccess(), 422);
+            $associationBarangay = \App\Support\LianBarangays::canonicalName($association->barangay);
+            $farmerBarangay = \App\Support\LianBarangays::canonicalName($user->registeredBarangay());
+            if ($associationBarangay && $farmerBarangay && $associationBarangay !== $farmerBarangay) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'user_id' => 'Selected farmer must be registered in '.$associationBarangay.'.',
+                ]);
+            }
             $association->newQuery()->whereKey($association->id)->lockForUpdate()->firstOrFail();
             \App\Models\AssociationChairmanAssignment::query()
                 ->where(function ($query) use ($association, $user): void {

@@ -29,8 +29,8 @@ class ResponsiveLayoutTest extends TestCase
         $this->assertStringContainsString('@media (max-width: 640px)', $farmerCss);
         // The MAO dashboard (2026-10): four tiles, two per row on phones (the Operations page and its stylesheet were removed).
         $this->assertStringContainsString('@media (min-width: 560px) { .mhd-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }', file_get_contents(resource_path('css/mao-dashboard.css')));
-        // "Farmers by Organization" chart moved from the MAO dashboard to the Farmer Profiles page.
-        $this->assertStringContainsString('.farmer-org-legend { grid-template-columns: 1fr; }', $crudIndex);
+        // "Farmers by Organization" KPIs moved from chart to responsive KPI grid on the Farmer Profiles page.
+        $this->assertStringContainsString('data-association-kpis', $crudIndex);
         // MAO overview: built on the farmer dashboard system; its styles live in resources/css/mao-dashboard.css.
         // 1 KPI per row on phones, 2 on small tablets, 3 on tablets, up to 5 on desktop; tables become cards on phones.
         $maoCss = file_get_contents(resource_path('css/mao-dashboard.css'));

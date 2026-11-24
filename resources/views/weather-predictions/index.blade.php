@@ -69,7 +69,7 @@
                     <label for="wpxBarangay">{{ __('farmer.predictions.barangay') }}</label>
                     <select id="wpxBarangay" name="barangay">
                         <option value="">{{ ($maoScoped ?? false) ? (app()->getLocale() === 'fil' ? 'Lahat ng naka-assign na barangay' : 'All assigned barangays') : __('farmer.predictions.all_lian') }}</option>
-                        @foreach ($barangays as $name)
+                        @foreach ((array) $barangays as $name)
                             <option value="{{ $name }}" @selected($barangay === $name)>{{ $name }}</option>
                         @endforeach
                     </select>

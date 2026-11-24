@@ -28,7 +28,7 @@ class FarmerProfileController extends CrudController
 
     // MAO list (2026-10): no contact number or address; total_farm_area and account_status are FarmerProfile accessors.
     // Panel revision 1.1: + Organizations (every organization the farmer belongs to).
-    protected array $columns = ['full_name' => 'Name', 'barangay' => 'Barangay', 'organization_names' => 'Organizations', 'farm_type' => 'Farm Type', 'total_farm_area' => 'Total Farm Area', 'account_status' => 'Status'];
+    protected array $columns = ['full_name' => 'Name', 'barangay' => 'Barangay', 'farm_type' => 'Farm Type', 'total_farm_area' => 'Total Farm Area', 'account_status' => 'Status'];
 
     // Panel revision 1.4: + RSBSA no. (the farmer ID); organization names and the record no. are searched in extraSearch().
     protected array $searchable = ['full_name', 'contact_number', 'address', 'barangay', 'farm_type', 'rsbsa_no'];

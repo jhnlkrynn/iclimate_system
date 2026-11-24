@@ -14,41 +14,9 @@ use Illuminate\View\View;
 
 class CommunityFeedController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): RedirectResponse
     {
-        $canPost = $this->canPost($request->user());
-
-        // The same for everyone who can (or can not) post, so one prepared page serves all of them for
-        // half a minute. It needs about ten database round trips. Any change to a post, comment,
-        // reaction or attachment rebuilds it (see AppServiceProvider).
-        $posts = \App\Support\PageCache::shared(
-            'community-feed',
-            30,
-            fn () => FeedPost::query()
-                ->with([
-                    'author',
-                    'media',
-                    'comments.user',
-                    'reactions.user',
-                ])
-                ->withCount([
-                    'reactions as like_reactions_count' => fn ($query) => $query->where('type', 'Like'),
-                    'reactions as love_reactions_count' => fn ($query) => $query->where('type', 'Love'),
-                    'reactions as care_reactions_count' => fn ($query) => $query->where('type', 'Care'),
-                    'reactions as wow_reactions_count' => fn ($query) => $query->where('type', 'Wow'),
-                    'reactions as helpful_reactions_count' => fn ($query) => $query->where('type', 'Helpful'),
-                ])
-                ->when(! $canPost, fn ($query) => $query->whereNull('archived_at'))
-                ->latest()
-                ->paginate(10),
-            \App\Support\PageCache::queryVary($request, ['page']) + ['can_post' => $canPost ? '1' : '0'],
-        );
-
-        return view('community-feed.index', [
-            'posts' => $posts,
-            'canPost' => $canPost,
-            'reactionTypes' => ['Like', 'Love', 'Care', 'Wow', 'Helpful'],
-        ]);
+        return redirect()->to(route('mao.planner.index').'#announcements');
     }
 
     public function store(Request $request): RedirectResponse
@@ -69,7 +37,7 @@ class CommunityFeedController extends Controller
 
         $this->storeAttachments($post, $request->file('attachments', []));
 
-        return redirect()->route('community-feed.index')->with('success', 'Post published to the community feed.');
+        return redirect()->to(route('mao.planner.index').'#announcements')->with('success', 'Post published to the community feed.');
     }
 
     public function update(Request $request, FeedPost $post): RedirectResponse

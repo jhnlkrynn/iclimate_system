@@ -5,12 +5,12 @@
     <div class="mfd itd itp">
         <x-shared.page-header kicker="Municipal Agriculture Office" title="Account Requests" lede="New farmer sign-ups wait here. Approve a farmer so they can log in, or reject the sign-up with a reason." />
 
-        @include('partials.manuscript-tabs', ['group' => 'farmers', 'label' => 'Farmers'])
+        @include('partials.manuscript-tabs', ['group' => 'approvals', 'label' => 'Approvals and reports'])
 
-        <nav class="ic-tabs mb-3" aria-label="Show sign-ups" data-live-region="approval-tabs" data-live-areas="users,farmers">
+        <nav class="itp-subtabs" aria-label="Show sign-ups" data-live-region="approval-tabs" data-live-areas="users,farmers">
             @foreach (['pending' => 'Waiting', 'approved' => 'Approved', 'rejected' => 'Rejected'] as $key => $label)
-                <a href="{{ route('mao.farmer-approvals.index', array_filter(['show' => $key, 'barangay' => $barangay, 'search' => $search])) }}" @class(['ic-tab', 'is-active' => $show === $key]) @if ($show === $key) aria-current="page" @endif>
-                    {{ $label }}@if ($key === 'pending')<span class="ic-tab-count" data-pending-count>{{ number_format($pendingCount) }}</span>@endif
+                <a href="{{ route('mao.farmer-approvals.index', array_filter(['show' => $key, 'barangay' => $barangay, 'search' => $search])) }}" @class(['itp-subtab', 'is-active' => $show === $key]) @if ($show === $key) aria-current="page" @endif>
+                    {{ $label }}@if ($key === 'pending')<span class="itp-subtab-count" data-pending-count>{{ number_format($pendingCount) }}</span>@endif
                 </a>
             @endforeach
         </nav>
@@ -18,43 +18,54 @@
         <form class="itd-filters mb-3" method="GET" action="{{ route('mao.farmer-approvals.index') }}">
             <input type="hidden" name="show" value="{{ $show }}">
             <label>Search<input type="search" name="search" value="{{ $search }}" placeholder="Farmer name or email" maxlength="120"></label>
-            <button class="btn btn-outline-primary btn-sm" type="submit">Search</button>
             <label>Barangay
                 <select name="barangay" data-autosubmit>
                     <option value="">All</option>
                     @foreach ($barangays as $name)<option value="{{ $name }}" @selected($barangay === $name)>{{ $name }}</option>@endforeach
                 </select>
             </label>
-            <noscript><button class="btn btn-primary btn-sm" type="submit">Apply</button></noscript>
+            <button class="btn btn-primary" type="submit">Search</button>
         </form>
 
         {{-- data-live-region: a new sign-up appears here without reloading (resources/js/live-page.js). --}}
-        <section class="itp-section" aria-labelledby="faTitle" data-live-region="approvals" data-live-areas="users,farmers">
-            <div class="itp-section-head">
-                <h2 id="faTitle">{{ ['pending' => 'Waiting for approval', 'approved' => 'Approved sign-ups', 'rejected' => 'Rejected sign-ups'][$show] }}</h2>
-                <p>{{ $show === 'pending' ? 'Oldest first. Check the name and barangay against the RSBSA list before approving.' : 'Newest first.' }}</p>
-            </div>
-
+        <section class="itp-section" aria-label="{{ ['pending' => 'Waiting for approval', 'approved' => 'Approved sign-ups', 'rejected' => 'Rejected sign-ups'][$show] }}" data-live-region="approvals" data-live-areas="users,farmers">
             @if ($users->isEmpty())
-                <div class="fad-empty" role="status"><p class="fad-lead">{{ $show === 'pending' ? 'No sign-ups are waiting.' : 'Nothing to show.' }}</p></div>
+                <div class="mfd-card p-4 text-muted" role="status">{{ $show === 'pending' ? 'No sign-ups are waiting.' : 'Nothing to show.' }}</div>
             @else
                 <div class="table-responsive mfd-card p-0">
                     <table class="table table-sm align-middle mb-0" data-farmer-approvals>
                         <thead>
-                            <tr><th>Name</th><th>Contact</th><th>Barangay</th><th>Farm</th><th>Signed up</th><th>Status</th><th>Reviewed</th><th>Reviewing MAO Staff</th><th>Rejection reason</th><th class="text-end">Action</th></tr>
+                            <tr><th>Farmer</th><th>Barangay &amp; Farm</th><th>Signed up</th><th>Review</th><th class="text-end">Action</th></tr>
                         </thead>
                         <tbody>
                             @foreach ($users as $farmer)
+                                @php
+                                    $contact = $farmer->contact_number ?: $farmer->farmerProfile?->contact_number;
+                                    $reviewedAt = $farmer->reviewed_at?->timezone('Asia/Manila')->format('M j, Y H:i')
+                                        ?: $farmer->approved_at?->timezone('Asia/Manila')->format('M j, Y H:i');
+                                    $reviewer = $farmer->accountReviewer?->name ?: $farmer->approver?->name;
+                                @endphp
                                 <tr data-user-id="{{ $farmer->id }}">
-                                    <td><strong>{{ $farmer->name }}</strong><div class="small text-muted">{{ $farmer->email }}</div></td>
-                                    <td>{{ $farmer->contact_number ?: ($farmer->farmerProfile?->contact_number ?: '—') }}</td>
-                                    <td>{{ $farmer->barangay ?: 'Barangay: not set yet' }}</td>
-                                    <td>{{ $farmer->farmerProfile?->farm_type ?: '—' }}@if ($farmer->farmerProfile?->farm_area) · {{ rtrim(rtrim(number_format((float) $farmer->farmerProfile->farm_area, 2), '0'), '.') }} ha @endif</td>
-                                    <td>{{ $farmer->created_at?->timezone(\App\Support\BusinessClock::timezone())->format('M j, Y') }}</td>
-                                    <td>{{ $farmer->applicationStatus() }}</td>
-                                    <td>{{ $farmer->reviewed_at?->timezone('Asia/Manila')->format('M j, Y H:i') ?: $farmer->approved_at?->timezone('Asia/Manila')->format('M j, Y H:i') ?: ($farmer->status === \App\Models\User::STATUS_PENDING ? 'Awaiting review' : 'Not recorded') }}</td>
-                                    <td>{{ $farmer->accountReviewer?->name ?: $farmer->approver?->name ?: 'Not recorded' }}</td>
-                                    <td>{{ $farmer->status === \App\Models\User::STATUS_REJECTED ? $farmer->rejection_reason : '—' }}</td>
+                                    <td>
+                                        <strong>{{ $farmer->name }}</strong>
+                                        <div class="small text-muted">{{ $farmer->email }}@if ($contact) · {{ $contact }}@endif</div>
+                                    </td>
+                                    <td>
+                                        <div>{{ $farmer->barangay ?: 'Barangay not set' }}</div>
+                                        @if ($farmer->farmerProfile?->farm_type || $farmer->farmerProfile?->farm_area)
+                                            <div class="small text-muted">{{ $farmer->farmerProfile?->farm_type ?: '—' }}@if ($farmer->farmerProfile?->farm_area) · {{ rtrim(rtrim(number_format((float) $farmer->farmerProfile->farm_area, 2), '0'), '.') }} ha @endif</div>
+                                        @endif
+                                    </td>
+                                    <td class="itd-nowrap">{{ $farmer->created_at?->timezone(\App\Support\BusinessClock::timezone())->format('M j, Y') }}</td>
+                                    <td>
+                                        <div>{{ $farmer->applicationStatus() }}</div>
+                                        @if ($reviewedAt || $reviewer)
+                                            <div class="small text-muted">{{ $reviewedAt ?: '' }}@if ($reviewedAt && $reviewer) · @endif{{ $reviewer ?: '' }}</div>
+                                        @endif
+                                        @if ($farmer->status === \App\Models\User::STATUS_REJECTED && $farmer->rejection_reason)
+                                            <div class="small text-danger">{{ $farmer->rejection_reason }}</div>
+                                        @endif
+                                    </td>
                                     <td class="text-end">
                                         <a class="btn btn-outline-primary btn-sm mb-2" href="{{ route('mao.farmer-approvals.show', $farmer) }}">View Details</a>
                                         @if ($show === 'rejected')

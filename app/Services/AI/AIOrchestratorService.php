@@ -233,7 +233,7 @@ class AIOrchestratorService
         // last_details is read from the previous chat; saving it again would copy the report into every chat.
         unset($result['memory']['last_details']);
         $result['memory'] = [
-            ...($result['memory'] ?? \Illuminate\Support\Arr::except($memory, ['last_details'])),
+            ...($result['memory'] ?? Arr::except($memory, ['last_details'])),
             'orchestrator' => [
                 'intent' => $intent,
                 'classifier_source' => $classification['source'],
@@ -1304,18 +1304,18 @@ class AIOrchestratorService
     private function targetMonth(array $entities): CarbonImmutable
     {
         if (($entities['target_period'] ?? null) === 'next_month') {
-            return \App\Support\BusinessClock::now()->toImmutable()->addMonthNoOverflow()->startOfMonth();
+            return BusinessClock::now()->toImmutable()->addMonthNoOverflow()->startOfMonth();
         }
 
         if (isset($entities['target_date']) && is_string($entities['target_date'])) {
             try {
                 return CarbonImmutable::parse($entities['target_date'])->startOfMonth();
             } catch (Throwable) {
-                return \App\Support\BusinessClock::now()->toImmutable()->addMonthNoOverflow()->startOfMonth();
+                return BusinessClock::now()->toImmutable()->addMonthNoOverflow()->startOfMonth();
             }
         }
 
-        return \App\Support\BusinessClock::now()->toImmutable()->addMonthNoOverflow()->startOfMonth();
+        return BusinessClock::now()->toImmutable()->addMonthNoOverflow()->startOfMonth();
     }
 
     private function translate(string $language, string $english, string $tagalog): string

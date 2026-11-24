@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\FarmerPlantingSchedule;
+use App\Models\FeedPost;
 use App\Models\MaoActivity;
+use App\Models\User;
 use App\Support\LianBarangays;
+use App\Support\PageCache;
 use App\Support\SchemaCache;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -54,10 +57,46 @@ class MaoPlannerController extends Controller
             );
         }
 
+        $canPost = $request->user()?->role === User::ROLE_MAO;
+        $posts = SchemaCache::hasTable('feed_posts')
+            ? PageCache::shared(
+                'community-feed',
+                30,
+                fn () => FeedPost::query()
+                    ->with([
+                        'author',
+                        'media',
+                        'comments.user',
+                        'reactions.user',
+                    ])
+                    ->withCount([
+                        'reactions as like_reactions_count' => fn ($query) => $query->where('type', 'Like'),
+                        'reactions as love_reactions_count' => fn ($query) => $query->where('type', 'Love'),
+                        'reactions as care_reactions_count' => fn ($query) => $query->where('type', 'Care'),
+                        'reactions as wow_reactions_count' => fn ($query) => $query->where('type', 'Wow'),
+                        'reactions as helpful_reactions_count' => fn ($query) => $query->where('type', 'Helpful'),
+                    ])
+                    ->when(! $canPost, fn ($query) => $query->whereNull('archived_at'))
+                    ->latest()
+                    ->paginate(10, ['*'], 'feed_page')
+                    ->withQueryString(),
+                PageCache::queryVary($request, ['feed_page']) + ['can_post' => $canPost ? '1' : '0'],
+            )
+            : new LengthAwarePaginator(
+                items: [],
+                total: 0,
+                perPage: 10,
+                currentPage: LengthAwarePaginator::resolveCurrentPage('feed_page'),
+                options: ['path' => $request->url(), 'query' => $request->query()],
+            );
+
         $data = [
             'activities' => $activities,
             'activitiesAvailable' => $activitiesAvailable,
             'farmerActivities' => $this->farmerActivities($filters['farmer_barangay'] ?? null),
+            'posts' => $posts,
+            'canPost' => $canPost,
+            'reactionTypes' => ['Like', 'Love', 'Care', 'Wow', 'Helpful'],
             'filters' => $filters,
             'barangays' => LianBarangays::all(),
             'types' => MaoActivity::TYPES,

@@ -29,7 +29,7 @@ return [
         'reports' => 'Mga Ulat',
         'announcements' => 'Mga Anunsyo',
         'messages' => 'Mga Mensahe',
-        'mao_office' => 'Tanggapan ng MAO',
+        'mao_office' => 'Mga Tala ng Aktibidad',
     ],
     'dashboard' => [
         'office' => 'Tanggapan ng Agrikultura ng Bayan',

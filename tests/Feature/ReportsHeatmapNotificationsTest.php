@@ -373,7 +373,7 @@ class ReportsHeatmapNotificationsTest extends TestCase
             'body' => 'Seeds will be distributed this Friday.',
             'category' => 'Announcement',
             'visibility' => 'All Farmers',
-        ])->assertRedirect(route('community-feed.index'));
+        ])->assertRedirect(route('mao.planner.index').'#announcements');
 
         $this->assertDatabaseHas('feed_posts', [
             'user_id' => $mao->id,

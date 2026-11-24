@@ -45,7 +45,7 @@ class MaoPageSmokeTest extends TestCase
             '/climate-records' => 'Climate Records',
             '/planting-advisories' => 'Advisories',
             '/reports' => 'Reports',
-            '/community-feed' => 'Announcements',
+            '/mao/planner' => 'Announcements',
             '/farmer-profiles' => 'Farmer',
             '/weather-predictions' => 'Forecast',
             '/messages' => 'Messages',
@@ -73,6 +73,8 @@ class MaoPageSmokeTest extends TestCase
         // Removed or moved pages (2026-10) open their replacement; Chatbot Knowledge is hidden and opens the dashboard.
         $this->actingAs($user)->get('/mao/operations')->assertRedirect('/mao/dashboard');
         $this->actingAs($user)->get('/management/advisories')->assertRedirect(route('planting-advisories.index', ['show' => 'all']));
+        $this->actingAs($user)->get('/community-feed')->assertRedirect(route('mao.planner.index').'#announcements');
+        $this->actingAs($user)->get('/announcements')->assertRedirect('community-feed');
         $this->actingAs($user)->get('/ai-admin/topics')->assertNotFound();
     }
 }

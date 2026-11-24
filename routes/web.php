@@ -124,7 +124,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/farmer/dashboard/farm-size', [\App\Http\Controllers\FarmerDashboardSetupController::class, 'farmSize'])->name('farmer.dashboard.farm-size');
             Route::post('/farmer/dashboard/profile', [\App\Http\Controllers\FarmerDashboardSetupController::class, 'profile'])->name('farmer.dashboard.profile');
             // Farm map drawing was removed (2026-10): the old pop-up's save opens My Farm and stores nothing.
-            Route::post('/farmer/dashboard/farm-map', [\App\Http\Controllers\FarmBoundaryController::class, 'updateFromDashboard'])->middleware('farmer.redirect:farmer.my-farm')->name('farmer.dashboard.farm-map');
+            Route::post('/farmer/dashboard/farm-map', [FarmBoundaryController::class, 'updateFromDashboard'])->middleware('farmer.redirect:farmer.my-farm')->name('farmer.dashboard.farm-map');
         });
 
         // The dashboard's association card: answer for one farm, or "Later" (FarmAssociationPromptController).
@@ -341,10 +341,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             RiceProductionController::class
         )->middleware('farmer.redirect:farmer.dashboard');
 
-        Route::resource(
-            'historical-rice-productions',
-            \App\Http\Controllers\HistoricalRiceProductionController::class
-        )->middleware(['farmer.redirect:farmer.dashboard', 'role:'.User::ROLE_MAO]);
+        Route::redirect('historical-rice-productions', '/rice-productions')
+            ->middleware(['farmer.redirect:farmer.dashboard', 'role:'.User::ROLE_MAO])
+            ->name('historical-rice-productions.index');
 
 
         /*
@@ -357,7 +356,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // a watched analytics run.
         Route::get(
             'management/advisories',
-            fn (\Illuminate\Http\Request $request) => redirect()->route('planting-advisories.index', array_filter(['show' => 'all', 'run' => $request->query('run')]))
+            fn (Request $request) => redirect()->route('planting-advisories.index', array_filter(['show' => 'all', 'run' => $request->query('run')]))
         )
             ->middleware(
                 'role:'.

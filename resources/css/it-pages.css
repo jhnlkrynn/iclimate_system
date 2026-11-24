@@ -282,9 +282,19 @@ html[data-theme="dark"] body .itp-simple-health .mfd-header .mfd-btn.is-quiet:ho
 .itp-account-email { font-size: .9375rem; color: var(--muted); overflow-wrap: anywhere; }
 .itp-account-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
 .itp-account-facts { flex: 1 1 320px; min-width: 0; }
-.itp-form section { display: flex; flex-direction: column; gap: 20px; }
-.itp-form section > header { padding-bottom: 12px; border-bottom: 1px solid var(--line); }
-.itp-form section > header p { margin-top: 4px !important; font-size: .9375rem !important; font-weight: 400; color: var(--muted) !important; }
+.itp-form .mfd-card::before,
+.itp-form .mfd-card::after { content: none !important; display: none !important; }
+.itp-form section:not(.ic-photo-form) { display: flex; flex-direction: column; gap: 20px; }
+.itp-form section.ic-photo-form { display: flex; flex-direction: row; align-items: center; gap: 20px; flex-wrap: wrap; }
+.itp-form section.ic-photo-form .ic-photo-body { flex: 1 1 280px; min-width: 0; }
+.itp-form section.ic-photo-form .ic-photo-title { font-size: 1.125rem; font-weight: 700; color: var(--ink); margin: 0 0 4px; }
+.itp-form section.ic-photo-form .ic-photo-hint { margin: 0 0 12px; font-size: .9375rem; color: var(--muted); }
+.itp-form section:not(.ic-photo-form) > header { padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.itp-form section:not(.ic-photo-form) > header p { margin-top: 4px !important; font-size: .9375rem !important; font-weight: 400; color: var(--muted) !important; }
+.itp-two > .mfd-card { display: flex; flex-direction: column; }
+.itp-two > .mfd-card > section { flex: 1 1 auto; }
+.itp-two > .mfd-card > section > form { flex: 1 1 auto; }
+.itp-two > .mfd-card > section > form > div:last-child { margin-top: auto !important; padding-top: 4px; }
 .itp-form form { display: flex; flex-direction: column; gap: 16px; margin: 0 !important; }
 .itp-form form > * { margin-top: 0 !important; }
 .itp-form form > div > label { display: block; margin-bottom: 6px; }
@@ -292,8 +302,22 @@ html[data-theme="dark"] body .itp-simple-health .mfd-header .mfd-btn.is-quiet:ho
 .itp-form form > div:last-child { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .itp-form ul { font-size: .875rem; }
 .itp-form .mfd-card.is-danger { border-top: 3px solid var(--danger); }
+.itp-form .mfd-card.is-danger > section > header { border-bottom: 0; padding-bottom: 0; }
+@media (min-width: 768px) {
+    .itp-form .mfd-card.is-danger > section { flex-direction: row; align-items: center; justify-content: space-between; gap: 24px; }
+    .itp-form .mfd-card.is-danger > section > .btn { align-self: center; flex: none; }
+}
 .itp-form #send-verification { display: none; }
 .itp-form section > .btn { align-self: flex-start; }
+.itp-privacy-foot { display: flex; justify-content: flex-end; padding-top: 4px; }
+.itp-privacy-foot a { font-size: .875rem; font-weight: 500; color: var(--muted); text-decoration: none; }
+.itp-privacy-foot a:hover { color: var(--brand-ink, var(--brand)); text-decoration: underline; }
+.itp-subtabs { display: flex; flex-wrap: wrap; gap: 4px 20px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+.itp-subtab { display: inline-flex; align-items: center; gap: 8px; padding: 8px 2px 10px; border-bottom: 2px solid transparent; margin-bottom: -1px; font-size: .9375rem; font-weight: 500; color: var(--muted); text-decoration: none; }
+.itp-subtab:hover { color: var(--ink); }
+.itp-subtab.is-active { color: var(--brand-ink, var(--brand)); border-bottom-color: var(--brand); font-weight: 600; }
+.itp-subtab-count { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--subtle); color: var(--ink); font-size: .75rem; font-weight: 600; }
+.itp-subtab.is-active .itp-subtab-count { background: var(--good-bg); color: var(--brand-ink, var(--brand)); }
 
 /* ================================================================ 3b. System Health */
 .itp-check { display: flex; flex-direction: column; gap: 12px; border-top-width: 3px; border-top-style: solid; }

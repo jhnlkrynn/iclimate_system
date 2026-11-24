@@ -41,12 +41,18 @@ class AdvisoryAlertService
         $scheduled = $data['scheduled_for'] !== null && $data['scheduled_for']->isFuture();
         $targets = $data['barangays'] === [] ? [null] : $data['barangays'];
 
+        $actionRules = app(AdvisoryActionRules::class);
+        $actions = $actionRules->metadataFor($data['title'].' '.$data['message'], $data['severity']);
+        $recommended = filled($data['recommended_action'] ?? null)
+            ? $data['recommended_action']
+            : $actionRules->toActionString($actions['actions_en']);
+
         $advisories = collect($targets)->map(fn (?string $barangay) => PlantingAdvisory::query()->create([
             'title' => $data['title'],
             'content' => $data['message'],
             'message' => $data['message'],
             'summary' => Str::limit($data['message'], 180),
-            'recommended_action' => $data['recommended_action'],
+            'recommended_action' => $recommended,
             'type' => $data['type'] === 'general' ? PlantingAdvisory::TYPE_PLANTING : PlantingAdvisory::TYPE_CLIMATE,
             'advisory_type' => $data['type'] === 'general' ? PlantingAdvisory::TYPE_PLANTING : PlantingAdvisory::TYPE_CLIMATE,
             'severity' => $data['severity'],
@@ -62,7 +68,7 @@ class AdvisoryAlertService
             'approved_by' => $author->getKey(),
             'approved_at' => now(),
             'posted_by' => $author->getKey(),
-            'metadata' => ['alert_batch' => $batch, 'alert_type' => $data['type'], 'scope_type' => $barangay === null ? 'municipality' : 'barangay'],
+            'metadata' => ['alert_batch' => $batch, 'alert_type' => $data['type'], 'scope_type' => $barangay === null ? 'municipality' : 'barangay', ...$actions],
         ]));
 
         $notified = $scheduled ? 0 : $advisories->sum(fn (PlantingAdvisory $a) => $this->notify($a, $data['type']));

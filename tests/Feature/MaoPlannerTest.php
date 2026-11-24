@@ -103,7 +103,7 @@ class MaoPlannerTest extends TestCase
     {
         $fil = $this->mao(['preferred_language' => 'fil']);
         $this->actingAs($fil)->get(route('mao.planner.index'))->assertOk()->assertSee('Planner ng MAO');
-        $this->actingAs($fil)->get(route('mao.dashboard'))->assertSee('Planner ng MAO')->assertSee(route('mao.planner.index'), false);
+        $this->actingAs($fil)->get(route('mao.dashboard'))->assertSee('Mga Advisory at Planner')->assertSee(route('planting-advisories.index'), false);
 
         $this->actingAs(User::factory()->farmer()->create())->get(route('mao.planner.index'))->assertForbidden();
     }

@@ -25,7 +25,7 @@ class ClimateRecordController extends CrudController
     protected bool $printable = true;
 
     // Manuscript – Naicel (2026-10-08): Validated (verified_at, set by RecordValidationController).
-    protected array $columns = ['record_date' => 'Date', 'rainfall' => 'Rainfall', 'temperature' => 'Temperature', 'humidity' => 'Humidity', 'season' => 'Season', 'source' => 'Source', 'verification' => 'Validated', 'verified_by_label' => 'Validated by'];
+    protected array $columns = ['record_date' => 'Date', 'rainfall' => 'Rainfall', 'temperature' => 'Temperature', 'humidity' => 'Humidity', 'season' => 'Season', 'source' => 'Source'];
 
     protected array $searchable = ['record_date', 'season', 'source'];
 

@@ -69,9 +69,9 @@ class FarmerOrganizationChartRelocationTest extends TestCase
             ->assertOk()
             ->assertSee('Farmers by Organization')
             ->assertSee($organization->name)
-            ->assertSee('id="farmersByOrganizationChartCompact"', false)
-            ->assertSee('"compact":true', false)                                   // chart config data block
-            ->assertSee('const isCompact = chartConfig.compact;', false);
+            ->assertSee('data-association-kpis', false)
+            ->assertSee('Total Farmers')
+            ->assertSee('Top Association');
     }
 
     public function test_farmer_does_not_see_the_organization_chart_on_their_own_profile_page(): void
@@ -93,13 +93,11 @@ class FarmerOrganizationChartRelocationTest extends TestCase
         $this->actingAs($mao)
             ->get(route('farmer-profiles.index'))
             ->assertOk()
-            ->assertSee('organizationColors', false)
-            ->assertSee('farmer-org-legend-item', false)
-            ->assertSee("label === 'None' ? 'No Organization'", false)
-            ->assertSee('data-organization-index', false)
-            ->assertSee('setActiveElements', false)
-            ->assertSee('setOrganizationStatus', false)
-            ->assertSee('horizontalCategoryTicks', false);
+            ->assertSee('data-association-kpis', false)
+            ->assertSee('Total Farmers')
+            ->assertSee('Associations')
+            ->assertSee('Top Association')
+            ->assertSee('No Organization');
     }
 
 

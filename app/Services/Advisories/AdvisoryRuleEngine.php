@@ -74,14 +74,23 @@ class AdvisoryRuleEngine
                 }
 
                 DB::transaction(function () use ($rule, $weather, $metrics, $validFrom, $validUntil, $generationKey, $requiresReview, $createdAdvisories, $context, &$summary): void {
+                    $title = $this->titleFor($rule, $context);
+                    $message = $this->messageFor($rule, $metrics, $context);
+                    $summaryText = $this->summaryFor($rule, $metrics, $context);
+                    $actionRules = app(AdvisoryActionRules::class);
+                    $actions = $actionRules->metadataFor(
+                        implode(' ', [$title, $summaryText, $message, (string) $rule->recommendation]),
+                        $rule->severity
+                    );
+
                     $advisory = PlantingAdvisory::query()->create([
-                        'title' => $this->titleFor($rule, $context),
-                        'content' => $this->messageFor($rule, $metrics, $context),
+                        'title' => $title,
+                        'content' => $message,
                         'type' => Str::headline($rule->advisory_type),
                         'advisory_type' => $rule->advisory_type,
-                        'summary' => $this->summaryFor($rule, $metrics, $context),
-                        'message' => $this->messageFor($rule, $metrics, $context),
-                        'recommended_action' => $rule->recommendation,
+                        'summary' => $summaryText,
+                        'message' => $message,
+                        'recommended_action' => $actionRules->toActionString($actions['actions_en']),
                         'severity' => $rule->severity,
                         'priority' => $rule->priority,
                         'target_barangay' => null,
@@ -99,6 +108,7 @@ class AdvisoryRuleEngine
                         'published_at' => $requiresReview ? null : now(),
                         'metadata' => [
                             ...$this->forecastMetadata($metrics, $weather),
+                            ...$actions,
                             'advisory_horizon' => $context['advisory_horizon'] ?? 'forecast',
                             'advisory_horizon_label' => $context['advisory_horizon_label'] ?? 'Forecast',
                             'advisory_horizon_description' => $context['advisory_horizon_description'] ?? null,

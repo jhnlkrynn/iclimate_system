@@ -64,7 +64,7 @@ class CommunicationPlatformTest extends TestCase
             ],
         ]);
 
-        $response->assertRedirect(route('community-feed.index'));
+        $response->assertRedirect(route('mao.planner.index').'#announcements');
         $this->assertDatabaseHas('feed_posts', ['title' => 'Seed Distribution Schedule']);
         $this->assertDatabaseHas('feed_media', ['media_type' => 'file', 'original_name' => 'schedule.pdf']);
 
@@ -96,7 +96,7 @@ class CommunicationPlatformTest extends TestCase
 
         $url = $media->url();
         $this->assertNotNull($url);
-        $this->actingAs($mao)->get(route('community-feed.index'))->assertOk()->assertSee($url, false);
+        $this->actingAs($mao)->get(route('mao.planner.index'))->assertOk()->assertSee($url, false);
         $this->actingAs($farmer)->get(route('planting-advisories.index'))->assertOk()->assertSee($url, false);
     }
 
@@ -145,7 +145,7 @@ class CommunicationPlatformTest extends TestCase
             'path' => 'community-feed/deleted-image.jpg', 'original_name' => 'deleted-image.jpg', 'mime_type' => 'image/jpeg', 'media_type' => 'image', 'size' => 10,
         ]);
 
-        $staffHtml = $this->actingAs($mao)->get(route('community-feed.index'))->assertOk()->assertSee('Attachment unavailable')->getContent();
+        $staffHtml = $this->actingAs($mao)->get(route('mao.planner.index'))->assertOk()->assertSee('Attachment unavailable')->getContent();
         $farmerHtml = $this->actingAs($farmer)->get(route('planting-advisories.index'))->assertOk()->assertSee('Attachment unavailable')->getContent();
         $this->assertStringNotContainsString('community-feed/deleted-image.jpg', $staffHtml);
         $this->assertStringNotContainsString('community-feed/deleted-image.jpg', $farmerHtml);

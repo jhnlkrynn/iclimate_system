@@ -120,7 +120,7 @@ body :is(.table thead th, table thead th, .frec-table thead th, .mtd-table thead
     line-height: 1.45 !important;
 }
 
-body :is(.badge, .sidebar-badge, .status-badge, .status-label, .chip, .tag) {
+body :is(.badge, .sidebar-badge:not(.topbar-bell-badge), .status-badge, .status-label, .chip, .tag) {
     min-height: 34px;
     font-size: var(--ic-a11y-badge) !important;
     line-height: 1.35;

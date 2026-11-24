@@ -81,7 +81,6 @@
                             <tr>
                                 <th>Barangay</th>
                                 <th>Association</th>
-                                <th>Registration</th>
                                 <th class="text-end">Area (ha)</th>
                                 <th class="text-end">Members</th>
                                 <th>Status</th>
@@ -93,12 +92,6 @@
                                 <tr data-association-id="{{ $association->id }}">
                                     <td>{{ $association->barangay }}</td>
                                     <td><strong>{{ $association->name }}</strong></td>
-                                    <td>
-                                        <div>{{ $association->registration_no ?: '—' }}</div>
-                                        @if ($association->date_registered)
-                                            <div class="small text-muted">{{ $association->date_registered->format('M j, Y') }}</div>
-                                        @endif
-                                    </td>
                                     <td class="text-end">{{ $association->area_hectares !== null ? number_format((float) $association->area_hectares, 2) : '—' }}</td>
                                     <td class="text-end">{{ $association->farmer_count !== null ? number_format((int) $association->farmer_count) : '—' }}</td>
                                     <td>

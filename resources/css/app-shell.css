@@ -637,7 +637,12 @@ html body .topbar.ic-topbar .ic-icon-btn { width: 40px; height: 40px; min-width:
 html body .topbar.ic-topbar .ic-icon-btn[data-ic-notifications] > svg { width: 24px; height: 24px; }
 html body .topbar.ic-topbar .ic-icon-btn:hover { background: var(--sage-50) !important; color: var(--sage-900) !important; }
 html body .topbar.ic-topbar .ic-icon-btn:focus-visible { outline: 2px solid var(--sage-500) !important; outline-offset: 2px; }
-html body .topbar.ic-topbar .ic-icon-btn .topbar-bell-badge { top: 2px; right: 2px; min-width: 16px; height: 16px; padding: 0 4px; border-color: #fff; font-size: 10px; }
+html body .topbar.ic-topbar .ic-icon-btn .topbar-bell-badge {
+    top: 2px; right: 2px;
+    min-width: 17px !important; min-height: 0 !important; height: 17px !important;
+    padding: 0 4px !important; border-color: #fff;
+    font-size: 10px !important; line-height: 1 !important;
+}
 html body .topbar.ic-topbar .ic-avatar-btn {
     width: 40px !important;
     height: 40px !important;

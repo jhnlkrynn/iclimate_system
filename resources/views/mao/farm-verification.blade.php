@@ -8,36 +8,36 @@
                 ? 'Verify farmer-submitted farms in your assigned barangays before they count toward yields and dashboards.'
                 : 'Verify farmer-submitted farms across Lian before they count toward yields and dashboards.'" />
 
-        <div class="ic-tabs mb-3" role="tablist" aria-label="Verification status">
+        @include('partials.manuscript-tabs', ['group' => 'approvals', 'label' => 'Approvals and reports'])
+
+        <nav class="itp-subtabs" role="tablist" aria-label="Verification status">
             <a href="{{ route('mao.farm-verification.index', ['show' => 'pending', 'barangay' => $barangay, 'search' => $search]) }}"
-                @class(['ic-tab', 'is-active' => $show === 'pending'])>
-                Pending @if ($pendingCount > 0)<span class="badge bg-warning text-dark ms-1">{{ $pendingCount }}</span>@endif
+                @class(['itp-subtab', 'is-active' => $show === 'pending'])>
+                Pending @if ($pendingCount > 0)<span class="itp-subtab-count">{{ $pendingCount }}</span>@endif
             </a>
             <a href="{{ route('mao.farm-verification.index', ['show' => 'approved', 'barangay' => $barangay, 'search' => $search]) }}"
-                @class(['ic-tab', 'is-active' => $show === 'approved'])>Approved</a>
+                @class(['itp-subtab', 'is-active' => $show === 'approved'])>Approved</a>
             <a href="{{ route('mao.farm-verification.index', ['show' => 'rejected', 'barangay' => $barangay, 'search' => $search]) }}"
-                @class(['ic-tab', 'is-active' => $show === 'rejected'])>Rejected</a>
-        </div>
+                @class(['itp-subtab', 'is-active' => $show === 'rejected'])>Rejected</a>
+        </nav>
 
-        <form method="GET" class="mfd-card pr-filters mb-3" role="search" aria-label="Filter farm verification queue">
+        <form method="GET" class="itd-filters mb-3" role="search" aria-label="Filter farm verification queue">
             <input type="hidden" name="show" value="{{ $show }}">
-            <div>
-                <label class="form-label" for="fvSearch">Farmer or farm name</label>
-                <input class="form-control" id="fvSearch" type="search" name="search" value="{{ $search }}" placeholder="Search...">
-            </div>
-            <div>
-                <label class="form-label" for="fvBarangay">Barangay</label>
-                <select class="form-select" id="fvBarangay" name="barangay">
+            <label for="fvSearch">Farmer or farm name
+                <input id="fvSearch" type="search" name="search" value="{{ $search }}" placeholder="Search...">
+            </label>
+            <label for="fvBarangay">Barangay
+                <select id="fvBarangay" name="barangay" data-autosubmit>
                     <option value="">All barangays</option>
                     @foreach ($barangays as $b)
                         <option value="{{ $b }}" @selected($barangay === $b)>{{ $b }}</option>
                     @endforeach
                 </select>
-            </div>
-            <div class="pr-filter-actions">
-                <button class="btn btn-primary" type="submit">Filter</button>
+            </label>
+            <button class="btn btn-primary" type="submit">Filter</button>
+            @if ($search !== '' || $barangay !== '')
                 <a class="btn btn-outline-secondary" href="{{ route('mao.farm-verification.index', ['show' => $show]) }}">Clear</a>
-            </div>
+            @endif
         </form>
 
         <section class="mfd-card p-0" aria-label="Farm verification list">
@@ -121,20 +121,25 @@
                                             <span class="badge bg-warning text-dark">Pending MAO review</span>
                                         @endif
                                     </td>
-                                    <td>
-                                        @if ($farm->isPendingVerification() || $farm->isRejected())
-                                            <form method="POST" action="{{ route('mao.farm-verification.approve', $farm) }}" class="d-inline">
-                                                @csrf
-                                                <button type="submit" class="btn btn-sm btn-success">Approve</button>
-                                            </form>
-                                        @endif
-                                        @if ($farm->isPendingVerification() || $farm->isApproved())
-                                            <form method="POST" action="{{ route('mao.farm-verification.reject', $farm) }}" class="mt-2 d-flex gap-1">
-                                                @csrf
-                                                <input type="text" name="reason" class="form-control form-control-sm" placeholder="Rejection reason (required)" minlength="3" maxlength="500" required>
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
-                                            </form>
-                                        @endif
+                                    <td class="text-end">
+                                        <div class="d-flex flex-wrap gap-2 justify-content-end align-items-start">
+                                            @if ($farm->isPendingVerification() || $farm->isRejected())
+                                                <form method="POST" action="{{ route('mao.farm-verification.approve', $farm) }}" class="d-inline">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                                </form>
+                                            @endif
+                                            @if ($farm->isPendingVerification() || $farm->isApproved())
+                                                <details>
+                                                    <summary class="btn btn-sm btn-outline-danger">Reject</summary>
+                                                    <form method="POST" action="{{ route('mao.farm-verification.reject', $farm) }}" class="mt-2 d-flex gap-2 justify-content-end">
+                                                        @csrf
+                                                        <input type="text" name="reason" class="form-control form-control-sm" placeholder="Rejection reason (required)" minlength="3" maxlength="500" required style="min-width: 210px;">
+                                                        <button type="submit" class="btn btn-sm btn-danger">Confirm</button>
+                                                    </form>
+                                                </details>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach

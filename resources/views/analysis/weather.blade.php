@@ -181,27 +181,6 @@
                             <p class="wa-season-band mt-3 mb-0" data-wa-wet-note>{{ $yearSummary['wet_season_note'] }}</p>
                         </section>
                     </div>
-                @elseif ($windSummary)
-                    <div class="col-12 col-lg-6">
-                        <section class="fad-card h-100" aria-labelledby="waWindTableTitle" id="waWindTable">
-                            <h2 class="mb-1 fw-bold" id="waWindTableTitle" style="font-size: 22px; color: var(--sage-800);">{{ $L('wind_table_title') }}</h2>
-                            <div class="table-responsive">
-                                <table class="table table-sm mb-2">
-                                    <thead><tr><th>{{ $L('wind_band') }}</th><th>{{ $L('wind_months_count') }}</th><th>{{ $L('wind_examples') }}</th></tr></thead>
-                                    <tbody>
-                                        @foreach (['calm' => 'wind_calm', 'breezy' => 'wind_breezy', 'windy' => 'wind_windy'] as $wKey => $wLabel)
-                                            <tr>
-                                                <td>{{ $L($wLabel) }}</td>
-                                                <td>{{ $windSummary[$wKey]['count'] }}</td>
-                                                <td class="small text-muted">{{ $windSummary[$wKey]['months'] === [] ? '—' : implode(', ', $windSummary[$wKey]['months']) }}</td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                            @if ($stationWind)<p class="small text-muted mb-0">{{ $L('station_wind') }}</p>@endif
-                        </section>
-                    </div>
                 @endif
             </div>
 
@@ -210,10 +189,10 @@
                 <p class="small text-muted">{{ $L('compare_note') }}</p>
                 <div class="table-responsive">
                     <table class="table table-sm mb-0">
-                        <thead><tr><th></th><th>{{ $L('months') }}</th><th>{{ $L('rainfall') }} ({{ $L('per_month') }})</th><th>{{ $L('temperature') }}</th><th>{{ $L('humidity') }}</th>@unless($isFarmer)<th>{{ $L('wind') }}</th>@endunless</tr></thead>
+                        <thead><tr><th></th><th>{{ $L('months') }}</th><th>{{ $L('rainfall') }} ({{ $L('per_month') }})</th><th>{{ $L('temperature') }}</th><th>{{ $L('humidity') }}</th></tr></thead>
                         <tbody>
                             @foreach ($seasons as $season => $s)
-                                <tr><th>{{ $L(strtolower($season)) }}</th><td>{{ $s['months'] }}</td><td>{{ $fmt($s['rainfall'], 1, ' mm') }}</td><td>{{ $fmt($s['temperature'], 1, ' °C') }}</td><td>{{ $fmt($s['humidity'], 1, '%') }}</td>@unless($isFarmer)<td>{{ $fmt($s['wind_speed'], 1) }}</td>@endunless</tr>
+                                <tr><th>{{ $L(strtolower($season)) }}</th><td>{{ $s['months'] }}</td><td>{{ $fmt($s['rainfall'], 1, ' mm') }}</td><td>{{ $fmt($s['temperature'], 1, ' °C') }}</td><td>{{ $fmt($s['humidity'], 1, '%') }}</td></tr>
                             @endforeach
                         </tbody>
                     </table>
@@ -231,33 +210,6 @@
                     </table>
                 </div>
             </section>
-
-            @if (! $isFarmer)
-                {{-- Staff: climate risk signals and climate vs yield. --}}
-                <section class="fad-card mt-3" aria-labelledby="waRiskTitle" data-climate-indicators>
-                    <h2 class="h5 fw-bold" id="waRiskTitle">Climate risk signals</h2>
-                    <p class="small text-muted">Months above or below planning thresholds (not official PAGASA warnings): heavy rain {{ (int) \App\Services\Climate\WeatherAnalysisService::heavyRainMm() }} mm or more, dry below {{ (int) \App\Services\Climate\WeatherAnalysisService::dryMonthMm() }} mm, hot at {{ (int) \App\Services\Climate\WeatherAnalysisService::hotMonthC() }} °C average or more.</p>
-                    <div class="row g-3">
-                        @foreach (['heavy_rain' => 'Heavy-rain months', 'dry' => 'Dry months', 'hot' => 'Hot months'] as $key => $title)
-                            <div class="col-md-4">
-                                <div class="fw-semibold">{{ $title }} <span class="badge text-bg-light">{{ count($indicators[$key]) }}</span></div>
-                                <p class="small mb-0">{{ $indicators[$key] === [] ? 'None' : implode(', ', array_slice($indicators[$key], -12)) }}@if (count($indicators[$key]) > 12) (latest 12) @endif</p>
-                            </div>
-                        @endforeach
-                    </div>
-                </section>
-
-                <section class="fad-card mt-3" aria-labelledby="waYieldTitle" data-climate-vs-yield>
-                    <h2 class="h5 fw-bold" id="waYieldTitle">Climate vs rice yield</h2>
-                    @if ($pairs->isEmpty())
-                        <p class="mb-0">No month in this choice has both a yield record and weather readings.</p>
-                    @else
-                        <p class="small text-muted">Each point is a month with a yield record: that month's rainfall against the municipal average yield.</p>
-                        <div style="position: relative; height: 260px;"><canvas id="waYieldScatterChart" data-ic-info-bound="true" role="img" aria-label="Rainfall against rice yield, one point per month"></canvas></div>
-                        <script type="application/json" data-yield-pairs>@json($pairs->map(fn ($p) => ['x' => $p['rainfall'], 'y' => $p['yield'], 'label' => $p['key']])->filter(fn ($p) => $p['x'] !== null)->values())</script>
-                    @endif
-                </section>
-            @endif
 
             <div class="mt-3 d-flex flex-wrap justify-content-between gap-2 small text-muted">
                 <span data-months-shown>{{ trans_choice('weather_analysis.months_shown', $count, ['count' => $count]) }}</span>
@@ -408,17 +360,6 @@
                     },
                 }));
             });
-
-            const pairs = document.querySelector('[data-yield-pairs]');
-            const scatter = document.getElementById('waYieldScatterChart');
-            if (pairs && scatter) {
-                const points = JSON.parse(pairs.textContent || '[]');
-                charts.push(new window.Chart(scatter, {
-                    type: 'line',
-                    data: { datasets: [{ label: 'Month', data: points, showLine: false, pointRadius: 4, borderColor: sage700, backgroundColor: 'rgba({{ config('palette.rgb.700') }}, .6)' }] },
-                    options: { responsive: true, maintainAspectRatio: false, parsing: { xAxisKey: 'x', yAxisKey: 'y' }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw.label}: ${ctx.raw.x} mm, ${ctx.raw.y} t/ha` } } }, scales: { x: { type: 'linear', title: { display: true, text: 'Rainfall (mm)' } }, y: { title: { display: true, text: 'Yield (t/ha)' } } } },
-                }));
-            }
         };
         document.addEventListener('DOMContentLoaded', async () => {
             try { await window.iClimateVisualsReady; } catch (e) { return; }

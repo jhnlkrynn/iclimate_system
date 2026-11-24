@@ -74,6 +74,8 @@
         </div>
     </section>
 
+    @include('partials.manuscript-tabs', ['group' => 'records', 'label' => 'Records and reports'])
+
     @if ($analyticsRun && in_array($analyticsRun->status, ['pending', 'processing'], true))
         <div class="alert alert-info border" data-analytics-run="{{ route('analytics-runs.show', $analyticsRun) }}" data-prediction-realtime data-prediction-labels='{"requested":"Report requested","processing":"Report processing","completed":"Report completed","failed":"Report failed"}'>
             <strong data-prediction-status-text>Preparing your report&hellip;</strong>

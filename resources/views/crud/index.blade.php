@@ -46,15 +46,18 @@
         </div>
     </section>
 
-    @if (in_array($routeName, ['climate-records', 'rice-productions', 'historical-rice-productions'], true))
+    @if (in_array($routeName, ['climate-records', 'rice-productions'], true))
         {{-- Records (2026-10): Climate Records and Rice Production are two tabs of one sidebar item. --}}
         <nav class="ic-tabs mb-4" aria-label="Records" data-records-tabs>
-            @foreach (['climate-records' => 'Climate Records', 'rice-productions' => 'Rice Production', 'historical-rice-productions' => 'Historical Benchmarks'] as $tabRoute => $tabLabel)
+            @foreach (['climate-records' => 'Climate Records', 'rice-productions' => 'Rice Production'] as $tabRoute => $tabLabel)
                 <a href="{{ route($tabRoute.'.index') }}" @class(['ic-tab', 'is-active' => $routeName === $tabRoute]) @if ($routeName === $tabRoute) aria-current="page" @endif>{{ $tabLabel }}</a>
             @endforeach
             {{-- Manuscript – Naicel (2026-10-08): Barangays (location, rice area, risk classification) is a third tab for the MAO. --}}
             @if (auth()->user()?->role === \App\Models\User::ROLE_MAO && \Illuminate\Support\Facades\Route::has('mao.barangays.index'))
                 <a href="{{ route('mao.barangays.index') }}" class="ic-tab">Barangays</a>
+            @endif
+            @if (auth()->user()?->role === \App\Models\User::ROLE_MAO && \Illuminate\Support\Facades\Route::has('reports.index'))
+                <a href="{{ route('reports.index') }}" class="ic-tab">Reports</a>
             @endif
         </nav>
     @endif
@@ -73,7 +76,26 @@
         </nav>
     @endif
 
-    @if ($routeName === 'farmer-profiles' && isset($farmerOrganizationChart))
+    @if ($routeName === 'farmer-profiles' && isset($farmerOrganizationSummary))
+        @php
+            $orgLabels = (array) ($farmerOrganizationChart['labels'] ?? []);
+            $orgCounts = (array) ($farmerOrganizationChart['counts'] ?? []);
+            $orgEntries = collect($orgLabels)->map(function ($label, $index) use ($orgCounts): array {
+                $name = $label === 'None' ? 'No Organization' : (string) $label;
+
+                return ['name' => $name, 'count' => (int) ($orgCounts[$index] ?? 0)];
+            });
+            $noOrgCount = (int) ($farmerOrganizationSummary['farmersWithoutOrganization']
+                ?? $orgEntries->firstWhere('name', 'No Organization')['count']
+                ?? 0);
+            $namedOrgs = $orgEntries
+                ->reject(fn (array $entry): bool => $entry['name'] === 'No Organization')
+                ->sortByDesc('count')
+                ->values();
+            $orgCount = (int) ($farmerOrganizationSummary['totalOrganizations'] ?? $namedOrgs->count());
+            $topOrg = $namedOrgs->first();
+            $maxOrgCount = max(1, (int) ($topOrg['count'] ?? 1));
+        @endphp
         <details class="ic-collapse mb-4" open>
             <summary>
                 <span class="ic-collapse-title">
@@ -81,27 +103,61 @@
                     <span class="ic-collapse-count">{{ number_format((int) ($farmerOrganizationSummary['totalFarmers'] ?? 0)) }}</span>
                 </span>
             </summary>
-            <div class="card no-lift">
-                <div class="card-body p-3">
+            <div class="card no-lift" data-association-kpis>
+                <div class="card-body p-4">
                     <p class="text-muted small mb-3">Registered farmers grouped by their Farmer's Association.</p>
-                    <div class="farmer-org-chart-shell">
-                        <div class="farmer-org-chart-inner">
-                            <div class="farmer-org-chart-state" data-organization-chart-state role="status">Loading farmer groups...</div>
-                            <canvas id="farmersByOrganizationChartCompact" aria-label="Farmers by organization bar chart. Use the legend below for full organization names and counts." aria-busy="true" role="img" tabindex="0"></canvas>
+                    <div class="row g-3 mb-4">
+                        <div class="col-6 col-lg-3">
+                            <div class="border rounded-3 p-3 h-100 bg-white">
+                                <div class="text-uppercase text-muted fw-semibold" style="font-size: .72rem; letter-spacing: .05em;">Total Farmers</div>
+                                <div class="fw-bold text-dark mt-2 lh-1" style="font-size: 1.75rem; color: #111827;">{{ number_format((int) ($farmerOrganizationSummary['totalFarmers'] ?? 0)) }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg-3">
+                            <div class="border rounded-3 p-3 h-100 bg-white">
+                                <div class="text-uppercase text-muted fw-semibold" style="font-size: .72rem; letter-spacing: .05em;">Associations</div>
+                                <div class="fw-bold text-dark mt-2 lh-1" style="font-size: 1.75rem; color: #111827;">{{ number_format($orgCount) }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg-3">
+                            <div class="border rounded-3 p-3 h-100 bg-white">
+                                <div class="text-uppercase text-muted fw-semibold" style="font-size: .72rem; letter-spacing: .05em;">Top Association</div>
+                                <div class="fw-bold text-dark mt-2" style="font-size: .92rem; line-height: 1.35; color: #111827;">{{ $topOrg['name'] ?? '—' }}</div>
+                                @if (! empty($topOrg))
+                                    <div class="small fw-semibold mt-1" style="color: #111827;">{{ number_format((int) ($topOrg['count'] ?? 0)) }} farmers</div>
+                                @endif
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg-3">
+                            <div class="border rounded-3 p-3 h-100 bg-white">
+                                <div class="text-uppercase text-muted fw-semibold" style="font-size: .72rem; letter-spacing: .05em;">No Organization</div>
+                                <div class="fw-bold text-dark mt-2 lh-1" style="font-size: 1.75rem; color: #111827;">{{ number_format($noOrgCount) }}</div>
+                            </div>
                         </div>
                     </div>
-                    <div id="farmersByOrganizationLegendCompact" class="farmer-org-legend" role="list" aria-label="Farmers by organization legend"></div>
-                    <div id="farmersByOrganizationStatusCompact" class="farmer-org-chart-status" aria-live="polite">Loading farmer groups...</div>
+                    @if ($namedOrgs->isNotEmpty())
+                        <style>
+                            .ic-org-kpi-grid { display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 10px; }
+                            @media (min-width: 576px) { .ic-org-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+                            @media (min-width: 1200px) { .ic-org-kpi-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+                        </style>
+                        <div class="ic-org-kpi-grid">
+                            @foreach ($namedOrgs as $orgEntry)
+                                <div class="border rounded-3 px-3 py-2 bg-white d-flex flex-column justify-content-between gap-2" style="min-width: 0;">
+                                    <div class="d-flex justify-content-between align-items-start gap-2">
+                                        <span class="small fw-semibold text-dark" style="line-height: 1.35; color: #111827;">{{ $orgEntry['name'] }}</span>
+                                        <span class="rounded-pill flex-shrink-0 fw-bold" style="background: #f1f5f9; color: #111827; font-size: .8rem; white-space: nowrap; padding: 3px 10px;">{{ number_format($orgEntry['count']) }}</span>
+                                    </div>
+                                    <div style="height: 4px; border-radius: 999px; background: #e5e7eb; overflow: hidden;">
+                                        <div style="height: 100%; width: {{ round(($orgEntry['count'] / $maxOrgCount) * 100) }}%; background: #111827; border-radius: 999px;"></div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
             </div>
         </details>
-        @include('dashboards.partials.farmer-organization-chart', [
-            'chartData' => $farmerOrganizationChart,
-            'canvasId' => 'farmersByOrganizationChartCompact',
-            'legendId' => 'farmersByOrganizationLegendCompact',
-            'statusId' => 'farmersByOrganizationStatusCompact',
-            'compact' => true,
-        ])
     @endif
 
     {{-- Panel revision 4.4 B: a list limited to the MAO user's barangays says so. --}}
@@ -116,7 +172,7 @@
     @php
         $activeFilterCount = (($search ?? '') !== '' ? 1 : 0)
             + collect(array_keys($filterable))->filter(fn ($field) => request()->filled($field))->count();
-        $showRecordActions = $routeName !== 'climate-records';
+        $showRecordActions = ! in_array($routeName, ['climate-records', 'rice-productions'], true);
     @endphp
     <details class="ic-collapse" @if($activeFilterCount) data-force-open="true" @endif>
         <summary>

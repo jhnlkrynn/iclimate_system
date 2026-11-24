@@ -167,11 +167,9 @@ class PagasaAdvisoryService
             (bool) preg_match('/yellow warning|heavy rainfall|thunderstorm advisory/i', $bulletin['text']) => 'moderate',
             default => 'information',
         };
-        $action = match ($severity) {
-            'critical' => 'Pause outdoor farm work. Move equipment to higher ground and follow PAGASA and LGU instructions.',
-            'high', 'moderate' => 'Avoid field work during thunderstorms, postpone spraying before rain, and check drainage.',
-            default => 'Check field moisture and the latest forecast before irrigating, fertilizing, or spraying.',
-        };
+        $rules = app(AdvisoryActionRules::class);
+        $actions = $rules->metadataFor($bulletin['title'].' '.$bulletin['text'], $severity);
+        $action = $rules->toActionString($actions['actions_en']);
         $barangays = $scope['barangays'];
         // Multiple named barangays remain a restricted coverage list, not all-Lian.
         $target = count($barangays) === 1 ? $barangays[0] : null;
@@ -181,7 +179,7 @@ class PagasaAdvisoryService
         return [
             'title' => $bulletin['title'], 'content' => $bulletin['text'],
             'type' => 'Climate', 'advisory_type' => 'climate',
-            'summary' => Str::limit($bulletin['text'], 500), 'message' => $bulletin['text'],
+            'summary' => AdvisoryActionRules::toSentenceCase(Str::limit($bulletin['text'], 500)), 'message' => $bulletin['text'],
             'recommended_action' => $action, 'severity' => $severity,
             'priority' => ['critical' => 100, 'high' => 85, 'moderate' => 60, 'information' => 25][$severity],
             'target_barangay' => $target, 'target_scope' => $barangays ? 'barangay' : 'municipality',
@@ -202,6 +200,7 @@ class PagasaAdvisoryService
                 'advisory_horizon' => $source['horizon'], 'fetched_at' => now()->toIso8601String(),
                 'publication_time_available' => $bulletin['published'] !== null,
                 'pagasa_details' => $bulletin['details'] ?? null,
+                ...$actions,
             ],
             'posted_by' => $this->systemUserId(),
         ];

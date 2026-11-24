@@ -36,6 +36,8 @@
             @endif
         </header>
 
+        @include('partials.manuscript-tabs', ['group' => 'advisories-and-planner', 'label' => 'Advisories and planner'])
+
         @if (! $isFarmer)
             {{-- Staff: what farmers see now, what waits for approval, or everything; and one barangay. --}}
             <div class="adv-bar">

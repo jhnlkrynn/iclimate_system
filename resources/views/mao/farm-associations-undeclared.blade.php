@@ -1,10 +1,10 @@
 <x-app-layout>
-    <x-slot:title>Undeclared Farms</x-slot:title>
+    <x-slot:title>Unassigned Farms</x-slot:title>
     {{-- FarmAssociationUndeclaredController: farms whose association question has no answer yet, per barangay. Tick farms
          of one barangay and "Set association" to answer for them (marked "Set by MAO"; the farmer can change it; no
          notification). --}}
     <div class="mfd itd itp">
-        <x-shared.page-header kicker="Municipal Agriculture Office" title="Undeclared Farms" lede="Farms whose farmer has not said yet whether the farm is part of a farmers' association. You can answer for several farms of one barangay at once; the farmer sees “Set by MAO” and can still change it." />
+        <x-shared.page-header kicker="Municipal Agriculture Office" title="Unassigned Farms" lede="Farms that are not yet linked to a farmers' association. You can assign multiple farms in a barangay at once; farmers will see “Set by MAO” and can update it anytime." />
 
         @include('partials.manuscript-tabs', ['group' => 'farmers', 'label' => 'Farmers'])
 

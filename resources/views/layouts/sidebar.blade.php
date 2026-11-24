@@ -50,8 +50,8 @@
         // Manuscript – Naicel (2026-10-08): pages of the manuscript modules (routes/manuscript.php) open as tabs of an
         // existing item, so the menu stays short.
         'account-requests' => ['mao.farmer-approvals.index', ['mao.farmer-approvals.*']],
-        'farmer-profiles-and-approvals' => ['farmer-profiles.index', ['farmer-profiles.*', 'mao.farmer-approvals.*', 'mao.farm-associations.*']],
-        'records-and-barangays' => ['climate-records.index', ['climate-records.*', 'rice-productions.*', 'records.*', 'mao.barangays.*']],
+        'farmer-profiles-and-approvals' => ['farmer-profiles.index', ['farmer-profiles.*', 'mao.farmer-approvals.*', 'mao.farm-associations.*', 'mao.associations.*', 'mao.farm-verification.*', 'mao.association-reports.*']],
+        'records-and-barangays' => ['climate-records.index', ['climate-records.*', 'rice-productions.*', 'records.*', 'mao.barangays.*', 'reports.*']],
         // Panel revision 4.4: MAO Office = Activity Log and MAO Personnel.
         'mao-office' => ['mao.activity-log.index', ['mao.activity-log.*', 'mao.personnel.*']],
         // End Manuscript – Naicel
@@ -81,7 +81,6 @@
             $navLink($nav('advisories'), 'advisories', 'advisories'),
             $navLink($nav('my_farm'), 'my-farm', 'rice-production'),
             $navLink($nav('varieties'), 'rice-varieties', 'seedling'),
-            $navLink($nav('messages'), 'messages', 'messages'),
         ];
         if (\Illuminate\Support\Facades\Cache::remember('navigation:association-chairman:'.$user->id, 30, fn () => $user->isAssociationChairman())) {
             $primaryGroup[] = [$nav('association_reports'), 'association-chairman.dashboard', ['association-chairman.*'], 'reports', null, null, null];
@@ -99,23 +98,37 @@
             $navLink($maoNav('dashboard'), 'dashboard', 'dashboard'),
             $navLink($maoNav('heat_map'), 'heatmap', 'heatmap'),
             $navLink($maoNav('forecast'), 'weather', 'weather'),
-            $navLink($maoNav('advisories'), 'advisories', 'advisories'),
-            // "MAO Planner", or "Planner ng MAO" when the MAO's saved language is Filipino.
-            $navLink(__('mao.planner.title', [], $maoLocale), 'mao-planner', 'calendar'),
-            $navLink($maoNav('records'), 'records-and-barangays', 'climate-records'),   // Manuscript – Naicel: + Import, Barangays
-            $navLink($maoNav('farmers'), 'farmer-profiles-and-approvals', 'farmer-profiles'),
-            $navLink($maoNav('account_requests'), 'account-requests', 'user-management'),   // Manuscript – Naicel: + Farmer Approvals tab
+            [
+                $maoLocale === 'fil' ? 'Mga Advisory at Planner' : 'Advisories & Planner',
+                'planting-advisories.index',
+                ['planting-advisories.*', 'management.advisories.*', 'mao.alerts.*', 'mao.planner.*', 'calendar.*'],
+                'advisories',
+                null,
+                null,
+                'advisories',
+            ],
+            [
+                $maoLocale === 'fil' ? 'Mga Tala at Ulat' : 'Records & Reports',
+                'climate-records.index',
+                ['climate-records.*', 'rice-productions.*', 'records.*', 'mao.barangays.*', 'reports.*'],
+                'climate-records',
+                null,
+                null,
+                'records-and-barangays',
+            ],   // Manuscript – Naicel: + Import, Barangays, Reports
+            [
+                $maoLocale === 'fil' ? 'Mga Magsasaka at Pag-apruba' : 'Farmers & Approvals',
+                'farmer-profiles.index',
+                ['farmer-profiles.*', 'mao.farmer-approvals.*', 'mao.farm-associations.*', 'mao.associations.*', 'mao.farm-verification.*', 'mao.association-reports.*'],
+                'farmer-profiles',
+                (($navCounts['pending'] ?? 0) + ($navCounts['pending_farms'] ?? 0)) ?: null,
+                null,
+                'farmer-profiles-and-approvals',
+            ],
             $navLink($maoNav('varieties'), 'rice-varieties', 'seedling'),
             // MAO/IT – Naicel (2026-10-07): Field Reports is hidden unless FIELD_REPORTS_UI=true (config/iclimate.php).
             ...(\App\Http\Middleware\FieldReportsUi::enabled() ? [$navLink($maoNav('field_reports'), 'field-reports', 'reports')] : []),
-            $navLink($maoNav('reports'), 'reports', 'reports'),
-            $navLink($maoNav('announcements'), 'community', 'community'),
-            $navLink($maoNav('messages'), 'messages', 'messages'),
-            $navLink($maoNav('mao_office'), 'mao-office', 'system-logs'),   // panel revision 4.4
         ];
-        $primaryGroup[] = ['Farm verification', 'mao.farm-verification.index', ['mao.farm-verification.*'], 'farmer-profiles', ($navCounts['pending_farms'] ?? 0) ?: null, null, null];
-        $primaryGroup[] = [$maoNav('association_reports'), 'mao.association-reports.index', ['mao.association-reports.*'], 'reports', null, null, null];
-        $primaryGroup[] = ['Climora Feedback', 'mao.climora-feedback.index', ['mao.climora-feedback.*'], 'messages', null, null, null];
         if ($user->isMaoHead()) {
             $primaryGroup[] = $navLink($maoNav('account_management'), 'user-management', 'user-management');
         }

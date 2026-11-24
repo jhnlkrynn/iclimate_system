@@ -197,19 +197,20 @@ class FarmerHomeKpis
         if (! SchemaCache::hasTable('farmer_planting_schedules')) {
             return null;
         }
+        /** @var FarmerPlantingSchedule|null $plan */
         $plan = $this->plans($user, $onlyFarm)
             ->whereNotNull('planting_date')
             ->when(SchemaCache::hasColumn('farmer_planting_schedules', 'harvested_on'), fn ($q) => $q->whereNull('harvested_on'))
             ->when(SchemaCache::hasColumn('farmer_planting_schedules', 'actual_yield'), fn ($q) => $q->where(fn ($w) => $w->whereNull('actual_yield')->orWhere('actual_yield', '<=', 0)))
             ->orderByDesc('planting_date')->orderByDesc('id')->first();
-        if ($plan === null) {
+        if (! $plan instanceof FarmerPlantingSchedule) {
             return null;
         }
 
         // Calendar dates in Manila time (the date columns hold a plain date).
         $today = CarbonImmutable::parse($now->toDateString());
-        $planted = CarbonImmutable::parse($plan->planting_date->toDateString());
-        $harvest = ($date = $plan->harvestDateForPlanning()) ? CarbonImmutable::parse($date->toDateString()) : null;
+        $planted = CarbonImmutable::parse($plan->planting_date);
+        $harvest = ($date = $plan->harvestDateForPlanning()) ? CarbonImmutable::parse($date) : null;
         $day = fn (CarbonImmutable $d): string => $d->locale(app()->getLocale())->translatedFormat($d->year === $today->year ? 'M j' : 'M j, Y');
         $tile = ['key' => 'crop', 'icon' => 'sprout', 'href' => route('farmer.my-farm')];
         $variety = $plan->varietyLabel();

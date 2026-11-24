@@ -22,10 +22,12 @@ class Phase4AnalysisTest extends TestCase
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
         $response = $this->actingAs($mao)->get(route('analysis.weather'))->assertOk();
-        $response->assertSee('waRainfallChart', false)->assertSee('waWindTable', false)
+        $response->assertSee('waRainfallChart', false)->assertDontSee('waWindTable', false)
             ->assertSee('data-wa-range-toggle', false)
             ->assertSee('What does this mean?')
-            ->assertSee('data-season-comparison', false)->assertSee('data-climate-indicators', false)
+            ->assertSee('data-season-comparison', false)
+            ->assertDontSee('data-climate-indicators', false)
+            ->assertDontSee('data-climate-vs-yield', false)
             ->assertSee('data-manuscript-tabs="analysis"', false);
 
         $this->assertSame(2020, $response->viewData('fromYear'));

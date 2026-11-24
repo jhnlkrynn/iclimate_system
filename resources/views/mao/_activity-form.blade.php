@@ -32,7 +32,7 @@
         <label for="{{ $prefix }}Notes">Notes (optional)</label>
         <textarea id="{{ $prefix }}Notes" name="notes" class="form-control" rows="3" maxlength="2000">{{ $old('notes') }}</textarea>
     </div>
-    <div class="mpl-field is-wide">
-        <button class="btn btn-primary" type="submit" data-loading-text="Saving...">{{ $activity ? 'Save changes' : 'Add Activity' }}</button>
+    <div class="mpl-field is-wide d-flex justify-content-start">
+        <button class="btn btn-primary" type="submit" data-loading-text="Saving...">{{ $activity ? 'Save changes' : 'Save Activity' }}</button>
     </div>
 </form>
