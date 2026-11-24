@@ -57,6 +57,7 @@
         // End Manuscript – Naicel
         // Farmers: My Farm also covers their planting schedules and the Calendar it links to.
         'my-farm' => ['farmer.my-farm', ['farmer.my-farm', 'farmer.planting-schedules.*', 'calendar.*']],
+        'explore-results' => ['farmer.explore-results.index', ['farmer.explore-results.*']],
         'rice-varieties' => ['rice-varieties.index', ['rice-varieties.*']],
     ];
 
@@ -80,6 +81,7 @@
             $navLink($nav('heat_map'), 'heatmap', 'heatmap'),
             $navLink($nav('advisories'), 'advisories', 'advisories'),
             $navLink($nav('my_farm'), 'my-farm', 'rice-production'),
+            $navLink($farmerLocale === 'fil' ? 'Suriin ang ani ng mga bukid' : 'Explore farm results', 'explore-results', 'reports'),
             $navLink($nav('varieties'), 'rice-varieties', 'seedling'),
         ];
         if (\Illuminate\Support\Facades\Cache::remember('navigation:association-chairman:'.$user->id, 30, fn () => $user->isAssociationChairman())) {

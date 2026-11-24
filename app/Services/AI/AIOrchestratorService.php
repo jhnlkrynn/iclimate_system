@@ -8,6 +8,7 @@ use App\Models\PlantingAdvisory;
 use App\Models\TyphoonSafetyResponse;
 use App\Models\User;
 use App\Models\YieldPrediction;
+use App\Services\Farmer\FarmResultsExplorationService;
 use App\Services\Prediction\PredictionOrchestrator;
 use App\Exceptions\PredictionNotReady;
 use App\Services\Prediction\PredictionReadMode;
@@ -143,6 +144,11 @@ class AIOrchestratorService
         // Farmer asking when to harvest: answer directly from their active farm's VarietyHarvestEstimator.
         if ($farmContext->isFarmer && $this->isHarvestTimingQuestion($question)) {
             return $this->harvestTiming($farmContext, $language, $memory);
+        }
+
+        // Farmer asking how irrigated or rainfed farms do in their barangay or a named barangay.
+        if ($this->isFarmResultsExplorationQuestion($question)) {
+            return $this->farmResultsExploration($user, $question, $farmContext, $language, $memory);
         }
 
         // Rule-based classification: instant. Groq is asked below, and only if the rules cannot place the message.
@@ -1372,6 +1378,75 @@ class AIOrchestratorService
                 'tool' => 'harvest_timing',
                 'success' => $farmContext->expectedHarvestDate !== null,
                 'farm_context' => $farmContext->toArray(),
+            ],
+        ]);
+    }
+
+    private function isFarmResultsExplorationQuestion(string $question): bool
+    {
+        $text = mb_strtolower($question);
+
+        if (! preg_match('/\b(irrigated|rainfed|may patubig|sahod[- ]?ulan)\b/i', $text)) {
+            return false;
+        }
+
+        return (bool) preg_match('/\b(farms?|bukid|barangay|do|perform|average|results?|ani|yield|kamusta|kumusta)\b/i', $text);
+    }
+
+    private function farmResultsExploration(User $user, string $question, ?FarmerChatContext $farmContext, string $language, array $memory): array
+    {
+        $tagalog = str_contains($language, 'Tagalog');
+        $locale = $tagalog ? 'fil' : 'en';
+        $text = mb_strtolower($question);
+
+        $farmType = preg_match('/\b(rainfed|sahod[- ]?ulan)\b/i', $text) ? 'Rainfed' : 'Irrigated';
+        $namedBarangay = collect(LianBarangays::all())
+            ->first(fn (string $barangay): bool => str_contains($text, mb_strtolower($barangay)));
+        $barangay = $namedBarangay ?: ($farmContext?->barangay ?? $user->registeredBarangay());
+
+        $season = null;
+        if (preg_match('/\b(wet|tag-ulan)\b/i', $text)) {
+            $season = 'Wet';
+        } elseif (preg_match('/\b(dry|tag-araw|tag-init)\b/i', $text)) {
+            $season = 'Dry';
+        }
+
+        $explore = app(FarmResultsExplorationService::class)->explore([
+            'farm_type' => $farmType,
+            'barangay' => $barangay,
+            'season' => $season,
+        ], $locale);
+
+        if (! $explore['sufficient']) {
+            $answer = $explore['insight'];
+        } else {
+            $parts = [$explore['insight']];
+
+            if ($explore['min_yield'] !== null && $explore['max_yield'] !== null) {
+                $parts[] = $tagalog
+                    ? "Karaniwang saklaw: {$explore['min_yield']}–{$explore['max_yield']} t/ha mula sa {$explore['farm_count']} na bukid."
+                    : "Typical range: {$explore['min_yield']}–{$explore['max_yield']} t/ha across {$explore['farm_count']} farms.";
+            }
+
+            if ($explore['top_varieties'] !== []) {
+                $topList = collect($explore['top_varieties'])
+                    ->take(3)
+                    ->map(fn (array $row): string => "{$row['name']} ({$row['avg']} t/ha)")
+                    ->implode(', ');
+                $parts[] = $tagalog
+                    ? "Nangungunang binhi: {$topList}."
+                    : "Top varieties: {$topList}.";
+            }
+
+            $answer = implode(' ', $parts);
+        }
+
+        return $this->textResult($answer, 'farm_results_explore', 'iClimate Farm Results', 'iClimate Approved Harvests', $language, $memory, [
+            'confidence_score' => 90,
+            'tool_result' => [
+                'tool' => 'farm_results_explore',
+                'success' => true,
+                'explore' => $explore,
             ],
         ]);
     }

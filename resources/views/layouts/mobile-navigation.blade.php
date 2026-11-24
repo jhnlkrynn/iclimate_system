@@ -46,7 +46,7 @@
     $mobileMoreGroups = [];
     if ($isFarmer) {
         $mobileMoreGroups = [
-            ['My farm', array_values(array_filter([$mobileLink('my-farm'), $mobileLink('rice-varieties')]))],
+            ['My farm', array_values(array_filter([$mobileLink('my-farm'), $mobileLink('explore-results'), $mobileLink('rice-varieties')]))],
             ['Weather & risk', array_values(array_filter([$mobileLink('heatmap'), $mobileLink('advisories')]))],
             ['Talk to the MAO', array_values(array_filter([
                 $mobileLink('messages'),

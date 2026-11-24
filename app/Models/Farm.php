@@ -81,6 +81,7 @@ class Farm extends Model
         'farm_size_hectares', 'farm_size_method', 'farm_size_estimate_range', 'farm_size_unit', 'farm_type',
         'is_primary', 'archived_at',
         'verification_status', 'verified_by', 'verified_at', 'rejection_reason',
+        'expected_yield_t_ha', 'expected_yield_season',
     ];
 
     protected static function booted(): void
@@ -110,6 +111,7 @@ class Farm extends Model
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
             'farm_size_hectares' => 'decimal:4',
+            'expected_yield_t_ha' => 'decimal:2',
             'is_primary' => 'boolean',
             'archived_at' => 'datetime',
             'verified_at' => 'datetime',

@@ -179,6 +179,12 @@ final class FarmerDashboardService
                 // The yield card shows Lian's usual yield itself when the farmer has no estimate (see harvest.blade.php).
                 'usual_on_card' => $harvest['state'] !== 'ok' && ($harvest['needs_area'] ?? false) && is_numeric($harvest['usual'] ?? null)]);
 
+        $expectedYield = rescue(
+            fn (): array => app(\App\Services\Farmer\FarmerExpectedYieldService::class)->resolve($user, $farm, $harvest, $week, $now, app()->getLocale()),
+            ['expected' => null, 'source' => 'none', 'source_label' => '', 'estimate' => null, 'diff_t_ha' => null, 'diff_pct' => null, 'insights' => [], 'last_harvest' => null],
+            false
+        );
+
         return [
             'generated_at' => $now,
             'locale' => app()->getLocale(),
@@ -192,6 +198,7 @@ final class FarmerDashboardService
             'weather' => $weather,
             'risk' => $risk,
             'harvest' => $harvest,
+            'expected_yield' => $expectedYield,
             'week' => $week,
             'advisory' => $advisory,
             'advisory_count' => $advisoryCount,

@@ -64,6 +64,33 @@ class FarmController extends Controller
         ]);
     }
 
+    public function updateExpectedYield(Request $request, int $farm): RedirectResponse
+    {
+        $this->ensureAvailable();
+        $user = $request->user();
+        $record = $this->ownFarm($request, $farm);
+        $data = $request->validate([
+            'expected_yield_t_ha' => ['required', 'numeric', 'min:0.1', 'max:15'],
+        ]);
+
+        $now = \Carbon\CarbonImmutable::now(\App\Support\BusinessClock::timezone());
+        $seasonKey = \App\Support\RiceSeason::window($now)['season'].' '.$now->year;
+        $value = round((float) $data['expected_yield_t_ha'], 2);
+
+        if (\App\Support\SchemaCache::hasColumn('farms', 'expected_yield_t_ha')) {
+            $record->forceFill([
+                'expected_yield_t_ha' => $value,
+                'expected_yield_season' => $seasonKey,
+            ])->save();
+        }
+        \Illuminate\Support\Facades\Cache::forever("farmer:expected-yield:{$record->getKey()}:{$seasonKey}", $value);
+        FarmerDashboardService::forgetCached($user);
+
+        $fil = app()->getLocale() === 'fil';
+
+        return back()->with('success', $fil ? 'Na-save ang inaasahan mong ani.' : 'Your expected yield was saved.');
+    }
+
     public function edit(Request $request, int $farm): View
     {
         $farm = $this->ownFarm($request, $farm);

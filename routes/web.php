@@ -138,6 +138,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('farmer.language')
             ->name('farmer.my-farm');
 
+        Route::get('/farmer/explore-results', \App\Http\Controllers\FarmerExploreResultsController::class)
+            ->middleware('farmer.language')
+            ->name('farmer.explore-results.index');
+
         Route::middleware('farmer.language')->group(function () {
             Route::get('/farmer/complete-profile', [\App\Http\Controllers\CompleteProfileController::class, 'show'])->name('farmer.complete-profile.show');
             Route::post('/farmer/complete-profile', [\App\Http\Controllers\CompleteProfileController::class, 'store'])->middleware('throttle:20,1,post-farmer-complete-profile')->name('farmer.complete-profile.store');
@@ -161,6 +165,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('/active', [\App\Http\Controllers\FarmController::class, 'select'])->middleware('throttle:60,1,post-farmer-farms-active')->name('select');
             Route::get('/{farm}/edit', [\App\Http\Controllers\FarmController::class, 'edit'])->whereNumber('farm')->name('edit');
             Route::put('/{farm}', [\App\Http\Controllers\FarmController::class, 'update'])->whereNumber('farm')->name('update');
+            Route::patch('/{farm}/expected-yield', [\App\Http\Controllers\FarmController::class, 'updateExpectedYield'])->whereNumber('farm')->name('expected-yield');
             Route::delete('/{farm}', [\App\Http\Controllers\FarmController::class, 'destroy'])->whereNumber('farm')->name('destroy');
             Route::post('/{farm}/primary', [\App\Http\Controllers\FarmController::class, 'primary'])->whereNumber('farm')->name('primary');
             Route::post('/{farm}/restore', [\App\Http\Controllers\FarmController::class, 'restore'])->whereNumber('farm')->middleware('throttle:20,1,post-farmer-farm-restore')->name('restore');
