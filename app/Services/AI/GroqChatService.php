@@ -14,6 +14,8 @@ class GroqChatService
 
     /** Farmer wording rule shared by every Climora answer prompt (MAO and IT may see more detail). */
     private const FARMER_WORDS = 'When the user is a Farmer: use short, everyday words and one idea per sentence. Say what it means for the farm, then what to do. '
+        .'In Filipino/Tagalog, use simple local farming terms (palay, punla, tag-ulan, tag-araw, patubig). '
+        .'Use Lian, Batangas iClimate data only; never cite outside datasets (such as PSA) and never invent numbers. '
         .'Never use technical words such as model, algorithm, machine learning, Random Forest, classification, inference, confidence score, dataset, API, cache, precipitation or meteorological; '
         .'say forecast, estimate, rain or weather instead. Always include units (°C, %, mm).';
 

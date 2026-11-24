@@ -5,6 +5,24 @@
     $icAiFirstName = \Illuminate\Support\Str::of((string) auth()->user()?->name)->squish()->before(' ')->toString();
     $icAiGreeting = $icAiFirstName !== '' ? 'Hi, '.$icAiFirstName.'! How can I help you today?' : 'Hi! How can I help you today?';
     $icAiFarmerLanguage = auth()->user()?->role === \App\Models\User::ROLE_FARMER;
+    $icAiHeaderLocale = $icAiFarmerLanguage ? \App\Support\FarmerLanguage::resolve(request()) : 'en';
+    $icAiWidgetLang = $icAiHeaderLocale === 'fil' ? 'tl' : (auth()->user()?->aiLanguageCode() ?? 'en');
+    $icAiFarmerChipsEn = [
+        'Weather this week',
+        'Can I plant now?',
+        'When to harvest?',
+        'Typhoon coming?',
+        'My expected yield',
+        'Flood/drought in my barangay',
+    ];
+    $icAiFarmerChipsTl = [
+        'Panahon ngayong linggo',
+        'Puwede na ba magtanim?',
+        'Kailan ang ani?',
+        'May bagyo ba?',
+        'Inaasahang ani ko',
+        'Baha/tagtuyot sa barangay ko',
+    ];
 
     $icAiChips = match (auth()->user()->role) {
         \App\Models\User::ROLE_MAO => [
@@ -13,12 +31,7 @@
             'How many active planting advisories are there?',
             'Latest announcement',
         ],
-        default => [
-            'Will it rain this week?',
-            'What is my expected rice yield?',
-            'When should I plant?',
-            'My rice leaves are turning yellow',
-        ],
+        default => $icAiWidgetLang === 'tl' ? $icAiFarmerChipsTl : $icAiFarmerChipsEn,
     };
 
     // Static label/unit lookup for the "Why this yield estimate" panel,
@@ -596,10 +609,19 @@
     #icAiWidget .ic-ai-panel .ic-ai-suggest-toggle { min-height: 28px; padding: 0 8px; }
     #icAiWidget .ic-ai-panel .ic-ai-send { min-height: 44px; padding: 0; }
     #icAiWidget .ic-ai-panel .ic-ai-language select { min-height: 32px; padding-top: 0; padding-bottom: 0; }
+    .ic-ai-feedback { display: flex; align-items: center; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+    .ic-ai-fb-btn { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border: 1px solid var(--sage-100); border-radius: 999px; background: #fff; color: var(--ai-muted); font-size: 12px !important; line-height: 1.2 !important; cursor: pointer; }
+    .ic-ai-fb-btn:hover { border-color: var(--ai-green); color: var(--ai-ink); background: var(--sage-50); }
+    .ic-ai-fb-btn.is-active { border-color: var(--ai-green); background: var(--sage-50); color: var(--ai-green); font-weight: 600; }
+    .ic-ai-fb-reason { display: flex; gap: 4px; width: 100%; margin-top: 4px; }
+    .ic-ai-fb-reason input { flex: 1 1 auto; min-width: 0; padding: 4px 8px; border: 1px solid var(--sage-100); border-radius: 8px; font-size: 12px !important; background: #fff; color: var(--ai-ink); }
+    .ic-ai-fb-reason button { padding: 4px 10px; border: 0; border-radius: 8px; background: var(--ai-primary); color: #fff; font-size: 12px !important; font-weight: 600; cursor: pointer; }
+    .ic-ai-profile-link { color: var(--ai-green); font-weight: 600; text-decoration: underline; }
+    @media (prefers-reduced-motion: reduce) { .ic-ai-fb-btn { transition: none; } }
 </style>
 
 <script type="application/json" id="icAiFeatureCatalog">{!! json_encode($icAiFeatureCatalog, JSON_UNESCAPED_SLASHES) !!}</script>
-<div id="icAiWidget" class="ic-ai-widget" data-message-url="{{ route('ai-chat.message') }}">
+<div id="icAiWidget" class="ic-ai-widget" data-message-url="{{ route('ai-chat.message') }}" data-feedback-base="{{ url('/ai-chat') }}" data-header-lang="{{ $icAiWidgetLang }}">
     <section class="ic-ai-panel" role="dialog" aria-modal="false" aria-labelledby="icAiTitle">
         <header class="ic-ai-header">
             <div class="ic-ai-head-main">
@@ -836,6 +858,13 @@
         const updateLanguageUi = () => {
             const typingText = typing?.querySelector('.ic-ai-typing-text');
             if (typingText) typingText.textContent = languageText('Climora AI is checking iClimate...', 'Sinusuri ng Climora AI ang iClimate...');
+            if (chips && languageSelect) {
+                const isTl = selectedLanguage() === 'tl';
+                const list = isTl
+                    ? ['Panahon ngayong linggo', 'Puwede na ba magtanim?', 'Kailan ang ani?', 'May bagyo ba?', 'Inaasahang ani ko', 'Baha/tagtuyot sa barangay ko']
+                    : ['Weather this week', 'Can I plant now?', 'When to harvest?', 'Typhoon coming?', 'My expected yield', 'Flood/drought in my barangay'];
+                chips.innerHTML = list.map((label) => `<button type="button" class="ic-ai-chip" data-ai-chip>${escapeHtml(label)}</button>`).join('');
+            }
         };
         const resultCard = (label, value) => `<div class="ic-ai-card"><div class="ic-ai-card-label">${label}</div><div class="ic-ai-card-value">${escapeHtml(value || 'Not available yet')}</div></div>`;
         const featureCatalog = (() => {
@@ -919,10 +948,23 @@
             return grid + features;
         };
         // A short farmer answer leads with its answer line in bold; everything stays escaped.
+        const linkifyProfile = (escapedText) => escapedText.replaceAll(
+            '/farmer/complete-profile',
+            `<a href="/farmer/complete-profile" class="ic-ai-profile-link">${escapeHtml(languageText('Complete Profile', 'Kumpletuhin ang Profile'))}</a>`
+        );
         const answerHtml = (chat) => {
-            if (!chat.memory?.brief) return escapeHtml(chat.answer);
+            if (!chat.memory?.brief) return linkifyProfile(escapeHtml(chat.answer));
             const [first, ...rest] = String(chat.answer ?? '').split('\n');
-            return `<strong>${escapeHtml(first)}</strong>${rest.length ? '\n' + escapeHtml(rest.join('\n')) : ''}`;
+            return `<strong>${escapeHtml(first)}</strong>${rest.length ? '\n' + linkifyProfile(escapeHtml(rest.join('\n'))) : ''}`;
+        };
+        const feedbackBar = (chat) => {
+            if (!chat?.id) return '';
+            const upLabel = escapeHtml(languageText('Helpful', 'Nakatulong'));
+            const downLabel = escapeHtml(languageText('Not helpful', 'Hindi nakatulong'));
+            return `<div class="ic-ai-feedback" data-feedback-chat="${chat.id}">`
+                + `<button type="button" class="ic-ai-fb-btn" data-feedback-val="1" aria-label="${upLabel}" aria-pressed="false">👍</button>`
+                + `<button type="button" class="ic-ai-fb-btn" data-feedback-val="0" aria-label="${downLabel}" aria-pressed="false">👎</button>`
+                + `</div>`;
         };
         const addMessage = (role, message, extra = '', html = null) => {
             typing.insertAdjacentHTML(
@@ -971,7 +1013,7 @@
                 if (!response.ok) throw new Error('assistant request failed');
 
                 const chat = data.chat;
-                addMessage('assistant', chat.answer, predictionGrid(chat), answerHtml(chat));
+                addMessage('assistant', chat.answer, predictionGrid(chat) + feedbackBar(chat), answerHtml(chat));
             } catch (error) {
                 const message = error.name === 'AbortError'
                     ? languageText('The assistant took too long. Please ask a shorter iClimate question or try again.', 'Matagal sumagot ang assistant. Magtanong nang mas maikli o subukan ulit.')
@@ -1071,6 +1113,57 @@
                 input.value = chip.textContent.trim();
                 openAssistant();
                 submitQuestion(input.value);
+                return;
+            }
+
+            const fbBtn = event.target.closest('[data-feedback-val]');
+            if (fbBtn && widget.contains(fbBtn)) {
+                event.preventDefault();
+                const bar = fbBtn.closest('[data-feedback-chat]');
+                const chatId = bar?.dataset.feedbackChat;
+                const helpful = fbBtn.dataset.feedbackVal === '1';
+                if (!chatId) return;
+
+                const sendFeedback = (reason = null) => fetch(`${widget.dataset.feedbackBase}/${chatId}/feedback`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
+                    body: JSON.stringify({ helpful, reason }),
+                    loader: false,
+                }).catch(() => {});
+
+                bar.querySelectorAll('[data-feedback-val]').forEach((btn) => {
+                    const active = btn === fbBtn;
+                    btn.classList.toggle('is-active', active);
+                    btn.setAttribute('aria-pressed', String(active));
+                });
+
+                sendFeedback(null);
+
+                const existingReason = bar.querySelector('.ic-ai-fb-reason');
+                if (helpful) {
+                    existingReason?.remove();
+                } else if (!existingReason) {
+                    const placeholder = escapeHtml(languageText('Optional: why was this not helpful?', 'Opsyonal: bakit hindi nakatulong?'));
+                    const saveLabel = escapeHtml(languageText('Send', 'Ipadala'));
+                    bar.insertAdjacentHTML('beforeend', `<div class="ic-ai-fb-reason"><input type="text" maxlength="500" placeholder="${placeholder}"><button type="button" data-feedback-send>${saveLabel}</button></div>`);
+                }
+                return;
+            }
+
+            const fbSend = event.target.closest('[data-feedback-send]');
+            if (fbSend && widget.contains(fbSend)) {
+                event.preventDefault();
+                const bar = fbSend.closest('[data-feedback-chat]');
+                const reasonBox = fbSend.closest('.ic-ai-fb-reason');
+                const chatId = bar?.dataset.feedbackChat;
+                const reason = reasonBox?.querySelector('input')?.value?.trim() || null;
+                if (!chatId) return;
+                fetch(`${widget.dataset.feedbackBase}/${chatId}/feedback`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': token },
+                    body: JSON.stringify({ helpful: false, reason }),
+                    loader: false,
+                }).then(() => reasonBox?.remove()).catch(() => {});
             }
         });
 

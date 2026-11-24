@@ -317,7 +317,7 @@ class IntentClassifierService
 
     private function looksLikeRisk(string $text): bool
     {
-        return str($text)->contains(['risk', 'high risk', 'severe risk', 'heat map', 'heatmap', 'panganib']);
+        return str($text)->contains(['risk', 'high risk', 'severe risk', 'heat map', 'heatmap', 'panganib', 'flood', 'drought', 'baha', 'tagtuyot']);
     }
 
     private function looksLikeApiForecast(string $text): bool
@@ -398,7 +398,10 @@ class IntentClassifierService
      */
     private function looksLikePlantingAction(string $text): bool
     {
-        return str($text)->contains(['should i plant', 'dapat ba akong magtanim', 'dapat bang magtanim']);
+        return str($text)->contains([
+            'should i plant', 'can i plant', 'good time to plant',
+            'dapat ba akong magtanim', 'dapat bang magtanim', 'puwede na ba magtanim', 'pwede na ba magtanim', 'puwede bang magtanim', 'pwede bang magtanim',
+        ]);
     }
 
     private function looksLikeIrrigationAction(string $text): bool
@@ -423,7 +426,7 @@ class IntentClassifierService
 
     private function looksLikeAdvisory(string $text): bool
     {
-        return str($text)->contains(['advisory', 'advisories', 'warning', 'alert', 'babala', 'pagasa']);
+        return str($text)->contains(['advisory', 'advisories', 'warning', 'alert', 'babala', 'pagasa', 'typhoon', 'bagyo', 'storm', 'signal']);
     }
 
     private function validIntent(string $intent): bool

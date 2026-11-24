@@ -94,6 +94,32 @@ class AIChatController extends Controller
         return response()->json(['language' => $validated['language']]);
     }
 
+    public function feedback(Request $request, AIChat $chat): JsonResponse
+    {
+        abort_unless((int) $chat->user_id === (int) $request->user()->id, 403);
+
+        $validated = $request->validate([
+            'helpful' => ['required', 'boolean'],
+            'reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $helpful = (bool) $validated['helpful'];
+        $reason = $helpful ? null : (isset($validated['reason']) ? trim((string) $validated['reason']) : null);
+
+        $chat->forceFill([
+            'helpful' => $helpful,
+            'feedback_reason' => $reason !== '' ? $reason : null,
+            'feedback_at' => now(),
+        ])->save();
+
+        return response()->json([
+            'ok' => true,
+            'chat_id' => $chat->id,
+            'helpful' => $chat->helpful,
+            'feedback_reason' => $chat->feedback_reason,
+        ]);
+    }
+
     public function clear(Request $request): RedirectResponse
     {
         AIChat::query()->where('user_id', $request->user()->id)->delete();

@@ -29,6 +29,9 @@ class AIChat extends Model
         'explanation',
         'confidence_score',
         'response_time_ms',
+        'helpful',
+        'feedback_reason',
+        'feedback_at',
     ];
 
     protected $casts = [
@@ -41,6 +44,8 @@ class AIChat extends Model
         'memory' => 'array',
         'confidence_score' => 'decimal:2',
         'response_time_ms' => 'integer',
+        'helpful' => 'boolean',
+        'feedback_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

@@ -296,6 +296,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // MAO Dashboard – Naicel (2026-10-08): the dashboard's English / Filipino selector, saved on the MAO's account.
         Route::post('/mao/dashboard/language', [DashboardController::class, 'maoLanguage'])
             ->middleware('throttle:20,1,post-mao-dashboard-language')->name('mao.dashboard.language');
+        Route::get('/mao/climora-feedback', [\App\Http\Controllers\Mao\AiFeedbackController::class, 'index'])
+            ->name('mao.climora-feedback.index');
     });
 
 
@@ -766,6 +768,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('role:'.User::ROLE_FARMER)
             ->name(
                 'ai-chat.language'
+            );
+
+        Route::post(
+            'ai-chat/{chat}/feedback',
+            [AIChatController::class, 'feedback']
+        )
+            ->middleware('throttle:60,1,post-ai-chat-feedback')
+            ->name(
+                'ai-chat.feedback'
             );
 
 

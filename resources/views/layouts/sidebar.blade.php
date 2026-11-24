@@ -115,6 +115,7 @@
             $navLink($maoNav('mao_office'), 'mao-office', 'system-logs'),   // panel revision 4.4
         ];
         $primaryGroup[] = [$maoNav('association_reports'), 'mao.association-reports.index', ['mao.association-reports.*'], 'reports', null, null, null];
+        $primaryGroup[] = ['Climora Feedback', 'mao.climora-feedback.index', ['mao.climora-feedback.*'], 'messages', null, null, null];
         if ($user->isMaoHead()) {
             $primaryGroup[] = $navLink($maoNav('account_management'), 'user-management', 'user-management');
         }

@@ -12,6 +12,7 @@ use App\Models\PlantingAdvisory;
 use App\Models\RiceProduction;
 use App\Models\User;
 use App\Services\AI\FarmerAnswerStyle;
+use App\Services\AI\FarmerChatContext;
 use App\Services\AI\GroqChatService;
 use App\Services\AI\IntentDetectionService;
 use App\Services\AI\KnowledgeBaseService;
@@ -49,16 +50,17 @@ class PredictionService
         return $this->dateValidator->validate($targetDate) !== null;
     }
 
-    public function answer(User $user, string $question): array
+    public function answer(User $user, string $question, ?FarmerChatContext $farmContext = null): array
     {
         $startedAt = microtime(true);
         $memory = $this->conversationMemory($user);
         $language = $this->intentDetector->detectLanguage($question, $memory, $user->aiLanguageCode());
         $intentResult = $this->intentDetector->detect($question, $memory);
         $intent = $intentResult['intent'];
+        $farmContext ??= FarmerChatContext::for($user, $question);
 
         if (! $intentResult['requires_prediction']) {
-            return $this->answerWithoutPrediction($user, $question, $intent, $language, $memory, $intentResult, $startedAt);
+            return $this->answerWithoutPrediction($user, $question, $intent, $language, $memory, $intentResult, $startedAt, $farmContext);
         }
 
         $targetDate = $this->parseTargetDateFromQuestion($question) ?? PredictionDateValidator::defaultTargetDate();
@@ -71,10 +73,10 @@ class PredictionService
         $memoryText = $question.' '.implode(' ', $memory['recent_questions'] ?? []);
         $conditions = $this->conditionsFrom($memoryText);
         $profile = $user->farmerProfile ?: FarmerProfile::query()->where('user_id', $user->id)->first();
-        $activeFarm = $user->role === User::ROLE_FARMER ? ActiveFarm::current($user) : null;
+        $activeFarm = $farmContext->activeFarm;
 
-        $farmType = $conditions['farm_type'] ?? (string) ($activeFarm?->farm_type ?? $profile?->farm_type ?? FarmerProfile::FARM_TYPE_RAINFED);
-        $areaOverride = $numbers['area'] ?? null;
+        $farmType = $conditions['farm_type'] ?? (string) ($farmContext->farmType ?? $activeFarm?->farm_type ?? $profile?->farm_type ?? FarmerProfile::FARM_TYPE_RAINFED);
+        $areaOverride = $numbers['area'] ?? $farmContext->farmArea;
         $manualOverrides = array_filter([
             'rainfall' => $numbers['rainfall'] ?? null,
             'temp_avg' => $numbers['temperature'] ?? $conditions['temperature'] ?? null,
@@ -92,9 +94,13 @@ class PredictionService
         // without enough weather data, cannot.
         $decisionLacksData = (bool) data_get($engineResult, 'decision_support.insufficient_data', false);
         if (! ($sharedYieldResult['success'] ?? false) && ($decisionLacksData || $intent === IntentDetectionService::RICE_YIELD_PREDICTION)) {
+            \Illuminate\Support\Facades\Log::warning('Climora PredictionService: rice-yield prediction unavailable.', [
+                'barangay' => $farmContext->barangay,
+                'intent' => $intent,
+            ]);
             $message = $this->isTagalog($language)
-                ? 'Hindi pa available ang prediksyon ng ani dahil kulang ang mga napatunayang datos o hindi gumagana ang prediction system. Walang tantiyang ginawa. Subukan muli mamaya.'
-                : 'A rice-yield prediction is not available right now because verified input data is incomplete or the prediction service is unavailable. No estimate was made. Please try again later.';
+                ? 'Hindi pa available ang prediksyon ng ani dahil kulang ang mga napatunayang datos o hindi gumagana ang prediction system (nagre-refresh ang ani tuwing 3 oras). Walang tantiyang ginawa.'
+                : 'A rice-yield prediction is not available right now because verified input data is incomplete or the prediction service is unavailable (yield refreshes every 3 hours). No estimate was made.';
 
             return $this->textResponse($message, $intent, $language, $memory, $startedAt, [
                 'source_type' => 'System',
@@ -326,7 +332,7 @@ class PredictionService
             );
     }
 
-    private function answerWithoutPrediction(User $user, string $question, string $intent, string $language, array $memory, array $intentResult, float $startedAt): array
+    private function answerWithoutPrediction(User $user, string $question, string $intent, string $language, array $memory, array $intentResult, float $startedAt, ?FarmerChatContext $farmContext = null): array
     {
         if ($this->shouldUseLocalSystemAnswer($intent, $question)) {
             return $this->textResponse($this->localSystemAnswer($intent, $question, $language), $intent, $language, $memory, $startedAt, [
@@ -359,7 +365,7 @@ class PredictionService
             ]);
         }
 
-        if ($groqAnswer = $this->groqChat->answer($user, $question, $intent, $language, $memory, $this->assistantContextForGroq($user))) {
+        if ($groqAnswer = $this->groqChat->answer($user, $question, $intent, $language, $memory, $this->assistantContextForGroq($user, $farmContext))) {
             return $this->textResponse($groqAnswer['answer'], $intent, $language, $memory, $startedAt, [
                 'source_type' => 'Generative AI',
                 'source_name' => $groqAnswer['source_name'],
@@ -528,11 +534,12 @@ class PredictionService
         return null;
     }
 
-    private function assistantContextForGroq(User $user): array
+    private function assistantContextForGroq(User $user, ?FarmerChatContext $farmContext = null): array
     {
+        $farmContext ??= FarmerChatContext::for($user);
         $profile = $user->farmerProfile;
-        $farm = $user->role === User::ROLE_FARMER ? ActiveFarm::current($user) : null;
-        $barangay = $farm?->barangay ?: ($profile?->barangay ?: $user->barangay);
+        $farm = $farmContext->activeFarm;
+        $barangay = $farmContext->barangay ?: ($farm?->barangay ?: ($profile?->barangay ?: $user->barangay));
         $latestWeather = ExternalWeatherData::query()->latest('fetched_at')->first();
         $latestClimate = ClimateRecord::query()->latest('record_date')->first();
         $latestProduction = RiceProduction::query()
@@ -548,6 +555,7 @@ class PredictionService
         $latestNotification = Notification::query()->where('user_id', $user->id)->latest()->first();
 
         return [
+            'farm_context' => $farmContext->toArray(),
             'current_user' => [
                 'role' => $user->role,
                 'barangay' => $barangay,
