@@ -11,6 +11,10 @@
         <div class="mfd-sr-only" role="status" aria-live="polite" data-mfd-live></div>
         <div class="mfd-soft" role="alert" data-mfd-refresh-error hidden><span data-mfd-refresh-error-text>{{ __('farmer.state.refresh_failed') }}</span></div>
 
+        @if (\App\Support\FarmerProfileCompletion::shouldShowBanner(auth()->user()))
+            @include('partials.complete-profile-banner')
+        @endif
+
         {{-- The "is this farm part of an association?" question is asked on My Farm (farmer-records/my-farm). --}}
 
         @foreach (\App\Http\Controllers\DashboardController::FARMER_SLOTS as $name)

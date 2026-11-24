@@ -48,7 +48,7 @@
                                 <tr data-user-id="{{ $farmer->id }}">
                                     <td><strong>{{ $farmer->name }}</strong><div class="small text-muted">{{ $farmer->email }}</div></td>
                                     <td>{{ $farmer->contact_number ?: ($farmer->farmerProfile?->contact_number ?: '—') }}</td>
-                                    <td>{{ $farmer->barangay ?: '—' }}</td>
+                                    <td>{{ $farmer->barangay ?: 'Barangay: not set yet' }}</td>
                                     <td>{{ $farmer->farmerProfile?->farm_type ?: '—' }}@if ($farmer->farmerProfile?->farm_area) · {{ rtrim(rtrim(number_format((float) $farmer->farmerProfile->farm_area, 2), '0'), '.') }} ha @endif</td>
                                     <td>{{ $farmer->created_at?->timezone(\App\Support\BusinessClock::timezone())->format('M j, Y') }}</td>
                                     <td>{{ $farmer->applicationStatus() }}</td>

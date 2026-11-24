@@ -22,14 +22,11 @@
                         <h2 class="text-xl font-semibold text-ink">How to create an account</h2>
                         <ol class="mt-4 flex flex-col gap-4">
                             <li><span class="lp-reg-step" aria-hidden="true">1</span><div><strong>Enter your name and email</strong><p>Use an email address you can open. It is what you will use to log in.</p></div></li>
-                            <li><span class="lp-reg-step" aria-hidden="true">2</span><div><strong>Choose your barangay and association</strong><p>Pick the barangay where your farm is, then your farmers’ association. Choose “Not a member” if you have none.</p></div></li>
-                            <li><span class="lp-reg-step" aria-hidden="true">3</span><div><strong>Make a password</strong><p>Type it twice so both match. Do not use a password you share with others.</p></div></li>
-                            <li><span class="lp-reg-step" aria-hidden="true">4</span><div><strong>Type the security code and agree to the terms</strong><p>Copy the letters from the picture, tick the box, then press Create account.</p></div></li>
-                            @if (config('iclimate.farmer_approval'))
-                                <li><span class="lp-reg-step" aria-hidden="true">5</span><div><strong>Wait for MAO approval</strong><p>The Municipal Agriculture Office reviews each new account. You can log in once it is approved.</p></div></li>
-                            @endif
+                            <li><span class="lp-reg-step" aria-hidden="true">2</span><div><strong>Create a password and enter the code</strong><p>Use at least 8 characters, type the security code, tick the privacy box, then press Create account.</p></div></li>
+                            <li><span class="lp-reg-step" aria-hidden="true">3</span><div><strong>Wait for MAO approval</strong><p>The Municipal Agriculture Office reviews each new account. You can log in once it is approved.</p></div></li>
                         </ol>
-                        <p class="mt-5 rounded-lg bg-sage-50 px-4 py-3 text-base text-ink">Need help? Visit the Municipal Agriculture Office at the Lian Municipal Hall, or <a href="#contact" class="lp-link">send us a message</a>.</p>
+                        <p class="mt-4 text-sm font-medium text-sage-800">You'll add your barangay and association after you log in.</p>
+                        <p class="mt-4 rounded-lg bg-sage-50 px-4 py-3 text-base text-ink">Need help? Visit the Municipal Agriculture Office at the Lian Municipal Hall, or <a href="#contact" class="lp-link">send us a message</a>.</p>
                     </div>
                 @endguest
             </div>

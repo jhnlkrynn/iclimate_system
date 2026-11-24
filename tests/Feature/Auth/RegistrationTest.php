@@ -16,23 +16,16 @@ class RegistrationTest extends TestCase
 
     public function test_registration_screen_can_be_rendered(): void
     {
-        $this->seed(FarmerOrganizationSeeder::class);
-
         $this->get('/register')->assertRedirect(url('/').'#register');
         $response = $this->get('/');
 
         $response->assertStatus(200);
         $response->assertSee(route('captcha.image', ['context' => 'register']), false);
-        $response->assertSee('Balibago Farmers Association');
-        $response->assertSee('Farm location / barangay');
+        $response->assertDontSee('Farm location / barangay');
         $response->assertSee('At least 8 characters');
         $response->assertSee('Uppercase letter');
         $response->assertSee('Symbol');
-
-        $html = $response->getContent();
-        $this->assertLessThan(strpos($html, 'id="farmer_organization_id"'), strpos($html, 'id="barangay"'));
-        $this->assertStringContainsString('data-association-status="not_member"', $html);
-        $this->assertStringNotContainsString('isn\'t listed', $html);
+        $response->assertSee("You'll add your barangay and association after you log in.", false);
     }
 
     public function test_registration_captcha_image_can_be_rendered(): void
@@ -51,7 +44,6 @@ class RegistrationTest extends TestCase
             'email' => 'test@example.com',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
-            'barangay' => 'Balibago',
             'captcha_answer' => '7',
             'privacy_agreed' => '1',
         ]);
@@ -61,96 +53,45 @@ class RegistrationTest extends TestCase
         $response->assertSessionHas('success', 'Account created. The Municipal Agriculture Office will review it; you can log in once it is approved.');   // Manuscript – Naicel: sign-ups wait for approval
         $this->assertDatabaseHas('users', [
             'email' => 'test@example.com',
-            'barangay' => 'Balibago',
+            'barangay' => null,
         ]);
         $this->assertDatabaseHas('farmer_profiles', [
             'full_name' => 'Test User',
-            'barangay' => 'Balibago',
+            'barangay' => null,
             'farmer_organization_id' => null,
         ]);
     }
 
-    public function test_registration_saves_an_association_only_for_the_selected_barangay(): void
+    public function test_registration_allows_8_char_password_without_complexity_chips_blocking(): void
     {
-        $this->seed(FarmerOrganizationSeeder::class);
-        $organization = FarmerOrganization::query()
-            ->where('name', 'Cuaco Irrigator\'s Association')
-            ->firstOrFail();
-
         $response = $this->withSession($this->captchaSession('register', '7'))->post('/register', [
-            'name' => 'Org User',
-            'email' => 'org-user@example.com',
-            'password' => 'Password123!',
-            'password_confirmation' => 'Password123!',
-            'farmer_organization_id' => $organization->id,
-            'barangay' => 'Binubusan',
+            'name' => 'Simple Password User',
+            'email' => 'simple-pass@example.com',
+            'password' => 'myfarm2026',
+            'password_confirmation' => 'myfarm2026',
             'captcha_answer' => '7',
             'privacy_agreed' => '1',
         ]);
 
         $this->assertGuest();
         $response->assertRedirect('/');
-        $response->assertSessionHas('success', 'Account created. The Municipal Agriculture Office will review it; you can log in once it is approved.');   // Manuscript – Naicel: sign-ups wait for approval
-        $this->assertDatabaseHas('users', [
-            'email' => 'org-user@example.com',
-            'barangay' => 'Binubusan',
-        ]);
-        $this->assertDatabaseHas('farmer_profiles', [
-            'full_name' => 'Org User',
-            'farmer_organization_id' => $organization->id,
-            'barangay' => 'Binubusan',
-            'farm_type' => 'Irrigated',
-        ]);
+        $response->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('users', ['email' => 'simple-pass@example.com']);
     }
 
-    public function test_registration_rejects_an_association_from_another_barangay(): void
+    public function test_registration_rejects_passwords_shorter_than_8_characters(): void
     {
-        $this->seed(FarmerOrganizationSeeder::class);
-        $organization = FarmerOrganization::query()->where('name', 'Balibago Farmers Association')->firstOrFail();
-
-        $response = $this->withSession($this->captchaSession('register', '7'))->post('/register', [
-            'name' => 'Wrong Barangay User',
-            'email' => 'wrong-barangay@example.com',
-            'password' => 'Password123!',
-            'password_confirmation' => 'Password123!',
-            'barangay' => 'Binubusan',
-            'farmer_organization_id' => $organization->id,
-            'captcha_answer' => '7',
-        ]);
-
-        $this->assertGuest();
-        $response->assertSessionHasErrors('farmer_organization_id');
-        $this->assertDatabaseMissing('users', ['email' => 'wrong-barangay@example.com']);
-    }
-
-    public function test_registration_requires_manual_barangay_when_no_organization_is_selected(): void
-    {
-        $response = $this->withSession($this->captchaSession('register', '7'))->post('/register', [
-            'name' => 'No Barangay User',
-            'email' => 'no-barangay@example.com',
-            'password' => 'Password123!',
-            'password_confirmation' => 'Password123!',
-            'captcha_answer' => '7',
-        ]);
-
-        $this->assertGuest();
-        $response->assertSessionHasErrors('barangay');
-    }
-
-    public function test_registration_rejects_weak_passwords(): void
-    {
-        $response = $this->withSession($this->captchaSession('register', '7'))->post('/register', [
-            'name' => 'Weak Password User',
-            'email' => 'weak-password@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
-            'barangay' => 'Balibago',
+        $short = $this->withSession($this->captchaSession('register', '7'))->post('/register', [
+            'name' => 'Short Password User',
+            'email' => 'short-password@example.com',
+            'password' => 'short12',
+            'password_confirmation' => 'short12',
             'captcha_answer' => '7',
             'privacy_agreed' => '1',
         ]);
 
         $this->assertGuest();
-        $response->assertSessionHasErrors('password');
+        $short->assertSessionHasErrors('password');
     }
 
     public function test_registration_rejects_duplicate_email_and_keeps_entered_names(): void
@@ -210,32 +151,8 @@ class RegistrationTest extends TestCase
         $response->assertSessionHasErrors('captcha_answer');
     }
 
-    /**
-     * @return array<string, array<string, mixed>>
-     */
-    public function test_registration_rejects_a_generic_poblacion_and_offers_only_official_barangay_names(): void
-    {
-        $response = $this->withSession($this->captchaSession('register', '7'))->post('/register', [
-            'name' => 'Pob Farmer',
-            'email' => 'pob@example.com',
-            'password' => 'Password123!',
-            'password_confirmation' => 'Password123!',
-            'barangay' => 'Poblacion',   // Lian has five Poblacion barangays: a bare "Poblacion" is ambiguous
-            'captcha_answer' => '7',
-        ]);
-
-        $response->assertSessionHasErrors('barangay');
-        $this->assertDatabaseMissing('users', ['email' => 'pob@example.com']);
-
-        $select = \Illuminate\Support\Str::betweenFirst($this->get('/')->getContent(), '<select id="barangay"', '</select>');
-        preg_match_all('/<option value="([^"]+)"/', $select, $options);
-        $offered = $options[1];
-        $this->assertNotEmpty($offered);
-        $this->assertSame([], array_values(array_diff($offered, \App\Support\LianBarangays::all())), 'Every registration choice must be an official Lian barangay name.');
-    }
-
-    /** A sign-up saves one user, one farmer profile and one first farm, and nothing twice (2026-10-08). */
-    public function test_a_new_farmer_is_saved_once_with_a_profile_and_a_first_farm_and_waits_for_approval(): void
+    /** A sign-up saves one user and one incomplete farmer profile (no farm yet) and waits for approval. */
+    public function test_a_new_farmer_is_saved_once_with_an_incomplete_profile_and_waits_for_approval(): void
     {
         $response = $this->withSession($this->captchaSession('register', '7'))->post('/register', $this->validSignUp());
 
@@ -246,11 +163,11 @@ class RegistrationTest extends TestCase
         $user = User::query()->where('email', 'new-farmer@example.com')->sole();
         $this->assertSame(User::ROLE_FARMER, $user->role);
         $this->assertSame(User::STATUS_PENDING, $user->status);
+        $this->assertNull($user->barangay);
         $this->assertTrue(Hash::check('Password123!', $user->password));
         $this->assertDatabaseCount('farmer_profiles', 1);
-        $this->assertDatabaseHas('farmer_profiles', ['user_id' => $user->id, 'barangay' => 'Balibago', 'farm_type' => 'Irrigated']);
-        $this->assertSame(1, \App\Models\Farm::query()->where('user_id', $user->id)->count());
-        $this->assertDatabaseHas('farms', ['user_id' => $user->id, 'barangay' => 'Balibago', 'is_primary' => true]);
+        $this->assertDatabaseHas('farmer_profiles', ['user_id' => $user->id, 'barangay' => null, 'farm_type' => null]);
+        $this->assertSame(0, \App\Models\Farm::query()->where('user_id', $user->id)->count());
     }
 
     public function test_legacy_approval_setting_cannot_bypass_pending_registration(): void
@@ -285,8 +202,7 @@ class RegistrationTest extends TestCase
             'name' => ['name' => ''],
             'email' => ['email' => 'not-an-email'],
             'password' => ['password_confirmation' => 'Different123!'],
-            'barangay' => ['barangay' => 'Not A Barangay'],
-            'farmer_organization_id' => ['farmer_organization_id' => 999999],
+            'privacy_agreed' => ['privacy_agreed' => '0'],
         ];
 
         foreach ($wrong as $field => $change) {
@@ -304,7 +220,7 @@ class RegistrationTest extends TestCase
     public function test_empty_optional_fields_do_not_stop_a_sign_up(): void
     {
         $this->withSession($this->captchaSession('register', '7'))
-            ->post('/register', $this->validSignUp(['farmer_organization_id' => '', 'contact_number' => '', 'farm_area' => '', 'preferred_language' => '']))
+            ->post('/register', $this->validSignUp(['contact_number' => '', 'farm_area' => '', 'preferred_language' => '']))
             ->assertRedirect('/')
             ->assertSessionHasNoErrors();
 
@@ -312,83 +228,18 @@ class RegistrationTest extends TestCase
         $this->assertDatabaseHas('farmer_profiles', ['full_name' => 'New Farmer', 'farmer_organization_id' => null]);
     }
 
-    /** Other organizations are saved as memberships next to the main one (none, one or several). */
-    public function test_other_organizations_are_saved_as_memberships(): void
+    /** A wrong security answer sends the form back with the entered name and email kept. */
+    public function test_entered_fields_survive_a_failed_submission(): void
     {
-        $this->seed(FarmerOrganizationSeeder::class);
-        [$main, $first, $second, $third] = FarmerOrganization::query()->orderBy('id')->take(4)->get()->all();
-
-        $cases = [
-            'none' => [[], [$main->id]],
-            'one' => [[$first->id], [$main->id, $first->id]],
-            'several' => [[$first->id, $second->id, $third->id], [$main->id, $first->id, $second->id, $third->id]],
-        ];
-
-        foreach ($cases as $label => [$others, $expected]) {
-            $this->withSession($this->captchaSession('register', '7'))
-                ->post('/register', $this->validSignUp([
-                    'email' => "{$label}@example.com",
-                    'farmer_organization_id' => $main->id,
-                    'other_organizations' => $others,
-                ]))
-                ->assertRedirect('/')
-                ->assertSessionHasNoErrors();
-
-            $profile = User::query()->where('email', "{$label}@example.com")->sole()->farmerProfile;
-            $this->assertSame($main->id, (int) $profile->farmer_organization_id, $label);
-            $this->assertEqualsCanonicalizing($expected, $profile->organizations()->pluck('farmer_organizations.id')->map(fn ($id) => (int) $id)->all(), $label);
-        }
-    }
-
-    /** Without JavaScript the main organization can also be picked as an "other" one: it is saved once, as the main one. */
-    public function test_the_main_organization_is_stripped_from_other_organizations(): void
-    {
-        $this->seed(FarmerOrganizationSeeder::class);
-        [$main, $other] = FarmerOrganization::query()->orderBy('id')->take(2)->get()->all();
-
-        $this->withSession($this->captchaSession('register', '7'))
-            ->post('/register', $this->validSignUp(['farmer_organization_id' => $main->id, 'other_organizations' => [$main->id, $other->id]]))
-            ->assertRedirect('/')
-            ->assertSessionHasNoErrors();
-
-        $profile = User::query()->where('email', 'new-farmer@example.com')->sole()->farmerProfile;
-        $this->assertSame($main->id, (int) $profile->farmer_organization_id);
-        $this->assertDatabaseCount('farmer_organization_members', 2);
-    }
-
-    public function test_bad_other_organizations_are_rejected_and_save_nothing(): void
-    {
-        $this->seed(FarmerOrganizationSeeder::class);
-        $id = FarmerOrganization::query()->value('id');
-
-        foreach ([[999999], [$id, $id], ['abc'], 'not-a-list'] as $others) {
-            $this->from('/register')->withSession($this->captchaSession('register', '7'))
-                ->post('/register', $this->validSignUp(['other_organizations' => $others]))
-                ->assertRedirect('/register')
-                ->assertSessionHasErrors();
-        }
-
-        $this->assertDatabaseCount('users', 0);
-        $this->assertDatabaseCount('farmer_organization_members', 0);
-    }
-
-    /** A wrong security answer sends the form back with the chosen organizations still chosen. */
-    public function test_chosen_other_organizations_survive_a_failed_submission(): void
-    {
-        $this->seed(FarmerOrganizationSeeder::class);
-        [$first, $second, $notChosen] = FarmerOrganization::query()->orderBy('id')->take(3)->get()->all();
-
         $this->from('/register')->withSession($this->captchaSession('register', '7'))
-            ->post('/register', $this->validSignUp(['_auth_form' => 'register', 'captcha_answer' => '8', 'other_organizations' => [$first->id, $second->id]]))
+            ->post('/register', $this->validSignUp(['_auth_form' => 'register', 'first_name' => 'New', 'last_name' => 'Farmer', 'captcha_answer' => '8']))
             ->assertRedirect('/register')
             ->assertSessionHasErrors('captcha_answer');
 
         $this->get('/register')->assertRedirect(url('/').'#register');
         $page = $this->get('/')->assertOk()->assertSee('data-auth-mode="register"', false);
-        $page->assertSee('name="other_organizations[]"', false);
-        $page->assertSee('<option value="'.$first->id.'" data-name="'.e($first->name).'" data-barangay="'.e($first->barangay).'" selected', false);
-        $page->assertSee('<option value="'.$second->id.'" data-name="'.e($second->name).'" data-barangay="'.e($second->barangay).'" selected', false);
-        $page->assertDontSee('<option value="'.$notChosen->id.'" data-name="'.e($notChosen->name).'" data-barangay="'.e($notChosen->barangay).'" selected', false);
+        $page->assertSee('value="New"', false);
+        $page->assertSee('value="Farmer"', false);
         $this->assertDatabaseCount('users', 0);
     }
 

@@ -86,7 +86,7 @@ class WarmFarmerYields extends Command
                     ? 'invalid/missing barangay '.json_encode($rawBarangay, JSON_UNESCAPED_UNICODE)
                     : 'missing/invalid farm area';
                 if ($this->output->isVerbose()) {
-                    $this->line("Skipped invalid farm data (farmer {$farmer->id}".($farm ? ", farm {$farm->id}" : '')."): {$reason}");
+                    $this->line("Skipped incomplete profile (farmer {$farmer->id}".($farm ? ", farm {$farm->id}" : '')."): {$reason}");
                 }
 
                 return true;
@@ -109,7 +109,7 @@ class WarmFarmerYields extends Command
                 $missing++;                                  // farm size or records missing: nothing the service can fix
                 $inARow = 0;
                 if ($this->output->isVerbose()) {
-                    $this->line("Skipped invalid farm data (farmer {$farmer->id}".($farm ? ", farm {$farm->id}" : '').'): '.($result['error'] ?? 'missing model inputs'));
+                    $this->line("Skipped incomplete profile (farmer {$farmer->id}".($farm ? ", farm {$farm->id}" : '').'): '.($result['error'] ?? 'missing model inputs'));
                 }
             } else {
                 $cause = (string) ($result['error'] ?? 'Unknown service failure');
@@ -149,7 +149,7 @@ class WarmFarmerYields extends Command
                 ->each(fn (User $farmer): bool => $prepare($farmer, null));
         }
 
-        $this->line("Yield estimates prepared: {$done}, skipped: invalid farm data: {$missing}".($failed ? ", failed: {$failed}" : ''));
+        $this->line("Yield estimates prepared: {$done}, skipped: incomplete profile: {$missing}".($failed ? ", failed: {$failed}" : ''));
         if ($stopped) {
             $this->warn('The estimate service is not answering; the remaining farmers keep their last estimate until the next run.');
         }

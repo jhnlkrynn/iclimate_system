@@ -25,7 +25,7 @@ class FarmerMissingInfoNotifier
 {
     public const CATEGORY_PREFIX = 'setup:';
 
-    public const ITEMS = ['barangay', 'farm', 'farm_area', 'planting_date', 'harvest'];
+    public const ITEMS = ['complete_profile', 'barangay', 'farm', 'farm_area', 'planting_date', 'harvest'];
 
     /** Page loads look again at most this often; a save looks at once. */
     private const PAGE_CHECK_SECONDS = 60;
@@ -114,6 +114,9 @@ class FarmerMissingInfoNotifier
     public function missing(User $user): array
     {
         $missing = [];
+        if (\App\Support\FarmerProfileCompletion::isIncomplete($user)) {
+            $missing[] = 'complete_profile';
+        }
         if ($user->registeredBarangay() === null) {
             $missing[] = 'barangay';
         }
@@ -165,6 +168,7 @@ class FarmerMissingInfoNotifier
         }
         $primary = fn (): ?Farm => $user !== null && ActiveFarm::available() ? ActiveFarm::farms($user)->first() : null;
         $url = match (substr($category, strlen(self::CATEGORY_PREFIX))) {
+            'complete_profile' => route('farmer.complete-profile.show'),
             'barangay' => route('profile.edit').'#barangay',
             'farm' => route('farmer.farms.create'),
             'farm_area' => ($farm = $primary()) ? route('farmer.farms.edit', $farm->getKey()) : route('farmer.my-farm'),

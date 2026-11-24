@@ -373,8 +373,8 @@ class FarmerYieldEstimateTest extends TestCase
 
         $this->artisan('iclimate:warm-farmer-yields', ['-v' => true])
             ->expectsOutputToContain('Farmer filter: 6 total (Active: 4, Approved: 1, Pending: 1, Inactive: 0, Rejected: 0); 5 eligible with active farm (5 farms), 0 without active farm.')
-            ->expectsOutputToContain('Skipped invalid farm data')
-            ->expectsOutputToContain('Yield estimates prepared: 1, skipped: invalid farm data: 4')
+            ->expectsOutputToContain('Skipped incomplete profile')
+            ->expectsOutputToContain('Yield estimates prepared: 1, skipped: incomplete profile: 4')
             ->assertSuccessful();
 
         $this->assertSame(4.6, FarmerDashboardService::storedEstimate($approved->id)['yield_tons_per_hectare']);
@@ -402,10 +402,25 @@ class FarmerYieldEstimateTest extends TestCase
         });
 
         $this->artisan('iclimate:warm-farmer-yields', ['-v' => true])
-            ->expectsOutputToContain('Yield estimates prepared: 0, skipped: invalid farm data: 0, failed: 3')
+            ->expectsOutputToContain('Yield estimates prepared: 0, skipped: incomplete profile: 0, failed: 3')
             ->expectsOutputToContain('HTTP 503: Service Unavailable')
             ->expectsOutputToContain('not answering')
             ->expectsOutputToContain('Barangay yield estimates: 19 of 19 (0 from farm averages, 19 from their own model run)')
             ->assertFailed();
+    }
+
+    public function test_queued_yield_job_skips_farmer_without_valid_barangay_as_incomplete_profile(): void
+    {
+        $farmer = User::factory()->farmer()->create([
+            'status' => User::STATUS_APPROVED,
+            'barangay' => null,
+        ]);
+
+        $this->mock(RiceYieldPredictionService::class, function ($mock): void {
+            $mock->shouldNotReceive('predictForUser');
+        });
+
+        PrepareFarmerYieldEstimate::dispatchSync($farmer->id);
+        $this->assertNull(FarmerDashboardService::storedEstimate($farmer->id));
     }
 }

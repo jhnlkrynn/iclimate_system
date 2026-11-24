@@ -31,19 +31,26 @@ class FarmerApprovalController extends Controller
         $allowedBarangays = MaoScope::barangays($request->user()) ?? LianBarangays::all();
         $barangay = in_array($request->query('barangay'), $allowedBarangays, true) ? $request->query('barangay') : null;
         $search = mb_substr(trim((string) $request->query('search')), 0, 120);
+        $applyScopeWithUnsetBarangay = function ($q) use ($request): void {
+            $covered = MaoScope::barangays($request->user());
+            if ($covered !== null) {
+                $q->where(fn ($scoped) => $scoped->whereIn('barangay', $covered)->orWhereNull('barangay')->orWhere('barangay', ''));
+            }
+        };
+
         $query = User::query()->where('role', User::ROLE_FARMER)
             ->with(['farmerProfile', 'accountReviewer:id,name', 'approver:id,name'])
             ->when($barangay, fn ($q) => $q->where('barangay', $barangay))
             ->when($search !== '', fn ($q) => $q->where(fn ($terms) => $terms->where('name', 'like', '%'.$search.'%')->orWhere('email', 'like', '%'.$search.'%')));
-        MaoScope::apply($query, 'barangay', $request->user());
+        $applyScopeWithUnsetBarangay($query);
         $query = match ($show) {
-            'approved' => $query->where('status', User::STATUS_ACTIVE)->latest('approved_at'),
+            'approved' => $query->whereIn('status', [User::STATUS_ACTIVE, User::STATUS_APPROVED])->latest('approved_at'),
             'rejected' => $query->where('status', User::STATUS_REJECTED)->latest(FarmerAccountReviewService::available() ? 'reviewed_at' : 'updated_at'),
             default => $query->where('status', User::STATUS_PENDING)->oldest('created_at'),
         };
 
         $pendingQuery = User::query()->where('role', User::ROLE_FARMER)->where('status', User::STATUS_PENDING);
-        MaoScope::apply($pendingQuery, 'barangay', $request->user());
+        $applyScopeWithUnsetBarangay($pendingQuery);
 
         return view('mao.farmer-approvals', [
             'show' => $show, 'barangay' => $barangay, 'search' => $search, 'barangays' => $allowedBarangays,

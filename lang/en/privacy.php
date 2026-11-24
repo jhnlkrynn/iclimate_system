@@ -20,6 +20,7 @@ return [
         'retention_body' => 'Kept while your account is active; deleted accounts enter a 30-day recovery window.',
         'contact_body' => 'Contact the :address · :hours · :email, for questions, corrections or deletion requests.',
     ],
+    'signup_short' => 'Under RA 10173, iClimate collects your account and farm records for weather advisories, yield estimates, and MAO coordination.',
     'signup_summary' => 'In compliance with the Data Privacy Act of 2012 (RA 10173), iClimate collects your name, email, contact number, barangay, and farm/planting records to deliver weather advisories, yield estimates, and MAO support. Authorized MAO personnel (for their assigned barangays) and the MAO Head can view your records. Active accounts are kept while in service (deleted accounts enter a 30-day restore window).',
     'sections' => [
         'collected_title' => 'What information we collect',

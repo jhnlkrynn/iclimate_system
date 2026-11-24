@@ -21,6 +21,9 @@
     <div @class(['fad', 'wpx', 'is-farmer' => $isFarmer]) data-predictions>
         {{-- Manuscript – Naicel (2026-10-08): Weather Analysis, Yield Prediction / Impact Analysis, Yield Forecast tabs. --}}
         @include('partials.manuscript-tabs', ['group' => 'analysis', 'label' => 'Predictions and analysis'])
+        @if ($isFarmer && (auth()->user()->registeredBarangay() === null || (\App\Support\ActiveFarm::available() && ! auth()->user()->farms()->active()->exists())))
+            @include('partials.complete-profile-banner', ['dismissible' => false])
+        @endif
         @if ($isFarmer)
             {{-- Farmers (2026-10): the week's answer first, in one sentence, with what to do (WeatherPredictionController::plainForecast). --}}
             @php $answer = $plain['answer']; @endphp

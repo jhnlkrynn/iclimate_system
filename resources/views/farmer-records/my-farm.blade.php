@@ -32,6 +32,10 @@
             <div class="frec-note fmf-no-print" role="status">{{ session('success') }}</div>
         @endif
 
+        @if (\App\Support\FarmerProfileCompletion::isIncomplete(auth()->user()))
+            @include('partials.complete-profile-banner', ['dismissible' => false])
+        @endif
+
         @if ($available)
             {{-- My Farms: every farm of this farmer, each with its own location and size. --}}
             <section class="frec-panel fmf-no-print" aria-labelledby="ffmListTitle" data-my-farms>

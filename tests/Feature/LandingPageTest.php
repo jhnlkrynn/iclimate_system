@@ -235,7 +235,7 @@ class LandingPageTest extends TestCase
         $this->assertStringNotContainsString('New to iClimate?', $html);
         $this->assertStringNotContainsString('Already have an account?', $html);
         // The sign-up fields are the shared /register ones.
-        foreach (['name="first_name"', 'name="last_name"', 'name="farmer_organization_id"', 'name="barangay"', 'name="password_confirmation"', 'name="captcha_answer"', 'id="pwdToggle"', 'id="passwordStrengthLabel"', 'data-password-rule="symbol"', 'id="agreeTerms"', 'Register as a rice farmer in Lian, Batangas.', 'MAO Staff accounts are set up by the system administrators.'] as $needle) {
+        foreach (['name="first_name"', 'name="last_name"', 'name="password_confirmation"', 'name="captcha_answer"', 'id="pwdToggle"', 'id="passwordStrengthLabel"', 'data-password-rule="symbol"', 'id="agreeTerms"', 'Register as a rice farmer in Lian, Batangas.', 'MAO Staff accounts are set up by the system administrators.'] as $needle) {
             $this->assertStringContainsString($needle, $html);
         }
         // The sign-up captcha picture waits until that form is shown (one captcha per session).
@@ -247,7 +247,7 @@ class LandingPageTest extends TestCase
         $this->from('/')->post(route('register'), [
             '_auth_form' => 'register', 'first_name' => 'Juan', 'last_name' => 'Dela Cruz', 'name' => 'Juan Dela Cruz',
             'email' => 'not-an-email', 'password' => 'Secret123!', 'password_confirmation' => 'Secret123!', 'captcha_answer' => '',
-        ])->assertRedirect('/')->assertSessionHasErrors(['email', 'captcha_answer', 'barangay']);
+        ])->assertRedirect('/')->assertSessionHasErrors(['email', 'captcha_answer']);
 
         $html = $this->get('/')->assertOk()->getContent();
         $this->assertStringContainsString('data-auth-mode="register"', $html);

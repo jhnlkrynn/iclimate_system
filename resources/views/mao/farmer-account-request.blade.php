@@ -4,7 +4,7 @@
     <h2 class="h4">{{ $farmer->name }}</h2>
     <dl class="row">
         <dt class="col-sm-3">Application status</dt><dd class="col-sm-9">{{ $farmer->applicationStatus() }}</dd>
-        <dt class="col-sm-3">Barangay</dt><dd class="col-sm-9">{{ $farmer->barangay ?: 'Not supplied' }}</dd>
+        <dt class="col-sm-3">Barangay</dt><dd class="col-sm-9">{{ $farmer->barangay ?: 'Barangay: not set yet' }}</dd>
         <dt class="col-sm-3">Email</dt><dd class="col-sm-9">{{ $farmer->email }}</dd>
         <dt class="col-sm-3">Contact number</dt><dd class="col-sm-9">{{ $farmer->contact_number ?: $farmer->farmerProfile?->contact_number ?: 'Not supplied' }}</dd>
         <dt class="col-sm-3">Registered</dt><dd class="col-sm-9">{{ $farmer->created_at?->timezone('Asia/Manila')->format('M d, Y H:i') }}</dd>

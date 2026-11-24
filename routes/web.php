@@ -138,6 +138,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('farmer.language')
             ->name('farmer.my-farm');
 
+        Route::middleware('farmer.language')->group(function () {
+            Route::get('/farmer/complete-profile', [\App\Http\Controllers\CompleteProfileController::class, 'show'])->name('farmer.complete-profile.show');
+            Route::post('/farmer/complete-profile', [\App\Http\Controllers\CompleteProfileController::class, 'store'])->middleware('throttle:20,1,post-farmer-complete-profile')->name('farmer.complete-profile.store');
+            Route::post('/farmer/complete-profile/dismiss', [\App\Http\Controllers\CompleteProfileController::class, 'dismiss'])->middleware('throttle:30,1,post-farmer-complete-profile-dismiss')->name('farmer.complete-profile.dismiss');
+        });
+
         // Farmer – Naicel (2026-10): the Activity Calendar (planted / harvested), the actual-harvest question and the
         // forecast survey. Farmer only; each acts on the signed-in farmer's own records and farms.
         Route::middleware(['farmer.language', 'throttle:30,1,post-farmer-naicel'])->group(function () {

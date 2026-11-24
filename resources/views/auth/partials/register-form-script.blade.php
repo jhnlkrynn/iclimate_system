@@ -14,8 +14,6 @@
     const captchaAnswer = document.getElementById('captcha_answer');
     const agreeTerms = document.getElementById('agreeTerms');
     const submit = document.getElementById('createAccountBtn');
-    const organization = document.getElementById('farmer_organization_id');
-    const manualBarangay = document.getElementById('barangay');
     const strengthLabel = document.getElementById('passwordStrengthLabel');
     const strengthFill = document.getElementById('passwordStrengthFill');
 
@@ -75,10 +73,9 @@
         if (! value) return 'Please enter your email address.';
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? '' : 'Please enter a valid email address.';
       }],
-      [manualBarangay, () => manualBarangay.value ? '' : 'Please select your barangay.'],
       [password, () => {
         if (! password.value) return 'Please create a password.';
-        return Object.values(passwordRules(password.value)).every(Boolean) ? '' : 'Your password must meet all the requirements below.';
+        return password.value.length >= 8 ? '' : 'Your password must be at least 8 characters.';
       }],
       [confirmPassword, () => {
         if (! confirmPassword.value) return 'Please re-enter your password.';
@@ -115,234 +112,6 @@
       });
     });
 
-    const syncAssociationOptions = (reset = false) => {
-      const selected = organization?.value || '';
-      const barangay = manualBarangay?.value || '';
-      const choices = [...organization.options].filter((option) => option.dataset.barangay);
-
-      choices.forEach((option) => {
-        const matches = Boolean(barangay) && option.dataset.barangay === barangay;
-        option.hidden = ! matches;
-        option.disabled = ! matches;
-      });
-      organization.disabled = ! barangay;
-      if (reset || (selected && ! choices.some((option) => option.value === selected && ! option.disabled))) {
-        organization.value = '';
-      }
-    };
-
-    // Other organizations: the hidden native multi-select stays the source of truth (it is what gets submitted); this
-    // builds a searchable dropdown with chips on top of it. The main organization is never offered as an "other" one.
-    const setupOtherOrganizations = () => {
-      const native = document.getElementById('other_organizations');
-      if (! native) return () => {};
-      const group = native.closest('[data-org-multiselect]');
-      const errorSlot = document.getElementById('other_organizations-error');
-      const options = [...native.options];
-      const placeholder = 'Add more (optional)';
-      const svg = (path) => `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="${path}" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-
-      // The field looks like the other inputs: icon, the chosen organizations as chips on one line ("+N more" for
-      // the ones that do not fit), then the search box. The list floats below it, or above when there is no room.
-      const wrap = document.createElement('div');
-      wrap.className = 'form-input has-icon org-ms';
-      const chips = document.createElement('ul');
-      chips.className = 'org-ms-chips';
-      chips.setAttribute('aria-label', 'Chosen organizations');
-      const more = document.createElement('button');
-      Object.assign(more, { type: 'button', className: 'org-ms-more', hidden: true });
-      const input = document.createElement('input');
-      Object.assign(input, { type: 'text', id: 'other_organizations_search', className: 'org-ms-search', placeholder, autocomplete: 'off', spellcheck: false });
-      Object.entries({ role: 'combobox', 'aria-expanded': 'false', 'aria-controls': 'other_organizations_list', 'aria-autocomplete': 'list', 'aria-describedby': 'other_organizations-error' })
-        .forEach(([key, value]) => input.setAttribute(key, value));
-      if (native.classList.contains('is-invalid')) {
-        wrap.classList.add('is-invalid');
-        input.setAttribute('aria-invalid', 'true');
-      }
-      const list = document.createElement('ul');
-      Object.assign(list, { id: 'other_organizations_list', className: 'org-ms-list', hidden: true });
-      list.setAttribute('role', 'listbox');
-      list.setAttribute('aria-multiselectable', 'true');
-      list.setAttribute('aria-label', 'Other organizations');
-
-      wrap.append(organization.parentElement.querySelector('.input-icon').cloneNode(true), chips, more, input, list);
-      native.hidden = true;
-      group.querySelector('.org-native-hint').hidden = true;
-      group.querySelector('label').htmlFor = input.id;
-      native.after(wrap);
-
-      let visible = [];
-      let active = -1;
-      const isOpen = () => ! list.hidden;
-
-      const renderList = () => {
-        const query = input.value.trim().toLowerCase();
-        visible = options.filter((option) => ! option.disabled
-          && (! query || `${option.dataset.name} ${option.dataset.barangay}`.toLowerCase().includes(query)));
-        active = Math.min(active, visible.length - 1);
-
-        list.replaceChildren(...visible.map((option, index) => {
-          const item = document.createElement('li');
-          item.id = `other_organizations_option_${option.value}`;
-          item.className = 'org-ms-option' + (index === active ? ' is-active' : '');
-          item.dataset.index = index;
-          item.setAttribute('role', 'option');
-          item.setAttribute('aria-selected', String(option.selected));
-          const check = document.createElement('span');
-          check.className = 'org-ms-check';
-          check.innerHTML = svg('M2.5 6.2l2.2 2.2 4.8-5');
-          const text = document.createElement('span');
-          text.className = 'org-ms-text';
-          const barangay = document.createElement('span');
-          barangay.className = 'org-ms-barangay';
-          barangay.textContent = `· ${option.dataset.barangay}`;
-          text.append(`${option.dataset.name} `, barangay);
-          item.append(check, text);
-          return item;
-        }));
-        if (! visible.length) {
-          const empty = document.createElement('li');
-          empty.className = 'org-ms-empty';
-          empty.textContent = 'No organization matches your search.';
-          list.append(empty);
-        }
-
-        // Scroll only the list (never the page) to keep the highlighted option in view.
-        const current = list.querySelector('.is-active');
-        if (current) {
-          input.setAttribute('aria-activedescendant', current.id);
-          if (current.offsetTop < list.scrollTop) list.scrollTop = current.offsetTop;
-          else if (current.offsetTop + current.offsetHeight > list.scrollTop + list.clientHeight) list.scrollTop = current.offsetTop + current.offsetHeight - list.clientHeight;
-        } else {
-          input.removeAttribute('aria-activedescendant');
-        }
-      };
-
-      // Chips stay on one line: the ones that do not fit are hidden and counted in "+N more".
-      const fitChips = () => {
-        const items = [...chips.children];
-        let shown = items.length;
-        const showMore = () => {
-          more.hidden = shown === items.length;
-          more.textContent = shown ? `+${items.length - shown} more` : `${items.length} chosen`;
-          more.setAttribute('aria-label', `${items.length} organizations chosen. Show the list.`);
-        };
-        items.forEach((item) => { item.hidden = false; });
-        showMore();
-        while (shown > 0 && chips.scrollWidth > chips.clientWidth + 1) {
-          items[--shown].hidden = true;
-          showMore();
-        }
-        input.placeholder = items.length ? '' : placeholder;
-      };
-
-      const renderChips = () => {
-        chips.replaceChildren(...options.filter((option) => option.selected).map((option) => {
-          const chip = document.createElement('li');
-          chip.className = 'org-ms-chip';
-          const name = document.createElement('span');
-          name.textContent = option.dataset.name;
-          name.title = `${option.dataset.name} · ${option.dataset.barangay}`;
-          const remove = document.createElement('button');
-          remove.type = 'button';
-          remove.setAttribute('aria-label', `Remove ${option.dataset.name}`);
-          remove.innerHTML = svg('M3 3l6 6M9 3l-6 6');
-          remove.addEventListener('click', () => {
-            toggle(option, false);
-            input.focus();
-          });
-          chip.append(name, remove);
-          return chip;
-        }));
-        fitChips();
-      };
-
-      const toggle = (option, on = ! option.selected) => {
-        option.selected = on;
-        wrap.classList.remove('is-invalid');
-        input.removeAttribute('aria-invalid');
-        if (errorSlot) errorSlot.hidden = true;
-        renderChips();
-        if (isOpen()) renderList();
-      };
-
-      const open = () => {
-        if (! isOpen()) {
-          const box = wrap.getBoundingClientRect();
-          const below = window.innerHeight - box.bottom;
-          wrap.classList.toggle('is-up', below < 260 && box.top > below);
-          list.hidden = false;
-          wrap.classList.add('is-open');
-          input.setAttribute('aria-expanded', 'true');
-        }
-        renderList();
-      };
-
-      const close = () => {
-        list.hidden = true;
-        active = -1;
-        wrap.classList.remove('is-open');
-        input.setAttribute('aria-expanded', 'false');
-        input.removeAttribute('aria-activedescendant');
-      };
-
-      const move = (step) => {
-        if (! isOpen()) return open();
-        if (! visible.length) return;
-        active = active < 0 ? (step > 0 ? 0 : visible.length - 1) : (active + step + visible.length) % visible.length;
-        renderList();
-      };
-
-      // Pressing anywhere in the field keeps the focus in the search box, so the list stays open for picking several.
-      wrap.addEventListener('mousedown', (event) => {
-        if (event.target !== input) event.preventDefault();
-      });
-      wrap.addEventListener('click', (event) => {
-        const item = event.target.closest('.org-ms-option');
-        if (item) {
-          active = Number(item.dataset.index);
-          toggle(visible[active]);
-          return;
-        }
-        if (list.contains(event.target) || event.target.closest('.org-ms-chip button')) return;
-        input.focus();
-        open();
-      });
-      input.addEventListener('input', () => {
-        active = 0;
-        open();
-      });
-      input.addEventListener('blur', close);
-      input.addEventListener('keydown', (event) => {
-        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-          event.preventDefault();
-          move(event.key === 'ArrowDown' ? 1 : -1);
-        } else if (event.key === 'Enter') {
-          // Enter picks an organization; it never submits the form from this field.
-          event.preventDefault();
-          if (isOpen() && visible[active]) toggle(visible[active]); else open();
-        } else if (event.key === 'Escape' && isOpen()) {
-          event.preventDefault();
-          close();
-        } else if (event.key === 'Backspace' && ! input.value) {
-          const last = options.filter((option) => option.selected).pop();
-          if (last) toggle(last, false);
-        }
-      });
-      if ('ResizeObserver' in window) new ResizeObserver(fitChips).observe(wrap);
-
-      // Called whenever the main organization changes: it leaves the options and the chips.
-      return () => {
-        options.forEach((option) => {
-          option.disabled = option.value === organization.value;
-          if (option.disabled) option.selected = false;
-        });
-        renderChips();
-        if (isOpen()) renderList();
-      };
-    };
-    const syncOtherOrganizations = setupOtherOrganizations();
-
     firstName.addEventListener('input', syncName);
     lastName.addEventListener('input', syncName);
     email.addEventListener('blur', () => { email.value = email.value.trim().toLowerCase(); });
@@ -351,10 +120,6 @@
       syncConfirmFeedback();
     });
     confirmPassword.addEventListener('input', syncConfirmFeedback);
-    organization.addEventListener('change', () => {
-      syncOtherOrganizations();
-    });
-    manualBarangay.addEventListener('change', () => syncAssociationOptions(true));
 
     // After a failed submission only the combined name comes back if the split fields were not posted.
     if (! firstName.value && ! lastName.value && name.value) {
@@ -364,8 +129,6 @@
     }
     syncName();
     checkStrength(password.value || '');
-    syncAssociationOptions();
-    syncOtherOrganizations();
 
     form.addEventListener('submit', (event) => {
       syncName();

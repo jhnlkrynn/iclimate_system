@@ -91,6 +91,10 @@ class PrepareFarmerYieldEstimate implements ShouldBeUnique, ShouldQueue
             // Only the farmer's own farm still in use; an archived or someone else's farm is not estimated.
             $farm = $this->farmId !== null ? Farm::query()->ownedBy($this->userId)->active()->find($this->farmId) : null;
             if ($user !== null && $user->role === User::ROLE_FARMER && ($this->farmId === null || $farm !== null)) {
+                $barangay = $farm !== null ? $farm->barangay : $user->registeredBarangay();
+                if (\App\Support\LianBarangays::canonicalName($barangay) === null) {
+                    return;
+                }
                 $dashboard->prepareYieldEstimate($user, $farm);
             }
         } finally {

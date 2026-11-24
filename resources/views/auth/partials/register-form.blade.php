@@ -52,66 +52,6 @@
     </div>
   </section>
 
-  <section class="form-section" aria-labelledby="sectionFarm">
-    <h2 class="sr-only" id="sectionFarm">Farm information</h2>
-
-    <div class="form-row-2col" data-reg-row="farm">
-      <div class="form-group">
-        <label for="barangay">Farm location / barangay</label>
-        <div class="input-wrap">
-          <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 14s5-3.8 5-8A5 5 0 0 0 3 6c0 4.2 5 8 5 8Z" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="6" r="1.7" stroke="currentColor" stroke-width="1.4"/></svg>
-          <select id="barangay" name="barangay" class="form-input has-icon @if($formErrors->has('barangay')) is-invalid @endif" aria-describedby="barangay-error" required @if($formErrors->has('barangay')) aria-invalid="true" @endif>
-            <option value="">Select barangay</option>
-            @foreach($manualBarangays as $barangay)
-              <option value="{{ $barangay }}" @selected($old('barangay') === $barangay)>{{ $barangay }}</option>
-            @endforeach
-          </select>
-        </div>
-        <p class="field-error" id="barangay-error" @unless($formErrors->has('barangay')) hidden @endunless>{{ $formErrors->first('barangay') }}</p>
-      </div>
-
-      <div class="form-group">
-        <label for="farmer_organization_id">Farmer's organization / Association</label>
-        <div class="input-wrap">
-          <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 13V6l6-3 6 3v7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 13V8h6v5M1.5 13.2h13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <select id="farmer_organization_id" name="farmer_organization_id" class="form-input has-icon @if($formErrors->has('farmer_organization_id')) is-invalid @endif" aria-describedby="farmer_organization_id-error" disabled>
-            <option value="">{{ __('farms.association.dropdown_choose_short') }}</option>
-            @foreach($farmerOrganizations as $organization)
-              <option
-                value="{{ $organization->id }}"
-                data-barangay="{{ $organization->barangay }}"
-                @selected((string) $old('farmer_organization_id') === (string) $organization->id)
-              >
-                {{ $organization->name }}
-              </option>
-            @endforeach
-            <option value="" data-association-status="not_member">{{ __('farms.association.dropdown_not_member') }}</option>
-          </select>
-        </div>
-        <p class="field-hint">Choose an association registered in your selected barangay, or choose “Not a member”.</p>
-        <p class="field-error" id="farmer_organization_id-error" @unless($formErrors->has('farmer_organization_id')) hidden @endunless>{{ $formErrors->first('farmer_organization_id') }}</p>
-      </div>
-    </div>
-
-    {{-- Panel revision 1.1: a farmer can belong to more than one organization. The one chosen above is the main
-         one (it sets the farm location); pick any others here. The plain multi-select is the no-JavaScript
-         fallback; the script below turns it into a searchable dropdown with chips. --}}
-    @if ($farmerOrganizations->count() > 1)
-      @php($otherOrganizations = array_map('strval', (array) $old('other_organizations', [])))
-      @php($otherOrganizationsError = $formErrors->first('other_organizations') ?: $formErrors->first('other_organizations.*'))
-      <div class="form-group" data-org-multiselect>
-        <label for="other_organizations">Other organizations you belong to <span class="field-optional">(optional)</span></label>
-        <select id="other_organizations" name="other_organizations[]" multiple size="5" class="form-input org-native @if($otherOrganizationsError) is-invalid @endif" aria-describedby="other_organizations-hint other_organizations-error">
-          @foreach($farmerOrganizations as $organization)
-            <option value="{{ $organization->id }}" data-name="{{ $organization->name }}" data-barangay="{{ $organization->barangay }}" @selected(in_array((string) $organization->id, $otherOrganizations, true))>{{ $organization->name }} · {{ $organization->barangay }}</option>
-          @endforeach
-        </select>
-        <p class="field-hint org-native-hint" id="other_organizations-hint">Hold Ctrl (or Cmd on a Mac) to choose more than one.</p>
-        <p class="field-error" id="other_organizations-error" @unless($otherOrganizationsError) hidden @endunless>{{ $otherOrganizationsError }}</p>
-      </div>
-    @endif
-  </section>
-
   <section class="form-section" aria-labelledby="sectionSecurity">
     <h2 class="sr-only" id="sectionSecurity">Account security</h2>
 
@@ -176,7 +116,7 @@
     <h2 class="sr-only" id="sectionAgreement">{{ __('privacy.title') }}</h2>
 
     <div class="form-group">
-      <p class="small text-muted mb-2" id="agreeTerms-note">{{ __('privacy.signup_summary') }} <a href="{{ route('privacy.notice') }}" target="_blank" rel="noopener noreferrer">{{ __('privacy.link') }}</a>.</p>
+      <p class="small text-muted mb-2" id="agreeTerms-note">{{ __('privacy.signup_short') }} <a href="{{ route('privacy.notice') }}" target="_blank" rel="noopener noreferrer">{{ __('privacy.link') }}</a>.</p>
       <div class="terms-row">
         <input type="checkbox" id="agreeTerms" name="privacy_agreed" value="1" aria-describedby="agreeTerms-note agreeTerms-error" @checked(old('privacy_agreed')) required/>
         <label for="agreeTerms">{{ __('privacy.agree_label') }}</label>

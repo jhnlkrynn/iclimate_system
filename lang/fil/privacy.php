@@ -20,6 +20,7 @@ return [
         'retention_body' => 'Pinananatili habang aktibo ang account; may 30-araw na palugit ang mga binurang account.',
         'contact_body' => 'Makipag-ugnayan sa :address · :hours · :email para sa mga tanong, pagwawasto, o kahilingan sa pagbura ng datos.',
     ],
+    'signup_short' => 'Sa ilalim ng RA 10173, kinokolekta ng iClimate ang iyong account at tala ng bukid para sa babala sa panahon, tantiya ng ani, at tulong ng MAO.',
     'signup_summary' => 'Alinsunod sa Data Privacy Act of 2012 (RA 10173), kinokolekta ng iClimate ang iyong pangalan, email, numero ng telepono, barangay, at mga tala ng bukid/pagtatanim para sa abiso sa panahon, tantiya ng ani, at tulong ng MAO. Ang mga awtorisadong tauhan ng MAO at ang MAO Head lamang ang makakakita ng iyong tala. Pinananatili ang datos habang aktibo ang account (may 30-araw na palugit ang mga binurang account).',
     'sections' => [
         'collected_title' => 'Anong impormasyon ang kinokolekta',
