@@ -180,6 +180,96 @@
             @endif
         </section>
 
+        @php
+            $sc = $seasonComparison ?? [];
+            $scFil = app()->getLocale() === 'fil';
+            $scHistory = $sc['history'] ?? [];
+            $scEstimate = $sc['estimate'] ?? null;
+            $scMax = max(1.0, (float) ($scEstimate ?? 0), ...array_map(fn ($r) => (float) ($r['yield_t_ha'] ?? 0), $scHistory));
+        @endphp
+        <section class="frec-panel fmf-season-compare" id="season-comparison" aria-labelledby="fmfSeasonCompareTitle" data-my-farm-season-comparison>
+            <div class="frec-panel-head is-row">
+                <div>
+                    <h2 id="fmfSeasonCompareTitle">{{ $scFil ? 'Paghahambing ng Ani Ngayong Panahon' : 'Season Yield Comparison' }}</h2>
+                    @if (! empty($sc['season_label']))
+                        <p class="fad-support mb-0">{{ $sc['season_label'] }}</p>
+                    @endif
+                </div>
+                @if (! empty($sc['ran_at']))
+                    <x-updated-at :at="$sc['ran_at']" :label="__('farmer.home.updated')" />
+                @endif
+            </div>
+
+            @if (! empty($sc['summary_line']) || ! empty($scHistory) || $scEstimate !== null)
+                <div class="fmf-sc-legend">
+                    <span class="fmf-sc-leg-item"><span class="fmf-sc-swatch is-actual" aria-hidden="true"></span>{{ $scFil ? 'Aktuwal na ani' : 'Actual harvest' }}</span>
+                    @if ($scEstimate !== null)
+                        <span class="fmf-sc-leg-item"><span class="fmf-sc-swatch is-estimate" aria-hidden="true"></span>{{ $scFil ? 'Tantiya (iClimate)' : 'Estimate (iClimate)' }}</span>
+                    @endif
+                </div>
+
+                @if (! empty($sc['summary_line']))
+                    <p class="fw-semibold mb-1">{{ $sc['summary_line'] }}</p>
+                    @if (! empty($sc['status_label']))
+                        <p class="mb-2">
+                            <span class="fmf-sc-status is-{{ $sc['status'] ?? 'same' }}">{{ $sc['status_label'] }}</span>
+                            @if (! empty($sc['comparison_insight']))
+                                <span class="small text-muted ms-2">{{ $sc['comparison_insight'] }}</span>
+                            @endif
+                        </p>
+                    @endif
+                @endif
+
+                <dl class="fmf-sc-stats">
+                    @if ($scEstimate !== null)
+                        <div><dt>{{ $scFil ? 'Tantiya ngayon' : 'Current estimate' }}</dt><dd>{{ number_format((float) $scEstimate, 2) }} t/ha</dd></div>
+                    @endif
+                    @if (($sc['baseline'] ?? null) !== null)
+                        <div><dt>{{ $scFil ? 'Karaniwan' : 'Average' }} ({{ $sc['source_label'] }})</dt><dd>{{ number_format((float) $sc['baseline'], 2) }} t/ha</dd></div>
+                    @endif
+                    @if (($sc['best'] ?? null) !== null)
+                        <div><dt>{{ $scFil ? 'Pinakamataas' : 'Best' }}</dt><dd>{{ number_format((float) $sc['best'], 2) }} t/ha</dd></div>
+                    @endif
+                    @if (($sc['lowest'] ?? null) !== null)
+                        <div><dt>{{ $scFil ? 'Pinakamababa' : 'Lowest' }}</dt><dd>{{ number_format((float) $sc['lowest'], 2) }} t/ha</dd></div>
+                    @endif
+                </dl>
+
+                @if (! empty($scHistory) || $scEstimate !== null)
+                    <div class="fmf-sc-bars" role="img" aria-label="{{ $scFil ? 'Bar chart ng mga nakaraang ani at tantiya' : 'Bar chart of past same-season harvests and current estimate' }}">
+                        @foreach ($scHistory as $bar)
+                            @php $pct = max(8, min(100, round(($bar['yield_t_ha'] / $scMax) * 100))); @endphp
+                            <div class="fmf-sc-col">
+                                <div class="fmf-sc-track">
+                                    <div class="fmf-sc-bar is-actual" style="height: {{ $pct }}%"></div>
+                                </div>
+                                <strong class="fmf-sc-val">{{ number_format((float) $bar['yield_t_ha'], 2) }} t/ha</strong>
+                                @if ($bar['tons'] !== null)
+                                    <span class="fmf-sc-sub">{{ rtrim(rtrim(number_format((float) $bar['tons'], 2), '0'), '.') }} t</span>
+                                @endif
+                                <span class="fmf-sc-lbl">{{ $bar['label'] }}</span>
+                            </div>
+                        @endforeach
+                        @if ($scEstimate !== null)
+                            @php $estPct = max(8, min(100, round(($scEstimate / $scMax) * 100))); @endphp
+                            <div class="fmf-sc-col">
+                                <div class="fmf-sc-track">
+                                    <div class="fmf-sc-bar is-estimate" style="height: {{ $estPct }}%"></div>
+                                </div>
+                                <strong class="fmf-sc-val">{{ number_format((float) $scEstimate, 2) }} t/ha</strong>
+                                <span class="fmf-sc-sub">{{ $scFil ? 'Tantiya' : 'Estimate' }}</span>
+                                <span class="fmf-sc-lbl">{{ $sc['season_label'] }}</span>
+                            </div>
+                        @endif
+                    </div>
+                @endif
+            @endif
+
+            @if (! empty($sc['empty_message']))
+                <p class="fad-support mb-0" data-season-comparison-empty>{{ $sc['empty_message'] }}</p>
+            @endif
+        </section>
+
         <section class="frec-panel fmf-harvests" id="harvests" aria-labelledby="fmfHarvestTitle">
             <div class="frec-panel-head is-row">
                 <h2 id="fmfHarvestTitle">{{ __('farmer.my_farm_page.harvests') }}</h2>

@@ -56,7 +56,8 @@ class FarmerExpectedYieldService
         $diffTHa = ($estimate !== null && $expected !== null) ? round($estimate - $expected, 2) : null;
         $diffPct = ($diffTHa !== null && $expected > 0) ? (int) round(($diffTHa / $expected) * 100) : null;
 
-        $insights = $this->buildInsights($harvest, $week, $expected, $estimate, $diffTHa, $activePlan, $farm?->barangay ?? $user->registeredBarangay(), $fil);
+        $seasonComparison = app(SeasonYieldComparisonService::class)->compare($user, $farm, $harvest, $now, $locale);
+        $insights = $this->buildInsights($harvest, $week, $expected, $estimate, $diffTHa, $activePlan, $farm?->barangay ?? $user->registeredBarangay(), $fil, $seasonComparison);
 
         return [
             'season_key' => $seasonKey,
@@ -68,6 +69,7 @@ class FarmerExpectedYieldService
             'diff_pct' => $diffPct,
             'insights' => $insights,
             'last_harvest' => $lastHarvest,
+            'season_comparison' => $seasonComparison,
         ];
     }
 
@@ -196,6 +198,7 @@ class FarmerExpectedYieldService
         ?FarmerPlantingSchedule $activePlan,
         ?string $barangay,
         bool $fil,
+        array $seasonComparison = [],
     ): array {
         if ($estimate === null) {
             $reason = trim((string) ($harvest['reason'] ?? ''));
@@ -207,6 +210,9 @@ class FarmerExpectedYieldService
         }
 
         $insights = [];
+        if (! empty($seasonComparison['comparison_insight'])) {
+            $insights[] = $seasonComparison['comparison_insight'];
+        }
 
         // Add stored 7-day forecast / stage insight without inventing numbers.
         $days = collect($week['days'] ?? []);

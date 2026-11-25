@@ -326,18 +326,18 @@ class FarmerHomeTest extends TestCase
 
     // ------------------------------------------------------------ 4. expected yield this season
 
-    public function test_yield_is_one_number_for_this_season_with_the_disclosure_and_no_badge(): void
+    public function test_yield_is_one_number_for_this_season_with_no_disclosure_and_no_badge(): void
     {
         config(['prediction.rice_yield.gate' => 'label']);   // display formatting; the gate itself: YieldModelGateTest
         $this->lianYields(4.0);
-        // The disclosure stays; the farmer card has no Normal / Higher / Lower badge (owner decision 2026-11-20).
+        // No Normal / Higher / Lower badge (owner decision 2026-11-20) and no Preliminary estimate disclosure (owner decision 2026-11-25).
         foreach ([4.1 => 'Normal', 5.0 => 'Higher', 3.0 => 'Lower'] as $yield => $label) {
             $this->mockPrediction((float) $yield);
             $html = $this->home($this->farmer(attributes: ['email' => 'y'.$yield.'@example.test']), estimate: true)->getContent();
             $this->assertStringContainsString(number_format((float) $yield, 2).' <small>t/ha</small>', $html);
             $this->assertStringNotContainsString('>'.$label.'</p>', $html, (string) $yield);
             $this->assertStringNotContainsString('Compared with the usual Lian yield', $html);
-            $this->assertStringContainsString('data-ml-status="unvalidated-estimate"', substr($html, (int) strpos($html, 'data-fh-harvest'), 3000));
+            $this->assertStringNotContainsString('data-ml-status="unvalidated-estimate"', substr($html, (int) strpos($html, 'data-fh-harvest'), 3000));
         }
         $season = \App\Support\RiceSeason::current() === 'Wet' ? 'Wet season' : 'Dry season';
         $this->assertStringContainsString($season, $this->text($html));

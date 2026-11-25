@@ -93,6 +93,40 @@ foreach (['desktop-1280', 'mobile-375', 'tablet-768'] as $project) {
     \App\Models\FarmerOrganization::create(['name' => 'Workflow '.$project, 'barangay' => 'Balibago', 'farm_type' => 'Rainfed']);
 }
 
+if (getenv('SEED_FORECAST_FIXTURE') === '1') {
+    $today = \Carbon\CarbonImmutable::now('Asia/Manila')->startOfDay();
+    $daily = array_map(function ($i) use ($today) {
+        $isDry = ($i % 3 === 1);
+        $isStorm = ($i === 0 || $i === 5);
+
+        return [
+            'date' => $today->addDays($i)->toDateString(),
+            'weather_code' => $isStorm ? 95 : ($isDry ? 1 : 61),
+            'condition' => $isStorm ? 'Thunderstorm' : ($isDry ? 'Mainly clear' : 'Light rain'),
+            'rainfall' => $isDry ? 0.0 : ($isStorm ? 1.6 : 3.4),
+            'precipitation_probability' => $isDry ? 12 : ($isStorm ? 97 : 65),
+            'temperature_max' => 31.0,
+            'temperature_min' => 24.0,
+            'wind_speed_max' => $isStorm ? 20.5 : 11.2,
+        ];
+    }, range(0, 15));
+
+    $records = [];
+    foreach (\App\Support\LianBarangays::all() as $brgy) {
+        $records[$brgy] = [
+            'barangay' => $brgy,
+            'temperature_c' => 29.0,
+            'fetched_at' => now()->toIso8601String(),
+            'observed_at' => now()->toIso8601String(),
+            'daily' => $daily,
+        ];
+    }
+    \Illuminate\Support\Facades\Cache::forever(\App\Services\Weather\LianBarangayWeatherService::STORE_KEY, [
+        'records' => $records,
+        'status' => [],
+    ]);
+}
+
 if (getenv('API_ML_ACCEPTANCE') === '1') {
     // Explicit diagnostic fixtures, not operational weather observations or accuracy evidence.
     for ($i=1;$i<=6;$i++) \App\Models\ClimateRecord::create(['record_date'=>now()->subMonthsNoOverflow($i)->startOfMonth()->toDateString(),

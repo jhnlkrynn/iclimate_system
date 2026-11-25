@@ -92,6 +92,13 @@ class FarmerMyFarmController extends Controller
             ])->all(),
             'harvests' => $this->harvests($schedules),
             'events' => $this->upcoming($schedules),
+            'seasonComparison' => app(\App\Services\Farmer\SeasonYieldComparisonService::class)->compare(
+                $user,
+                $current,
+                null,
+                BusinessClock::now(),
+                app()->getLocale(),
+            ),
             'printedAt' => BusinessClock::now(),
         ] + $this->activityData($request, $farms, $current));
     }

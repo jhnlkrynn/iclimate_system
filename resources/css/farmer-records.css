@@ -212,3 +212,25 @@ html[data-theme="dark"] .fmf .fmf-error { background: #3a1b1b; border-color: #7a
     .fmf .fmf-dialog { display: none !important; }
 }
 /* ------------------------------------------------------------------ end Farmer – Naicel */
+.fmf-sc-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 10px; font-size: .85rem; font-weight: 600; color: var(--muted, #4b5563); }
+.fmf-sc-leg-item { display: inline-flex; align-items: center; gap: 6px; }
+.fmf-sc-swatch { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+.fmf-sc-swatch.is-actual { background: var(--sage-700, #485A42); }
+.fmf-sc-swatch.is-estimate { background: #fef3c7; border: 2px dashed #b7791f; }
+.fmf-sc-status { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .8rem; font-weight: 700; }
+.fmf-sc-status.is-higher { background: #e6f4ec; color: #0f5132; }
+.fmf-sc-status.is-lower { background: #fbf1dc; color: #7a4f0a; }
+.fmf-sc-status.is-same { background: #eef3ef; color: #364432; }
+.fmf-sc-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 10px 0 14px; }
+.fmf-sc-stats > div { padding: 10px 12px; border: 1px solid #e3e8e5; border-radius: 10px; background: #f8faf9; }
+.fmf-sc-stats dt { font-size: .78rem; font-weight: 600; color: #4b5563; }
+.fmf-sc-stats dd { margin: 2px 0 0; font-size: 1.05rem; font-weight: 700; color: #1b1f1d; }
+.fmf-sc-bars { display: flex; align-items: flex-end; gap: 12px; overflow-x: auto; padding: 12px 4px 4px; border-top: 1px solid #e3e8e5; }
+.fmf-sc-col { flex: 1 0 88px; max-width: 130px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; }
+.fmf-sc-track { width: 44px; height: 120px; display: flex; align-items: flex-end; justify-content: center; }
+.fmf-sc-bar { width: 100%; border-radius: 8px 8px 0 0; }
+.fmf-sc-bar.is-actual { background: var(--sage-700, #485A42); }
+.fmf-sc-bar.is-estimate { background: #fef3c7; border: 2px dashed #b7791f; }
+.fmf-sc-val { font-size: .84rem; color: #1b1f1d; white-space: nowrap; }
+.fmf-sc-sub { font-size: .75rem; color: #4b5563; white-space: nowrap; }
+.fmf-sc-lbl { font-size: .78rem; font-weight: 600; color: #364432; }
