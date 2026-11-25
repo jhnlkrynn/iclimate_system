@@ -44,9 +44,7 @@ class RefreshWeatherCache extends Command
         // stored (or have expired) here, so the first visitor after an expiry does not wait several seconds on the
         // weather provider. A stored forecast is left alone, so this adds at most one request per barangay per expiry.
         try {
-            $barangays = \App\Models\FarmerProfile::query()->whereNotNull('barangay')->distinct()->pluck('barangay')
-                ->merge(\App\Models\User::query()->whereNotNull('barangay')->distinct()->pluck('barangay'))
-                ->map(fn ($name) => \App\Support\LianBarangays::canonicalName((string) $name))->filter()->unique();
+            $barangays = \App\Support\LianBarangays::all();
             $warmed = 0;
 
             foreach ($barangays as $barangay) {

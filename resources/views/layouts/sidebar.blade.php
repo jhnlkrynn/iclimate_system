@@ -57,6 +57,8 @@
         // End Manuscript – Naicel
         // Farmers: My Farm also covers their planting schedules and the Calendar it links to.
         'my-farm' => ['farmer.my-farm', ['farmer.my-farm', 'farmer.planting-schedules.*', 'calendar.*']],
+        'analysis-weather' => ['analysis.weather', ['analysis.weather']],
+        'analysis-yield' => ['analysis.yield', ['analysis.yield*']],
         'explore-results' => ['farmer.explore-results.index', ['farmer.explore-results.*']],
         'rice-varieties' => ['rice-varieties.index', ['rice-varieties.*']],
     ];
@@ -80,6 +82,8 @@
             $navLink($nav('home'), 'dashboard', 'dashboard'),
             $navLink($nav('heat_map'), 'heatmap', 'heatmap'),
             $navLink($nav('advisories'), 'advisories', 'advisories'),
+            $navLink($farmerLocale === 'fil' ? 'Pagsusuri ng Panahon' : 'Weather Analysis', 'analysis-weather', 'weather'),
+            $navLink($farmerLocale === 'fil' ? 'Taya ng Ani' : 'Yield Prediction', 'analysis-yield', 'weather'),
             $navLink($nav('my_farm'), 'my-farm', 'rice-production'),
             $navLink($farmerLocale === 'fil' ? 'Suriin ang ani ng mga bukid' : 'Explore farm results', 'explore-results', 'reports'),
             $navLink($nav('varieties'), 'rice-varieties', 'seedling'),

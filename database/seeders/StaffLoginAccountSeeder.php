@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Hash;
 class StaffLoginAccountSeeder extends Seeder
 {
     /**
-     * Create (or repair) the IT and MAO staff sign-in accounts.
+     * Create (or repair) the MAO staff sign-in account.
      *
      * Safe to run repeatedly: each account is matched by its email, so no duplicates are made.
      * The password comes from ICLIMATE_STAFF_ACCOUNT_PASSWORD and is only ever stored hashed.

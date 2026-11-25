@@ -39,14 +39,18 @@ class RefreshLianBarangayWeather extends Command
 
         $this->table(
             ['Barangay', 'Lat', 'Lon', 'Weather', 'Updated', 'Status'],
-            collect($records)->map(fn (array $record): array => [
-                $record['barangay'],
-                $record['latitude'],
-                $record['longitude'],
-                $record['temperature_c'] === null ? '—' : $record['temperature_c'].'°C · '.($record['condition'] ?? '—'),
-                $record['fetched_at'] ?? '—',
-                $record['status'],
-            ])->values()->all(),
+            collect($records)->map(function (array $record): array {
+                $coords = \App\Support\LianBarangays::coordinateFor((string) ($record['barangay'] ?? ''));
+
+                return [
+                    $record['barangay'],
+                    $record['latitude'] ?? ($coords[0] ?? '—'),
+                    $record['longitude'] ?? ($coords[1] ?? '—'),
+                    $record['temperature_c'] === null ? '—' : $record['temperature_c'].'°C · '.($record['condition'] ?? '—'),
+                    $record['fetched_at'] ?? '—',
+                    $record['status'],
+                ];
+            })->values()->all(),
         );
 
         $this->info("Latest weather for {$summary['current']} of {$summary['total']} barangays ({$summary['last_refresh_method']} request, {$seconds}s).");

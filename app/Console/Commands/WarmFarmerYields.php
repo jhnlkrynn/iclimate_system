@@ -33,7 +33,12 @@ class WarmFarmerYields extends Command
 
         $counters = ['done' => 0, 'missing' => 0, 'failed' => 0, 'inARow' => 0, 'stopped' => false];
 
-        if (ActiveFarm::available()) {
+        $mlHealthy = $this->checkMlHealthOnce();
+        if (! $mlHealthy) {
+            $counters['stopped'] = true;
+            \Illuminate\Support\Facades\Log::warning('WarmFarmerYields: ML service /health is unreachable; skipping per-farm yield warm-up for this run.');
+            $this->warn('ML service (/health) is not reachable; skipping per-farm local Python fallback so farmers keep their last stored estimate.');
+        } elseif (ActiveFarm::available()) {
             // Every MAO-approved farm in use of every active/approved farmer: pending/rejected farms are skipped as unverified.
             $farms = Farm::query()->active()->verified()
                 ->whereHas('user', fn ($q) => $q->where('role', User::ROLE_FARMER)->whereIn('status', $eligibleStatuses))
@@ -64,14 +69,16 @@ class WarmFarmerYields extends Command
             $this->warn('The estimate service is not answering; the remaining farmers keep their last estimate until the next run.');
         }
 
-        // The Heat Map's Expected yield layer: always run the 19 barangay-level estimates even when 0 farmer estimates succeed.
-        $barangayYields = collect($barangays->prepare(runModel: true));
+        // The Heat Map's Expected yield layer: run the 19 barangay-level estimates when ML is healthy, else read stored.
+        $barangayYields = collect($barangays->prepare(runModel: $mlHealthy));
         // This Week / 2 Weeks on the Heat Map: the same runs with that window of the saved barangay forecast.
-        foreach (array_keys(BarangayYieldForecastService::PERIOD_DAYS) as $period) {
-            $result = $barangays->preparePeriod($period);
-            $estimates = collect($result['estimates']);
-            $this->line(sprintf('%s yield estimates: %d farms, %d of %d barangays (%d model calls)', $period === 'week' ? 'This week' : 'Next 2 weeks',
-                $result['farm_runs'], $estimates->whereNotNull('predicted_yield')->count(), $estimates->count(), $result['model_calls']));
+        if ($mlHealthy) {
+            foreach (array_keys(BarangayYieldForecastService::PERIOD_DAYS) as $period) {
+                $result = $barangays->preparePeriod($period);
+                $estimates = collect($result['estimates']);
+                $this->line(sprintf('%s yield estimates: %d farms, %d of %d barangays (%d model calls)', $period === 'week' ? 'This week' : 'Next 2 weeks',
+                    $result['farm_runs'], $estimates->whereNotNull('predicted_yield')->count(), $estimates->count(), $result['model_calls']));
+            }
         }
         app(\App\Services\Risk\HeatMapLayerService::class)->forgetCache();   // the map's 10-minute answer shows the new estimates
         // Open Heat Maps, dashboards and forecast pages re-read once, only when an estimate really changed.
@@ -89,6 +96,25 @@ class WarmFarmerYields extends Command
         }
 
         return $counters['failed'] === 0 ? self::SUCCESS : self::FAILURE;
+    }
+
+    private function checkMlHealthOnce(): bool
+    {
+        $baseUrl = rtrim((string) config('services.farming_ai.url'), '/');
+        if ($baseUrl === '') {
+            return false;
+        }
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::connectTimeout(2)
+                ->timeout(3)
+                ->acceptJson()
+                ->get($baseUrl.'/health');
+
+            return $response->successful();
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     /** @param array<int, string> $eligibleStatuses */

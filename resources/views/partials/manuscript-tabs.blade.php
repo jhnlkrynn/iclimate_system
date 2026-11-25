@@ -35,6 +35,9 @@
             ['weather-predictions.index', ['Forecast', 'Taya ng Panahon'], ['weather-predictions.*'], [$mao]],
             ['analysis.weather', ['Weather Analysis', 'Pagsusuri ng Panahon'], ['analysis.weather'], [$farmerRole, $mao]],
             ['analysis.yield', ['Yield Prediction', 'Taya ng Ani'], ['analysis.yield*'], [$farmerRole]],
+            ['analysis.impact', 'Impact Analysis', ['analysis.impact*'], [$mao]],
+            ['analysis.forecast', 'Yield Forecast', ['analysis.forecast*'], [$mao]],
+            ['model-evaluation.index', 'Model Evaluation', ['model-evaluation.*'], [$mao]],
         ],
     ];
     $groupKey = (string) ($group ?? '');

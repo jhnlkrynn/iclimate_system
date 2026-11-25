@@ -44,6 +44,17 @@
         {{-- Panel revision 4.4 C: the farmer's assigned MAO personnel. --}}
         @include('partials.farmer-mao-contact', ['locale' => $f['locale'] ?? app()->getLocale()])
 
+        @php
+            $farmerForecastSurvey = rescue(
+                fn (): ?array => app(\App\Services\Weather\WeatherFeedbackService::class)->pendingDailyPrompt(auth()->user()),
+                null,
+                false
+            );
+        @endphp
+        @if (! empty($farmerForecastSurvey))
+            @include('weather-predictions.partials.forecast-survey', ['survey' => $farmerForecastSurvey])
+        @endif
+
         {{-- Farmer Survey – Naicel (2026-10-09): the way in to the short survey about the predictions and advice. --}}
         <section class="fh-card fh-survey" aria-labelledby="fhSurveyTitle" data-fh-survey>
             <h2 id="fhSurveyTitle" class="fh-kicker">{{ __('farmer.survey.home_title') }}</h2>

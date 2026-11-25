@@ -844,7 +844,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // "?refresh=1" queues one recomputation, so it is throttled.
         Route::get(
             'analysis/model-evaluation',
-            fn () => redirect()->route('mao.dashboard')
+            [\App\Http\Controllers\ModelEvaluationController::class, 'index']
         )
             ->middleware(['role:'.User::ROLE_MAO, 'throttle:20,1,get-model-evaluation'])
             ->name('model-evaluation.index');

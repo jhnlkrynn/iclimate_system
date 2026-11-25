@@ -46,8 +46,8 @@
     $mobileMoreGroups = [];
     if ($isFarmer) {
         $mobileMoreGroups = [
-            ['My farm', array_values(array_filter([$mobileLink('my-farm'), $mobileLink('explore-results'), $mobileLink('rice-varieties')]))],
-            ['Weather & risk', array_values(array_filter([$mobileLink('heatmap'), $mobileLink('advisories')]))],
+            ['My farm', array_values(array_filter([$mobileLink('my-farm'), $mobileLink('analysis-yield'), $mobileLink('explore-results'), $mobileLink('rice-varieties')]))],
+            ['Weather & risk', array_values(array_filter([$mobileLink('heatmap'), $mobileLink('analysis-weather'), $mobileLink('advisories')]))],
             ['Talk to the MAO', array_values(array_filter([
                 $mobileLink('messages'),
                 [($farmerLocale ?? 'en') === 'fil' ? 'Impormasyon sa tanggapan' : 'Contact info', $dashboardRoute, [$dashboardRoute], 'community', null, 'farmerMaoContact', 'contact-info'],

@@ -56,7 +56,7 @@ return [
     */
     'farmer_account_password' => env('ICLIMATE_FARMER_ACCOUNT_PASSWORD'),
 
-    /* Password given to it@gmail.com and mao@gmail.com by StaffLoginAccountSeeder. Empty: those accounts are not seeded. */
+    /* Password given to mao@gmail.com by StaffLoginAccountSeeder. Empty: that account is not seeded. */
     'staff_account_password' => env('ICLIMATE_STAFF_ACCOUNT_PASSWORD'),
 
     /*

@@ -72,7 +72,7 @@ class TwoRoleAccessTest extends TestCase
     {
         $staff = User::factory()->maoPersonnel()->create();
         $this->actingAs($staff)->get('/users')->assertForbidden();
-        $farmer = User::factory()->farmer()->create();
+        $farmer = User::factory()->farmer()->create(['barangay' => 'Prenza']);
         $this->actingAs($farmer)->get('/users')->assertForbidden();
         $head = User::factory()->maoPersonnel()->create(['is_mao_head' => true]);
         $this->actingAs($head)->get('/users')->assertOk()->assertDontSee('IT Personnel');
@@ -85,7 +85,7 @@ class TwoRoleAccessTest extends TestCase
     {
         Http::fake(['*' => Http::response(['error' => 'unavailable'], 500)]);
         $this->mock(\App\Services\Prediction\RiceYieldPredictionService::class, fn ($mock) => $mock->shouldReceive('predictForUser')->andReturn(null));
-        $farmer = User::factory()->farmer()->create();
+        $farmer = User::factory()->farmer()->create(['barangay' => 'Prenza']);
         $other = FarmerOrganization::query()->create(['name' => 'Private other association', 'barangay' => 'Kapito']);
         $own = FarmerOrganization::query()->create(['name' => 'Assigned association', 'barangay' => 'Prenza']);
         $period = AssociationReportingPeriod::query()->create(['period_key' => '2026-wet', 'label' => 'Wet season', 'reporting_year' => 2026, 'due_at' => now()->addWeek()]);
@@ -108,7 +108,7 @@ class TwoRoleAccessTest extends TestCase
     public function test_mao_assigns_a_farmer_and_manages_reporting_periods_without_changing_the_role(): void
     {
         $mao = User::factory()->maoHead()->create();
-        $farmer = User::factory()->farmer()->create();
+        $farmer = User::factory()->farmer()->create(['barangay' => 'Prenza']);
         $association = FarmerOrganization::query()->create(['name' => 'Assigned by MAO', 'barangay' => 'Prenza']);
         $this->actingAs($mao)->get('/mao/association-reports')->assertOk()->assertSee('Assigned by MAO');
         $this->post('/mao/association-reports/associations/'.$association->id.'/assign', ['user_id' => $farmer->id])->assertRedirect();

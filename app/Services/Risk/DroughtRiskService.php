@@ -236,18 +236,25 @@ class DroughtRiskService
         $prevHumidity = (float) ($metrics['humidity_percent'] ?? 75.0);
         $prevWind = (float) ($metrics['wind_max_kmh'] ?? 12.0);
 
-        $response = $this->python->farmingAssistant([
-            'prediction_type' => 'weather',
-            'features' => [
-                'previous_rainfall' => $prevRain,
-                'previous_temp' => $prevTemp,
-                'previous_humidity' => $prevHumidity,
-                'previous_wind_speed' => $prevWind,
-                'month' => $now->month,
-                'season' => $season,
-                'barangay' => $barangay,
-            ],
-        ]);
+        try {
+            $response = $this->python->farmingAssistant([
+                'prediction_type' => 'weather',
+                'features' => [
+                    'previous_rainfall' => $prevRain,
+                    'previous_temp' => $prevTemp,
+                    'previous_humidity' => $prevHumidity,
+                    'previous_wind_speed' => $prevWind,
+                    'month' => $now->month,
+                    'season' => $season,
+                    'barangay' => $barangay,
+                ],
+            ]);
+        } catch (Throwable $exception) {
+            return [
+                'ml_reachable' => false,
+                'error' => $exception->getMessage(),
+            ];
+        }
 
         $weatherPred = $response['weather_prediction'] ?? null;
         if (! ($response['success'] ?? false) || ! is_array($weatherPred) || empty($weatherPred['predicted_weather'])) {
