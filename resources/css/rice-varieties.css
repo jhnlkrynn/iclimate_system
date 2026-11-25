@@ -171,9 +171,11 @@
 .rv-choice input, .rv-seg input { position: absolute; opacity: 0; }
 .rv-choice span, .rv-seg span {
     display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border: 1px solid var(--rv-line); border-radius: 10px;
-    background: #fff; color: var(--rv-ink); font-weight: 600; cursor: pointer;
+    background: #fff; color: var(--sage-800, #364432); font-weight: 700; cursor: pointer; transition: background-color .15s ease, color .15s ease;
 }
-.rv-choice input:checked + span, .rv-seg input:checked + span { border-color: var(--rv-brand); background: var(--rv-brand); color: #fff; }
+.rv-choice span:hover, .rv-seg span:hover { background: var(--sage-50, #f3f6f2); color: var(--sage-800, #364432); }
+.rv-choice input:checked + span, .rv-seg input:checked + span { border-color: var(--sage-700, #485A42); background: var(--sage-700, #485A42); color: #fff; }
+.rv-choice input:checked + span:hover, .rv-seg input:checked + span:hover { border-color: var(--sage-800, #364432); background: var(--sage-800, #364432); color: #fff; }
 .rv-choice input:focus-visible + span, .rv-seg input:focus-visible + span { outline: 3px solid var(--rv-brand); outline-offset: 2px; }
 .rv-seg input:disabled + span { opacity: .45; cursor: not-allowed; }
 .rv-segmented { display: inline-flex; flex-wrap: wrap; gap: 6px; }

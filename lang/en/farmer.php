@@ -926,6 +926,7 @@ return [
         'today' => 'Today',
         'rain' => 'Rain',
         'chance' => 'Chance of rain',
+        'chance_short' => 'Rain chance',
         'temp' => 'High / Low',
         'wind' => 'Wind',
         'barangay' => 'Barangay',

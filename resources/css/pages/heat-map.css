@@ -52,10 +52,11 @@ html[data-theme="dark"] body .hmx-map .leaflet-tooltip.hmx-map-tooltip {
 }
 html[data-theme="dark"] body .hmx-map .hmx-map-tooltip .hmx-tip-line { color: var(--sage-200); }
 
-.hmx-toggle { position: absolute; top: .75rem; right: .75rem; z-index: 500; display: inline-flex; padding: .25rem; border-radius: 999px; background: #fff; border: 1px solid var(--sage-200); box-shadow: 0 4px 14px rgb(var(--sage-950-rgb) / .16); }
-.hmx-toggle-btn { min-height: 44px; padding: .55rem 1.05rem; border: 0; background: transparent; cursor: pointer; border-radius: 999px; font-size: 1rem; font-weight: 700; color: var(--sage-700); text-decoration: none; white-space: nowrap; }
+.hmx-toggle { position: absolute; top: .75rem; right: .75rem; z-index: 500; display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px; background: #fff; border: 1px solid var(--sage-200); box-shadow: 0 4px 14px rgb(var(--sage-950-rgb) / .16); }
+.hmx-toggle-btn { min-height: 44px; padding: .55rem 1.05rem; border: 0; background: transparent; cursor: pointer; border-radius: 999px; font-size: 1rem; font-weight: 700; color: var(--sage-800); text-decoration: none; white-space: nowrap; transition: background-color .15s ease, color .15s ease; }
 .hmx-toggle-btn:hover { color: var(--sage-800); background: var(--sage-50); }
 .hmx-toggle-btn.is-active { background: var(--sage-700); color: #fff; }
+.hmx-toggle-btn.is-active:hover { background: var(--sage-800); color: #fff; }
 .hmx-toggle-btn:focus-visible, .hmx-row:focus-visible, .hmx-own:focus-visible, .hmx-back:focus-visible { outline: 3px solid #1d6fd8; outline-offset: 2px; }
 
 .hmx-legend { position: absolute; left: .75rem; bottom: 1.6rem; z-index: 500; display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .9rem; padding: .5rem .8rem; border-radius: 12px; background: #fff; border: 1px solid var(--sage-200); box-shadow: 0 4px 14px rgb(var(--sage-950-rgb) / .16); font-size: .85rem; font-weight: 600; color: var(--sage-700); max-width: calc(100% - 1.5rem); }

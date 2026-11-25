@@ -135,24 +135,48 @@
                 <ol class="wpx-days" data-days="{{ count($forecast['days']) }}">
                     @foreach ($forecast['days'] as $i => $day)
                         <li @class(['wpx-day', 'is-today' => $i === 0, 'is-estimate' => $day['kind'] === 'estimate', 'is-less-certain' => $range === '2weeks' && $i >= 7, 'is-empty' => $day['kind'] === 'none']) data-kind="{{ $day['kind'] }}">
-                            <span class="wpx-day-name">{{ $i === 0 ? __('farmer.predictions.today') : $day['date']->locale(app()->getLocale())->translatedFormat('D, M j') }}</span>
-                            @if ($day['kind'] === 'none')
-                                <span class="wpx-day-words">{{ $noData }}</span>
-                            @else
-                                <span class="wpx-day-icon" aria-hidden="true">@include('dashboards.mao.icon', ['name' => $day['icon']])</span>
-                                @if ($day['kind'] === 'estimate')<span class="wpx-badge">{{ __('farmer.predictions.estimate_badge') }}</span>@endif
-                                @if ($range === '2weeks' && $i >= 7)<span class="wpx-certain-badge" data-less-certain>{{ __('farmer.predictions.less_certain') }}</span>@endif
-                                <span class="wpx-day-words">{{ $day['kind'] === 'estimate' ? __('farmer.predictions.estimate') : $day['condition'] }}</span>
-                                @if ($day['rain_words'])<span class="wpx-day-rain">{{ $day['rain_words'] }}</span>@endif
-                                @if ($day['high'] !== null)<span class="wpx-day-temp">{{ $num($day['high']) }}° / {{ $num($day['low']) }}°</span>@endif
-                                @if ($isFarmer && $day['wind_words'])<span class="wpx-day-wind">{{ $day['wind_words'] }}</span>@endif
-                                @if ($staff)
-                                    <dl class="wpx-day-numbers">
-                                        <div><dt>{{ __('farmer.predictions.rain') }}</dt><dd>{{ $day['rain_mm'] === null ? '—' : $num($day['rain_mm'], 1).' mm' }}</dd></div>
-                                        <div><dt>{{ __('farmer.predictions.chance') }}</dt><dd>{{ $day['chance'] === null ? '—' : $num($day['chance']).'%' }}</dd></div>
-                                        <div><dt>{{ __('farmer.predictions.wind') }}</dt><dd>{{ $day['wind_kmh'] === null ? '—' : $num($day['wind_kmh'], 1).' km/h' }}</dd></div>
-                                    </dl>
+                            <div class="wpx-day-top">
+                                <span class="wpx-day-name">{{ $i === 0 ? __('farmer.predictions.today') : $day['date']->locale(app()->getLocale())->translatedFormat('D, M j') }}</span>
+                                @if ($day['kind'] === 'none')
+                                    <span class="wpx-day-words">{{ $noData }}</span>
+                                @else
+                                    <span class="wpx-day-icon" aria-hidden="true">@include('dashboards.mao.icon', ['name' => $day['icon']])</span>
+                                    @if ($day['kind'] === 'estimate')<span class="wpx-badge">{{ __('farmer.predictions.estimate_badge') }}</span>@endif
+                                    @if ($range === '2weeks' && $i >= 7)<span class="wpx-certain-badge" data-less-certain>{{ __('farmer.predictions.less_certain') }}</span>@endif
+                                    <span class="wpx-day-words">{{ $day['kind'] === 'estimate' ? __('farmer.predictions.estimate') : $day['condition'] }}</span>
+                                    @if ($day['rain_words'])<span class="wpx-day-rain">{{ $day['rain_words'] }}</span>@endif
                                 @endif
+                            </div>
+                            @if ($day['kind'] !== 'none')
+                                <div class="wpx-day-bottom">
+                                    @if ($day['high'] !== null)<span class="wpx-day-temp">{{ $num($day['high']) }}° / {{ $num($day['low']) }}°</span>@endif
+                                    @if ($isFarmer && $day['wind_words'])<span class="wpx-day-wind">{{ $day['wind_words'] }}</span>@endif
+                                    @if ($staff)
+                                        <dl class="wpx-day-numbers">
+                                            <div>
+                                                <dt>
+                                                    <svg class="wpx-metric-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 2.2C8 2.2 4 6.7 4 9.6a4 4 0 0 0 8 0C12 6.7 8 2.2 8 2.2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+                                                    <span>{{ __('farmer.predictions.rain') }}</span>
+                                                </dt>
+                                                <dd>{{ $day['rain_mm'] === null ? '—' : $num($day['rain_mm'], 1).' mm' }}</dd>
+                                            </div>
+                                            <div>
+                                                <dt>
+                                                    <svg class="wpx-metric-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8a5 5 0 0 1 10 0H3Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 8v4.2a1.4 1.4 0 0 1-2.8 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                                                    <span>{{ __('farmer.predictions.chance_short') }}</span>
+                                                </dt>
+                                                <dd>{{ $day['chance'] === null ? '—' : $num($day['chance']).'%' }}</dd>
+                                            </div>
+                                            <div>
+                                                <dt>
+                                                    <svg class="wpx-metric-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 6h8.5a1.5 1.5 0 1 0-1.5-1.5M2 9.5h10.5a1.5 1.5 0 1 1-1.5 1.5M2 13h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                                                    <span>{{ __('farmer.predictions.wind') }}</span>
+                                                </dt>
+                                                <dd>{{ $day['wind_kmh'] === null ? '—' : $num($day['wind_kmh'], 1).' km/h' }}</dd>
+                                            </div>
+                                        </dl>
+                                    @endif
+                                </div>
                             @endif
                         </li>
                     @endforeach

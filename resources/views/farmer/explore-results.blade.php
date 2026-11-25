@@ -15,10 +15,10 @@
         </header>
 
         <section class="frec-panel mb-3" aria-label="{{ $fil ? 'Mga filter' : 'Filters' }}">
-            <div class="d-flex flex-wrap gap-2 mb-3" role="group" aria-label="{{ $fil ? 'Uri ng bukid' : 'Farm type' }}">
+            <div class="ic-seg mb-3" role="group" aria-label="{{ $fil ? 'Uri ng bukid' : 'Farm type' }}">
                 @foreach (['Irrigated', 'Rainfed'] as $typeOption)
                     <a href="{{ route('farmer.explore-results.index', array_filter(['farm_type' => $typeOption, 'barangay' => $result['barangay'], 'season' => $result['season'], 'year' => $result['year'], 'variety_id' => $result['variety_id']])) }}"
-                        @class(['fad-btn', 'is-compact', 'is-primary' => $result['farm_type'] === $typeOption, 'is-quiet' => $result['farm_type'] !== $typeOption])
+                        @class(['ic-seg-btn', 'is-active' => $result['farm_type'] === $typeOption])
                         @if ($result['farm_type'] === $typeOption) aria-current="page" @endif>
                         {{ $typeOption }}
                     </a>

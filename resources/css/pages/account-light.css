@@ -177,12 +177,55 @@ html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-
 html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .mhd .mhd-tile:first-child :is(.mhd-tile-label, .mhd-tile-value, .mhd-tile-note, .mhd-tile-label .mtd-svg, small, span) { color: var(--sage-700) !important; }
 html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) .mhd .mhd-tile:first-child .ic-go { background: #fff; color: var(--sage-700) !important; filter: none; }
 
-/* -- Selected tabs, chips, toggles and page numbers: light green ------------ */
-html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) :is(.ic-tab.is-active, .adv-chip.is-active, .hmx-toggle-btn.is-active, .page-item.active .page-link, .pagination .active > .page-link) {
+/* -- Selected tabs, chips, and page numbers: light green --------------------- */
+html body:is([data-user-role="Farmer"], [data-user-role="MAO Personnel"], [data-user-role="IT Expert"]) :is(.ic-tab.is-active, .adv-chip.is-active, .page-item.active .page-link, .pagination .active > .page-link) {
     background: var(--fa-btn) !important;
     background-image: none !important;
     border-color: var(--fa-btn-hover) !important;
     color: var(--fa-btn-ink) !important;
+}
+
+/* -- Segmented toggles: active = white on sage-700; inactive = sage-800 on white/transparent -- */
+html body .ic-seg {
+    display: inline-flex;
+    padding: 3px;
+    gap: 2px;
+    border: 1px solid var(--sage-200);
+    border-radius: 999px;
+    background: #fff;
+}
+html body :is(.wpx .wpx-range a, .hmx-toggle-btn, .fh-rain-range-btn, .ic-seg-btn) {
+    background: transparent !important;
+    color: var(--sage-800) !important;
+    border-radius: 999px;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+}
+html body .ic-seg-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 6px 16px;
+}
+html body :is(.wpx .wpx-range a, .hmx-toggle-btn, .fh-rain-range-btn, .ic-seg-btn):hover:not(:disabled) {
+    background: var(--sage-50) !important;
+    color: var(--sage-800) !important;
+}
+html body :is(.wpx .wpx-range a.is-active, .hmx-toggle-btn.is-active, .fh-rain-range-btn.is-active, .ic-seg-btn.is-active) {
+    background: var(--sage-700) !important;
+    border-color: var(--sage-700) !important;
+    color: #fff !important;
+}
+html body :is(.wpx .wpx-range a.is-active, .hmx-toggle-btn.is-active, .fh-rain-range-btn.is-active, .ic-seg-btn.is-active):hover:not(:disabled) {
+    background: var(--sage-800) !important;
+    border-color: var(--sage-800) !important;
+    color: #fff !important;
+}
+html body :is(.wpx .wpx-range a, .hmx-toggle-btn, .fh-rain-range-btn, .ic-seg-btn):focus-visible {
+    outline: 3px solid var(--gov-gold, #d97706);
+    outline-offset: 2px;
 }
 
 /* -- Gradients on buttons and badges become flat colours -------------------- */

@@ -916,6 +916,7 @@ return [
         'today' => 'Ngayon',
         'rain' => 'Ulan',
         'chance' => 'Tsansa ng ulan',
+        'chance_short' => 'Tsansa ng ulan',
         'temp' => 'Pinakamainit / Pinakamalamig',
         'wind' => 'Hangin',
         'barangay' => 'Barangay',

@@ -7,35 +7,40 @@
 .wpx .wpx-panel h2 { margin: 0; font-size: 1.35rem; font-weight: 700; color: #1b1f1d; }
 .wpx .wpx-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px; }
 
-/* [This Week] [Next 2 Weeks]: two plain links, the open one filled. */
-.wpx .wpx-range { display: inline-flex; border: 1px solid var(--sage-200); border-radius: 999px; overflow: hidden; }
-.wpx .wpx-range a { padding: 8px 18px; font-weight: 700; color: var(--sage-700); text-decoration: none; background: #fff; }
-.wpx .wpx-range a + a { border-left: 1px solid var(--sage-200); }
+/* [This Week] [Next 2 Weeks]: segmented toggle — active white on sage-700, inactive sage-800 on white. */
+.wpx .wpx-range { display: inline-flex; padding: 3px; border: 1px solid var(--sage-200); border-radius: 999px; background: #fff; gap: 2px; }
+.wpx .wpx-range a { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 6px 16px; border-radius: 999px; font-weight: 700; color: var(--sage-800); text-decoration: none; background: transparent; white-space: nowrap; transition: background-color .15s ease, color .15s ease; }
+.wpx .wpx-range a:hover { background: var(--sage-50); color: var(--sage-800); }
 .wpx .wpx-range a.is-active { background: var(--sage-700); color: #fff; }
+.wpx .wpx-range a.is-active:hover { background: var(--sage-800); color: #fff; }
+.wpx .wpx-range a:focus-visible { outline: 3px solid var(--gov-gold, #d97706); outline-offset: 2px; }
 
 .wpx .wpx-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .wpx .wpx-filter label { font-weight: 700; }
 .wpx .wpx-filter select { min-width: 220px; padding: 8px 10px; border: 1px solid var(--sage-200); border-radius: 8px; background: #fff; }
 
-/* The days: big, plain cards; numbers only for MAO and IT. */
-.wpx .wpx-days { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
-.wpx .wpx-day { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 10px; border: 1px solid #e3e8e5; border-radius: 12px; background: #f8faf9; text-align: center; }
+/* The days: 7 equal columns on desktop, aligned to same height; horizontal scroll on phones. */
+.wpx .wpx-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; align-items: stretch; }
+.wpx .wpx-day { display: flex; flex-direction: column; align-items: center; height: 100%; gap: 6px; padding: 14px 10px; border: 1px solid #e3e8e5; border-radius: 12px; background: #f8faf9; text-align: center; }
+.wpx .wpx-day-top { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 100%; }
+.wpx .wpx-day-bottom { margin-top: auto; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; padding-top: 4px; }
 .wpx .wpx-day.is-today { border-color: #111111; background: #f5f5f7; }
 .wpx .wpx-day.is-estimate { border-style: dashed; background: #fbfaf5; }
 .wpx .wpx-day.is-less-certain { opacity: .82; background: #f8faf8; border-style: dashed; }
 .wpx .wpx-certain-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .72rem; font-weight: 600; background: #eef3ef; color: #47624f; }
 .wpx .wpx-day.is-empty { opacity: .7; }
-.wpx .wpx-day-name { font-weight: 700; }
+.wpx .wpx-day-name { font-weight: 700; font-size: .92rem; white-space: nowrap; }
 .wpx .wpx-day-icon { color: #1a5c96; }
 .wpx .wpx-day-icon svg { width: 34px; height: 34px; }
-.wpx .wpx-day-words { font-size: 1rem; line-height: 1.3; }
-.wpx .wpx-day-rain { font-size: .92rem; font-weight: 700; color: #1a5c96; }
-.wpx .wpx-day-temp, .wpx .wpx-day-wind { font-size: .9rem; color: #5b6660; }
+.wpx .wpx-day-words { font-size: .94rem; line-height: 1.3; word-break: normal; overflow-wrap: break-word; }
+.wpx .wpx-day-rain { font-size: .88rem; font-weight: 700; color: #1a5c96; }
+.wpx .wpx-day-temp, .wpx .wpx-day-wind { font-size: .88rem; font-weight: 600; color: #4b5563; white-space: nowrap; }
 .wpx .wpx-badge { padding: 2px 10px; border-radius: 999px; font-size: .78rem; font-weight: 700; background: #fbf1dc; color: #7a4f0a; }
-.wpx .wpx-day-numbers { display: grid; gap: 2px; width: 100%; margin: 6px 0 0; padding-top: 6px; border-top: 1px solid #e3e8e5; font-size: .82rem; }
-.wpx .wpx-day-numbers div { display: flex; justify-content: space-between; gap: 6px; }
-.wpx .wpx-day-numbers dt { font-weight: 600; color: #5b6660; }
-.wpx .wpx-day-numbers dd { margin: 0; font-weight: 700; }
+.wpx .wpx-day-numbers { display: grid; gap: 6px; width: 100%; margin: 2px 0 0; padding-top: 8px; border-top: 1px solid #e3e8e5; text-align: left; }
+.wpx .wpx-day-numbers > div { display: flex; flex-direction: column; gap: 1px; }
+.wpx .wpx-day-numbers dt { display: inline-flex; align-items: center; gap: 4px; font-size: .74rem; font-weight: 600; color: #4b5563; line-height: 1.25; word-break: normal; overflow-wrap: normal; }
+.wpx .wpx-metric-icon { flex: 0 0 auto; color: var(--sage-700); }
+.wpx .wpx-day-numbers dd { margin: 0; font-size: .86rem; font-weight: 700; color: #1b1f1d; white-space: nowrap; font-variant-numeric: tabular-nums; }
 
 /* Expected yield: one big number and its comparison. */
 .wpx .wpx-big { margin: 0; font-size: 2.6rem; font-weight: 800; line-height: 1.1; color: #1b1f1d; }
@@ -51,8 +56,19 @@
 .wpx .wpx-tech-grid dt { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #5b6660; }
 .wpx .wpx-tech-grid dd { margin: 2px 0 0; font-weight: 600; }
 
+@media (max-width: 767.98px) {
+    .wpx .wpx-days:not(.is-plain) {
+        grid-template-columns: none;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(154px, 44vw);
+        overflow-x: auto;
+        scroll-snap-type: x proximity;
+        padding-bottom: 6px;
+        -webkit-overflow-scrolling: touch;
+    }
+    .wpx .wpx-days:not(.is-plain) .wpx-day { scroll-snap-align: start; }
+}
 @media (max-width: 575.98px) {
-    .wpx .wpx-days { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .wpx .wpx-range { width: 100%; }
     .wpx .wpx-range a { flex: 1; text-align: center; padding: 8px 10px; }
 }
@@ -158,7 +174,7 @@ html[data-theme="dark"] body .wpx-more-table th, html[data-theme="dark"] body .w
 html[data-theme="dark"] body .wpx-more-table thead th { color: var(--dk-muted, var(--sage-300)); }
 html[data-theme="dark"] body .ytr-facts dt, html[data-theme="dark"] body .ytr-source { color: var(--dk-muted, var(--sage-300)); }
 html[data-theme="dark"] body .ytr-inputs li, html[data-theme="dark"] body .ytr-checks li { border-bottom-color: var(--dk-border-strong, var(--sage-800)); }
-html[data-theme="dark"] body .wpx.is-farmer .wpx-range a.is-active { background: var(--sage-200); color: var(--sage-300); }
+html[data-theme="dark"] body .wpx.is-farmer .wpx-range a.is-active { background: var(--sage-700); color: #fff; }
 /* ------------------------------------------------------------ end farmers */
 
 @media (prefers-reduced-motion: no-preference) {
