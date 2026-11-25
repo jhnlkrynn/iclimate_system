@@ -167,9 +167,9 @@
                         <h2>{{ __('farmer.complete_profile.other_orgs_label') }}</h2>
                         <p>{{ $fil ? 'Pindutin ang mga samahang kinabibilangan mo bukod sa pangunahing samahan.' : 'Tap any additional organizations you belong to.' }}</p>
                     </div>
-                    <div class="cp-org-grid" role="group" aria-label="{{ __('farmer.complete_profile.other_orgs_label') }}">
+                    <div class="cp-org-grid" role="group" aria-label="{{ __('farmer.complete_profile.other_orgs_label') }}" data-cp-other-orgs>
                         @foreach ($organizations as $org)
-                            <label class="cp-org-chip">
+                            <label class="cp-org-chip" data-barangay="{{ $org->barangay }}">
                                 <input type="checkbox" name="other_organizations[]" value="{{ $org->id }}" @checked(in_array((string) $org->id, $selectedOthers, true))>
                                 <span>
                                     {{ $org->name }}
@@ -178,6 +178,7 @@
                             </label>
                         @endforeach
                     </div>
+                    <p class="cp-hint" data-cp-other-empty hidden>{{ $fil ? 'Walang ibang samahan na nakalista sa napiling barangay.' : 'No organizations listed for the selected barangay.' }}</p>
                     @error('other_organizations')<p class="text-sm text-red-700 mt-1">{{ $message }}</p>@enderror
                 </section>
             @endif
@@ -236,6 +237,23 @@
                 });
                 if (reset && assoc.selectedOptions[0]?.disabled) {
                     assoc.value = '';
+                }
+
+                const otherGrid = document.querySelector('[data-cp-other-orgs]');
+                const otherEmpty = document.querySelector('[data-cp-other-empty]');
+                if (otherGrid) {
+                    let visible = 0;
+                    otherGrid.querySelectorAll('.cp-org-chip').forEach((chip) => {
+                        const match = Boolean(val) && chip.dataset.barangay === val;
+                        chip.hidden = ! match;
+                        const input = chip.querySelector('input[type="checkbox"]');
+                        if (! match && reset && input) {
+                            input.checked = false;
+                        }
+                        if (match) visible += 1;
+                    });
+                    otherGrid.hidden = visible === 0;
+                    if (otherEmpty) otherEmpty.hidden = visible > 0;
                 }
             };
             brgy.addEventListener('change', () => sync(true));

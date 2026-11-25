@@ -68,18 +68,51 @@
             @if ($orgChoices->isNotEmpty())
                 <fieldset data-farmer-organizations>
                     <legend class="block font-medium text-sm">{{ __('Farmer organizations') }}</legend>
-                    <p class="mt-1 text-sm text-sage-700">{{ __('Tick every organization you are a member of.') }}</p>
+                    <p class="mt-1 text-sm text-sage-700">{{ __('Tick every organization you are a member of in your selected barangay.') }}</p>
                     <input type="hidden" name="farmer_organization_ids_present" value="1">
-                    <div class="check-grid mt-2">
+                    <div class="check-grid mt-2" data-org-grid>
                         @foreach ($orgChoices as $org)
-                            <label class="check-tile">
+                            <label class="check-tile" data-org-tile data-barangay="{{ $org->barangay }}">
                                 <input type="checkbox" name="farmer_organization_ids[]" value="{{ $org->id }}" @checked(in_array((string) $org->id, $orgTicked, true))>
                                 <span>{{ $org->name }}<small>{{ $org->barangay }}</small></span>
                             </label>
                         @endforeach
                     </div>
+                    <p class="mt-2 text-sm text-sage-700" data-org-empty hidden>{{ __('No organizations listed for the selected barangay.') }}</p>
                     <x-input-error class="mt-2" :messages="$errors->get('farmer_organization_ids')" />
                 </fieldset>
+                <script @nonce>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const brgy = document.getElementById('barangay');
+                        const grid = document.querySelector('[data-org-grid]');
+                        const empty = document.querySelector('[data-org-empty]');
+                        if (! brgy || ! grid) return;
+
+                        const sync = (clearHidden = false) => {
+                            const selected = brgy.value.trim();
+                            let visible = 0;
+                            grid.querySelectorAll('[data-org-tile]').forEach((tile) => {
+                                const match = selected !== '' && tile.dataset.barangay === selected;
+                                tile.hidden = ! match;
+                                const input = tile.querySelector('input[type="checkbox"]');
+                                if (! match && clearHidden && input) {
+                                    input.checked = false;
+                                }
+                                if (match) visible += 1;
+                            });
+                            grid.hidden = visible === 0;
+                            if (empty) {
+                                empty.textContent = selected === ''
+                                    ? @json(__('Select a barangay above to see organizations in your area.'))
+                                    : @json(__('No organizations listed for the selected barangay.'));
+                                empty.hidden = visible > 0;
+                            }
+                        };
+
+                        brgy.addEventListener('change', () => sync(true));
+                        sync(false);
+                    });
+                </script>
             @endif
 
             {{-- Farm size and type: used for the expected yield on Home and shown on My Farm. --}}
