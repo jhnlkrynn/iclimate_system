@@ -163,13 +163,7 @@ class SeasonYieldComparisonTest extends TestCase
 
         $myFarm = $this->actingAs($farmer)->get(route('farmer.my-farm'));
         $myFarm->assertOk();
-        $myFarm->assertSee('Season Yield Comparison');
-        $myFarm->assertSee('Estimate (iClimate)');
-        $myFarm->assertSee('Actual harvest');
-        $myFarm->assertSee('4.07 t/ha');
-        $myFarm->assertSee('3.80 t/ha');
-        $myFarm->assertSee('4.00 t/ha');
-        $myFarm->assertSee('3.60 t/ha');
+        $myFarm->assertDontSee('data-my-farm-season-comparison', false);
     }
 
     public function test_falls_back_to_approved_barangay_same_season_average_when_no_farm_history(): void
@@ -231,6 +225,6 @@ class SeasonYieldComparisonTest extends TestCase
 
         $myFarm = $this->actingAs($farmer)->get(route('farmer.my-farm'));
         $myFarm->assertOk();
-        $myFarm->assertSee('No past harvests yet. Record your harvest to compare next season.');
+        $myFarm->assertDontSee('data-my-farm-season-comparison', false);
     }
 }
