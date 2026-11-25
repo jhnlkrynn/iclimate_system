@@ -1420,18 +1420,22 @@ class AIOrchestratorService
         if (! $explore['sufficient']) {
             $answer = $explore['insight'];
         } else {
-            $parts = [$explore['insight']];
+            $parts = [$explore['insight'], $explore['based_on'].'.'];
+
+            if (! empty($explore['few_farms_note'])) {
+                $parts[] = $explore['few_farms_note'];
+            }
 
             if ($explore['min_yield'] !== null && $explore['max_yield'] !== null) {
                 $parts[] = $tagalog
-                    ? "Karaniwang saklaw: {$explore['min_yield']}–{$explore['max_yield']} t/ha mula sa {$explore['farm_count']} na bukid."
-                    : "Typical range: {$explore['min_yield']}–{$explore['max_yield']} t/ha across {$explore['farm_count']} farms.";
+                    ? "Karaniwang saklaw: {$explore['min_yield']}–{$explore['max_yield']} t/ha."
+                    : "Typical range: {$explore['min_yield']}–{$explore['max_yield']} t/ha.";
             }
 
             if ($explore['top_varieties'] !== []) {
                 $topList = collect($explore['top_varieties'])
                     ->take(3)
-                    ->map(fn (array $row): string => "{$row['name']} ({$row['avg']} t/ha)")
+                    ->map(fn (array $row): string => $row['avg'] !== null ? "{$row['name']} ({$row['avg']} t/ha)" : $row['name'])
                     ->implode(', ');
                 $parts[] = $tagalog
                     ? "Nangungunang binhi: {$topList}."

@@ -65,34 +65,51 @@
             </form>
         </section>
 
-        <section class="frec-panel mb-3" data-explore-insight>
-            <p class="mb-0 fw-semibold" style="color: var(--sage-800, #1f3d28);">{{ $result['insight'] }}</p>
-        </section>
-
         @if (! $result['sufficient'])
             <section class="frec-panel" data-explore-empty>
-                <p class="mb-0 text-muted">{{ $fil ? 'Hindi pa sapat ang bilang ng mga bukid.' : 'Not enough farms yet.' }}</p>
+                <p class="mb-0 fw-semibold" style="color: var(--sage-800, #1f3d28);">{{ $result['insight'] }}</p>
             </section>
         @else
+            <section class="frec-panel mb-3" data-explore-insight>
+                <p class="mb-1 fw-semibold" style="color: var(--sage-800, #1f3d28);">{{ $result['insight'] }}</p>
+                <p class="mb-0 small text-muted" data-explore-based-on>
+                    {{ $result['based_on'] }}@if (! empty($result['few_farms_note'])) · {{ $result['few_farms_note'] }}@endif
+                </p>
+            </section>
+
+            @if (! empty($result['no_harvest_note']))
+                <section class="frec-panel mb-3" data-explore-no-harvest>
+                    <p class="mb-0 text-muted">{{ $result['no_harvest_note'] }}</p>
+                </section>
+            @endif
+
             <div class="row g-3 mb-3">
-                <div class="col-4">
+                <div class="col-6 col-md-{{ $result['has_harvests'] ? '3' : '6' }}">
                     <div class="frec-panel h-100">
                         <div class="small text-muted">{{ $fil ? 'Mga bukid' : 'Farms' }}</div>
                         <div class="fs-4 fw-bold">{{ number_format($result['farm_count']) }}</div>
                     </div>
                 </div>
-                <div class="col-4">
+                <div class="col-6 col-md-{{ $result['has_harvests'] ? '3' : '6' }}">
                     <div class="frec-panel h-100">
-                        <div class="small text-muted">{{ $fil ? 'Average na ani' : 'Average yield' }}</div>
-                        <div class="fs-4 fw-bold">{{ number_format((float) $result['avg_yield'], 2) }} <small class="fs-6">t/ha</small></div>
+                        <div class="small text-muted">{{ $fil ? 'Kabuuang sukat' : 'Total area' }}</div>
+                        <div class="fs-4 fw-bold">{{ $result['total_area'] !== null ? number_format((float) $result['total_area'], 2).' ha' : '—' }}</div>
                     </div>
                 </div>
-                <div class="col-4">
-                    <div class="frec-panel h-100">
-                        <div class="small text-muted">{{ $fil ? 'Karaniwang saklaw' : 'Typical range' }}</div>
-                        <div class="fs-5 fw-bold">{{ number_format((float) $result['min_yield'], 2) }}–{{ number_format((float) $result['max_yield'], 2) }} <small class="fs-6">t/ha</small></div>
+                @if ($result['has_harvests'])
+                    <div class="col-6 col-md-3">
+                        <div class="frec-panel h-100">
+                            <div class="small text-muted">{{ $fil ? 'Average na ani' : 'Average yield' }}</div>
+                            <div class="fs-4 fw-bold">{{ number_format((float) $result['avg_yield'], 2) }} <small class="fs-6">t/ha</small></div>
+                        </div>
                     </div>
-                </div>
+                    <div class="col-6 col-md-3">
+                        <div class="frec-panel h-100">
+                            <div class="small text-muted">{{ $fil ? 'Karaniwang saklaw' : 'Typical range' }}</div>
+                            <div class="fs-5 fw-bold">{{ number_format((float) $result['min_yield'], 2) }}–{{ number_format((float) $result['max_yield'], 2) }} <small class="fs-6">t/ha</small></div>
+                        </div>
+                    </div>
+                @endif
             </div>
 
             @if (! empty($result['by_season']))
@@ -106,15 +123,15 @@
             <div class="row g-3">
                 <div class="col-md-6">
                     <section class="frec-panel h-100" aria-labelledby="expVarTitle">
-                        <h2 id="expVarTitle" class="h5 mb-2">{{ $fil ? 'Nangungunang barayti' : 'Top varieties by average yield' }}</h2>
+                        <h2 id="expVarTitle" class="h5 mb-2">{{ $result['has_harvests'] ? ($fil ? 'Nangungunang barayti' : 'Top varieties by average yield') : ($fil ? 'Mga nakatanim na barayti' : 'Varieties planted') }}</h2>
                         @if (empty($result['top_varieties']))
-                            <p class="text-muted small mb-0">{{ $fil ? 'Hindi pa sapat ang bilang ng mga bukid.' : 'Not enough farms yet.' }}</p>
+                            <p class="text-muted small mb-0">{{ $fil ? 'Wala pang nakatalang barayti.' : 'No varieties recorded yet.' }}</p>
                         @else
                             <ul class="list-unstyled mb-0 d-grid gap-2">
                                 @foreach ($result['top_varieties'] as $v)
                                     <li class="d-flex justify-content-between align-items-center border-bottom pb-1">
                                         <span class="fw-semibold">{{ $v['name'] }}</span>
-                                        <span class="small">{{ number_format($v['avg'], 2) }} t/ha ({{ $v['farms'] }} {{ $fil ? 'bukid' : 'farms' }})</span>
+                                        <span class="small">@if ($v['avg'] !== null){{ number_format($v['avg'], 2) }} t/ha · @endif{{ $v['farms'] }} {{ $v['farms'] === 1 ? ($fil ? 'bukid' : 'farm') : ($fil ? 'bukid' : 'farms') }}</span>
                                     </li>
                                 @endforeach
                             </ul>
@@ -125,13 +142,13 @@
                     <section class="frec-panel h-100" aria-labelledby="expMonthTitle">
                         <h2 id="expMonthTitle" class="h5 mb-2">{{ $fil ? 'Karaniwang buwan ng pagtatanim' : 'Most common planting months' }}</h2>
                         @if (empty($result['common_months']))
-                            <p class="text-muted small mb-0">{{ $fil ? 'Hindi pa sapat ang bilang ng mga bukid.' : 'Not enough farms yet.' }}</p>
+                            <p class="text-muted small mb-0">{{ $fil ? 'Wala pang nakatalang petsa ng pagtanim.' : 'No planting dates recorded yet.' }}</p>
                         @else
                             <ul class="list-unstyled mb-0 d-grid gap-2">
                                 @foreach ($result['common_months'] as $m)
                                     <li class="d-flex justify-content-between align-items-center border-bottom pb-1">
                                         <span class="fw-semibold">{{ $m['month'] }}</span>
-                                        <span class="small">{{ $m['farms'] }} {{ $fil ? 'bukid' : 'farms' }}</span>
+                                        <span class="small">{{ $m['farms'] }} {{ $m['farms'] === 1 ? ($fil ? 'bukid' : 'farm') : ($fil ? 'bukid' : 'farms') }}</span>
                                     </li>
                                 @endforeach
                             </ul>

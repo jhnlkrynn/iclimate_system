@@ -220,7 +220,7 @@ class FarmerYieldAndExploreFeaturesTest extends TestCase
         $noAreaResponse->assertDontSee('(from');
     }
 
-    public function test_explore_farm_results_enforces_min_5_farms_excludes_demo_and_unapproved_and_protects_privacy(): void
+    public function test_explore_farm_results_shows_1_farm_excludes_demo_and_unapproved_and_handles_no_harvest_and_empty_state(): void
     {
         $viewer = $this->farmer('Humayingan');
         $variety = RiceVariety::create([
@@ -231,27 +231,6 @@ class FarmerYieldAndExploreFeaturesTest extends TestCase
             'source' => RiceVariety::SOURCE_IMPORT,
         ]);
 
-        // 4 approved Rainfed farms in Humayingan -> below min-5 threshold.
-        foreach ([3.2, 3.6, 4.0, 4.4] as $i => $yield) {
-            $owner = $this->farmer('Humayingan', 'real'.$i);
-            $farm = $this->approvedFarm($owner, [
-                'farm_name' => 'Secret Private Farm '.$i,
-                'farm_type' => 'Rainfed',
-            ]);
-            FarmerPlantingSchedule::create([
-                'user_id' => $owner->id,
-                'farm_id' => $farm->id,
-                'rice_variety_id' => $variety->id,
-                'rice_variety' => 'NSIC Rc 222',
-                'season' => 'Wet',
-                'farm_type' => 'Rainfed',
-                'planting_date' => '2026-06-15',
-                'harvested_on' => '2026-09-25',
-                'actual_yield' => $yield,
-                'status' => 'Harvested',
-            ]);
-        }
-
         // Add 1 pending (unapproved) farm and 1 demo (@iclimate.local) farm — both must be excluded.
         $pendingOwner = $this->farmer('Humayingan', 'pending');
         $pendingFarm = $this->approvedFarm($pendingOwner, [
@@ -261,6 +240,7 @@ class FarmerYieldAndExploreFeaturesTest extends TestCase
         FarmerPlantingSchedule::create([
             'user_id' => $pendingOwner->id,
             'farm_id' => $pendingFarm->id,
+            'rice_variety_id' => $variety->id,
             'rice_variety' => 'NSIC Rc 222',
             'season' => 'Wet',
             'farm_type' => 'Rainfed',
@@ -279,6 +259,7 @@ class FarmerYieldAndExploreFeaturesTest extends TestCase
         FarmerPlantingSchedule::create([
             'user_id' => $demoOwner->id,
             'farm_id' => $demoFarm->id,
+            'rice_variety_id' => $variety->id,
             'rice_variety' => 'NSIC Rc 222',
             'season' => 'Wet',
             'farm_type' => 'Rainfed',
@@ -288,24 +269,58 @@ class FarmerYieldAndExploreFeaturesTest extends TestCase
             'status' => 'Harvested',
         ]);
 
-        // With only 4 valid farms, page must hide aggregates and show "Not enough farms yet".
-        $insufficientPage = $this->actingAs($viewer)->get(route('farmer.explore-results.index', [
+        // With 0 valid farms, page shows ONE empty message suggesting widening filters.
+        $emptyPage = $this->actingAs($viewer)->get(route('farmer.explore-results.index', [
             'farm_type' => 'Rainfed',
             'barangay' => 'Humayingan',
         ]));
-        $insufficientPage->assertOk();
-        $insufficientPage->assertSee('Not enough farms yet');
-        $insufficientPage->assertDontSee('Secret Private Farm');
+        $emptyPage->assertOk();
+        $emptyPage->assertSee('No approved farms match these filters yet. Try All of Lian or another year.');
+        $emptyPage->assertDontSee('Not enough farms yet');
+        $emptyPage->assertDontSee('data-explore-insight');
 
-        // Add the 5th approved real farm -> now 5 farms, average = (3.2+3.6+4.0+4.4+3.8)/5 = 3.8 t/ha.
-        $fifthOwner = $this->farmer('Humayingan', 'real5');
-        $fifthFarm = $this->approvedFarm($fifthOwner, [
-            'farm_name' => 'Secret Private Farm 5',
+        // 1 approved real farm with planting only (no harvest yet) -> shows count, area, variety, month + no-harvest note.
+        $plantedOwner = $this->farmer('Humayingan', 'planted1');
+        $plantedFarm = $this->approvedFarm($plantedOwner, [
+            'farm_name' => 'Secret Private Farm 1',
+            'farm_type' => 'Rainfed',
+            'farm_size_hectares' => 2.5,
+        ]);
+        FarmerPlantingSchedule::create([
+            'user_id' => $plantedOwner->id,
+            'farm_id' => $plantedFarm->id,
+            'rice_variety_id' => $variety->id,
+            'season' => 'Dry',
+            'farm_type' => 'Rainfed',
+            'farm_area_hectares' => 2.5,
+            'planting_date' => '2026-01-15',
+            'harvested_on' => null,
+            'actual_yield' => null,
+        ]);
+
+        $noHarvestPage = $this->actingAs($viewer)->get(route('farmer.explore-results.index', [
+            'farm_type' => 'Rainfed',
+            'barangay' => 'Humayingan',
+            'season' => 'Dry',
+        ]));
+        $noHarvestPage->assertOk();
+        $noHarvestPage->assertSee('Based on 1 farm');
+        $noHarvestPage->assertSee('Few farms, so results may vary.');
+        $noHarvestPage->assertSee('No harvest recorded yet for this season.');
+        $noHarvestPage->assertSee('2.50 ha');
+        $noHarvestPage->assertSee('NSIC Rc 222');
+        $noHarvestPage->assertSee('January');
+        $noHarvestPage->assertDontSee('Secret Private Farm 1');
+
+        // 1 approved real farm with harvest -> shows full results with "Based on 1 farm" & "Few farms, so results may vary."
+        $harvestOwner = $this->farmer('Humayingan', 'real1');
+        $harvestFarm = $this->approvedFarm($harvestOwner, [
+            'farm_name' => 'Secret Private Farm 2',
             'farm_type' => 'Rainfed',
         ]);
         FarmerPlantingSchedule::create([
-            'user_id' => $fifthOwner->id,
-            'farm_id' => $fifthFarm->id,
+            'user_id' => $harvestOwner->id,
+            'farm_id' => $harvestFarm->id,
             'rice_variety_id' => $variety->id,
             'rice_variety' => 'NSIC Rc 222',
             'season' => 'Wet',
@@ -316,19 +331,19 @@ class FarmerYieldAndExploreFeaturesTest extends TestCase
             'status' => 'Harvested',
         ]);
 
-        $sufficientPage = $this->actingAs($viewer)->get(route('farmer.explore-results.index', [
+        $oneFarmPage = $this->actingAs($viewer)->get(route('farmer.explore-results.index', [
             'farm_type' => 'Rainfed',
             'barangay' => 'Humayingan',
             'season' => 'Wet',
         ]));
-        $sufficientPage->assertOk();
-        $sufficientPage->assertSee('Rainfed farms in Humayingan averaged 3.8 t/ha');
-        $sufficientPage->assertSee('3.2');
-        $sufficientPage->assertSee('4.4');
-        $sufficientPage->assertSee('NSIC Rc 222');
-        $sufficientPage->assertDontSee('Secret Private Farm');
+        $oneFarmPage->assertOk();
+        $oneFarmPage->assertSee('Rainfed farms in Humayingan averaged 3.8 t/ha');
+        $oneFarmPage->assertSee('Based on 1 farm');
+        $oneFarmPage->assertSee('Few farms, so results may vary.');
+        $oneFarmPage->assertSee('NSIC Rc 222');
+        $oneFarmPage->assertDontSee('Secret Private Farm 2');
 
-        // Irrigated filter has 0 farms -> still shows Not enough farms yet (never side-by-side).
+        // Irrigated filter still has 0 farms -> empty state.
         $irrigatedResult = app(FarmResultsExplorationService::class)->explore([
             'farm_type' => 'Irrigated',
             'barangay' => 'Humayingan',
@@ -340,10 +355,10 @@ class FarmerYieldAndExploreFeaturesTest extends TestCase
     {
         $farmer = $this->farmer('Humayingan');
 
-        // Before 5 farms: Climora reports not enough farms yet.
+        // Before any farms: Climora reports no matching approved farms yet.
         $replyInsufficient = app(AIOrchestratorService::class)->answer($farmer, 'How do irrigated farms do in my barangay?');
         $this->assertSame('farm_results_explore', $replyInsufficient['intent']);
-        $this->assertStringContainsString('Not enough farms yet', $replyInsufficient['answer']);
+        $this->assertStringContainsString('No approved farms match these filters yet', $replyInsufficient['answer']);
 
         $variety = RiceVariety::create([
             'import_key' => 'nsic_rc_222_climora',
@@ -374,6 +389,7 @@ class FarmerYieldAndExploreFeaturesTest extends TestCase
         $replySufficient = app(AIOrchestratorService::class)->answer($farmer, 'How do irrigated farms do in my barangay?');
         $this->assertSame('farm_results_explore', $replySufficient['intent']);
         $this->assertStringContainsString('Irrigated farms in Humayingan averaged 5 t/ha', $replySufficient['answer']);
+        $this->assertStringContainsString('Based on 5 farms', $replySufficient['answer']);
         $this->assertStringContainsString('4.6–5.4 t/ha', $replySufficient['answer']);
         $this->assertStringContainsString('NSIC Rc 222', $replySufficient['answer']);
     }
@@ -450,11 +466,12 @@ class FarmerYieldAndExploreFeaturesTest extends TestCase
             'source' => RiceVariety::SOURCE_IMPORT,
         ]);
 
-        // Empty state (no harvests yet) must return 200 and show variety option + Not enough farms yet.
+        // Empty state (no farms/harvests yet) must return 200 and show variety option + single empty message.
         $empty = $this->actingAs($viewer)->get(route('farmer.explore-results.index'));
         $empty->assertOk();
         $empty->assertSee('NSIC Rc 480 (GSR 8)');
-        $empty->assertSee('Not enough farms yet');
+        $empty->assertSee('No approved farms match these filters yet. Try All of Lian or another year.');
+        $empty->assertDontSee('Not enough farms yet');
 
         // Seed 5 approved farms with harvests for that variety.
         foreach ([4.2, 4.4, 4.6, 4.8, 5.0] as $i => $yield) {
