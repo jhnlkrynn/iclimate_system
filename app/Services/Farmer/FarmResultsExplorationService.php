@@ -49,7 +49,7 @@ class FarmResultsExplorationService
             ->when($season !== null, fn (Builder $q) => $q->where('farmer_planting_schedules.season', $season))
             ->when($year !== null, fn (Builder $q) => $q->whereYear(\Illuminate\Support\Facades\DB::raw('COALESCE(harvested_on, planting_date)'), $year))
             ->when($varietyId !== null, fn (Builder $q) => $q->where('farmer_planting_schedules.rice_variety_id', $varietyId))
-            ->with('riceVariety:id,nsic_code,variety_name')
+            ->with('riceVariety:id,nsic_reg_no,variety_name')
             ->get([
                 'farmer_planting_schedules.id',
                 'farmer_planting_schedules.user_id',
@@ -101,7 +101,7 @@ class FarmResultsExplorationService
     public function filterOptions(): array
     {
         $varieties = SchemaCache::hasTable('rice_varieties')
-            ? RiceVariety::query()->orderBy('variety_name')->get(['id', 'nsic_code', 'variety_name'])
+            ? RiceVariety::query()->orderBy('variety_name')->get(['id', 'nsic_reg_no', 'variety_name'])
             : collect();
 
         $years = SchemaCache::hasTable('farmer_planting_schedules')

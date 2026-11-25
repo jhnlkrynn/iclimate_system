@@ -437,4 +437,47 @@ class FarmerYieldAndExploreFeaturesTest extends TestCase
         $this->assertStringContainsString('range=week', $fourteenHtml);
         $this->assertStringContainsString('range=2weeks', $fourteenHtml);
     }
+
+    public function test_explore_results_page_loads_200_with_real_rice_varieties_schema_empty_and_populated(): void
+    {
+        $viewer = $this->farmer('Humayingan');
+        $variety = RiceVariety::create([
+            'import_key' => 'nsic_2016_rc_480',
+            'nsic_reg_no' => 'NSIC 2016 Rc 480',
+            'variety_name' => 'GSR 8',
+            'yield_tpr_ws' => 5200,
+            'maturity_typical' => 115,
+            'source' => RiceVariety::SOURCE_IMPORT,
+        ]);
+
+        // Empty state (no harvests yet) must return 200 and show variety option + Not enough farms yet.
+        $empty = $this->actingAs($viewer)->get(route('farmer.explore-results.index'));
+        $empty->assertOk();
+        $empty->assertSee('NSIC Rc 480 (GSR 8)');
+        $empty->assertSee('Not enough farms yet');
+
+        // Seed 5 approved farms with harvests for that variety.
+        foreach ([4.2, 4.4, 4.6, 4.8, 5.0] as $i => $yield) {
+            $owner = $this->farmer('Humayingan', 'schema'.$i);
+            $farm = $this->approvedFarm($owner, ['farm_type' => 'Irrigated']);
+            FarmerPlantingSchedule::create([
+                'user_id' => $owner->id,
+                'farm_id' => $farm->id,
+                'rice_variety_id' => $variety->id,
+                'season' => 'Wet',
+                'farm_type' => 'Irrigated',
+                'planting_date' => '2026-06-10',
+                'harvested_on' => '2026-09-25',
+                'actual_yield' => $yield,
+            ]);
+        }
+
+        $populated = $this->actingAs($viewer)->get(route('farmer.explore-results.index', [
+            'farm_type' => 'Irrigated',
+            'barangay' => 'Humayingan',
+        ]));
+        $populated->assertOk();
+        $populated->assertSee('Irrigated farms in Humayingan averaged 4.6 t/ha');
+        $populated->assertSee('NSIC Rc 480 (GSR 8)');
+    }
 }
