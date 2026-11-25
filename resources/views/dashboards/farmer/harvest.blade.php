@@ -29,7 +29,6 @@
                 <p class="fh-big mb-0">{{ number_format($h['yield'], 2) }} <small>t/ha</small></p>
             </div>
         </div>
-        <p class="fh-muted mt-1">@include('components.unvalidated-estimate')</p>
     @elseif ($h['state'] === 'loading')
         <div class="ic-skel-lines" role="status"><span></span><span></span><span class="visually-hidden">{{ __('farmer.home.harvest.preparing') }}</span></div>
         <p class="fh-muted">{{ __('farmer.home.harvest.preparing') }}</p>

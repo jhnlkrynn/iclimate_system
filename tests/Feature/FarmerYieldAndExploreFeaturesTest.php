@@ -156,7 +156,8 @@ class FarmerYieldAndExploreFeaturesTest extends TestCase
         $dashboard->assertSee('Expected yield this season');
         $dashboard->assertSee('iClimate estimate');
         $dashboard->assertSee('4.80');
-        $dashboard->assertSee('Preliminary estimate');
+        $dashboard->assertDontSee('Preliminary estimate');
+        $dashboard->assertDontSee('Accuracy not verified');
         $dashboard->assertSee('Updated');
         $dashboard->assertSee('Last harvest: 5.50 t/ha');
         $dashboard->assertDontSee('Your expected yield (t/ha)');
