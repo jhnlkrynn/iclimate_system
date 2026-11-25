@@ -126,10 +126,38 @@
                     <span>{{ __('farmer.activity.farm') }}</span>
                     <select class="fad-input" name="farm_id" required>
                         @foreach ($activityFarms as $farmOption)
-                            <option value="{{ $farmOption['id'] }}" data-expected-harvest="{{ $farmOption['expected_harvest'] ?? '' }}" @selected((string) old('farm_id', $activityFarmId) === (string) $farmOption['id'])>{{ $farmOption['name'] }}</option>
+                            <option value="{{ $farmOption['id'] }}"
+                                data-expected-harvest="{{ $farmOption['expected_harvest'] ?? '' }}"
+                                data-open-planting="{{ json_encode($farmOption['open_planting'] ?? null) }}"
+                                @selected((string) old('farm_id', $activityFarmId) === (string) $farmOption['id'])>{{ $farmOption['name'] }}</option>
                         @endforeach
                     </select>
                 </label>
+                @php
+                    $actFil = app()->getLocale() === 'fil';
+                    $actVarietyOld = (string) old('rice_variety_id', '');
+                @endphp
+                <div class="fmf-field" data-fmf-variety-wrap @if (old('kind', 'planted') !== 'planted') hidden @endif>
+                    <label for="fmfVarietySearch" class="d-block mb-1">{{ $actFil ? 'Rice variety' : 'Variety' }}</label>
+                    <input id="fmfVarietySearch" type="search" class="fad-input mb-2" placeholder="{{ $actFil ? 'Maghanap ng variety (hal. NSIC Rc 222)...' : 'Search variety (e.g. NSIC Rc 222)...' }}" autocomplete="off" data-fmf-variety-search>
+                    <select class="fad-input" name="rice_variety_id" data-fmf-variety-select @if (old('kind', 'planted') === 'planted') required @endif>
+                        <option value="" disabled @selected($actVarietyOld === '')>{{ $actFil ? 'Pumili ng rice variety...' : 'Choose a rice variety...' }}</option>
+                        <option value="unknown" @selected($actVarietyOld === 'unknown')>{{ $actFil ? 'Hindi ko alam' : "I don't know" }}</option>
+                        @foreach (($activityVarieties ?? []) as $vOption)
+                            <option value="{{ $vOption['id'] }}" data-search="{{ $vOption['search'] }}" @selected($actVarietyOld === (string) $vOption['id'])>{{ $vOption['label'] }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="rv-preview" data-fmf-harvest-preview data-estimate-url="{{ route('rice-varieties.estimate') }}" hidden aria-live="polite">
+                    <strong data-fmf-preview-summary></strong>
+                    <span class="rv-preview-basis" data-fmf-preview-today></span>
+                </div>
+                <div class="fad-m-note is-good" data-fmf-closing-ref hidden aria-live="polite"
+                    data-prefix="{{ $actFil ? 'Isinasarang tanim' : 'Closing' }}"
+                    data-planted-word="{{ $actFil ? 'itinanim noong' : 'planted' }}"
+                    data-expected-word="{{ $actFil ? 'Inaasahang ani' : 'Expected harvest' }}"
+                    data-unknown-variety="{{ $actFil ? 'Hindi alam ang variety' : 'Unknown variety' }}">
+                </div>
                 {{-- Panel revision 1.3: asked only when the harvest date is early or late. --}}
                 @include('partials.harvest-timing-fields', ['timingWrap' => 'fmf-field', 'timingInput' => 'fad-input', 'timingError' => 'fmf-error', 'timingBag' => 'activity'])
                 <div class="fmf-dialog-actions">

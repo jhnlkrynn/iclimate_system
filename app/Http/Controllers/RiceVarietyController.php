@@ -103,14 +103,47 @@ class RiceVarietyController extends Controller
         $variety = ! empty($data['variety']) && SchemaCache::hasTable('rice_varieties') ? RiceVariety::query()->find($data['variety']) : null;
         $result = $estimator->estimate($variety, $data['date'], $data['season'] ?? null, $data['establishment'] ?? null, $data['basis'] ?? 'sowing', $data['seedling_age'] ?? null);
         $expected = $result['expected_harvest_date'];
+        $plantingDate = \Illuminate\Support\Carbon::parse($data['date'])->startOfDay();
+        $today = \App\Support\BusinessClock::today()->startOfDay();
+        $daysFromPlanting = (int) $plantingDate->diffInDays($expected);
+        $daysFromToday = (int) $today->diffInDays($expected, false);
+        $isPastPlanting = $plantingDate->lt($today);
+        $isDefaultEstimate = $variety === null || ($result['basis_code'] ?? 'default') === 'default';
         $before = (int) $result['window_start']->diffInDays($expected);
         $after = (int) $expected->diffInDays($result['window_end']);
+        $fil = app()->getLocale() === 'fil';
+
+        $hasCustomRange = ! $isDefaultEstimate
+            && $result['window_start']->ne($result['window_end'])
+            && ($before !== (int) config('rice_varieties.window_days', 5) || $after !== (int) config('rice_varieties.window_days', 5));
+        $rangeText = $hasCustomRange
+            ? ' ('.$result['window_start']->locale(app()->getLocale())->translatedFormat('M j').' – '.$result['window_end']->locale(app()->getLocale())->translatedFormat('M j').')'
+            : '';
+        $dateText = $expected->locale(app()->getLocale())->translatedFormat('M j, Y');
+        $estimateTag = $isDefaultEstimate ? ($fil ? ' · tantiya' : ' · estimate') : '';
+
+        $previewSummary = $fil
+            ? "Inaasahang ani: {$dateText}{$rangeText} · mga {$daysFromPlanting} araw mula sa pagtanim{$estimateTag}"
+            : "Expected harvest: {$dateText}{$rangeText} · about {$daysFromPlanting} days from planting{$estimateTag}";
+
+        $previewFromToday = null;
+        if ($isPastPlanting) {
+            $previewFromToday = $daysFromToday >= 0
+                ? ($fil ? "{$daysFromToday} araw mula ngayon." : "That's {$daysFromToday} days from today.")
+                : ($fil ? abs($daysFromToday).' araw na ang lumipas mula sa inaasahang ani.' : 'Expected harvest was '.abs($daysFromToday).' days ago.');
+        }
 
         return response()->json([
             'expected_harvest_date' => $expected->toDateString(),
             'window_start' => $result['window_start']->toDateString(),
             'window_end' => $result['window_end']->toDateString(),
             'maturity_days_used' => $result['maturity_days_used'],
+            'days_from_planting' => $daysFromPlanting,
+            'days_from_today' => $daysFromToday,
+            'is_past_planting' => $isPastPlanting,
+            'is_default_estimate' => $isDefaultEstimate,
+            'preview_summary' => $previewSummary,
+            'preview_from_today' => $previewFromToday,
             'basis' => $result['basis'],
             'basis_code' => $result['basis_code'],
             'label' => $before === $after

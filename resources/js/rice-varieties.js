@@ -338,7 +338,7 @@ export function initVarietyPicker() {
             controller?.abort();
             controller = new AbortController();
             const url = new URL(root.dataset.rvEstimateUrl, window.location.origin);
-            url.searchParams.set('variety', select.value);
+            if (select.value && select.value !== 'unknown') url.searchParams.set('variety', select.value);
             url.searchParams.set('date', planting.value);
             if (season?.value) url.searchParams.set('season', season.value);
             if (checked('crop_establishment')) url.searchParams.set('establishment', checked('crop_establishment'));
@@ -349,8 +349,8 @@ export function initVarietyPicker() {
                 if (!response.ok) throw new Error(`Estimate failed (${response.status})`);
                 latest = await response.json();
                 preview.hidden = false;
-                preview.querySelector('[data-rv-preview-label]').textContent = latest.label;
-                preview.querySelector('[data-rv-preview-basis]').textContent = latest.basis;
+                preview.querySelector('[data-rv-preview-label]').textContent = latest.preview_summary || latest.label;
+                preview.querySelector('[data-rv-preview-basis]').textContent = latest.preview_from_today || latest.basis;
                 if (mode.value !== 'manual' && harvest) {
                     harvest.value = latest.expected_harvest_date;
                     harvest.dispatchEvent(new Event('change', { bubbles: true }));

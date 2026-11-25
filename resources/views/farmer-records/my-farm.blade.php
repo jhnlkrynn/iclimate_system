@@ -157,6 +157,7 @@
                     <table class="frec-table">
                         <thead><tr>
                             <th scope="col">{{ __('farmer.my_farm_page.planted') }}</th>
+                            <th scope="col">{{ app()->getLocale() === 'fil' ? 'Variety' : 'Variety' }}</th>
                             <th scope="col">{{ __('farmer.my_farm_page.harvest_due') }}</th>
                             <th scope="col">{{ __('farmer.my_farm_page.season') }}</th>
                             <th scope="col">{{ __('farmer.my_farm_page.status') }}</th>
@@ -166,7 +167,15 @@
                             @foreach ($schedules as $row)
                                 <tr>
                                     <th scope="row">{{ $date($row['planting_date']) }}</th>
-                                    <td>{{ $date($row['harvest_date']) }}@if (! empty($row['variety']))<small class="fmf-variety d-block" data-harvest-variety>{{ $row['variety'] }}</small>@endif</td>
+                                    <td data-harvest-variety>{{ $row['variety'] ?: (app()->getLocale() === 'fil' ? 'Hindi alam' : "I don't know") }}</td>
+                                    <td>
+                                        {{ $date($row['harvest_date']) }}
+                                        @if (($row['days_left'] ?? null) !== null && $row['days_left'] >= 0)
+                                            <small class="fmf-variety d-block">
+                                                {{ app()->getLocale() === 'fil' ? "{$row['days_left']} araw pa" : "{$row['days_left']} days left" }}
+                                            </small>
+                                        @endif
+                                    </td>
                                     <td>{{ $row['season'] ?? '—' }}</td>
                                     <td>{{ $row['status'] }}</td>
                                     <td class="is-end fmf-no-print"><a class="fad-btn is-quiet is-compact" href="{{ route('farmer.planting-schedules.edit', $row['id']) }}">{{ __('farmer.my_farm_page.edit') }}</a></td>

@@ -23,11 +23,12 @@
 
     <div class="rv-plant-field" data-rv-picker>
         <label class="{{ $c['label'] }}" for="rice_variety_id">{{ __('rice_varieties.form.variety') }}</label>
-        <select class="{{ $c['select'] }}{{ $invalid('rice_variety_id') }}" id="rice_variety_id" name="rice_variety_id" data-rv-select
+        <select class="{{ $c['select'] }}{{ $invalid('rice_variety_id') }}" id="rice_variety_id" name="rice_variety_id" data-rv-select required
                 data-rv-placeholder="{{ __('rice_varieties.form.choose') }}" aria-describedby="rice_variety_hint"
                 data-rv-suits="{{ __('rice_varieties.form.suits', ['type' => ':type']) }}" data-rv-other="{{ __('rice_varieties.form.other') }}"
                 data-rv-farm-labels="{{ json_encode(['Irrigated' => mb_strtolower(__('rice_varieties.farm_types.Irrigated')), 'Rainfed' => mb_strtolower(__('rice_varieties.farm_types.Rainfed'))]) }}">
-            <option value="">{{ __('rice_varieties.form.dont_know') }}</option>
+            <option value="" disabled @selected(! $schedule->exists && $varietyId === null)>{{ __('rice_varieties.form.choose') }}</option>
+            <option value="unknown" @selected($varietyId === 'unknown' || ($schedule->exists && $varietyId === null))>{{ __('rice_varieties.form.dont_know') }}</option>
             @foreach ($groups as $groupLabel => $groupOptions)
                 @if ($groupLabel !== '' && $groupOptions)<optgroup label="{{ $groupLabel }}" data-rv-group="{{ $loop->first ? 'suits' : 'other' }}">@endif
                 @foreach ($groupOptions as $order => $option)

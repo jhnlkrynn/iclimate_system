@@ -230,6 +230,19 @@ class RiceVariety extends Model
             ])->all();
     }
 
+    /**
+     * Active rice varieties sorted A–Z by label for searchable selects.
+     *
+     * @return list<array{id: int, label: string, search: string, year: int|null, farm_types: list<string>}>
+     */
+    public static function alphabeticalOptions(?int $keepId = null): array
+    {
+        $options = self::pickerOptions($keepId);
+        usort($options, fn (array $a, array $b): int => strnatcasecmp($a['label'], $b['label']));
+
+        return $options;
+    }
+
     // ------------------------------------------------------------------ catalog
 
     public function scopeActive(Builder $query): Builder

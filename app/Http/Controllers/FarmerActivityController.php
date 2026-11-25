@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\FarmerPlantingSchedule;
 use App\Models\FarmerProfile;
+use App\Models\RiceVariety;
 use App\Services\Farmer\FarmerMissingInfoNotifier;
 use App\Services\Farmer\YieldSurveyService;
 use App\Support\ActiveFarm;
@@ -11,6 +12,8 @@ use App\Services\PlantingSchedulePredictionService;
 use App\Support\BusinessClock;
 use App\Support\LianBarangays;
 use App\Support\RiceSeason;
+use App\Support\SchemaCache;
+use App\Support\VarietyHarvestEstimator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -36,14 +39,22 @@ class FarmerActivityController extends Controller
         $back = fn (array $errors) => redirect()->to(route('farmer.my-farm', array_filter(['month' => $this->monthOf($request->input('date'))])).'#activity')
             ->withErrors($errors, 'activity')->withInput()->with('fmf_activity_dialog', true);
 
-        $validator = Validator::make($request->only(['date', 'kind', 'farm_id', 'harvest_timing_reason', 'harvest_timing_reason_other']), [
-            'date' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.$today->copy()->subYears(3)->toDateString(), 'before_or_equal:'.$today->copy()->addYear()->toDateString()],
+        $fil = app()->getLocale() === 'fil';
+        $validator = Validator::make($request->only(['date', 'kind', 'farm_id', 'rice_variety_id', 'harvest_timing_reason', 'harvest_timing_reason_other']), [
+            'date' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.$today->copy()->subYears(3)->toDateString(), 'before_or_equal:'.$today->toDateString()],
             'kind' => ['required', Rule::in([self::KIND_PLANTED, self::KIND_HARVESTED])],
             'farm_id' => ['required', 'integer'],
+            'rice_variety_id' => [Rule::requiredIf(fn () => $request->input('kind') === self::KIND_PLANTED), 'nullable', 'string'],
         ] + \App\Support\HarvestTiming::rules(), [
+            'date.before_or_equal' => $fil
+                ? 'Hindi maaaring nasa hinaharap ang petsa ng pagtanim o pag-ani.'
+                : 'Planting or harvest date cannot be in the future.',
             'date.*' => __('farmer.activity.errors.date'),
             'kind.*' => __('farmer.activity.errors.kind'),
             'farm_id.*' => __('farmer.activity.errors.farm'),
+            'rice_variety_id.required' => $fil
+                ? 'Pumili ng rice variety (o piliin ang "Hindi ko alam").'
+                : 'Please pick a rice variety (or choose "I don\'t know").',
         ]);
         if ($validator->fails()) {
             return $back($validator->errors()->toArray());
@@ -58,21 +69,68 @@ class FarmerActivityController extends Controller
         $month = ['month' => $date->format('Y-m')];
 
         if ($data['kind'] === self::KIND_PLANTED) {
+            if ($date->toDateString() > $today->toDateString()) {
+                return $back(['date' => $fil ? 'Hindi maaaring nasa hinaharap ang petsa ng pagtanim.' : 'Planting date cannot be in the future.']);
+            }
+
             $exists = FarmerPlantingSchedule::query()->where('user_id', $user->id)->where('farm_id', $farm->id)->whereDate('planting_date', $date->toDateString())->exists();
             if ($exists) {
                 return $back(['date' => __('farmer.activity.errors.duplicate')]);
             }
 
-            $schedule = $user->plantingSchedules()->create([
+            // No new planting until after harvest or expected harvest on this farm.
+            $openPlanting = FarmerPlantingSchedule::query()
+                ->where('user_id', $user->id)
+                ->where('farm_id', $farm->id)
+                ->whereNull('harvested_on')
+                ->where(fn ($q) => $q->whereNull('progress_status')->orWhere('progress_status', '!=', 'Harvested'))
+                ->orderByDesc('planting_date')
+                ->first();
+            if ($openPlanting !== null) {
+                $openExpected = $openPlanting->harvestDateForPlanning();
+                if ($openExpected === null || $date->toDateString() <= $openExpected->toDateString()) {
+                    $until = $openExpected?->locale(app()->getLocale())->translatedFormat('M j, Y');
+                    return $back([
+                        'date' => $fil
+                            ? 'May aktibong tanim pa sa bukid na ito'.($until ? " hanggang {$until}" : '').'. Magtala muna ng ani o maghintay pagkatapos ng inaasahang ani.'
+                            : 'This farm still has an active planting'.($until ? " until {$until}" : '').'. Record its harvest first or plant after the expected harvest date.',
+                    ]);
+                }
+            }
+
+            $varietyInput = (string) ($data['rice_variety_id'] ?? '');
+            $variety = null;
+            if ($varietyInput !== '' && $varietyInput !== 'unknown') {
+                if (! ctype_digit($varietyInput) || ! SchemaCache::hasTable('rice_varieties')) {
+                    return $back(['rice_variety_id' => $fil ? 'Hindi wastong rice variety.' : 'Please choose a valid rice variety.']);
+                }
+                $variety = RiceVariety::query()->find((int) $varietyInput);
+                if ($variety === null) {
+                    return $back(['rice_variety_id' => $fil ? 'Hindi makita ang napiling rice variety.' : 'Selected rice variety was not found.']);
+                }
+            }
+
+            $season = RiceSeason::forDate($date);
+            $estimate = app(VarietyHarvestEstimator::class)->estimate($variety, $date, $season);
+            $expectedHarvest = $estimate['expected_harvest_date']->toDateString();
+
+            $attrs = [
                 'farm_id' => $farm->id,
                 'planting_date' => $date->toDateString(),
-                'scheduled_harvest_date' => $date->copy()->addDays((int) config('farmer_dashboard.crop.default_duration_days', 115))->toDateString(),
-                'season' => RiceSeason::forDate($date),
+                'scheduled_harvest_date' => $expectedHarvest,
+                'season' => $season,
                 // A farm saved without a type takes the profile's, else the same starting value registration gives.
                 'farm_type' => $farm->farm_type ?: ($user->farmerProfile?->farm_type ?: FarmerProfile::FARM_TYPE_IRRIGATED),
                 'barangay' => in_array($farm->barangay, LianBarangays::all(), true) ? $farm->barangay : null,
                 'farm_area_hectares' => $farm->knownHectares(),
-            ]);
+            ];
+            if (SchemaCache::hasColumn('farmer_planting_schedules', 'rice_variety_id')) {
+                $attrs['rice_variety_id'] = $variety?->id;
+                $attrs['rice_variety'] = $variety?->displayName();
+                $attrs['harvest_date_manual'] = false;
+            }
+
+            $schedule = $user->plantingSchedules()->create($attrs);
             // The record is saved either way; its yield estimate is filled from prepared data when that is ready.
             rescue(fn () => $predictions->refresh($schedule), null, true);
             $missing->sync($user);

@@ -239,6 +239,10 @@ class FarmerPlantingScheduleController extends Controller
         $harvestNeeded = $varieties ? 'required_without_all:harvest_month,rice_variety_id' : 'required_without:harvest_month';
         $monthNeeded = $varieties ? 'required_without_all:scheduled_harvest_date,rice_variety_id' : 'required_without:scheduled_harvest_date';
 
+        if ($request->input('rice_variety_id') === 'unknown') {
+            $request->merge(['rice_variety_id' => null]);
+        }
+
         return $request->validate([
             'farm_id' => ['nullable', 'integer'],
             'planting_date' => ['required', 'date'],

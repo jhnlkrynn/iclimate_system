@@ -69,6 +69,7 @@ class FarmerMyFarmController extends Controller
             return new \Illuminate\Database\Eloquent\Collection;
         }
 
+        /** @var \Illuminate\Database\Eloquent\Collection<int, FarmerPlantingSchedule> $schedules */
         $schedules = FarmerPlantingSchedule::query()->where('user_id', $userId)
             ->when($current !== null, fn ($q) => $q->where(fn ($w) => $w->where('farm_id', $current->getKey())
                 ->when($current->is_primary, fn ($p) => $p->orWhereNull('farm_id'))))
@@ -162,14 +163,24 @@ class FarmerMyFarmController extends Controller
      */
     private function formatSchedules(Collection $schedules): array
     {
-        return $schedules->map(fn (FarmerPlantingSchedule $s): array => [
-            'id' => $s->id,
-            'planting_date' => $s->planting_date,
-            'harvest_date' => $s->harvestDateForPlanning(),
-            'variety' => $s->varietyLabel(),
-            'season' => $this->seasonLabel($s),
-            'status' => $this->statusLabel($s->monitoringStatus()),
-        ])->values()->all();
+        $today = BusinessClock::today()->startOfDay();
+
+        return $schedules->map(function (FarmerPlantingSchedule $s) use ($today): array {
+            $harvestDate = $s->harvestDateForPlanning();
+            $isOpen = $s->harvested_on === null && $s->progress_status !== 'Harvested';
+
+            return [
+                'id' => $s->id,
+                'planting_date' => $s->planting_date,
+                'harvest_date' => $harvestDate,
+                'days_left' => ($isOpen && $harvestDate !== null)
+                    ? (int) $today->diffInDays(\Carbon\CarbonImmutable::parse($harvestDate->toDateString(), $today->timezone)->startOfDay(), false)
+                    : null,
+                'variety' => $s->varietyLabel(),
+                'season' => $this->seasonLabel($s),
+                'status' => $this->statusLabel($s->monitoringStatus()),
+            ];
+        })->values()->all();
     }
 
     private function seasonLabel(FarmerPlantingSchedule $schedule): ?string
@@ -261,12 +272,24 @@ class FarmerMyFarmController extends Controller
 
         return [
             // Panel revision 1.3: each farm's open planting's expected harvest, so the dialog can ask why a harvest is early or late.
-            'activityFarms' => $farms->map(fn (Farm $f): array => [
-                'id' => $f->getKey(),
-                'name' => $f->farm_name,
-                'expected_harvest' => $all->first(fn (FarmerPlantingSchedule $s): bool => (int) ($s->farm_id ?? $primaryId) === (int) $f->getKey()
-                    && $s->harvested_on === null && $s->progress_status !== 'Harvested')?->harvestDateForPlanning()?->toDateString(),
-            ])->values()->all(),
+            'activityFarms' => $farms->map(function (Farm $f) use ($all, $primaryId): array {
+                /** @var FarmerPlantingSchedule|null $open */
+                $open = $all->first(fn (FarmerPlantingSchedule $s): bool => (int) ($s->farm_id ?? $primaryId) === (int) $f->getKey()
+                    && $s->harvested_on === null && $s->progress_status !== 'Harvested');
+                $expected = $open?->harvestDateForPlanning();
+
+                return [
+                    'id' => $f->getKey(),
+                    'name' => $f->farm_name,
+                    'expected_harvest' => $expected?->toDateString(),
+                    'open_planting' => $open === null ? null : [
+                        'variety' => $open->varietyLabel(),
+                        'planted_on' => $open->planting_date?->locale(app()->getLocale())->translatedFormat('M j, Y'),
+                        'expected_harvest_label' => $expected?->locale(app()->getLocale())->translatedFormat('M j, Y'),
+                    ],
+                ];
+            })->values()->all(),
+            'activityVarieties' => \App\Models\RiceVariety::alphabeticalOptions(),
             'activityFarmId' => $current?->getKey(),
             'calendar' => $this->calendar($request, $all, $farmName, $farms->count() > 1),
             'yieldSurvey' => $pending === null ? null : [
@@ -309,7 +332,7 @@ class FarmerMyFarmController extends Controller
                 // Panel revision 1.3: "Early (12 days) – Heavy rain / flooding" on a recorded harvest.
                 'timing' => $kind === 'harvested' && $s->harvest_timing ? $s->harvest_timing : null,
                 'timing_text' => $kind === 'harvested' ? $s->harvestTimingSummary(app()->getLocale()) : null,
-                'variety' => $kind === 'expected' ? $s->varietyLabel() : null,      // the variety its expected date comes from
+                'variety' => in_array($kind, ['planted', 'expected'], true) ? $s->varietyLabel() : null,      // the variety its expected date comes from
             ];
         };
         foreach ($schedules as $s) {

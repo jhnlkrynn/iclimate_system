@@ -311,7 +311,7 @@ class RiceVarietiesTest extends TestCase
 
         $this->actingAs($farmer)->get(route('farmer.my-farm'))->assertOk()
             ->assertSee('Oct 16, 2026')
-            ->assertSee('<small class="fmf-variety d-block" data-harvest-variety>NSIC Rc 480 (GSR 8)</small>', false);
+            ->assertSee('data-harvest-variety>NSIC Rc 480 (GSR 8)</td>', false);
         $this->actingAs($farmer)->get(route('farmer.my-farm', ['month' => '2026-10']))->assertOk()->assertSee('data-harvest-variety>NSIC Rc 480 (GSR 8)', false);
         $this->actingAs($farmer)->get(route('calendar.index'))->assertOk()->assertSee('<dd data-harvest-variety>NSIC Rc 480 (GSR 8)</dd>', false);
         $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk()->assertSee('NSIC Rc 480 (GSR 8)');
