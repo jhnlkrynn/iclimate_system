@@ -1,7 +1,10 @@
 <x-app-layout>
     <x-slot:title>{{ __('farmer.complete_profile.page_title') }}</x-slot:title>
 
-    @php($fil = app()->getLocale() === 'fil')
+    @php
+        $fil = app()->getLocale() === 'fil';
+        /** @var list<string> $barangays */
+    @endphp
 
     <style @nonce>
         .cp-wrap { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
@@ -122,7 +125,7 @@
                         <label for="cp-barangay" class="cp-label">{{ __('farmer.complete_profile.barangay_label') }}</label>
                         <select id="cp-barangay" name="barangay" class="form-select w-full @error('barangay') is-invalid @enderror" required>
                             <option value="">{{ __('farmer.complete_profile.barangay_placeholder') }}</option>
-                            @foreach ($barangays as $b)
+                            @foreach ((array) $barangays as $b)
                                 <option value="{{ $b }}" @selected(old('barangay', $primaryFarm?->barangay ?? $user->registeredBarangay()) === $b)>{{ $b }}</option>
                             @endforeach
                         </select>
