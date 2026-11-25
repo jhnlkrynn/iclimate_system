@@ -255,7 +255,8 @@ html body :is(.form-control, .form-select, .fad-input, input[type="text"], input
 html body :is(.form-control, .form-select, .fad-input, select, textarea):focus {
     border-color: var(--gov-primary) !important; box-shadow: 0 0 0 3px rgb(var(--sage-700-rgb) / .18) !important; transform: none !important;
 }
-html body :is(.form-label, label, legend, .fad-label, .fad-m-field-label) { color: var(--gov-text-2); }
+html body :is(.form-label, label:not(.btn), legend, .fad-label, .fad-m-field-label) { color: var(--gov-text-2); }
+html body label.btn-primary { color: #fff !important; }
 html body ::placeholder { color: #8A94A6; opacity: 1; }
 html body .form-check-input:checked { background-color: var(--gov-primary); border-color: var(--gov-primary); }
 html body :is(.invalid-feedback, .field-error, .fmf-error) { color: var(--gov-danger) !important; }
