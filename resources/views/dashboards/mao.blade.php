@@ -303,7 +303,9 @@
                 <div class="mtd-card-head">
                     <div>
                         <h2 id="mhdClimateTitle">{{ $t('charts.climate.title') }}</h2>
-                        <p class="mtd-sub">{{ $t('charts.climate.sub') }}</p>
+                        <p class="mtd-sub">{{ app()->getLocale() === 'fil'
+                            ? 'Buwanang ulan at init sa nakaraang 12 buwan. Mas mataas na asul na bar = mas maulan; linyang kahel = mas mainit.'
+                            : 'Monthly rain and heat over the last 12 months. Taller blue bars = more rain; orange line = warmer weather.' }}</p>
                     </div>
                 </div>
                 <div class="mtd-chart">
@@ -315,17 +317,20 @@
                     $cRain = $climate['rainfall'] ?? [];
                     $cTemp = $climate['temperature'] ?? [];
                     $wetIdx = ! empty($cRain) ? array_keys($cRain, max($cRain))[0] : null;
+                    $dryIdx = ! empty($cRain) ? array_keys($cRain, min($cRain))[0] : null;
                     $hotIdx = ! empty($cTemp) ? array_keys($cTemp, max($cTemp))[0] : null;
                     $cFil = app()->getLocale() === 'fil';
                 @endphp
                 @if ($wetIdx !== null || $hotIdx !== null)
                     <p class="mhd-reading" data-mao-climate-reading>
                         @if ($wetIdx !== null && isset($cLabels[$wetIdx]))
-                            {{ $cFil ? 'Pinakamaulan' : 'Wettest' }}: {{ $cLabels[$wetIdx] }} ({{ number_format((float) $cRain[$wetIdx], 0) }} mm)
+                            {{ $cFil ? 'Pinakamaulan' : 'Rainiest month' }}: <strong>{{ $cLabels[$wetIdx] }}</strong> ({{ number_format((float) $cRain[$wetIdx], 0) }} mm)
                         @endif
-                        @if ($wetIdx !== null && $hotIdx !== null) · @endif
+                        @if ($dryIdx !== null && isset($cLabels[$dryIdx]) && $dryIdx !== $wetIdx)
+                            · {{ $cFil ? 'Pinakatuyo' : 'Driest' }}: <strong>{{ $cLabels[$dryIdx] }}</strong> ({{ number_format((float) $cRain[$dryIdx], 0) }} mm)
+                        @endif
                         @if ($hotIdx !== null && isset($cLabels[$hotIdx]))
-                            {{ $cFil ? 'Pinakamainit' : 'Warmest' }}: {{ $cLabels[$hotIdx] }} ({{ number_format((float) $cTemp[$hotIdx], 1) }} °C)
+                            · {{ $cFil ? 'Pinakamainit' : 'Warmest' }}: <strong>{{ $cLabels[$hotIdx] }}</strong> ({{ number_format((float) $cTemp[$hotIdx], 1) }} °C)
                         @endif
                     </p>
                 @endif
@@ -337,7 +342,9 @@
                 <div class="mtd-card-head">
                     <div>
                         <h2 id="mhdImpactTitle">{{ $t('charts.impact.title') }}</h2>
-                        <p class="mtd-sub">{{ $t('charts.impact.sub') }}</p>
+                        <p class="mtd-sub">{{ app()->getLocale() === 'fil'
+                            ? 'Kabuuang ulan (asul na bar) at karaniwang ani (berdeng linya) bawat taniman. Tingnan kung bumaba o tumaas ang ani kapag maulan.'
+                            : 'Total rain (blue bars) and average harvest (green line) each season. See how heavy rain affects rice yield.' }}</p>
                     </div>
                 </div>
                 {{-- Panel revision 3.2: rainfall (bars, mm, left axis) and yield (line, t/ha, right axis) per rice season. --}}
@@ -594,11 +601,11 @@
                     options: { ...base(true), interaction: { mode: 'index', intersect: false },
                         scales: {
                             rain: axis(T.impact.axisRain, { position: 'left', beginAtZero: true }),
-                            yield: axis(T.yield.axis, { position: 'right', grid: { drawOnChartArea: false } }),
-                            x: { grid: { display: false }, ticks: { font: FONT, maxRotation: 35, minRotation: 0, autoSkip: true, maxTicksLimit: 12 } },
+                            yield: axis(T.yield.axis, { position: 'right', beginAtZero: false, suggestedMin: 1, suggestedMax: 6, grid: { drawOnChartArea: false } }),
+                            x: { grid: { display: false }, ticks: { font: { size: 12 }, maxRotation: 35, minRotation: 0, autoSkip: false } },
                         },
                         plugins: { legend: { display: true, position: 'top', labels: { font: FONT, usePointStyle: true } }, tooltip: { callbacks: {
-                            label: (c) => c.dataset.yAxisID === 'rain' ? `${T.impact.rainSeries}: ${c.parsed.y.toFixed(1)} mm` : `${T.impact.yieldSeries}: ${c.parsed.y.toFixed(2)} t/ha`,
+                            label: (c) => c.dataset.yAxisID === 'rain' ? `${T.impact.rainSeries}: ${c.parsed.y.toFixed(0)} mm` : `${T.impact.yieldSeries}: ${c.parsed.y.toFixed(2)} t/ha`,
                         } } } },
                 }) : null;
 
@@ -660,19 +667,27 @@
                     // 3.2 Weather Impact: rainfall bars and yield line per season, same range and season.
                     if (impactChart) {
                         const periods = (ry.periods || []).filter((p) => inRange(p.year) && (s.season === 'all' || p.season === s.season));
-                        impactChart.data.labels = periods.map((p) => p.label);
+                        impactChart.data.labels = periods.map((p) => `${p.season || ''} '${String(p.year).slice(-2)}`.trim());
                         impactChart.data.datasets[0].data = periods.map((p) => p.rain);
                         impactChart.data.datasets[1].data = periods.map((p) => p.yield);
                         impactChart.update();
                         const reading = document.querySelector('[data-mao-impact-reading]');
+                        const wetAvg = avg(periods.filter((p) => p.season === 'Wet').map((p) => p.yield));
+                        const dryAvg = avg(periods.filter((p) => p.season === 'Dry').map((p) => p.yield));
+                        const seasonAvgNote = [
+                            wetAvg != null ? `Wet avg: ${f2(wetAvg)} t/ha` : null,
+                            dryAvg != null ? `Dry avg: ${f2(dryAvg)} t/ha` : null,
+                        ].filter(Boolean).join(' · ');
                         if (reading && periods.length >= 3) {
                             const mx = avg(periods.map((p) => p.rain)); const my = avg(periods.map((p) => p.yield));
                             let sxy = 0; let sx = 0; let sy = 0;
                             periods.forEach((p) => { sxy += (p.rain - mx) * (p.yield - my); sx += (p.rain - mx) ** 2; sy += (p.yield - my) ** 2; });
                             const r = sx > 0 && sy > 0 ? sxy / Math.sqrt(sx * sy) : 0;
-                            reading.textContent = (r >= 0.3 ? T.impact.more : r <= -0.3 ? T.impact.less : T.impact.none) + ' ' + T.impact.based.replace(':count', periods.length);
+                            const baseText = (r >= 0.3 ? T.impact.more : r <= -0.3 ? T.impact.less : T.impact.none) + ' ' + T.impact.based.replace(':count', periods.length);
+                            reading.textContent = seasonAvgNote ? `${baseText} (${seasonAvgNote})` : baseText;
                         } else if (reading) {
-                            reading.textContent = T.impact.based.replace(':count', periods.length);
+                            const baseText = T.impact.based.replace(':count', periods.length);
+                            reading.textContent = seasonAvgNote ? `${baseText} (${seasonAvgNote})` : baseText;
                         }
                     }
 
@@ -738,19 +753,23 @@
                 const [climateEl, c] = read('maoClimateChart');
                 if (climateEl) new window.Chart(climateEl, {
                     type: 'bar',
-                    data: { labels: c.labels || [], datasets: [
-                        { type: 'bar', label: T.climate.rain, data: c.rainfall || [], yAxisID: 'rain', backgroundColor: 'rgba(31, 111, 178, .55)', borderColor: '#1f6fb2', borderWidth: 1, borderRadius: 4, maxBarThickness: 26, order: 2 },
-                        { type: 'line', label: T.climate.temp, data: c.temperature || [], yAxisID: 'temp', borderColor: '#c2570c', backgroundColor: '#c2570c', borderWidth: 3, tension: .3, pointRadius: 4, pointHoverRadius: 6, order: 1 },
-                    ] },
+                    data: {
+                        labels: (c.labels || []).map((l) => String(l).split(' ')[0]),
+                        datasets: [
+                            { type: 'bar', label: T.climate.rain, data: c.rainfall || [], yAxisID: 'rain', backgroundColor: 'rgba(31, 111, 178, .55)', borderColor: '#1f6fb2', borderWidth: 1, borderRadius: 4, maxBarThickness: 26, order: 2 },
+                            { type: 'line', label: T.climate.temp, data: c.temperature || [], yAxisID: 'temp', borderColor: '#c2570c', backgroundColor: '#c2570c', borderWidth: 3, tension: .3, pointRadius: 4, pointHoverRadius: 6, order: 1 },
+                        ],
+                    },
                     options: { ...base(true), interaction: { mode: 'index', intersect: false },
                         scales: {
                             rain: axis(T.climate.rain, { position: 'left', beginAtZero: true }),
-                            temp: axis(T.climate.temp, { position: 'right', grid: { drawOnChartArea: false } }),
-                            x: { grid: { display: false }, ticks: { font: FONT, maxRotation: 0, autoSkip: true } },
+                            temp: axis(T.climate.temp, { position: 'right', beginAtZero: false, suggestedMin: 24, suggestedMax: 33, grid: { drawOnChartArea: false } }),
+                            x: { grid: { display: false }, ticks: { font: { size: 12 }, maxRotation: 0, autoSkip: false } },
                         },
                         plugins: {
                             legend: { display: true, position: 'top', labels: { font: FONT, usePointStyle: true } },
                             tooltip: { callbacks: {
+                                title: (items) => (c.labels || [])[items[0]?.dataIndex] || items[0]?.label,
                                 label: (ctx) => ctx.dataset.yAxisID === 'rain'
                                     ? `${T.climate.rain}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(0) : '—'} mm`
                                     : `${T.climate.temp}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(1) : '—'} °C`,
