@@ -24,13 +24,21 @@ class FarmerMyFarmController extends Controller
 {
     public function __invoke(Request $request): View
     {
+        return view('farmer-records.my-farm', $this->buildPageData($request));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildPageData(Request $request): array
+    {
         $user = $request->user();
         // Farmer – Naicel (2026-10): missing farm information goes to the notification bell.
         app(\App\Services\Farmer\FarmerMissingInfoNotifier::class)->syncOnPageLoad($user);
         $profile = $user->farmerProfile;
         $farms = ActiveFarm::farms($user);
         $current = ActiveFarm::current($user);
-        /** @var \Illuminate\Support\Collection<int, FarmerPlantingSchedule> $schedules */
+        /** @var Collection<int, FarmerPlantingSchedule> $schedules */
         $schedules = SchemaCache::hasTable('farmer_planting_schedules')
             ? FarmerPlantingSchedule::query()->where('user_id', $user->id)
                 // The current farm's plans (older plans without a farm count as the primary farm's).
@@ -51,7 +59,7 @@ class FarmerMyFarmController extends Controller
             ? Farm::query()->ownedBy($user)->whereNotNull('archived_at')->orderByDesc('archived_at')->get(['id', 'farm_name', 'barangay', 'archived_at'])
             : new \Illuminate\Database\Eloquent\Collection;
 
-        return view('farmer-records.my-farm', [
+        return [
             'archivedFarms' => $archivedFarms,
             'associationPrompt' => \App\Services\Farms\FarmAssociations::promptFor($user),
             'available' => ActiveFarm::available(),
@@ -75,7 +83,7 @@ class FarmerMyFarmController extends Controller
                 app()->getLocale(),
             ),
             'printedAt' => BusinessClock::now(),
-        ] + $this->activityData($request, $farms, $current));
+        ] + $this->activityData($request, $farms, $current);
     }
 
     /**
@@ -198,7 +206,7 @@ class FarmerMyFarmController extends Controller
     private function activityData(Request $request, Collection $farms, ?Farm $current): array
     {
         $user = $request->user();
-        /** @var \Illuminate\Support\Collection<int, FarmerPlantingSchedule> $all */
+        /** @var Collection<int, FarmerPlantingSchedule> $all */
         $all = SchemaCache::hasTable('farmer_planting_schedules')
             ? FarmerPlantingSchedule::query()->where('user_id', $user->id)->orderByDesc('planting_date')->get()
             : new \Illuminate\Database\Eloquent\Collection;
@@ -274,8 +282,8 @@ class FarmerMyFarmController extends Controller
         ksort($byDate);
 
         $weeks = [];
-        $cursor = $month->startOfWeek(\Carbon\CarbonInterface::SUNDAY);
-        $last = $month->endOfMonth()->endOfWeek(\Carbon\CarbonInterface::SATURDAY);
+        $cursor = $month->startOfWeek(\Carbon\Constants\UnitValue::SUNDAY);
+        $last = $month->endOfMonth()->endOfWeek(\Carbon\Constants\UnitValue::SATURDAY);
         while ($cursor <= $last) {
             $week = [];
             for ($i = 0; $i < 7; $i++) {

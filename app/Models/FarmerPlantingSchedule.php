@@ -8,10 +8,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
 /**
- * @property \Illuminate\Support\Carbon|null $planting_date
- * @property \Illuminate\Support\Carbon|null $scheduled_harvest_date
- * @property \Illuminate\Support\Carbon|null $harvest_month
- * @property \Illuminate\Support\Carbon|null $harvested_on
+ * @property Carbon|null $planting_date
+ * @property Carbon|null $scheduled_harvest_date
+ * @property Carbon|null $harvest_month
+ * @property Carbon|null $harvested_on
  */
 class FarmerPlantingSchedule extends Model
 {
