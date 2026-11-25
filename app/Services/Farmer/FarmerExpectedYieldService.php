@@ -208,23 +208,6 @@ class FarmerExpectedYieldService
 
         $insights = [];
 
-        if ($expected !== null && $diffTHa !== null) {
-            $abs = number_format(abs($diffTHa), 2);
-            if (abs($diffTHa) < 0.25) {
-                $insights[] = $fil
-                    ? 'Malapit sa inaasahan mo; ipagpatuloy ang kasalukuyang plano.'
-                    : 'Close to your expectation; keep your current plan.';
-            } elseif ($diffTHa < 0) {
-                $insights[] = $fil
-                    ? "Mas mababa nang {$abs} t/ha ang tantiya ng iClimate kaysa sa inaasahan mo."
-                    : "The iClimate estimate is {$abs} t/ha below what you expect.";
-            } else {
-                $insights[] = $fil
-                    ? "Mas mataas nang {$abs} t/ha ang tantiya ng iClimate kaysa sa inaasahan mo."
-                    : "The iClimate estimate is {$abs} t/ha above what you expect.";
-            }
-        }
-
         // Add stored 7-day forecast / stage insight without inventing numbers.
         $days = collect($week['days'] ?? []);
         $hasHeavyRain = $days->contains(fn (array $d): bool => ($d['rain_key'] ?? null) === 'heavy');

@@ -27,22 +27,6 @@
                 <div class="small text-muted">{{ $fil ? 'Tantiya ng iClimate' : 'iClimate estimate' }}</div>
                 <p class="fh-big mb-0">{{ number_format($h['yield'], 2) }} <small>t/ha</small></p>
             </div>
-            @if (($ey['expected'] ?? null) !== null)
-                <div>
-                    <div class="small text-muted">{{ $fil ? 'Inaasahan mo' : 'Your expected' }}</div>
-                    <p class="fh-big mb-0" style="font-size: 1.45rem;">{{ number_format((float) $ey['expected'], 2) }} <small>t/ha</small></p>
-                </div>
-                @if (($ey['diff_t_ha'] ?? null) !== null)
-                    @php
-                        $sign = $ey['diff_t_ha'] > 0 ? '+' : '';
-                        $pctSign = ($ey['diff_pct'] ?? 0) > 0 ? '+' : '';
-                    @endphp
-                    <div class="small fw-semibold text-dark" data-expected-diff>
-                        {{ $sign }}{{ number_format((float) $ey['diff_t_ha'], 2) }} t/ha
-                        @if (($ey['diff_pct'] ?? null) !== null) ({{ $pctSign }}{{ $ey['diff_pct'] }}%)@endif
-                    </div>
-                @endif
-            @endif
         </div>
         <p class="fh-muted mt-1">@include('components.unvalidated-estimate')</p>
     @elseif ($h['state'] === 'loading')
@@ -59,21 +43,8 @@
         @endif
     @endif
 
-    @if ($activeFarmId)
-        <form method="POST" action="{{ route('farmer.farms.expected-yield', $activeFarmId) }}" class="mt-2 d-flex flex-wrap align-items-end gap-2" data-expected-yield-form>
-            @csrf
-            @method('PATCH')
-            <div>
-                <label class="small text-muted d-block mb-1" for="expectedYieldInput">{{ $fil ? 'Inaasahan mong ani (t/ha)' : 'Your expected yield (t/ha)' }}</label>
-                <input id="expectedYieldInput" type="number" name="expected_yield_t_ha" step="0.01" min="0.1" max="15"
-                    class="form-control form-control-sm" style="width: 140px;"
-                    value="{{ old('expected_yield_t_ha', $ey['expected'] ?? '') }}" required>
-            </div>
-            <button type="submit" class="mfd-btn is-compact">{{ $fil ? 'I-save' : 'Save' }}</button>
-            @if (! empty($ey['source_label']))
-                <span class="small text-muted" data-expected-source>{{ $ey['source_label'] }}</span>
-            @endif
-        </form>
+    @if (($lastHarvest['yield'] ?? null) !== null)
+        <p class="small text-muted mt-2 mb-0" data-expected-last-harvest>{{ $fil ? 'Huling ani' : 'Last harvest' }}: {{ number_format((float) $lastHarvest['yield'], 2) }} t/ha</p>
     @endif
 
     @if (! empty($ey['insights']))

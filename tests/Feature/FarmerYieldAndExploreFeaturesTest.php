@@ -154,12 +154,15 @@ class FarmerYieldAndExploreFeaturesTest extends TestCase
         $dashboard = $this->actingAs($farmer)->get(route('farmer.dashboard'));
         $dashboard->assertOk();
         $dashboard->assertSee('Expected yield this season');
-        $dashboard->assertSee('Your expected yield (t/ha)');
-        $dashboard->assertSee('6.00');
+        $dashboard->assertSee('iClimate estimate');
         $dashboard->assertSee('4.80');
-        $dashboard->assertSee('-1.20 t/ha');
-        $dashboard->assertSee('-20%');
-        $dashboard->assertSee('below what you expect');
+        $dashboard->assertSee('Preliminary estimate');
+        $dashboard->assertSee('Updated');
+        $dashboard->assertSee('Last harvest: 5.50 t/ha');
+        $dashboard->assertDontSee('Your expected yield (t/ha)');
+        $dashboard->assertDontSee('Not set yet');
+        $dashboard->assertDontSee('data-expected-yield-form', false);
+        $dashboard->assertDontSee('below what you expect');
     }
 
     public function test_last_harvest_card_shows_tons_and_yield_with_area_and_tons_only_without_area(): void
