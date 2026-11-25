@@ -65,7 +65,7 @@ class FarmerHomeKpis
             rescue(fn (): ?array => $this->farmTile($user, $farm), null, false),
             rescue(fn (): ?array => $this->cropTile($user, $onlyFarm, $now), null, false),
             rescue(fn (): ?array => $this->expectedTile($harvest, $area), null, false),
-            rescue(fn (): ?array => $this->rainTile($week), null, false),
+            rescue(fn (): ?array => $this->rainTile($week, (array) ($place['two_weeks'] ?? [])), null, false),
         ]));
 
         // Fill the row with the figures about the farmer's place, in this order, until there are MAX_TILES.
@@ -305,24 +305,96 @@ class FarmerHomeKpis
      * @param  array<string, mixed>  $week
      * @return array<string, mixed>|null
      */
-    private function rainTile(array $week): ?array
+    private function rainTile(array $week, array $twoWeeks = []): ?array
     {
-        $days = collect($week['days'] ?? [])->filter(fn (array $d): bool => ($d['rain_key'] ?? null) !== null);
+        $days = collect($week['days'] ?? [])->filter(fn (array $d): bool => ($d['rain_key'] ?? null) !== null)->values();
         if (($week['state'] ?? null) !== 'ok' || $days->isEmpty()) {
             return null;
         }
-        $rainy = $days->filter(fn (array $d): bool => $d['rain_key'] !== 'none')->count();
-        $heavy = $days->filter(fn (array $d): bool => $d['rain_key'] === 'heavy')->count();
 
+        $weekSummary = $this->summarizeRainRange($days, 'week');
+        $twoWeekDays = collect($twoWeeks['days'] ?? [])->filter(fn (array $d): bool => ($d['rain_key'] ?? null) !== null)->take(14)->values();
+        $hasTwoWeeks = $twoWeekDays->count() > 7;
+        $twoWeeksSummary = $hasTwoWeeks
+            ? $this->summarizeRainRange($twoWeekDays, '2weeks')
+            : [
+                'available' => false,
+                'unavailable_note' => __('farmer.kpis.rain.not_available'),
+                'label' => __('farmer.kpis.rain.label', ['days' => 14]),
+                'of' => __('farmer.kpis.rain.of', ['days' => 14]),
+                'link' => route('heat-map.index', ['range' => '2weeks']),
+            ];
+
+        $detail = $this->detail(
+            $weekSummary['label'],
+            $weekSummary['rows'],
+            $weekSummary['note'],
+            link: $weekSummary['link']
+        );
+        $detail['ranges'] = [
+            'week' => $weekSummary,
+            '2weeks' => $twoWeeksSummary,
+        ];
+
+        return [
+            'key' => 'rain',
+            'icon' => 'rain',
+            'href' => $weekSummary['link'],
+            'label' => $weekSummary['label'],
+            'value' => (string) $weekSummary['count'],
+            'unit' => $weekSummary['of'],
+            'note' => $weekSummary['note'],
+            'ranges' => [
+                'week' => $weekSummary,
+                '2weeks' => $twoWeeksSummary,
+            ],
+            'detail' => $detail,
+        ];
+    }
+
+    /**
+     * Build summary counts, rows, and links for a 7-day or 14-day rain range.
+     *
+     * @param  \Illuminate\Support\Collection<int, array<string, mixed>>  $days
+     * @return array<string, mixed>
+     */
+    private function summarizeRainRange(\Illuminate\Support\Collection $days, string $range): array
+    {
+        $rainy = $days->filter(fn (array $d): bool => $d['rain_key'] !== 'none')->count();
+        $heavy = $days->filter(fn (array $d): bool => ! empty($d['heavy']) || $d['rain_key'] === 'heavy')->count();
         $note = $heavy > 0 ? trans_choice('farmer.kpis.rain.heavy', $heavy, ['count' => $heavy]) : __('farmer.kpis.rain.no_heavy');
+
         $rows = [];
-        foreach ($days as $d) {
-            $rows[(string) ($d['label'] ?? '')] = trim((string) ($d['condition'] ?? '').(! empty($d['rain']) ? ' · '.$d['rain'] : ''));
+        $items = [];
+        foreach ($days->values() as $i => $d) {
+            $label = (string) ($d['label'] ?? '');
+            $value = trim((string) ($d['condition'] ?? '').(! empty($d['rain']) ? ' · '.$d['rain'] : ''));
+            $icon = $d['icon'] ?? null;
+            if ($icon === 'rain' && ($d['rain_key'] ?? null) === 'none') {
+                $icon = 'sun';
+            }
+            $rows[$label] = $value;
+            $items[] = [
+                'label' => $label,
+                'value' => $value,
+                'icon' => $icon ?: 'weather',
+                'group' => $i < 7 ? 'this_week' : 'next_week',
+                'less_certain' => $i >= 7,
+            ];
         }
 
-        return ['key' => 'rain', 'icon' => 'rain', 'href' => route('farmer.dashboard').'#week', 'label' => __('farmer.kpis.rain.label', ['days' => $days->count()]),
-            'value' => (string) $rainy, 'unit' => __('farmer.kpis.rain.of', ['days' => $days->count()]), 'note' => $note,
-            'detail' => $this->detail(__('farmer.kpis.rain.label', ['days' => $days->count()]), $rows, $note, link: route('farmer.dashboard').'#week')];
+        return [
+            'available' => true,
+            'range' => $range,
+            'days' => $days->count(),
+            'count' => $rainy,
+            'label' => __('farmer.kpis.rain.label', ['days' => $days->count()]),
+            'of' => __('farmer.kpis.rain.of', ['days' => $days->count()]),
+            'note' => $note,
+            'link' => route('heat-map.index', ['range' => $range]),
+            'rows' => $rows,
+            'items' => $items,
+        ];
     }
 
     // ------------------------------------------------------------ the figures about the farmer's place

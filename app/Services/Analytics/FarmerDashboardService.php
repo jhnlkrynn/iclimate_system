@@ -176,6 +176,7 @@ final class FarmerDashboardService
         $charts = app(\App\Services\Farmer\FarmerHomeCharts::class)->for($user, $onlyFarm, $barangay);
         $figures = app(\App\Services\Farmer\FarmerHomeKpis::class)->for($user, $farm, $onlyFarm, $harvest, $week, $now,
             ['risk' => $risk, 'barangay' => $barangay, 'forecast' => $charts['weather'],
+                'two_weeks' => $this->week($weather, $now, 14, 'extended_days'),
                 // The yield card shows Lian's usual yield itself when the farmer has no estimate (see harvest.blade.php).
                 'usual_on_card' => $harvest['state'] !== 'ok' && ($harvest['needs_area'] ?? false) && is_numeric($harvest['usual'] ?? null)]);
 
@@ -254,27 +255,8 @@ final class FarmerDashboardService
             return ['state' => 'nodata'];
         }
 
-        $days = [];
-        foreach ((array) ($w['forecast'] ?? []) as $day) {
-            if (! is_array($day) || empty($day['date'])) {
-                continue;
-            }
-            $condition = (string) (WeatherConditionLabel::display($day['condition'] ?? null) ?: '');
-            $rain = is_numeric($day['rainfall'] ?? null) ? (float) $day['rainfall'] : null;
-            $chance = is_numeric($day['precipitation_probability'] ?? null) ? (float) $day['precipitation_probability'] : null;
-            $wind = is_numeric($day['wind_speed_max'] ?? null) ? (float) $day['wind_speed_max'] : null;
-            $rainKey = self::rainKey($rain, $chance);
-            $words = self::dayWords($condition, $rainKey);
-            $days[] = [
-                'date' => CarbonImmutable::parse($day['date'], self::TIMEZONE),
-                'condition' => $words['condition'],
-                'rain_words' => $words['rain'],
-                'icon' => $this->iconFor($condition, true),
-                'rain_key' => $rainKey,
-                'heavy' => $rain !== null && $rain >= self::HEAVY_RAIN_MM,
-                'strong_wind' => $wind !== null && $wind >= (float) config('farmer_dashboard.strong_wind_kmh', self::STRONG_WIND_KMH),
-            ];
-        }
+        $days = $this->parseForecastDays((array) ($w['forecast'] ?? []));
+        $extendedDays = $this->parseForecastDays((array) ($w['forecast_extended'] ?? $w['forecast'] ?? []));
 
         $today = collect($days)->first(fn (array $d) => $d['date']->isSameDay($now));
         $todayTotals = is_array($w['today'] ?? null) ? $w['today'] : [];
@@ -302,7 +284,41 @@ final class FarmerDashboardService
             'stale' => (bool) ($w['stale'] ?? false) || $updated === null
                 || $updated->diffInMinutes($now) > (int) config('farmer_dashboard.weather.stale_after_minutes', 60),
             'days' => $days,
+            'extended_days' => $extendedDays,
         ];
+    }
+
+    /**
+     * Parse raw forecast rows into normalized day entries.
+     *
+     * @param  array<int, mixed>  $rawDays
+     * @return array<int, array<string, mixed>>
+     */
+    private function parseForecastDays(array $rawDays): array
+    {
+        $days = [];
+        foreach ($rawDays as $day) {
+            if (! is_array($day) || empty($day['date'])) {
+                continue;
+            }
+            $condition = (string) (WeatherConditionLabel::display($day['condition'] ?? null) ?: '');
+            $rain = is_numeric($day['rainfall'] ?? null) ? (float) $day['rainfall'] : null;
+            $chance = is_numeric($day['precipitation_probability'] ?? null) ? (float) $day['precipitation_probability'] : null;
+            $wind = is_numeric($day['wind_speed_max'] ?? null) ? (float) $day['wind_speed_max'] : null;
+            $rainKey = self::rainKey($rain, $chance);
+            $words = self::dayWords($condition, $rainKey);
+            $days[] = [
+                'date' => CarbonImmutable::parse($day['date'], self::TIMEZONE),
+                'condition' => $words['condition'],
+                'rain_words' => $words['rain'],
+                'icon' => $this->iconFor($condition, true),
+                'rain_key' => $rainKey,
+                'heavy' => $rain !== null && $rain >= self::HEAVY_RAIN_MM,
+                'strong_wind' => $wind !== null && $wind >= (float) config('farmer_dashboard.strong_wind_kmh', self::STRONG_WIND_KMH),
+            ];
+        }
+
+        return $days;
     }
 
     /** Rain in words for a day: none, light, moderate or heavy (from the amount, else the chance). Null without either. */
@@ -367,17 +383,22 @@ final class FarmerDashboardService
     // ------------------------------------------------------------------ 5a. the next 7 days
 
     /** @return array{state: string, days: array<int, array<string, mixed>>} */
-    private function week(array $weather, CarbonImmutable $now): array
+    private function week(array $weather, CarbonImmutable $now, int $limit = self::WEEK_DAYS, string $sourceKey = 'days'): array
     {
         if ($weather['state'] !== 'ok') {
             return ['state' => 'nodata', 'days' => []];
         }
-        $days = array_values(array_filter($weather['days'], fn (array $d) => $d['date']->toDateString() >= $now->toDateString()));
+        $source = (array) ($weather[$sourceKey] ?? $weather['days'] ?? []);
+        $days = array_values(array_filter($source, fn (array $d) => $d['date']->toDateString() >= $now->toDateString()));
         $days = array_map(fn (array $d) => $d + [
             'is_today' => $d['date']->isSameDay($now),
-            'label' => $d['date']->isSameDay($now) ? __('farmer.home.week.today') : $d['date']->locale(app()->getLocale())->translatedFormat('D'),
+            'label' => $d['date']->isSameDay($now)
+                ? __('farmer.home.week.today')
+                : ($limit > self::WEEK_DAYS
+                    ? $d['date']->locale(app()->getLocale())->translatedFormat('D, M j')
+                    : $d['date']->locale(app()->getLocale())->translatedFormat('D')),
             'rain' => $d['rain_words'],
-        ], array_slice($days, 0, self::WEEK_DAYS));
+        ], array_slice($days, 0, $limit));
 
         return ['state' => $days === [] ? 'nodata' : 'ok', 'days' => $days];
     }

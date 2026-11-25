@@ -61,7 +61,9 @@
             // The figures in the tiles: farm size, days to harvest, expected harvest, rain, risk, advisories, ...
             foreach ($f['kpis'] ?? [] as $tile) {
                 if (! empty($tile['detail'])) {
-                    $panels[$panelFor[$tile['key']] ?? $tile['key']] = $tile['detail'];
+                    $detail = $tile['detail'];
+                    $detail['icon'] = $detail['icon'] ?? ($tile['icon'] ?? null);
+                    $panels[$panelFor[$tile['key']] ?? $tile['key']] = $detail;
                 }
             }
             // Weather today: current conditions, today's all-day forecast, wind, and when it was read.
@@ -69,6 +71,7 @@
             if ($w['state'] === 'ok') {
                 $todayForecast = collect($f['week']['days'] ?? [])->first(fn (array $d): bool => $d['is_today'] ?? false);
                 $panels['weather'] = [
+                    'icon' => 'weather',
                     'title' => __('farmer.home.weather.title'),
                     'rows' => array_filter([
                         __('farmer.kpis.detail.conditions') => $w['condition'],
@@ -86,11 +89,13 @@
             // Barangay risk: the Barangay Risk card's rating (the risk tile, when shown, has the same one).
             if (($f['risk']['state'] ?? null) === 'ok' && ! isset($panels['risk'])) {
                 $panels['risk'] = \App\Services\Farmer\FarmerHomeKpis::riskDetail($f['risk'], (string) ($f['barangay'] ?? ''));
+                $panels['risk']['icon'] = $panels['risk']['icon'] ?? 'alert';
             }
             // Expected harvest: the tile's tons when the farm size is known; otherwise the yield card's t/ha alone.
             $h = $f['harvest'] ?? ['state' => 'nodata'];
             if ($h['state'] === 'ok' && ! isset($panels['expected-harvest'])) {
                 $panels['expected-harvest'] = [
+                    'icon' => 'yield',
                     'title' => __('farmer.home.harvest.title'),
                     'rows' => array_filter([
                         __('farmer.kpis.detail.yield_per_ha') => number_format($h['yield'], 2).' t/ha',
@@ -111,33 +116,165 @@
                 <button type="button" class="fh-drawer-x" data-fh-drawer-close aria-label="{{ __('farmer.kpis.detail.close') }}">
                     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
                 </button>
+                @php
+                    $weekDays = array_values($f['week']['days'] ?? []);
+                    $dayWeatherIcons = [];
+                    foreach ($weekDays as $idx => $day) {
+                        $icon = $day['icon'] ?? null;
+                        if ($icon === 'rain' && ($day['rain_key'] ?? null) === 'none') {
+                            $icon = 'sun';
+                        }
+                        $weekDays[$idx]['_viz_icon'] = $icon;
+                        if (empty($icon)) {
+                            continue;
+                        }
+                        if (! empty($day['label'])) {
+                            $dayWeatherIcons[(string) $day['label']] = (string) $icon;
+                        }
+                        if (! empty($day['date']) && $day['date'] instanceof \Carbon\CarbonInterface) {
+                            $dayWeatherIcons[$day['date']->locale(app()->getLocale())->translatedFormat('D j')] = (string) $icon;
+                        }
+                    }
+                @endphp
                 @foreach ($panels as $key => $d)
+                    @php
+                        $rowNums = [];
+                        foreach ($d['rows'] ?? [] as $rLabel => $rValue) {
+                            if (preg_match('/^(-?\d+(?:\.\d+)?)\s*(°C|mm)$/i', trim((string) $rValue), $rm)) {
+                                $rowNums[$rLabel] = (float) $rm[1];
+                            }
+                        }
+                        $rowMax = $rowNums !== [] ? max(array_values($rowNums)) : 0.0;
+                    @endphp
                     <div class="fh-drawer-body" data-panel-section="{{ $key }}" hidden>
-                        <h2 class="fh-drawer-title" id="fhPanel-{{ $key }}">{{ $d['title'] }}</h2>
+                        <h2 class="fh-drawer-title" id="fhPanel-{{ $key }}">
+                            @if (! empty($d['icon']))
+                                <span class="fh-drawer-icon" aria-hidden="true">@include('dashboards.mao.icon', ['name' => $d['icon']])</span>
+                            @endif
+                            <span @if ($key === 'rain') data-rain-modal-title @endif>{{ $d['title'] }}</span>
+                        </h2>
+                        @if ($key === 'rain' && ! empty($d['ranges']))
+                            @php
+                                $rainModalTwoWeeks = $d['ranges']['2weeks'] ?? [];
+                                $hasTwoWeeksModal = (bool) ($rainModalTwoWeeks['available'] ?? false);
+                            @endphp
+                            <div class="fh-rain-modal-controls">
+                                <span class="fh-rain-range" role="group" aria-label="{{ $d['title'] }}" data-rain-toggle="modal">
+                                    <button type="button" class="fh-rain-range-btn is-active" data-rain-range-btn="week" aria-pressed="true">{{ __('farmer.kpis.rain.toggle_7') }}</button>
+                                    <button type="button" @class(['fh-rain-range-btn', 'is-disabled' => ! $hasTwoWeeksModal]) data-rain-range-btn="2weeks" aria-pressed="false" @unless ($hasTwoWeeksModal) disabled aria-disabled="true" data-disabled="true" @endunless>{{ __('farmer.kpis.rain.toggle_14') }}</button>
+                                </span>
+                                @unless ($hasTwoWeeksModal)
+                                    <span class="fh-rain-unavail">{{ __('farmer.kpis.rain.not_available') }}</span>
+                                @endunless
+                            </div>
+                            <p class="fh-rain-prediction-note" data-rain-prediction-note>
+                                <span aria-hidden="true">@include('dashboards.mao.icon', ['name' => 'info'])</span>
+                                <span>{{ __('farmer.kpis.rain.prediction_only') }}</span>
+                            </p>
+                        @endif
                         @if (! empty($d['badge']['label']))
                             <p class="fh-risk-badge is-{{ $d['badge']['tone'] }}">{{ $d['badge']['label'] }}</p>
                         @endif
-                        @if (! empty($d['rows']))
-                            <dl class="fh-drawer-facts">
-                                @foreach ($d['rows'] as $label => $value)
-                                    <div><dt>{{ $label }}</dt><dd>{{ $value }}</dd></div>
-                                @endforeach
-                            </dl>
-                        @endif
-                        @if (($d['progress'] ?? null) !== null)
-                            <div class="fh-drawer-progress">
-                                <span class="fh-kpi-bar" role="img" aria-label="{{ __('farmer.kpis.crop.progress', ['percent' => $d['progress']]) }}"><span style="width: {{ $d['progress'] }}%"></span></span>
-                                <span class="fh-muted">{{ __('farmer.kpis.crop.progress', ['percent' => $d['progress']]) }}</span>
-                            </div>
-                        @endif
-                        @if (! empty($d['text']))
-                            <p class="fh-words">{{ $d['text'] }}</p>
-                        @endif
-                        @if (! empty($d['updated_at']))
-                            <x-updated-at :at="$d['updated_at']" :label="__('farmer.home.updated')" />
-                        @endif
-                        @if (! empty($d['link']))
-                            <a class="fh-link fh-drawer-more" href="{{ $d['link'] }}">{{ __('farmer.kpis.detail.view_full') }} <span aria-hidden="true">→</span></a>
+                        @if ($key === 'rain' && ! empty($d['ranges']))
+                            @foreach (['week', '2weeks'] as $rangeKey)
+                                @php $rangeData = $d['ranges'][$rangeKey] ?? null; @endphp
+                                @if (! empty($rangeData['available']))
+                                    <div data-rain-panel="{{ $rangeKey }}" @if ($rangeKey === '2weeks') hidden @endif>
+                                        @if ($rangeKey === '2weeks')
+                                            @php
+                                                $thisWeekItems = array_values(array_filter($rangeData['items'] ?? [], fn (array $item): bool => ($item['group'] ?? '') === 'this_week'));
+                                                $nextWeekItems = array_values(array_filter($rangeData['items'] ?? [], fn (array $item): bool => ($item['group'] ?? '') === 'next_week'));
+                                            @endphp
+                                            <div class="fh-rain-group-title">{{ __('farmer.kpis.rain.this_week') }}</div>
+                                            <dl class="fh-drawer-facts">
+                                                @foreach ($thisWeekItems as $item)
+                                                    <div>
+                                                        <dt>{{ $item['label'] }}</dt>
+                                                        <dd>
+                                                            <span class="fh-drawer-viz" aria-hidden="true"><span class="fh-drawer-viz-icon">@include('dashboards.mao.icon', ['name' => $item['icon']])</span></span>
+                                                            <span>{{ $item['value'] }}</span>
+                                                        </dd>
+                                                    </div>
+                                                @endforeach
+                                            </dl>
+                                            <div class="fh-rain-group-title">{{ __('farmer.kpis.rain.next_week') }} <span class="fh-rain-certain-tag">{{ __('farmer.kpis.rain.less_certain') }}</span></div>
+                                            <dl class="fh-drawer-facts">
+                                                @foreach ($nextWeekItems as $item)
+                                                    <div class="is-less-certain">
+                                                        <dt>{{ $item['label'] }}</dt>
+                                                        <dd>
+                                                            <span class="fh-drawer-viz" aria-hidden="true"><span class="fh-drawer-viz-icon">@include('dashboards.mao.icon', ['name' => $item['icon']])</span></span>
+                                                            <span>{{ $item['value'] }}</span>
+                                                        </dd>
+                                                    </div>
+                                                @endforeach
+                                            </dl>
+                                        @else
+                                            <dl class="fh-drawer-facts">
+                                                @foreach ($rangeData['items'] ?? [] as $item)
+                                                    <div>
+                                                        <dt>{{ $item['label'] }}</dt>
+                                                        <dd>
+                                                            <span class="fh-drawer-viz" aria-hidden="true"><span class="fh-drawer-viz-icon">@include('dashboards.mao.icon', ['name' => $item['icon']])</span></span>
+                                                            <span>{{ $item['value'] }}</span>
+                                                        </dd>
+                                                    </div>
+                                                @endforeach
+                                            </dl>
+                                        @endif
+                                        @if (! empty($rangeData['note']))
+                                            <p class="fh-words mt-2">{{ $rangeData['note'] }}</p>
+                                        @endif
+                                        @if (! empty($rangeData['link']))
+                                            <a class="fh-link fh-drawer-more" href="{{ $rangeData['link'] }}">{{ __('farmer.kpis.detail.view_full') }} <span aria-hidden="true">→</span></a>
+                                        @endif
+                                    </div>
+                                @endif
+                            @endforeach
+                        @else
+                            @if (! empty($d['rows']))
+                                <dl class="fh-drawer-facts">
+                                    @foreach ($d['rows'] as $label => $value)
+                                        @php
+                                            $pct = isset($rowNums[$label]) && $rowMax > 0
+                                                ? max(12, min(100, (int) round(($rowNums[$label] / $rowMax) * 100)))
+                                                : null;
+                                            $rowIcon = $dayWeatherIcons[$label]
+                                                ?? (in_array($key, ['hot', 'rain'], true) ? ($weekDays[$loop->index]['_viz_icon'] ?? null) : null)
+                                                ?? ($d['icon'] ?? null);
+                                        @endphp
+                                        <div>
+                                            <dt>{{ $label }}</dt>
+                                            <dd>
+                                                @if (! empty($rowIcon) && ($pct !== null || isset($dayWeatherIcons[$label]) || in_array($key, ['hot', 'rain'], true)))
+                                                    <span class="fh-drawer-viz" aria-hidden="true">
+                                                        <span class="fh-drawer-viz-icon">@include('dashboards.mao.icon', ['name' => $rowIcon])</span>
+                                                        @if ($pct !== null)
+                                                            <span class="fh-drawer-viz-track"><span style="width: {{ $pct }}%"></span></span>
+                                                        @endif
+                                                    </span>
+                                                @endif
+                                                <span>{{ $value }}</span>
+                                            </dd>
+                                        </div>
+                                    @endforeach
+                                </dl>
+                            @endif
+                            @if (($d['progress'] ?? null) !== null)
+                                <div class="fh-drawer-progress">
+                                    <span class="fh-kpi-bar" role="img" aria-label="{{ __('farmer.kpis.crop.progress', ['percent' => $d['progress']]) }}"><span style="width: {{ $d['progress'] }}%"></span></span>
+                                    <span class="fh-muted">{{ __('farmer.kpis.crop.progress', ['percent' => $d['progress']]) }}</span>
+                                </div>
+                            @endif
+                            @if (! empty($d['text']))
+                                <p class="fh-words">{{ $d['text'] }}</p>
+                            @endif
+                            @if (! empty($d['updated_at']))
+                                <x-updated-at :at="$d['updated_at']" :label="__('farmer.home.updated')" />
+                            @endif
+                            @if (! empty($d['link']))
+                                <a class="fh-link fh-drawer-more" href="{{ $d['link'] }}">{{ __('farmer.kpis.detail.view_full') }} <span aria-hidden="true">→</span></a>
+                            @endif
                         @endif
                     </div>
                 @endforeach
@@ -178,13 +315,87 @@
                     if (card) card.focus({ preventScroll: true });
                 }
 
+                var storageKey = 'iclimate:rain-range:' + @json(auth()->id() ?? 'guest');
+
+                function readStoredRainRange() {
+                    try {
+                        return localStorage.getItem(storageKey) === '2weeks' ? '2weeks' : 'week';
+                    } catch (e) {
+                        return 'week';
+                    }
+                }
+
+                function saveRainRange(range) {
+                    try {
+                        localStorage.setItem(storageKey, range);
+                    } catch (e) {}
+                }
+
+                function setRainRange(range, persist) {
+                    var rainCard = document.querySelector('[data-rain-ranges]');
+                    if (!rainCard || !rainCard.dataset.rainRanges) return;
+                    var ranges;
+                    try {
+                        ranges = JSON.parse(rainCard.dataset.rainRanges);
+                    } catch (e) {
+                        return;
+                    }
+                    var chosen = (range === '2weeks' && ranges['2weeks'] && ranges['2weeks'].available) ? '2weeks' : 'week';
+                    var data = ranges[chosen];
+                    if (!data) return;
+
+                    var labelEl = rainCard.querySelector('[data-rain-card-label]');
+                    var valueEl = rainCard.querySelector('[data-rain-card-value]');
+                    var unitEl = rainCard.querySelector('[data-rain-card-unit]');
+                    var noteEl = rainCard.querySelector('[data-rain-card-note]');
+                    if (labelEl) labelEl.textContent = data.label;
+                    if (valueEl) valueEl.textContent = String(data.count);
+                    if (unitEl) unitEl.textContent = data.of;
+                    if (noteEl) noteEl.textContent = data.note;
+
+                    var modalSection = drawer.querySelector('[data-panel-section="rain"]');
+                    if (modalSection) {
+                        var modalTitle = modalSection.querySelector('[data-rain-modal-title]');
+                        if (modalTitle) modalTitle.textContent = data.label;
+                        modalSection.querySelectorAll('[data-rain-panel]').forEach(function (el) {
+                            el.hidden = el.dataset.rainPanel !== chosen;
+                        });
+                    }
+
+                    document.querySelectorAll('[data-rain-range-btn]').forEach(function (btn) {
+                        var active = btn.dataset.rainRangeBtn === chosen;
+                        btn.classList.toggle('is-active', active);
+                        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+                    });
+
+                    if (persist) saveRainRange(chosen);
+                }
+
+                setRainRange(readStoredRainRange(), false);
+
                 document.addEventListener('click', function (e) {
+                    var rainBtn = e.target.closest('[data-rain-range-btn]');
+                    if (rainBtn) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (rainBtn.dataset.disabled === 'true' || rainBtn.disabled) return;
+                        setRainRange(rainBtn.dataset.rainRangeBtn, true);
+                        return;
+                    }
                     var card = e.target.closest('[data-panel]');
                     if (card && !drawer.contains(card)) { e.preventDefault(); open(card.dataset.panel, card); return; }
                     if (e.target.closest('[data-fh-drawer-close]')) close();
                 });
 
                 document.addEventListener('keydown', function (e) {
+                    var rainBtn = e.target.closest && e.target.closest('[data-rain-range-btn]');
+                    if (rainBtn && (e.key === 'Enter' || e.key === ' ')) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (rainBtn.dataset.disabled === 'true' || rainBtn.disabled) return;
+                        setRainRange(rainBtn.dataset.rainRangeBtn, true);
+                        return;
+                    }
                     if (drawer.hidden) return;
                     if (e.key === 'Escape') { e.preventDefault(); close(); return; }
                     if (e.key !== 'Tab') return;

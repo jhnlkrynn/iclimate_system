@@ -377,4 +377,64 @@ class FarmerYieldAndExploreFeaturesTest extends TestCase
         $this->assertStringContainsString('4.6–5.4 t/ha', $replySufficient['answer']);
         $this->assertStringContainsString('NSIC Rc 222', $replySufficient['answer']);
     }
+
+    public function test_rainy_days_card_and_modal_support_7_and_14_day_toggle_and_unavailable_state(): void
+    {
+        $farmer = $this->farmer('Humayingan');
+        $this->approvedFarm($farmer);
+
+        $makeDay = fn (int $offset, float $mm): array => [
+            'date' => $this->now->addDays($offset)->toDateString(),
+            'condition' => $mm > 0 ? 'Light Rain' : 'Mainly Clear',
+            'rainfall' => $mm,
+            'precipitation_probability' => $mm > 0 ? 70 : 10,
+            'wind_speed_max' => 12,
+        ];
+
+        $sevenDays = array_map(fn (int $i) => $makeDay($i, $i % 2 === 0 ? 2.5 : 0.0), range(0, 6));
+        $fourteenDays = array_map(fn (int $i) => $makeDay($i, $i % 3 === 0 ? 3.0 : 0.0), range(0, 13));
+
+        // 1) Only 7 days stored -> 14 days is disabled with "Not available yet".
+        $this->mock(\App\Services\Weather\FarmerDashboardWeatherService::class, function ($mock) use ($sevenDays): void {
+            $mock->shouldReceive('current')->andReturn([
+                'success' => true,
+                'source' => 'Open-Meteo',
+                'timestamps' => ['server_fetched_at' => $this->now->toIso8601String()],
+                'current' => ['temperature' => 30.0, 'condition' => 'Mainly Clear', 'wind_speed' => 10, 'is_day' => true],
+                'today' => ['rainfall' => 2.5, 'precipitation_probability' => 70],
+                'forecast' => $sevenDays,
+                'forecast_extended' => $sevenDays,
+            ]);
+            $mock->shouldReceive('lastFetchedAt')->andReturn($this->now);
+        });
+
+        $onlySevenHtml = $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk()->getContent();
+        $this->assertStringContainsString('Rainy days, next 7 days', $onlySevenHtml);
+        $this->assertStringContainsString('Not available yet', $onlySevenHtml);
+        $this->assertStringContainsString('Forecast only — weather can still change.', $onlySevenHtml);
+
+        // 2) 14 days stored -> 14 days toggle enabled, grouped This week / Next week, Less certain on days 8-14.
+        Cache::flush();
+        $this->mock(\App\Services\Weather\FarmerDashboardWeatherService::class, function ($mock) use ($sevenDays, $fourteenDays): void {
+            $mock->shouldReceive('current')->andReturn([
+                'success' => true,
+                'source' => 'Open-Meteo',
+                'timestamps' => ['server_fetched_at' => $this->now->toIso8601String()],
+                'current' => ['temperature' => 30.0, 'condition' => 'Mainly Clear', 'wind_speed' => 10, 'is_day' => true],
+                'today' => ['rainfall' => 2.5, 'precipitation_probability' => 70],
+                'forecast' => $sevenDays,
+                'forecast_extended' => $fourteenDays,
+            ]);
+            $mock->shouldReceive('lastFetchedAt')->andReturn($this->now);
+        });
+
+        $fourteenHtml = $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk()->getContent();
+        $this->assertStringContainsString('data-rain-panel="week"', $fourteenHtml);
+        $this->assertStringContainsString('data-rain-panel="2weeks"', $fourteenHtml);
+        $this->assertStringContainsString('This week', $fourteenHtml);
+        $this->assertStringContainsString('Next week', $fourteenHtml);
+        $this->assertStringContainsString('Less certain', $fourteenHtml);
+        $this->assertStringContainsString('range=week', $fourteenHtml);
+        $this->assertStringContainsString('range=2weeks', $fourteenHtml);
+    }
 }
