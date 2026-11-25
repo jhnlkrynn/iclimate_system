@@ -5,15 +5,21 @@ namespace App\Services\Farmer;
 use App\Models\Farm;
 use App\Models\FarmerPlantingSchedule;
 use App\Models\RiceVariety;
+use App\Models\YieldPrediction;
+use App\Services\Prediction\BarangayYieldForecastService;
+use App\Services\Prediction\YieldFarmTypeAdjustment;
+use App\Support\BusinessClock;
 use App\Support\LianBarangays;
+use App\Support\RiceSeason;
 use App\Support\SampleData;
 use App\Support\SchemaCache;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 /**
- * Aggregated, privacy-preserving farm harvest exploration using approved farms only
- * (seeded/demo rows excluded; aggregates only, no farmer/farm names or coordinates).
+ * Aggregated, privacy-preserving farm harvest & stored-estimate exploration
+ * using approved farms only (never runs ML models on page load).
  */
 class FarmResultsExplorationService
 {
@@ -47,24 +53,30 @@ class FarmResultsExplorationService
             ? $harvestRows
             : $this->filteredScheduleRows($farmType, $barangay, $season, $year, $varietyId, onlyHarvested: false);
 
-        $matchingFarms = collect();
-        if ($activeRows->isEmpty() && $season === null && $year === null && $varietyId === null) {
-            $matchingFarms = $this->approvedFarmsQuery($farmType, $barangay)->get(['id', 'farm_size_hectares', 'farm_size_method', 'farm_size_estimate_range']);
-        }
+        $allApprovedFarms = $this->approvedFarmsQuery($farmType, $barangay)
+            ->get(['id', 'user_id', 'barangay', 'farm_type', 'farm_size_hectares', 'farm_size_method', 'farm_size_estimate_range']);
 
-        $farmCount = $activeRows->isNotEmpty()
-            ? $this->distinctFarmCount($activeRows)
-            : $matchingFarms->count();
+        $hasScheduleFilters = $season !== null || $year !== null || $varietyId !== null;
+        if ($hasScheduleFilters) {
+            $scheduleFarmIds = $activeRows->pluck('farm_id')->filter()->unique()->all();
+            $matchingFarms = $allApprovedFarms->whereIn('id', $scheduleFarmIds)->values();
+            $farmCount = $activeRows->isNotEmpty() ? $this->distinctFarmCount($activeRows) : 0;
+        } else {
+            $matchingFarms = $allApprovedFarms;
+            $farmCount = $matchingFarms->count();
+        }
 
         if ($farmCount < self::MIN_FARMS) {
             return $this->emptyResult($farmType, $barangay, $season, $year, $varietyId, $fil);
         }
 
-        $totalArea = $this->computeTotalArea($activeRows, $matchingFarms);
+        $totalArea = $this->computeTotalArea($matchingFarms, $activeRows);
         $basedOn = $this->basedOnLabel($farmCount, $fil);
         $fewFarmsNote = $farmCount <= 2
             ? ($fil ? 'Kaunti pa ang bukid, kaya maaaring mag-iba ang resulta.' : 'Few farms, so results may vary.')
             : null;
+
+        $estimate = $this->resolveEstimate($matchingFarms, $farmType, $barangay, $season, $totalArea, $fil);
 
         if ($hasHarvests) {
             $yields = $harvestRows->map(fn (FarmerPlantingSchedule $r): float => (float) $r->actual_yield);
@@ -75,7 +87,6 @@ class FarmResultsExplorationService
             $topVarieties = $this->varietyBreakdown($harvestRows, withYield: true);
             $commonMonths = $this->plantingMonthBreakdown($harvestRows, $locale);
             $insight = $this->buildInsight($farmType, $barangay, $season, $avgYield, $bySeason, $fil);
-            $noHarvestNote = null;
         } else {
             $avgYield = null;
             $minYield = null;
@@ -83,14 +94,15 @@ class FarmResultsExplorationService
             $bySeason = [];
             $topVarieties = $this->varietyBreakdown($activeRows, withYield: false);
             $commonMonths = $this->plantingMonthBreakdown($activeRows, $locale);
-            $noHarvestNote = $fil
-                ? 'Wala pang naitalang ani para sa panahong ito.'
-                : 'No harvest recorded yet for this season.';
-            $place = $barangay ?: ($fil ? 'buong Lian' : 'all of Lian');
-            $insight = $fil
-                ? "May {$farmCount} na aprubadong {$farmType} na bukid sa {$place}, ngunit wala pang naitalang ani para sa panahong ito."
-                : "{$farmCount} approved {$farmType} ".($farmCount === 1 ? 'farm' : 'farms')." in {$place}, with no harvest recorded yet for this season.";
+            $insight = $this->buildNoHarvestInsight($farmType, $barangay, $season, $farmCount, $estimate, $fil);
         }
+
+        $diffTHa = ($hasHarvests && $avgYield !== null && $estimate['t_ha'] !== null)
+            ? round($avgYield - $estimate['t_ha'], 2)
+            : null;
+        $diffPct = ($diffTHa !== null && $estimate['t_ha'] > 0)
+            ? (int) round(($diffTHa / $estimate['t_ha']) * 100)
+            : null;
 
         return [
             'sufficient' => true,
@@ -104,10 +116,12 @@ class FarmResultsExplorationService
             'total_area' => $totalArea,
             'based_on' => $basedOn,
             'few_farms_note' => $fewFarmsNote,
-            'no_harvest_note' => $noHarvestNote,
             'avg_yield' => $avgYield,
             'min_yield' => $minYield,
             'max_yield' => $maxYield,
+            'estimate' => $estimate,
+            'diff_t_ha' => $diffTHa,
+            'diff_pct' => $diffPct,
             'by_season' => $bySeason,
             'top_varieties' => $topVarieties,
             'common_months' => $commonMonths,
@@ -138,6 +152,111 @@ class FarmResultsExplorationService
             'barangays' => LianBarangays::all(),
             'varieties' => $varieties,
             'years' => $years,
+        ];
+    }
+
+    /**
+     * Read stored farm-level yield_predictions (with YieldFarmTypeAdjustment),
+     * falling back to stored BarangayYieldForecastService estimates. Never runs ML on page load.
+     *
+     * @param  Collection<int, Farm>  $matchingFarms
+     * @return array{state: string, source: string, badge: ?string, disclaimer: string, t_ha: ?float, total_tons: ?float, updated_at: ?CarbonImmutable, none_note: ?string}
+     */
+    private function resolveEstimate(
+        Collection $matchingFarms,
+        string $farmType,
+        ?string $barangay,
+        ?string $season,
+        ?float $totalArea,
+        bool $fil,
+    ): array {
+        $tz = BusinessClock::timezone();
+        $disclaimer = $fil ? 'Tantiya — hindi aktuwal na ani' : 'Estimate — not an actual harvest';
+        $adjuster = app(YieldFarmTypeAdjustment::class);
+        $farmIds = $matchingFarms->pluck('id')->filter()->values()->all();
+
+        // 1) Stored farm-level yield_predictions (warm-farmer-yields)
+        if ($farmIds !== [] && SchemaCache::hasTable('yield_predictions')) {
+            $farmPreds = YieldPrediction::query()
+                ->where('scope', YieldPrediction::SCOPE_FARM)
+                ->where('period', 'season')
+                ->whereIn('farm_id', $farmIds)
+                ->when($season !== null, fn (Builder $q) => $q->where('season', $season))
+                ->orderByDesc('generated_at')
+                ->get()
+                ->unique('farm_id')
+                ->filter(fn (YieldPrediction $p): bool => is_numeric($p->predicted_yield) && (float) $p->predicted_yield > 0);
+
+            if ($farmPreds->isNotEmpty()) {
+                $adjusted = $farmPreds->map(function (YieldPrediction $p) use ($adjuster, $farmType, $season): float {
+                    $res = $adjuster->forRequest($farmType, $p->season ?? $season, (float) $p->predicted_yield);
+
+                    return (float) ($res['adjusted_yield'] ?? $p->predicted_yield);
+                });
+                $avgTHa = round((float) $adjusted->avg(), 2);
+                $updated = $farmPreds->map(fn (YieldPrediction $p) => $p->generated_at?->timezone($tz))->filter()->max();
+
+                return [
+                    'state' => 'ok',
+                    'source' => 'farms',
+                    'badge' => null,
+                    'disclaimer' => $disclaimer,
+                    't_ha' => $avgTHa,
+                    'total_tons' => $totalArea !== null ? round($avgTHa * $totalArea, 2) : null,
+                    'updated_at' => $updated,
+                    'none_note' => null,
+                ];
+            }
+        }
+
+        // 2) Fallback: stored barangay season estimate (BarangayYieldForecastService)
+        $barangayRows = rescue(fn (): array => app(BarangayYieldForecastService::class)->all('season'), [], false);
+        $targetBarangays = $barangay !== null
+            ? [$barangay]
+            : $matchingFarms->pluck('barangay')->map(fn ($b) => LianBarangays::canonicalName((string) $b))->filter()->unique()->values()->all();
+
+        $matchedBarangayEstimates = collect($targetBarangays)
+            ->map(fn (string $b) => $barangayRows[$b] ?? null)
+            ->filter(fn ($row): bool => is_array($row) && is_numeric($row['predicted_yield'] ?? null) && (float) $row['predicted_yield'] > 0)
+            ->values();
+
+        if ($matchedBarangayEstimates->isNotEmpty()) {
+            $adjusted = $matchedBarangayEstimates->map(function (array $row) use ($adjuster, $farmType, $season): float {
+                $res = $adjuster->forRequest($farmType, $row['season'] ?? $season, (float) $row['predicted_yield']);
+
+                return (float) ($res['adjusted_yield'] ?? $row['predicted_yield']);
+            });
+            $avgTHa = round((float) $adjusted->avg(), 2);
+            $updated = $matchedBarangayEstimates
+                ->map(fn (array $row): ?CarbonImmutable => ! empty($row['prediction_timestamp'])
+                    ? rescue(fn () => CarbonImmutable::parse((string) $row['prediction_timestamp'])->timezone($tz), null, false)
+                    : null)
+                ->filter()
+                ->max();
+
+            return [
+                'state' => 'ok',
+                'source' => 'barangay',
+                'badge' => $fil ? 'Tantiya ng barangay' : 'Barangay estimate',
+                'disclaimer' => $disclaimer,
+                't_ha' => $avgTHa,
+                'total_tons' => $totalArea !== null ? round($avgTHa * $totalArea, 2) : null,
+                'updated_at' => $updated,
+                'none_note' => null,
+            ];
+        }
+
+        return [
+            'state' => 'none',
+            'source' => 'none',
+            'badge' => null,
+            'disclaimer' => $disclaimer,
+            't_ha' => null,
+            'total_tons' => null,
+            'updated_at' => null,
+            'none_note' => $fil
+                ? 'Hindi pa handa ang tantiya — nag-a-update tuwing 3 oras.'
+                : 'Estimate not ready yet — updates every 3 hours.',
         ];
     }
 
@@ -207,32 +326,34 @@ class FarmResultsExplorationService
     }
 
     /**
-     * @param  Collection<int, FarmerPlantingSchedule>  $rows
+     * Use each approved farm's real area (knownHectares()), falling back to schedule area only if farm area is missing.
+     *
      * @param  Collection<int, Farm>  $farms
+     * @param  Collection<int, FarmerPlantingSchedule>  $rows
      */
-    private function computeTotalArea(Collection $rows, Collection $farms): ?float
+    private function computeTotalArea(Collection $farms, Collection $rows): ?float
     {
-        if ($rows->isNotEmpty()) {
-            $perFarm = [];
-            foreach ($rows as $r) {
-                $key = $r->farm_id ? 'f:'.$r->farm_id : 'u:'.$r->user_id;
-                if (isset($perFarm[$key])) {
-                    continue;
-                }
-                $area = is_numeric($r->farm_area_hectares) && (float) $r->farm_area_hectares > 0
-                    ? (float) $r->farm_area_hectares
-                    : $r->farm?->knownHectares();
-                if ($area !== null && $area > 0) {
-                    $perFarm[$key] = $area;
-                }
+        $perFarm = [];
+        foreach ($farms as $farm) {
+            $area = $farm->knownHectares();
+            if ($area !== null && $area > 0) {
+                $perFarm['f:'.$farm->getKey()] = $area;
             }
-
-            return $perFarm !== [] ? round(array_sum($perFarm), 2) : null;
         }
 
-        $sum = $farms->map(fn (Farm $f): ?float => $f->knownHectares())->filter(fn (?float $a): bool => $a !== null && $a > 0)->sum();
+        foreach ($rows as $r) {
+            $key = $r->farm_id ? 'f:'.$r->farm_id : 'u:'.$r->user_id;
+            if (isset($perFarm[$key])) {
+                continue;
+            }
+            $area = $r->farm?->knownHectares()
+                ?? (is_numeric($r->farm_area_hectares) && (float) $r->farm_area_hectares > 0 ? (float) $r->farm_area_hectares : null);
+            if ($area !== null && $area > 0) {
+                $perFarm[$key] = $area;
+            }
+        }
 
-        return $sum > 0 ? round((float) $sum, 2) : null;
+        return $perFarm !== [] ? round(array_sum($perFarm), 2) : null;
     }
 
     /**
@@ -332,6 +453,32 @@ class FarmResultsExplorationService
     }
 
     /**
+     * @param  array<string, mixed>  $estimate
+     */
+    private function buildNoHarvestInsight(string $farmType, ?string $barangay, ?string $season, int $farmCount, array $estimate, bool $fil): string
+    {
+        $place = $barangay ?: ($fil ? 'buong Lian' : 'all of Lian');
+        $currentSeason = strtolower($season ?? RiceSeason::forMonth((int) CarbonImmutable::now(BusinessClock::timezone())->month));
+
+        if (($estimate['state'] ?? 'none') === 'ok' && $estimate['t_ha'] !== null) {
+            $tHa = $estimate['t_ha'];
+            if ($fil) {
+                $seasonLabel = $currentSeason === 'wet' ? 'tag-ulan' : 'tag-araw';
+
+                return "Ang mga bukid na {$farmType} sa {$place} ay tinatantiyang aani ng {$tHa} t/ha ngayong {$seasonLabel} (wala pang naitalang ani).";
+            }
+
+            return "{$farmType} farms in {$place} are estimated at {$tHa} t/ha this {$currentSeason} season (no harvest recorded yet).";
+        }
+
+        if ($fil) {
+            return "May {$farmCount} na aprubadong {$farmType} na bukid sa {$place} — wala pang naitalang ani para sa panahong ito.";
+        }
+
+        return "{$farmCount} approved {$farmType} ".($farmCount === 1 ? 'farm' : 'farms')." in {$place} — no harvest recorded yet for this season.";
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function emptyResult(string $farmType, ?string $barangay, ?string $season, ?int $year, ?int $varietyId, bool $fil): array
@@ -348,10 +495,12 @@ class FarmResultsExplorationService
             'total_area' => null,
             'based_on' => $this->basedOnLabel(0, $fil),
             'few_farms_note' => null,
-            'no_harvest_note' => null,
             'avg_yield' => null,
             'min_yield' => null,
             'max_yield' => null,
+            'estimate' => ['state' => 'none', 'source' => 'none', 'badge' => null, 'disclaimer' => '', 't_ha' => null, 'total_tons' => null, 'updated_at' => null, 'none_note' => null],
+            'diff_t_ha' => null,
+            'diff_pct' => null,
             'by_season' => [],
             'top_varieties' => [],
             'common_months' => [],

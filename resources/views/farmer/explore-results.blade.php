@@ -77,20 +77,16 @@
                 </p>
             </section>
 
-            @if (! empty($result['no_harvest_note']))
-                <section class="frec-panel mb-3" data-explore-no-harvest>
-                    <p class="mb-0 text-muted">{{ $result['no_harvest_note'] }}</p>
-                </section>
-            @endif
+            @php $est = $result['estimate'] ?? ['state' => 'none']; @endphp
 
             <div class="row g-3 mb-3">
-                <div class="col-6 col-md-{{ $result['has_harvests'] ? '3' : '6' }}">
+                <div class="col-6 col-md-{{ $result['has_harvests'] ? '3' : '4' }}">
                     <div class="frec-panel h-100">
                         <div class="small text-muted">{{ $fil ? 'Mga bukid' : 'Farms' }}</div>
                         <div class="fs-4 fw-bold">{{ number_format($result['farm_count']) }}</div>
                     </div>
                 </div>
-                <div class="col-6 col-md-{{ $result['has_harvests'] ? '3' : '6' }}">
+                <div class="col-6 col-md-{{ $result['has_harvests'] ? '3' : '4' }}">
                     <div class="frec-panel h-100">
                         <div class="small text-muted">{{ $fil ? 'Kabuuang sukat' : 'Total area' }}</div>
                         <div class="fs-4 fw-bold">{{ $result['total_area'] !== null ? number_format((float) $result['total_area'], 2).' ha' : '—' }}</div>
@@ -99,17 +95,43 @@
                 @if ($result['has_harvests'])
                     <div class="col-6 col-md-3">
                         <div class="frec-panel h-100">
-                            <div class="small text-muted">{{ $fil ? 'Average na ani' : 'Average yield' }}</div>
+                            <div class="small text-muted">{{ $fil ? 'Aktuwal na average' : 'Actual average' }}</div>
                             <div class="fs-4 fw-bold">{{ number_format((float) $result['avg_yield'], 2) }} <small class="fs-6">t/ha</small></div>
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-3">
-                        <div class="frec-panel h-100">
-                            <div class="small text-muted">{{ $fil ? 'Karaniwang saklaw' : 'Typical range' }}</div>
-                            <div class="fs-5 fw-bold">{{ number_format((float) $result['min_yield'], 2) }}–{{ number_format((float) $result['max_yield'], 2) }} <small class="fs-6">t/ha</small></div>
+                            <div class="small text-muted">{{ number_format((float) $result['min_yield'], 2) }}–{{ number_format((float) $result['max_yield'], 2) }} t/ha</div>
                         </div>
                     </div>
                 @endif
+                <div class="col-6 col-md-{{ $result['has_harvests'] ? '3' : '4' }}" data-explore-estimate>
+                    <div class="frec-panel h-100">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-1">
+                            <span class="small text-muted">{{ $fil ? 'Tantiyang ani' : 'Estimated yield' }}</span>
+                            @if (! empty($est['badge']))
+                                <span class="badge rounded-pill text-bg-light border small">{{ $est['badge'] }}</span>
+                            @endif
+                        </div>
+                        @if (($est['state'] ?? 'none') === 'ok')
+                            <div class="fs-4 fw-bold">{{ number_format((float) $est['t_ha'], 2) }} <small class="fs-6">t/ha</small></div>
+                            @if ($est['total_tons'] !== null)
+                                <div class="small fw-semibold">{{ number_format((float) $est['total_tons'], 2) }} t {{ $fil ? 'kabuuan' : 'total' }}</div>
+                            @endif
+                            @if ($result['diff_t_ha'] !== null)
+                                @php
+                                    $sign = $result['diff_t_ha'] > 0 ? '+' : '';
+                                    $pctSign = ($result['diff_pct'] ?? 0) > 0 ? '+' : '';
+                                @endphp
+                                <div class="small text-muted" data-explore-diff>
+                                    {{ $fil ? 'Agwat (Aktuwal vs Tantiya):' : 'Actual vs Est.:' }} {{ $sign }}{{ number_format((float) $result['diff_t_ha'], 2) }} t/ha @if ($result['diff_pct'] !== null)({{ $pctSign }}{{ $result['diff_pct'] }}%)@endif
+                                </div>
+                            @endif
+                            <div class="small text-muted mt-1">{{ $est['disclaimer'] }}</div>
+                            @if (! empty($est['updated_at']))
+                                <div class="small text-muted"><x-updated-at :at="$est['updated_at']" :label="$fil ? 'Na-update' : 'Updated'" /></div>
+                            @endif
+                        @else
+                            <div class="small text-muted mt-1">{{ $est['none_note'] }}</div>
+                        @endif
+                    </div>
+                </div>
             </div>
 
             @if (! empty($result['by_season']))

@@ -306,7 +306,9 @@ class FarmerYieldAndExploreFeaturesTest extends TestCase
         $noHarvestPage->assertOk();
         $noHarvestPage->assertSee('Based on 1 farm');
         $noHarvestPage->assertSee('Few farms, so results may vary.');
-        $noHarvestPage->assertSee('No harvest recorded yet for this season.');
+        $noHarvestPage->assertSee('no harvest recorded yet');
+        $noHarvestPage->assertSee('Estimate not ready yet — updates every 3 hours.');
+        $noHarvestPage->assertDontSee('data-explore-no-harvest');
         $noHarvestPage->assertSee('2.50 ha');
         $noHarvestPage->assertSee('NSIC Rc 222');
         $noHarvestPage->assertSee('January');
@@ -496,5 +498,109 @@ class FarmerYieldAndExploreFeaturesTest extends TestCase
         $populated->assertOk();
         $populated->assertSee('Irrigated farms in Humayingan averaged 4.6 t/ha');
         $populated->assertSee('NSIC Rc 480 (GSR 8)');
+    }
+
+    public function test_explore_results_shows_stored_farm_estimate_barangay_fallback_actual_vs_est_and_real_farm_area(): void
+    {
+        $viewer = $this->farmer('Balibago');
+        $owner = $this->farmer('Balibago', 'bal1');
+        $farm1 = $this->approvedFarm($owner, [
+            'farm_type' => 'Irrigated',
+            'farm_size_hectares' => 0.25,
+        ]);
+        // Farm 2 has 5.5 ha and no schedule yet — its real area must be included in Balibago's total area.
+        $farm2 = $this->approvedFarm($owner, [
+            'farm_name' => 'Farm 2',
+            'farm_type' => 'Irrigated',
+            'farm_size_hectares' => 5.50,
+        ]);
+
+        // 1) Barangay fallback when no farm-level YieldPrediction exists.
+        YieldPrediction::create([
+            'scope' => YieldPrediction::SCOPE_BARANGAY,
+            'subject_key' => 'barangay:Balibago',
+            'barangay' => 'Balibago',
+            'predicted_yield' => 4.20,
+            'classification' => 'Average',
+            'basis' => 'model',
+            'period' => 'season',
+            'farms_used' => 5,
+            'area_hectares' => 10.0,
+            'season_start' => \App\Support\RiceSeason::window($this->now)['start']->toDateString(),
+            'season' => 'Wet',
+            'season_label' => 'Wet 2026',
+            'target_month' => 11,
+            'model_version' => 'v1',
+            'generated_at' => $this->now,
+        ]);
+        $this->mock(\App\Services\Prediction\YieldFarmTypeAdjustment::class, function ($mock): void {
+            $mock->shouldReceive('forRequest')->andReturnUsing(fn ($t, $s, float $y) => ['adjusted_yield' => $y]);
+        });
+
+        $barangayFallback = $this->actingAs($viewer)->get(route('farmer.explore-results.index', [
+            'farm_type' => 'Irrigated',
+            'barangay' => 'Balibago',
+        ]));
+        $barangayFallback->assertOk();
+        $barangayFallback->assertSee('5.75 ha');
+        $barangayFallback->assertSee('Estimated yield');
+        $barangayFallback->assertSee('Barangay estimate');
+        $barangayFallback->assertSee('Estimate — not an actual harvest');
+        $barangayFallback->assertSee('4.20');
+        $barangayFallback->assertSee('24.15 t');
+        $barangayFallback->assertSee('Irrigated farms in Balibago are estimated at 4.2 t/ha');
+
+        // 2) Stored farm-level YieldPrediction overrides barangay fallback (no "Barangay estimate" badge).
+        YieldPrediction::create([
+            'scope' => YieldPrediction::SCOPE_FARM,
+            'subject_key' => 'farm:'.$farm2->id,
+            'farm_id' => $farm2->id,
+            'user_id' => $owner->id,
+            'barangay' => 'Balibago',
+            'predicted_yield' => 4.80,
+            'classification' => 'Average',
+            'basis' => 'model',
+            'period' => 'season',
+            'farms_used' => 10,
+            'area_hectares' => 5.50,
+            'season_start' => \App\Support\RiceSeason::window($this->now)['start']->toDateString(),
+            'season' => 'Wet',
+            'season_label' => 'Wet 2026',
+            'target_month' => 11,
+            'model_version' => 'v1',
+            'generated_at' => $this->now,
+        ]);
+
+        $farmEstimate = $this->actingAs($viewer)->get(route('farmer.explore-results.index', [
+            'farm_type' => 'Irrigated',
+            'barangay' => 'Balibago',
+        ]));
+        $farmEstimate->assertOk();
+        $farmEstimate->assertSee('4.80');
+        $farmEstimate->assertSee('27.60 t');
+        $farmEstimate->assertDontSee('Barangay estimate');
+
+        // 3) When actual harvest exists, Actual and Estimated appear side by side with the difference.
+        FarmerPlantingSchedule::create([
+            'user_id' => $owner->id,
+            'farm_id' => $farm1->id,
+            'season' => 'Wet',
+            'farm_type' => 'Irrigated',
+            'farm_area_hectares' => 0.25,
+            'planting_date' => '2026-06-10',
+            'harvested_on' => '2026-09-25',
+            'actual_yield' => 5.00,
+        ]);
+
+        $sideBySide = $this->actingAs($viewer)->get(route('farmer.explore-results.index', [
+            'farm_type' => 'Irrigated',
+            'barangay' => 'Balibago',
+        ]));
+        $sideBySide->assertOk();
+        $sideBySide->assertSee('Actual average');
+        $sideBySide->assertSee('5.00');
+        $sideBySide->assertSee('Estimated yield');
+        $sideBySide->assertSee('4.80');
+        $sideBySide->assertSee('+0.20 t/ha');
     }
 }
