@@ -354,25 +354,23 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function maoWeather(Request $request, WeatherApiService $weatherApi, FarmerDashboardWeatherService $sharedWeather): JsonResponse
+    public function maoWeather(Request $request, FarmerDashboardWeatherService $sharedWeather): JsonResponse
     {
-        $refresh = $request->boolean('refresh');
-        try {
-            $liveWeather = $sharedWeather->alignForecast(
-                $weatherApi->forecast(refresh: $refresh),
-                $refresh,
-            );
-        } catch (Throwable $e) {
-            Log::warning('MAO weather fetch failed: '.$e->getMessage());
-            $liveWeather = null;
-        }
+        $stored = rescue(fn () => $sharedWeather->stored(), null, false);
+        $liveWeather = $stored !== null
+            ? rescue(fn () => $sharedWeather->alignForecast($stored), $stored, false)
+            : null;
+        $loc = data_get($liveWeather, 'location');
+        $locationName = is_string($loc) && $loc !== '' ? $loc : 'Lian, Batangas';
+        $source = (string) (data_get($liveWeather, 'source') ?: data_get($liveWeather, 'provider') ?: 'Open-Meteo');
 
         return response()->json([
             'ok' => $liveWeather !== null,
+            'updating' => $liveWeather === null,
             'weather' => $liveWeather,
             'source_label' => $liveWeather
-                ? data_get($liveWeather, 'source', 'Open-Meteo').' live weather for '.data_get($liveWeather, 'location', 'Lian, Batangas')
-                : 'Stored climate records',
+                ? $source.' live weather for '.$locationName
+                : 'Updating… (using stored climate records)',
             'checked_at' => now((string) config('services.weather.timezone', 'Asia/Manila'))->toIso8601String(),
         ]);
     }
@@ -437,7 +435,7 @@ class DashboardController extends Controller
         $kpis = app(DashboardKpiService::class);
 
         $recent = $this->recentOperationalData();
-        $environment = $this->maoOperationsEnvironment($weatherApi, $sharedWeather, $recent);
+        $environment = $this->maoOperationsEnvironment($sharedWeather, $recent);
         $safety = $this->maoOperationsSafety($typhoonSafety);
         $weatherFeedbackFilters = $this->weatherFeedbackFilters($request);
 
@@ -448,10 +446,10 @@ class DashboardController extends Controller
             + $this->maoScheduleData($request);
     }
 
-    private function maoOperationsEnvironment(WeatherApiService $weatherApi, FarmerDashboardWeatherService $sharedWeather, array $recent): array
+    private function maoOperationsEnvironment(FarmerDashboardWeatherService $sharedWeather, array $recent): array
     {
         $records = $this->maoOperationsClimateRecords();
-        $liveWeather = $this->maoOperationsLiveWeather($weatherApi, $sharedWeather);
+        $liveWeather = $this->maoOperationsLiveWeather($sharedWeather);
 
         return [
             'latestClimate' => $recent['recentClimateRecords']->first(),
@@ -470,9 +468,9 @@ class DashboardController extends Controller
         return ClimateRecord::query()->orderByDesc('record_date')->take(12)->get()->sortBy('record_date')->values();
     }
 
-    private function maoOperationsLiveWeather(WeatherApiService $weatherApi, FarmerDashboardWeatherService $sharedWeather): ?array
+    private function maoOperationsLiveWeather(FarmerDashboardWeatherService $sharedWeather): ?array
     {
-        return rescue(fn () => $sharedWeather->alignForecast($weatherApi->forecast()), null, false);
+        return rescue(fn () => $sharedWeather->stored(), null, false);
     }
 
     /** @param Collection<int, ClimateRecord> $records */

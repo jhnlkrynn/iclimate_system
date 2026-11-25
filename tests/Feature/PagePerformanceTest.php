@@ -269,6 +269,46 @@ class PagePerformanceTest extends TestCase
         $this->assertFalse(app(PredictionReadMode::class)->active());
     }
 
+    public function test_no_page_request_makes_any_outbound_http_call(): void
+    {
+        Http::preventStrayRequests();
+
+        $farmer = $this->user(User::ROLE_FARMER);
+        $mao = $this->user(User::ROLE_MAO, ['is_mao_head' => true]);
+
+        foreach ([
+            '/farmer/dashboard',
+            '/heat-map',
+            '/planting-advisories',
+            '/analysis/weather',
+            '/analysis/yield',
+            '/farmer/my-farm',
+            '/farmer/explore-results',
+            '/rice-varieties',
+            '/calendar',
+            '/messages',
+        ] as $url) {
+            $this->actingAs($farmer)->get($url)->assertOk();
+        }
+
+        foreach ([
+            '/mao/dashboard',
+            '/heat-map',
+            '/weather-predictions',
+            '/planting-advisories',
+            '/mao/planner',
+            '/climate-records',
+            '/rice-productions',
+            '/farmer-profiles',
+            '/mao/farmer-approvals',
+            '/analysis/impact',
+            '/analysis/forecast',
+            '/analysis/model-evaluation',
+        ] as $url) {
+            $this->actingAs($mao)->get($url)->assertOk();
+        }
+    }
+
     // ------------------------------------------------------------ query counts
 
     public function test_cached_dashboards_need_almost_no_queries_on_the_second_visit(): void

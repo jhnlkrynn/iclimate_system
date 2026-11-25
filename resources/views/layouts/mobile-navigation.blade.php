@@ -62,12 +62,18 @@
 
     $mobilePayload = [];
     if ($isFarmer) {
-        // The Farmer dashboard already prepared this payload; do not rebuild it just to populate the mobile shell.
-        // Other farmer pages keep the existing fallback because they do not pass the dashboard's `f` view data.
+        // The Farmer dashboard already prepared this payload; reuse its cache across all farmer pages instead of rebuilding 20+ queries per page.
         $mobilePayload = request()->attributes->get('farmer_dashboard_payload');
-        $mobilePayload = is_array($mobilePayload)
-            ? $mobilePayload
-            : rescue(fn (): array => app(\App\Services\Analytics\FarmerDashboardService::class)->payload($user), [], false);
+        if (! is_array($mobilePayload)) {
+            $mobileCacheKey = \App\Services\Analytics\FarmerDashboardService::cacheKey($user);
+            $mobilePayload = \Illuminate\Support\Facades\Cache::get($mobileCacheKey);
+            if (! is_array($mobilePayload)) {
+                $mobilePayload = rescue(fn (): array => app(\App\Services\Analytics\FarmerDashboardService::class)->payload($user), [], false);
+                if ($mobilePayload !== []) {
+                    \Illuminate\Support\Facades\Cache::put($mobileCacheKey, $mobilePayload, now()->addMinutes(5));
+                }
+            }
+        }
     }
     $mobileCrop = collect(data_get($mobilePayload, 'kpis', []))->firstWhere('key', 'crop');
     $mobileFarmName = data_get($mobilePayload, 'farm.name') ?: ($navFarm?->farm_name ?? null);

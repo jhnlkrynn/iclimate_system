@@ -214,7 +214,7 @@ class WeatherPredictionController extends Controller
         WeatherPredictionRequest $request,
         PredictionDateValidator $dateValidator,
         AnalyticsDispatcher $analytics,
-        WeatherApiService $weatherApi,
+        FarmerDashboardWeatherService $sharedWeather,
     ): RedirectResponse {
         $validated = $request->validated();
         $targetDate = CarbonImmutable::parse($validated['prediction_date']);
@@ -231,14 +231,11 @@ class WeatherPredictionController extends Controller
             ])->withInput();
         }
 
-        // The stored forecast for this place (the run is queued; nothing is fetched while the person waits).
-        $liveWeather = $location['is_municipal_preview']
-            ? $this->municipalForecast($weatherApi)
-            : $weatherApi->forecast(
-                latitude: $location['coordinates'][0],
-                longitude: $location['coordinates'][1],
-                location: $location['label'],
-            );
+        // Stored weather only (never calls WeatherApiService / Open-Meteo during a request).
+        $stored = rescue(fn () => $sharedWeather->stored(), null, false);
+        $liveWeather = $stored === null ? null : array_merge($stored, [
+            'location' => $location['is_municipal_preview'] ? self::LIAN_MUNICIPAL_PREVIEW_LABEL : $location['label'],
+        ]);
         $run = $analytics->dispatch('weather_prediction', [
             'prediction_type' => PredictionType::WEATHER->value,
             'target_date' => $targetDate->toDateString(),
