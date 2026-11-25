@@ -85,4 +85,18 @@ return [
         'flood_prone_total_rain_mm' => 200.0,
         'note' => 'MAO flood-prone attributes plus saved Open-Meteo rainfall/runoff forecast; no official MGB/NOAH/GloFAS layer is installed.',
     ],
+
+    'drought_layer' => [
+        'dry_day_mm' => 1.0,
+        'moderate_dry_days_7d' => 5,
+        'high_dry_days_7d' => 6,
+        'moderate_dry_days_14d' => 8,
+        'high_dry_days_14d' => 11,
+        'moderate_total_rain_mm' => 25.0,
+        'high_total_rain_mm' => 10.0,
+        'moderate_max_temp_c' => 33.0,
+        'high_max_temp_c' => 34.5,
+        'low_humidity_percent' => 68.0,
+        'note' => 'iClimate Python weather model (when reachable), else stored Open-Meteo forecast (per-barangay or shared Lian), else last saved drought ratings.',
+    ],
 ];

@@ -16,6 +16,7 @@ class FetchOnlineWeather extends Command
         $result = $weather->fetchForecast((bool) $this->option('force'));
 
         if ($result['ok']) {
+            $this->callSilent('iclimate:refresh-drought-risk');
             $this->info('Weather Data Updated');
             $this->line('Records saved: '.$result['records_saved']);
             $this->line('Fetched at: '.$result['fetched_at']);

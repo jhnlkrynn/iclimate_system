@@ -155,16 +155,21 @@ export function initHeatMap() {
         const rows = Array.isArray(payload.barangays) ? payload.barangays.slice() : [];
         const order = { flood_prone: 0, severe: 0, high: 0, moderate: 1, low: 2, unavailable: 3 };
         rows.sort((a, b) => (order[a.level] ?? 9) - (order[b.level] ?? 9) || String(a.name).localeCompare(String(b.name)));
-        const title = view.querySelector('.hmx-title')?.textContent || (range === 'flood' ? 'Flood-prone barangays' : 'Heat Map');
+        const title = data.layerTitles?.[range] || view.querySelector('.hmx-title')?.textContent || (range === 'drought' ? 'Drought-prone barangays' : range === 'flood' ? 'Flood-prone barangays' : 'Heat Map');
         const counts = payload.summary?.levels || {};
         const total = rows.length;
         const available = rows.filter((row) => row.level !== 'unavailable').length;
         const countLines = Object.entries(counts).filter(([, count]) => Number(count) > 0).map(([level, count]) => `<li class="is-${escapeHtml(level)}"><span class="hmx-dot" style="--hmx-color:${escapeHtml(data.colors?.[level] || (level === 'flood_prone' ? '#EF6C00' : '#9CA3AF'))}"></span>${escapeHtml(String(count))}: ${escapeHtml(rows.find((row) => row.level === level)?.label || level.replace('_', ' '))}</li>`).join('');
         const list = rows.map((row) => `<li><button type="button" class="hmx-row" data-heat-map-pick="${escapeHtml(row.name)}"><span class="hmx-dot" style="--hmx-color:${escapeHtml(data.colors?.[row.level] || (row.level === 'flood_prone' ? '#EF6C00' : '#9CA3AF'))}"></span><span class="hmx-row-name">${escapeHtml(row.name)}</span><span class="hmx-row-level">${escapeHtml(row.label || row.level)}</span></button></li>`).join('');
-        const updated = payload.updated_at ? `<p class="hmx-source">Updated: ${escapeHtml(payload.updated_at)}</p>` : '';
-        const source = payload.source ? `<p class="hmx-source">${escapeHtml(payload.source)}</p>` : '';
-        const noData = available === 0 ? '<p class="hmx-text">Flood-prone barangays — No data yet</p>' : '';
-        view.innerHTML = `<h2 class="hmx-title">${escapeHtml(title)}</h2>${noData}<div class="hmx-summary"><ul class="hmx-counts">${countLines}</ul><p class="hmx-hint">${total} barangays</p></div><ul class="hmx-list">${list}</ul>${updated}${source}`;
+        const updatedWord = data.updatedWord || 'Updated';
+        const sourceWord = data.sourceWord || 'Source';
+        const metaParts = [];
+        if (payload.updated_at) metaParts.push(`${updatedWord} ${payload.updated_at}`);
+        if (payload.source) metaParts.push(`${sourceWord}: ${payload.source}`);
+        const metaLine = metaParts.length ? `<p class="hmx-source">${escapeHtml(metaParts.join(' · '))}</p>` : '';
+        const noDataText = data.emptyByLayer?.[range] || `${title} — No data yet`;
+        const noData = available === 0 ? `<p class="hmx-text">${escapeHtml(noDataText)}</p>` : '';
+        view.innerHTML = `<h2 class="hmx-title">${escapeHtml(title)}</h2>${noData}<div class="hmx-summary"><ul class="hmx-counts">${countLines}</ul><p class="hmx-hint">${total} barangays</p></div><ul class="hmx-list">${list}</ul>${metaLine}`;
         views = [...root.querySelectorAll('[data-heat-map-view]')];
     };
     const fetchLayer = async (key, selectedPeriod = period) => {

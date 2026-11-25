@@ -81,10 +81,17 @@ The Python FastAPI service powers rice yield model inference, monthly weather fo
 
 ### Local Development
 
+`composer dev` starts the Laravel server, queue worker, Pail logs, Vite, and the Python ML service (`127.0.0.1:8010`) together. To run the ML service standalone:
+
 ```bash
 cd python_scripts
 uvicorn main:app --host 127.0.0.1 --port 8010 --reload
 ```
+
+### Health Check & Drought Refresh
+
+- `php artisan iclimate:health --log --restart-ml` checks `127.0.0.1:8010/health`, alerts on failure, and attempts `systemctl restart iclimate-python.service` if available.
+- `php artisan iclimate:refresh-drought-risk` runs at `5,35 * * * *` (alongside `iclimate:refresh-flood-risk`) and after weather fetch/refresh commands.
 
 ### Production (`systemd`)
 

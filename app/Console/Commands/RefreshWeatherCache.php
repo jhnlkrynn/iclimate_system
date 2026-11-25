@@ -62,6 +62,8 @@ class RefreshWeatherCache extends Command
             $this->warn('Barangay forecasts could not be prepared.');
         }
 
+        $this->callSilent('iclimate:refresh-drought-risk');
+
         return $failed === 0 ? self::SUCCESS : self::FAILURE;
     }
 }

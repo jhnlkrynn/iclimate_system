@@ -58,6 +58,9 @@ final class HeatMapLayerService
             $source = 'Season yield estimate from the iClimate model and local adjustment, stored daily.';
         } else {
             $data = $this->layers->layers('en', $period)[$layer] ?? ['barangays' => [], 'updated_at' => null, 'source' => $source, 'labels' => []];
+            if (! empty($data['source'])) {
+                $source = (string) $data['source'];
+            }
             $profiles = $layer === 'flood' && Schema::hasTable('barangay_profiles')
                 ? BarangayProfile::query()->get()->keyBy(fn (BarangayProfile $profile): string => LianBarangays::canonicalName($profile->barangay) ?? $profile->barangay)
                 : collect();

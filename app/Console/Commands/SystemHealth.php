@@ -17,7 +17,7 @@ use Throwable;
  */
 class SystemHealth extends Command
 {
-    protected $signature = 'iclimate:health {--json : Machine-readable output} {--log : Write FAIL lines to the application log}';
+    protected $signature = 'iclimate:health {--json : Machine-readable output} {--log : Write FAIL lines to the application log} {--restart-ml : Attempt to restart iclimate-python.service if 8010 is unreachable}';
 
     protected $description = 'Check database, migrations, ML service, Reverb, queue, scheduler and disk; exit 1 on any failure.';
 
@@ -48,13 +48,27 @@ class SystemHealth extends Command
 
         $this->check('ml-service', function (): array {
             $url = rtrim((string) config('services.farming_ai.url'), '/').'/health';
-            $body = Http::timeout(3)->connectTimeout(2)->acceptJson()->get($url)->throw()->json();
-            $models = (array) ($body['models_loaded'] ?? []);
+            try {
+                $body = Http::timeout(3)->connectTimeout(2)->acceptJson()->get($url)->throw()->json();
+                $models = (array) ($body['models_loaded'] ?? []);
 
-            return ($body['status'] ?? null) === 'ok' && in_array('rice', $models, true)
-                ? ['OK', 'models loaded: '.implode(', ', $models)]
-                : ['FAIL', 'ML service is degraded (models not loaded) — check python_scripts and the model files'];
-        }, 'ML service is not reachable — start it (iclimate-python.service / local supervisor "ml").');
+                return ($body['status'] ?? null) === 'ok' && in_array('rice', $models, true)
+                    ? ['OK', 'models loaded: '.implode(', ', $models)]
+                    : ['FAIL', 'ML service is degraded (models not loaded) — check python_scripts and the model files'];
+            } catch (Throwable $e) {
+                if ($this->option('restart-ml') && PHP_OS_FAMILY === 'Linux' && is_executable('/bin/systemctl')) {
+                    rescue(fn () => \Illuminate\Support\Facades\Process::timeout(10)->run('sudo -n systemctl restart iclimate-python.service'), null, false);
+                    usleep(500000);
+                    $retry = rescue(fn () => Http::timeout(3)->connectTimeout(2)->acceptJson()->get($url)->throw()->json(), null, false);
+                    if (is_array($retry) && ($retry['status'] ?? null) === 'ok') {
+                        return ['WARN', 'ML service was down and restarted via iclimate-python.service'];
+                    }
+                }
+                Log::warning('iclimate:health: ML service at 8010 is unreachable.', ['url' => $url, 'error' => $e->getMessage()]);
+
+                throw $e;
+            }
+        }, 'ML service is not reachable — start it (iclimate-python.service / composer dev).');
 
         $this->check('reverb', function (): array {
             $host = (string) config('reverb.servers.reverb.host', '127.0.0.1');

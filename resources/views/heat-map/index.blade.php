@@ -34,6 +34,10 @@
         $layerKeys = $layerKeys ?? [];
         $mapData['layers'] = $layerKeys;
         $mapData['labelsByRange'] = collect($ranges)->only($layerKeys)->map(fn (array $r) => $r['labels'] ?? [])->all();
+        $mapData['layerTitles'] = collect($layerKeys)->mapWithKeys(fn (string $k) => [$k => $t('layers.'.$k.'_title')])->all();
+        $mapData['emptyByLayer'] = collect($layerKeys)->mapWithKeys(fn (string $k) => [$k => $t('layers.'.$k.'_empty')])->all();
+        $mapData['updatedWord'] = trans('farmer.home.updated', [], $locale);
+        $mapData['sourceWord'] = $locale === 'fil' ? 'Pinagmulan' : 'Source';
     @endphp
     <div @class(['hmx', 'is-farmer' => ! $showNumbers]) data-heat-map data-range="{{ $range }}" lang="{{ $locale }}" @if ($updating ?? false) data-heat-map-updating @endif>
         <h1 class="visually-hidden">{{ $t('title') }}</h1>

@@ -40,21 +40,32 @@ class BarangayMapLayers
         $yields = rescue(fn (): array => $this->yieldForecast->all($yieldPeriod === '2weeks' ? '2weeks' : 'week'), [], false);
 
         $layers = [];
-        foreach (['flood', 'drought'] as $key) {
-            $assessments = [];
-            foreach (LianBarangays::all() as $name) {
-                $assessments[$name] = $this->assess($key, $forecasts[$name] ?? [], $period === '2weeks' ? 14 : 7);
-            }
-            $updated = collect($forecasts)->map(fn (array $record): ?CarbonImmutable => rescue(
-                fn () => ! empty($record['fetched_at']) ? CarbonImmutable::parse($record['fetched_at']) : null,
-                null,
-                false,
-            ))->filter()->min();
-
-            $layers[$key] = $this->layer($key, $locale, fn (string $name): string => $assessments[$name]['level'],
-                fn (string $name, string $level): array => $this->dynamicText($key, $level, $assessments[$name], $locale),
-                $this->t('source', $locale), $updated, self::FORECAST_DAYS);
+        $floodAssessments = [];
+        foreach (LianBarangays::all() as $name) {
+            $floodAssessments[$name] = $this->assess('flood', $forecasts[$name] ?? [], $period === '2weeks' ? 14 : 7);
         }
+        $floodUpdated = collect($forecasts)->map(fn (array $record): ?CarbonImmutable => rescue(
+            fn () => ! empty($record['fetched_at']) ? CarbonImmutable::parse($record['fetched_at']) : null,
+            null,
+            false,
+        ))->filter()->min();
+
+        $layers['flood'] = $this->layer('flood', $locale, fn (string $name): string => $floodAssessments[$name]['level'],
+            fn (string $name, string $level): array => $this->dynamicText('flood', $level, $floodAssessments[$name], $locale),
+            $this->t('source', $locale), $floodUpdated, self::FORECAST_DAYS);
+
+        $drought = app(DroughtRiskService::class)->readForLayer($period);
+        $droughtRows = $drought['barangays'] ?? [];
+        $droughtDays = $period === '2weeks' ? 14 : 7;
+        $layers['drought'] = $this->layer(
+            'drought',
+            $locale,
+            fn (string $name): string => (string) ($droughtRows[$name]['level'] ?? 'nodata'),
+            fn (string $name, string $level): array => $this->dynamicText('drought', $level, $droughtRows[$name] ?? ['metrics' => ['days_covered' => 0]], $locale),
+            (string) ($drought['source'] ?? 'iClimate forecast'),
+            $drought['updated_at'] ?? $floodUpdated,
+            $droughtDays
+        );
 
         $yieldUpdated = collect($yields)->map(fn (array $prediction): ?CarbonImmutable => rescue(
             fn () => ! empty($prediction['prediction_timestamp']) ? CarbonImmutable::parse($prediction['prediction_timestamp']) : null,

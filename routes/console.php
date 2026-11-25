@@ -162,6 +162,11 @@ Schedule::command('iclimate:refresh-flood-risk')
     ->withoutOverlapping()
     ->appendOutputTo($automationLog('iclimate:refresh-flood-risk'));
 
+Schedule::command('iclimate:refresh-drought-risk')
+    ->cron('5,35 * * * *')
+    ->withoutOverlapping()
+    ->appendOutputTo($automationLog('iclimate:refresh-drought-risk'));
+
 // Closes prediction/report requests nothing finished in time and drops repeated refresh jobs, so the queue
 // stays short even after the worker was stopped for a while.
 Schedule::command('iclimate:clean-stale-queue')
@@ -260,7 +265,7 @@ Schedule::command('auth:clear-resets')
 
 // Audit 2026-11-18: one health check every 5 minutes; every FAIL (database down, ML or Reverb unreachable,
 // stalled queue, stopped scheduler, low disk) lands in the application log with what to do.
-Schedule::command('iclimate:health --log')
+Schedule::command('iclimate:health --log --restart-ml')
     ->everyFiveMinutes()
     ->withoutOverlapping(5)
     ->appendOutputTo($automationLog('iclimate:health'));

@@ -59,6 +59,7 @@ class RefreshLianBarangayWeather extends Command
             $this->rateRisk($risk, (bool) $this->option('force'));
             $layerCache->forgetCache();
             $this->callSilent('iclimate:refresh-flood-risk');
+            $this->callSilent('iclimate:refresh-drought-risk');
         }
 
         return $summary['current'] > 0 ? self::SUCCESS : self::FAILURE;
