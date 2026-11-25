@@ -249,7 +249,7 @@ class FarmerHomeKpisTest extends TestCase
         $this->assertSame(route('farmer.my-farm'), $expected['link']);
 
         // On the page: the tile is a button for its panel section, the one drawer holds that section (hidden until a
-        // card is clicked), and the section's "View full details" link is the planting plan, not My Farm.
+        // card is clicked), and no "View full details" button is rendered inside the drawer.
         $html = $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk()->getContent();
         $this->assertMatchesRegularExpression('#<button type="button" class="fh-kpi" data-fh-kpi="crop" data-panel="days-to-harvest" aria-haspopup="dialog" aria-controls="fhDrawer">#', $html);
         $this->assertStringNotContainsString('<a class="fh-kpi"', $html);
@@ -261,8 +261,8 @@ class FarmerHomeKpisTest extends TestCase
         $this->assertStringContainsString('Expected harvest date Nov 5, 2026', $text);
         $this->assertStringContainsString('Days left 30 days', $text);
         $this->assertStringContainsString('Based on your planting plan (115-day default).', $text);
-        $this->assertStringContainsString('href="'.route('farmer.planting-schedules.edit', $plan).'"', $m[1]);
-        $this->assertStringContainsString('View full details', $text);
+        $this->assertStringNotContainsString('fh-drawer-more', $m[1]);
+        $this->assertStringNotContainsString('View full details', $text);
         $this->assertStringContainsString('data-panel-section="farm-size"', $html);
         // The script that opens and closes it (with the page's CSP nonce when strict CSP is on).
         $this->assertMatchesRegularExpression('#<script(?: nonce="[^"]+")?>\s*// The summary panel#', $html);

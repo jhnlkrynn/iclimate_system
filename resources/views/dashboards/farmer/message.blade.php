@@ -5,6 +5,7 @@
     $m = $f['message'];
     $mood = $m['tone'] === 'good' ? 'good' : (in_array($m['tone'], ['watch', 'danger'], true) ? 'bad' : 'info');
 @endphp
+@if ($mood !== 'bad')
 <section class="fh-message is-{{ $m['tone'] }} fh-mood-{{ $mood }}" aria-labelledby="fhMessageTitle" data-fh-message="{{ $m['key'] }}">
     <div class="fh-message-art" aria-hidden="true">
         @if ($mood === 'good')
@@ -57,3 +58,4 @@
         @endif
     </div>
 </section>
+@endif

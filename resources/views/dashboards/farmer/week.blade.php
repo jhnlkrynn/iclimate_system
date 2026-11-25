@@ -9,8 +9,17 @@
     @if ($week['state'] === 'ok')
         <ol class="fh-days">
             @foreach ($week['days'] as $day)
+                @php
+                    $dayDate = ! empty($day['date'])
+                        ? ($day['date'] instanceof \Carbon\CarbonInterface
+                            ? $day['date']
+                            : \Carbon\CarbonImmutable::parse($day['date'], \App\Services\Analytics\FarmerDashboardService::TIMEZONE))
+                        : null;
+                    $dayDateLabel = $dayDate?->locale($f['locale'] ?? app()->getLocale())->translatedFormat('M j');
+                @endphp
                 <li @class(['fh-day', 'is-today' => $day['is_today']])>
                     <span class="fh-day-name">{{ $day['label'] }}</span>
+                    @if ($dayDateLabel)<span class="fh-day-date">{{ $dayDateLabel }}</span>@endif
                     <span class="fh-day-icon" aria-hidden="true">@include('dashboards.mao.icon', ['name' => $day['icon']])</span>
                     <span class="fh-day-words">{{ $day['condition'] }}</span>
                     @if ($day['rain'])<span class="fh-day-rain">{{ $day['rain'] }}</span>@endif

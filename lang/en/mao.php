@@ -221,6 +221,13 @@ return [
             'actual' => 'Actual (t/ha)',
             'difference' => 'Difference (t/ha)',
         ],
+        'weather_alert' => [
+            'title' => 'Weather alert',
+            'typhoon' => 'A typhoon advisory (:title) is currently active. Monitor field check-ins and advisories.',
+            'risk_high' => ':count barangay(s) currently have high weather risk (:barangays). Review the Heat Map and advisories.',
+            'heavy_rain' => 'Heavy rain is expected :when in Lian. Monitor drainage and field advisories.',
+            'strong_wind' => 'Strong wind is expected :when in Lian. Alert farmers to secure tall crops and equipment.',
+        ],
     ],
     // end MAO Dashboard – Naicel
 

@@ -83,7 +83,6 @@
                     ], fn ($v): bool => $v !== null && $v !== ''),
                     'text' => ($w['stale'] ?? false) ? __('farmer.kpis.detail.weather_stale') : null,
                     'updated_at' => $w['updated_at'],
-                    'link' => route('farmer.dashboard').'#week',
                 ];
             }
             // Barangay risk: the Barangay Risk card's rating (the risk tile, when shown, has the same one).
@@ -105,10 +104,21 @@
                     ], fn (string $v): bool => $v !== ''),
                     'text' => __('farmer.kpis.detail.harvest_how'),
                     'updated_at' => $h['ran_at'] ?? null,
-                    'link' => route('farmer.my-farm'),
                 ];
             }
         @endphp
+        @php
+            $fm = $f['message'] ?? [];
+            $weatherAlert = in_array($fm['tone'] ?? null, ['watch', 'danger'], true) ? [
+                'id' => (string) ($fm['key'] ?? 'alert'),
+                'date' => \Carbon\CarbonImmutable::now(\App\Services\Analytics\FarmerDashboardService::TIMEZONE)->toDateString(),
+                'tone' => (string) $fm['tone'],
+                'icon' => (string) ($fm['icon'] ?? 'alert'),
+                'title' => (string) ($fm['headline'] ?? __('farmer.home.message.headline_bad')),
+                'message' => (string) ($fm['text'] ?? ''),
+            ] : null;
+        @endphp
+        <x-weather-alert-modal :alert="$weatherAlert" />
         <div class="fh-drawer" id="fhDrawer" data-fh-drawer hidden>
             <div class="fh-drawer-backdrop" data-fh-drawer-close></div>
             <div class="fh-drawer-panel" role="dialog" aria-modal="true" tabindex="-1" data-fh-drawer-panel>
@@ -225,9 +235,6 @@
                                         @if (! empty($rangeData['note']))
                                             <p class="fh-words mt-2">{{ $rangeData['note'] }}</p>
                                         @endif
-                                        @if (! empty($rangeData['link']))
-                                            <a class="fh-link fh-drawer-more" href="{{ $rangeData['link'] }}">{{ __('farmer.kpis.detail.view_full') }} <span aria-hidden="true">→</span></a>
-                                        @endif
                                     </div>
                                 @endif
                             @endforeach
@@ -271,9 +278,6 @@
                             @endif
                             @if (! empty($d['updated_at']))
                                 <x-updated-at :at="$d['updated_at']" :label="__('farmer.home.updated')" />
-                            @endif
-                            @if (! empty($d['link']))
-                                <a class="fh-link fh-drawer-more" href="{{ $d['link'] }}">{{ __('farmer.kpis.detail.view_full') }} <span aria-hidden="true">→</span></a>
                             @endif
                         @endif
                     </div>

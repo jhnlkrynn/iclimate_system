@@ -447,6 +447,23 @@ class FarmerHomeTest extends TestCase
         $this->assertStringContainsString(route('planting-advisories.index'), $html);
     }
 
+    public function test_seven_days_cards_show_translated_calendar_dates_under_day_names(): void
+    {
+        $today = \Carbon\CarbonImmutable::now('Asia/Manila');
+        $tomorrow = $today->addDay();
+
+        $htmlEn = $this->home($this->farmer(attributes: ['email' => 'dates-en@example.test', 'preferred_language' => 'en']))->getContent();
+        $weekEn = $this->section($htmlEn, 'data-fh-week');
+        $this->assertSame(7, substr_count($weekEn, '<span class="fh-day-date">'));
+        $this->assertStringContainsString('<span class="fh-day-date">'.$today->locale('en')->translatedFormat('M j').'</span>', $weekEn);
+        $this->assertStringContainsString('<span class="fh-day-date">'.$tomorrow->locale('en')->translatedFormat('M j').'</span>', $weekEn);
+
+        $htmlFil = $this->home($this->farmer(attributes: ['email' => 'dates-fil@example.test', 'preferred_language' => 'fil']))->getContent();
+        $weekFil = $this->section($htmlFil, 'data-fh-week');
+        $this->assertStringContainsString('<span class="fh-day-date">'.$today->locale('fil')->translatedFormat('M j').'</span>', $weekFil);
+        $this->assertStringContainsString('<span class="fh-day-date">'.$tomorrow->locale('fil')->translatedFormat('M j').'</span>', $weekFil);
+    }
+
     // ------------------------------------------------------------ typhoon check-in
 
     public function test_typhoon_check_in_appears_only_during_an_active_typhoon(): void

@@ -779,6 +779,7 @@ return [
             'headline_bad' => 'Bad weather',
             'headline_alert' => 'Weather alert',
             'headline_info' => 'Today',
+            'got_it' => 'Got it',
             'good_reason' => ':condition, :temperature°C, and :risk barangay risk make conditions suitable for normal farm work.',
             'source_label' => 'Source',
             'source_value' => 'Latest iClimate weather data / :source forecast',
@@ -1372,7 +1373,6 @@ return [
         'detail' => [
             'open' => 'Show details: :card',
             'close' => 'Close',
-            'view_full' => 'View full details',
             'farm_name' => 'Farm name',
             'barangay' => 'Barangay',
             'size' => 'Farm size',
@@ -1492,7 +1492,6 @@ return [
         'open' => 'Open',
         'complete_profile' => ['title' => 'Complete your profile', 'message' => 'Add your barangay, association, contact number, and farm to get weather advice and yield estimates.'],
         'barangay' => ['title' => 'Add your barangay', 'message' => 'So you can see the risk and advice for your area.'],
-        'barangay_confirm' => ['title' => 'Confirm your barangay', 'message' => 'Your barangay ":barangay" needs to be confirmed. Please choose your exact barangay in your profile.'],
         'barangay_confirm' => ['title' => 'Confirm your barangay', 'message' => 'Your barangay ":barangay" needs to be confirmed. Please choose your exact barangay in your profile.'],
         'farm' => ['title' => 'Add your farm', 'message' => 'So your planting, harvest and yield estimate have a farm to belong to.'],
         'farm_area' => ['title' => 'Add your farm size', 'message' => 'So you can see your expected harvest this season.'],

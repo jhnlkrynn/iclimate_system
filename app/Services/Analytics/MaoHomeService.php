@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\WeatherForecastFeedback;
 use App\Services\Risk\BarangayWeekRiskService;
 use App\Services\TyphoonSafetyService;
+use App\Services\Weather\LianBarangayWeatherService;
 use App\Services\Weather\WeatherFeedbackSummaryService;
 use App\Support\ClimateHistory;
 use App\Support\LianBarangays;
@@ -20,6 +21,7 @@ use App\Support\SampleData;
 use App\Support\SchemaCache;
 use App\Support\YieldCorrections;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Cache;
 use Throwable;
 
 /**
@@ -60,14 +62,37 @@ class MaoHomeService
     {
         $now = CarbonImmutable::now(self::TIMEZONE);
         $this->scope = $barangays === null ? null : array_values(array_intersect(LianBarangays::all(), $barangays));
+        $risk = $this->scopedWeekRisk();
+
+        return array_merge(
+            $this->overviewPayload($now, $risk),
+            $this->analyticsPayload($now, $risk),
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function scopedWeekRisk(): array
+    {
         $risk = rescue(fn (): array => $this->weekRisk->forRange('week'), ['state' => 'nodata', 'counts' => [], 'barangays' => [], 'updated_at' => null], false);
         if ($this->scope !== null && ($risk['state'] ?? null) === 'ok') {
             $risk['barangays'] = array_intersect_key($risk['barangays'], array_flip($this->scope));
-            $risk['counts'] = array_merge(['high' => 0, 'moderate' => 0, 'low' => 0, 'severe' => 0, 'nodata' => 0],
-                collect($risk['barangays'])->countBy(fn (array $b): string => (string) $b['level'])->all());
+            $risk['counts'] = array_merge(
+                ['high' => 0, 'moderate' => 0, 'low' => 0, 'severe' => 0, 'nodata' => 0],
+                collect($risk['barangays'])->countBy(fn (array $b): string => (string) $b['level'])->all()
+            );
         }
-        $analytics = $this->analytics ?? app(MaoYieldAnalytics::class);
 
+        return $risk;
+    }
+
+    /**
+     * @param  array<string, mixed>  $risk
+     * @return array<string, mixed>
+     */
+    private function overviewPayload(CarbonImmutable $now, array $risk): array
+    {
         return [
             'generated_at' => $now,
             'season' => rescue(fn (): string => $this->seasonLabel($now), '', false),
@@ -96,6 +121,18 @@ class MaoHomeService
                 'updated_at' => $risk['updated_at'],
             ],
             'actions' => $this->actions(),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $risk
+     * @return array<string, mixed>
+     */
+    private function analyticsPayload(CarbonImmutable $now, array $risk): array
+    {
+        $analytics = $this->analytics ?? app(MaoYieldAnalytics::class);
+
+        return [
             'chart' => $this->yieldByYear(),
             // Panel revisions 3.1, 3.2, 4.2: series the page's Year range / Season filter recomputes in the browser.
             'yield_series' => rescue(fn (): array => $analytics->yieldByYear(), ['state' => 'nodata'], false),
@@ -105,6 +142,7 @@ class MaoHomeService
             'impact' => rescue(fn (): array => $this->rainfallAgainstYield(), ['state' => 'nodata'], false),
             'planted' => rescue(fn (): array => $this->plantedByBarangay($now), ['state' => 'nodata'], false),
             'survey' => rescue(fn (): array => $this->surveyResults(), ['accuracy' => [], 'yield' => ['count' => 0, 'rows' => collect()]], false),
+            'weather_alert' => rescue(fn (): ?array => $this->weatherAlert($now, $risk), null, false),
         ];
     }
 
@@ -396,7 +434,7 @@ class MaoHomeService
                 'key' => 'farmer-approvals',
                 'label' => 'Farmer sign-ups to approve',
                 // Shown only while someone is waiting (null hides the action).
-                'count' => rescue(fn (): ?int => $this->scoped(\App\Models\User::query()->where('role', \App\Models\User::ROLE_FARMER)->where('status', \App\Models\User::STATUS_PENDING), 'users.barangay')->count() ?: null, null, false),
+                'count' => rescue(fn (): ?int => $this->scoped(User::query()->where('role', User::ROLE_FARMER)->where('status', User::STATUS_PENDING), 'users.barangay')->count() ?: null, null, false),
                 'href' => route('mao.farmer-approvals.index'),
                 'action' => 'Review',
             ],
@@ -558,5 +596,87 @@ class MaoHomeService
         return $areas->isEmpty()
             ? ['state' => 'nodata']
             : ['state' => 'ok', 'labels' => $areas->keys()->all(), 'values' => $areas->values()->all()];
+    }
+
+    /**
+     * Active weather alert for MAO/IT dashboards (read from saved/cached data only).
+     *
+     * @param  array<string, mixed>  $risk
+     * @return array{id: string, date: string, tone: string, icon: string, kind: string, params: array<string, mixed>}|null
+     */
+    private function weatherAlert(CarbonImmutable $now, array $risk): ?array
+    {
+        $today = $now->toDateString();
+        $event = rescue(fn () => $this->typhoon->activeEvent(), null, false);
+        if (is_array($event) && ! empty($event['title'])) {
+            return [
+                'id' => 'typhoon:'.(string) ($event['key'] ?? 'active'),
+                'date' => $today,
+                'tone' => 'danger',
+                'icon' => 'storm',
+                'kind' => 'typhoon',
+                'params' => ['title' => (string) $event['title']],
+            ];
+        }
+
+        if (($risk['state'] ?? null) === 'ok') {
+            $highNames = collect($risk['barangays'] ?? [])->whereIn('level', ['high', 'severe'])->keys()->values();
+            if ($highNames->isNotEmpty()) {
+                return [
+                    'id' => 'risk_high',
+                    'date' => $today,
+                    'tone' => 'danger',
+                    'icon' => 'map',
+                    'kind' => 'risk_high',
+                    'params' => [
+                        'count' => $highNames->count(),
+                        'barangays' => $highNames->take(3)->implode(', ').($highNames->count() > 3 ? '…' : ''),
+                    ],
+                ];
+            }
+        }
+
+        $store = Cache::get(LianBarangayWeatherService::STORE_KEY);
+        $records = is_array($store['records'] ?? null) ? $store['records'] : [];
+        if ($this->scope !== null) {
+            $records = array_intersect_key($records, array_flip($this->scope));
+        }
+        $tomorrow = $now->addDay()->toDateString();
+        $heavyLimit = (float) config('farmer_dashboard.heavy_rain_mm', FarmerDashboardService::HEAVY_RAIN_MM);
+        $windLimit = (float) config('farmer_dashboard.strong_wind_kmh', FarmerDashboardService::STRONG_WIND_KMH);
+
+        foreach ($records as $record) {
+            foreach ((array) ($record['daily'] ?? []) as $day) {
+                $date = (string) ($day['date'] ?? '');
+                if ($date !== $today && $date !== $tomorrow) {
+                    continue;
+                }
+                $whenKey = $date === $today ? 'today' : 'tomorrow';
+                $rain = is_numeric($day['rainfall'] ?? null) ? (float) $day['rainfall'] : null;
+                if ($rain !== null && $rain >= $heavyLimit) {
+                    return [
+                        'id' => 'heavy_rain',
+                        'date' => $today,
+                        'tone' => 'watch',
+                        'icon' => 'rain',
+                        'kind' => 'heavy_rain',
+                        'params' => ['when_key' => $whenKey],
+                    ];
+                }
+                $wind = is_numeric($day['wind_speed_max'] ?? null) ? (float) $day['wind_speed_max'] : null;
+                if ($wind !== null && $wind >= $windLimit) {
+                    return [
+                        'id' => 'strong_wind',
+                        'date' => $today,
+                        'tone' => 'watch',
+                        'icon' => 'wind',
+                        'kind' => 'strong_wind',
+                        'params' => ['when_key' => $whenKey],
+                    ];
+                }
+            }
+        }
+
+        return null;
     }
 }

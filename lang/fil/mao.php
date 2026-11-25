@@ -220,6 +220,13 @@ return [
             'actual' => 'Aktuwal (t/ha)',
             'difference' => 'Pagkakaiba (t/ha)',
         ],
+        'weather_alert' => [
+            'title' => 'Babala sa panahon',
+            'typhoon' => 'May aktibong babala ng bagyo (:title). Bantayan ang mga check-in at advisory.',
+            'risk_high' => ':count barangay ang may mataas na panganib sa panahon (:barangays). Suriin ang Heat Map at mga advisory.',
+            'heavy_rain' => 'Malakas na ulan ang inaasahan :when sa Lian. Bantayan ang daluyan ng tubig at mga advisory.',
+            'strong_wind' => 'Malakas na hangin ang inaasahan :when sa Lian. Paalalahanan ang mga magsasaka na itali ang matataas na tanim.',
+        ],
     ],
     // end MAO Dashboard – Naicel
 

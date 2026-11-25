@@ -769,6 +769,7 @@ return [
             'headline_bad' => 'Masamang panahon',
             'headline_alert' => 'Babala sa panahon',
             'headline_info' => 'Ngayong araw',
+            'got_it' => 'Nakuha ko',
             'good_reason' => ':condition, :temperature°C, at :risk na panganib sa barangay kaya ang kondisyon para sa karaniwang gawain sa bukid.',
             'source_label' => 'Pinagmulan',
             'source_value' => 'Pinakabagong datos ng panahon ng iClimate / forecast mula sa :source',
@@ -1361,7 +1362,6 @@ return [
         'detail' => [
             'open' => 'Ipakita ang detalye: :card',
             'close' => 'Isara',
-            'view_full' => 'Tingnan ang buong detalye',
             'farm_name' => 'Pangalan ng bukid',
             'barangay' => 'Barangay',
             'size' => 'Laki ng bukid',
@@ -1481,7 +1481,6 @@ return [
         'open' => 'Buksan',
         'complete_profile' => ['title' => 'Kumpletuhin ang iyong profile', 'message' => 'Idagdag ang iyong barangay, samahan, numero ng telepono, at bukid para makakuha ng payo sa panahon at tantiya ng ani.'],
         'barangay' => ['title' => 'Idagdag ang iyong barangay', 'message' => 'Para makita ang panganib at payo para sa inyong lugar.'],
-        'barangay_confirm' => ['title' => 'Kumpirmahin ang iyong barangay', 'message' => 'Kailangang kumpirmahin ang iyong barangay na ":barangay". Piliin ang eksaktong barangay sa iyong profile.'],
         'barangay_confirm' => ['title' => 'Kumpirmahin ang iyong barangay', 'message' => 'Kailangang kumpirmahin ang iyong barangay na ":barangay". Piliin ang eksaktong barangay sa iyong profile.'],
         'farm' => ['title' => 'Idagdag ang iyong bukid', 'message' => 'Para may bukid na paglalagyan ang iyong tanim, ani at tantiya ng ani.'],
         'farm_area' => ['title' => 'Idagdag ang laki ng iyong bukid', 'message' => 'Para makita ang inaasahang ani mo ngayong season.'],

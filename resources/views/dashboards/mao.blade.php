@@ -821,4 +821,24 @@
             document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', start) : start();
         })();
     </script>
+    @php
+        $rawAlert = $mao['weather_alert'] ?? null;
+        $maoWeatherAlert = null;
+        if (is_array($rawAlert) && ! empty($rawAlert['kind'])) {
+            $params = (array) ($rawAlert['params'] ?? []);
+            if (! empty($params['when_key'])) {
+                $params['when'] = __('farmer.home.message.'.$params['when_key']);
+                unset($params['when_key']);
+            }
+            $maoWeatherAlert = [
+                'id' => (string) ($rawAlert['id'] ?? 'alert'),
+                'date' => (string) ($rawAlert['date'] ?? now('Asia/Manila')->toDateString()),
+                'tone' => (string) ($rawAlert['tone'] ?? 'danger'),
+                'icon' => (string) ($rawAlert['icon'] ?? 'alert'),
+                'title' => $t('weather_alert.title'),
+                'message' => $t('weather_alert.'.$rawAlert['kind'], $params),
+            ];
+        }
+    @endphp
+    <x-weather-alert-modal :alert="$maoWeatherAlert" />
 </x-app-layout>
