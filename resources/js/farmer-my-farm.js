@@ -14,22 +14,25 @@ export function initFarmerMyFarm() {
     const farmSelect = dialog?.querySelector('select[name="farm_id"]');
     const varietyWrap = dialog?.querySelector('[data-fmf-variety-wrap]');
     const varietySearch = dialog?.querySelector('[data-fmf-variety-search]');
-    const varietySelect = dialog?.querySelector('[data-fmf-variety-select]');
+    const varietyValue = dialog?.querySelector('[data-fmf-variety-value]');
+    const varietyList = dialog?.querySelector('[data-fmf-variety-list]');
     const previewBox = dialog?.querySelector('[data-fmf-harvest-preview]');
     const previewSummary = dialog?.querySelector('[data-fmf-preview-summary]');
     const previewToday = dialog?.querySelector('[data-fmf-preview-today]');
     const closingRef = dialog?.querySelector('[data-fmf-closing-ref]');
     let previewAbort = null;
+    let varietyOptions = [];
+    try { varietyOptions = varietySearch?.dataset.options ? JSON.parse(varietySearch.dataset.options) : []; } catch (e) { varietyOptions = []; }
 
     const currentKind = () => dialog?.querySelector('input[name="kind"]:checked')?.value || 'planted';
 
     const updatePreview = async () => {
-        if (!previewBox || !varietySelect || !dateInput || currentKind() !== 'planted') {
+        if (!previewBox || !varietyValue || !dateInput || currentKind() !== 'planted') {
             if (previewBox) previewBox.hidden = true;
             return;
         }
         const dateVal = dateInput.value;
-        const varietyVal = varietySelect.value;
+        const varietyVal = varietyValue.value;
         if (!dateVal || !varietyVal) {
             previewBox.hidden = true;
             return;
@@ -76,27 +79,82 @@ export function initFarmerMyFarm() {
     const syncDialogFields = () => {
         const isPlanted = currentKind() === 'planted';
         if (varietyWrap) varietyWrap.hidden = !isPlanted;
-        if (varietySelect) {
-            varietySelect.required = isPlanted;
-            varietySelect.disabled = !isPlanted;
+        if (varietySearch) {
+            varietySearch.required = isPlanted;
+            varietySearch.disabled = !isPlanted;
         }
+        if (varietyValue) varietyValue.disabled = !isPlanted;
+        if (!isPlanted && varietyList) varietyList.hidden = true;
         updatePreview();
         updateClosingRef();
     };
 
-    if (varietySearch && varietySelect) {
-        varietySearch.addEventListener('input', () => {
-            const q = varietySearch.value.trim().toLowerCase();
-            [...varietySelect.options].forEach((opt) => {
-                if (!opt.value || opt.value === 'unknown') { opt.hidden = false; return; }
-                const hay = (opt.dataset.search || opt.textContent).toLowerCase();
-                opt.hidden = q !== '' && !hay.includes(q);
+    const renderVarietyMatches = (query) => {
+        if (!varietyList || !varietySearch) return;
+        const q = query.trim().toLowerCase();
+        const matches = varietyOptions
+            .filter((o) => q === '' || String(o.id) === 'unknown' || (o.search || o.label || '').toLowerCase().includes(q))
+            .slice(0, 30);
+
+        varietyList.innerHTML = '';
+        if (matches.length === 0) {
+            const li = document.createElement('li');
+            li.className = 'fmf-combo-empty';
+            li.textContent = varietySearch.dataset.emptyLabel || 'No matching variety found.';
+            varietyList.appendChild(li);
+        } else {
+            matches.forEach((opt) => {
+                const li = document.createElement('li');
+                li.role = 'option';
+                li.tabIndex = -1;
+                li.textContent = opt.label;
+                if (String(varietyValue?.value || '') === String(opt.id)) {
+                    li.setAttribute('aria-selected', 'true');
+                }
+                li.addEventListener('mousedown', (ev) => {
+                    ev.preventDefault();
+                    varietySearch.value = opt.label;
+                    if (varietyValue) varietyValue.value = String(opt.id);
+                    varietySearch.setCustomValidity('');
+                    varietyList.hidden = true;
+                    varietySearch.setAttribute('aria-expanded', 'false');
+                    updatePreview();
+                });
+                varietyList.appendChild(li);
             });
+        }
+        varietyList.hidden = false;
+        varietySearch.setAttribute('aria-expanded', 'true');
+    };
+
+    if (varietySearch && varietyValue) {
+        varietySearch.addEventListener('focus', () => renderVarietyMatches(varietySearch.value));
+        varietySearch.addEventListener('input', () => {
+            const typed = varietySearch.value.trim().toLowerCase();
+            const exact = varietyOptions.find((o) => (o.label || '').toLowerCase() === typed);
+            varietyValue.value = exact ? String(exact.id) : '';
+            varietySearch.setCustomValidity('');
+            renderVarietyMatches(varietySearch.value);
+            updatePreview();
+        });
+        varietySearch.addEventListener('blur', () => {
+            setTimeout(() => {
+                if (varietyList) varietyList.hidden = true;
+                varietySearch.setAttribute('aria-expanded', 'false');
+            }, 120);
         });
     }
 
+    dialog?.querySelector('form')?.addEventListener('submit', (e) => {
+        if (currentKind() === 'planted' && varietySearch && varietyValue && !varietyValue.value) {
+            e.preventDefault();
+            varietySearch.setCustomValidity('Please pick a rice variety from the list.');
+            varietySearch.reportValidity();
+        }
+    });
+
     dialog?.addEventListener('change', (e) => {
-        if (e.target.matches('input[name="kind"], select[name="farm_id"], input[name="date"], [data-fmf-variety-select]')) {
+        if (e.target.matches('input[name="kind"], select[name="farm_id"], input[name="date"]')) {
             syncDialogFields();
         }
     });

@@ -136,17 +136,30 @@
                 @php
                     $actFil = app()->getLocale() === 'fil';
                     $actVarietyOld = (string) old('rice_variety_id', '');
+                    $actVarietyLabel = '';
+                    if ($actVarietyOld === 'unknown') {
+                        $actVarietyLabel = $actFil ? 'Hindi ko alam' : "I don't know";
+                    } elseif ($actVarietyOld !== '') {
+                        $matchedVariety = collect($activityVarieties ?? [])->firstWhere('id', (int) $actVarietyOld);
+                        $actVarietyLabel = $matchedVariety['label'] ?? '';
+                    }
+                    $actComboOptions = array_merge(
+                        [['id' => 'unknown', 'label' => $actFil ? 'Hindi ko alam' : "I don't know", 'search' => 'unknown hindi ko alam i dont know']],
+                        $activityVarieties ?? []
+                    );
                 @endphp
-                <div class="fmf-field" data-fmf-variety-wrap @if (old('kind', 'planted') !== 'planted') hidden @endif>
+                <div class="fmf-field fmf-combo" data-fmf-variety-wrap @if (old('kind', 'planted') !== 'planted') hidden @endif>
                     <label for="fmfVarietySearch" class="d-block mb-1">{{ $actFil ? 'Rice variety' : 'Variety' }}</label>
-                    <input id="fmfVarietySearch" type="search" class="fad-input mb-2" placeholder="{{ $actFil ? 'Maghanap ng variety (hal. NSIC Rc 222)...' : 'Search variety (e.g. NSIC Rc 222)...' }}" autocomplete="off" data-fmf-variety-search>
-                    <select class="fad-input" name="rice_variety_id" data-fmf-variety-select @if (old('kind', 'planted') === 'planted') required @endif>
-                        <option value="" disabled @selected($actVarietyOld === '')>{{ $actFil ? 'Pumili ng rice variety...' : 'Choose a rice variety...' }}</option>
-                        <option value="unknown" @selected($actVarietyOld === 'unknown')>{{ $actFil ? 'Hindi ko alam' : "I don't know" }}</option>
-                        @foreach (($activityVarieties ?? []) as $vOption)
-                            <option value="{{ $vOption['id'] }}" data-search="{{ $vOption['search'] }}" @selected($actVarietyOld === (string) $vOption['id'])>{{ $vOption['label'] }}</option>
-                        @endforeach
-                    </select>
+                    <input type="hidden" name="rice_variety_id" value="{{ $actVarietyOld }}" data-fmf-variety-value>
+                    <input id="fmfVarietySearch" type="search" class="fad-input" role="combobox" aria-autocomplete="list" aria-expanded="false"
+                        placeholder="{{ $actFil ? 'Maghanap ng variety (hal. NSIC Rc 222)...' : 'Search variety (e.g. NSIC Rc 222)...' }}"
+                        value="{{ $actVarietyLabel }}"
+                        autocomplete="off"
+                        data-fmf-variety-search
+                        data-options="{{ json_encode($actComboOptions) }}"
+                        data-empty-label="{{ $actFil ? 'Walang katugmang variety.' : 'No matching variety found.' }}"
+                        @if (old('kind', 'planted') === 'planted') required @endif>
+                    <ul class="fmf-combo-list" role="listbox" data-fmf-variety-list hidden></ul>
                 </div>
                 <div class="rv-preview" data-fmf-harvest-preview data-estimate-url="{{ route('rice-varieties.estimate') }}" hidden aria-live="polite">
                     <strong data-fmf-preview-summary></strong>

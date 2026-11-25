@@ -234,3 +234,17 @@ html[data-theme="dark"] .fmf .fmf-error { background: #3a1b1b; border-color: #7a
 .fmf-sc-val { font-size: .84rem; color: #1b1f1d; white-space: nowrap; }
 .fmf-sc-sub { font-size: .75rem; color: #4b5563; white-space: nowrap; }
 .fmf-sc-lbl { font-size: .78rem; font-weight: 600; color: #364432; }
+.fmf-combo { position: relative; }
+.fmf-combo-list {
+    position: absolute; z-index: 40; left: 0; right: 0; top: calc(100% + 4px);
+    max-height: 220px; overflow-y: auto; margin: 0; padding: 4px; list-style: none;
+    background: #fff; border: 1px solid var(--sage-200, #CCD8C8); border-radius: 10px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, .14);
+}
+.fmf-combo-list li {
+    padding: 9px 12px; border-radius: 8px; cursor: pointer; font-size: .92rem; color: #1b1f1d;
+}
+.fmf-combo-list li:hover, .fmf-combo-list li[aria-selected="true"] {
+    background: var(--sage-50, #F3F6F2); color: var(--sage-800, #364432); font-weight: 700;
+}
+.fmf-combo-list li.fmf-combo-empty { color: #5b6660; font-style: italic; cursor: default; background: none; }
