@@ -339,8 +339,18 @@ class FarmerYieldEstimateTest extends TestCase
 
     // ------------------------------------------------------------ the scheduled warm-up
 
+    private function fakeMlHealth(bool $healthy = true): void
+    {
+        \Illuminate\Support\Facades\Http::swap(new \Illuminate\Http\Client\Factory);
+        Http::fake([
+            '*/health' => Http::response($healthy ? ['status' => 'ok'] : [], $healthy ? 200 : 503),
+            '*' => Http::response([], 500),
+        ]);
+    }
+
     public function test_the_warm_up_prepares_every_farmer_and_stops_asking_a_service_that_is_down(): void
     {
+        $this->fakeMlHealth(true);
         $this->model(4.4);
         $farmers = collect(range(1, 5))->map(fn (int $i) => $this->farmer(email: "f{$i}@example.test"));
         $this->artisan('iclimate:warm-farmer-yields')->expectsOutputToContain('Yield estimates prepared: 5')->assertSuccessful();
@@ -356,6 +366,7 @@ class FarmerYieldEstimateTest extends TestCase
 
     public function test_warm_up_skips_invalid_barangays_and_areas_without_stopping_and_logs_filter_counts(): void
     {
+        $this->fakeMlHealth(true);
         $this->model(4.6);
 
         $badNull = $this->farmer(email: 'nullbrgy@example.test');
@@ -388,6 +399,7 @@ class FarmerYieldEstimateTest extends TestCase
 
     public function test_warm_up_still_runs_barangay_estimates_when_zero_farmer_estimates_succeed_and_prints_cause_with_verbose(): void
     {
+        $this->fakeMlHealth(true);
         $farmers = collect(range(1, 3))->map(fn (int $i) => $this->farmer(email: "fail{$i}@example.test"));
 
         $this->mock(RiceYieldPredictionService::class, function ($mock): void {
@@ -427,5 +439,25 @@ class FarmerYieldEstimateTest extends TestCase
 
         PrepareFarmerYieldEstimate::dispatchSync($farmer->id);
         $this->assertNull(FarmerDashboardService::storedEstimate($farmer->id));
+    }
+
+    public function test_warm_up_circuit_breaks_when_ml_health_check_fails_with_one_warning_and_no_per_farm_fallback(): void
+    {
+        $this->fakeMlHealth(false);
+        \Illuminate\Support\Facades\Log::spy();
+        $this->farmer(email: 'f1@example.test');
+        $this->farmer(email: 'f2@example.test');
+
+        $this->mock(RiceYieldPredictionService::class, function ($mock): void {
+            $mock->shouldNotReceive('predictForUser');
+        });
+
+        $this->artisan('iclimate:warm-farmer-yields')
+            ->expectsOutputToContain('skipping per-farm local Python fallback')
+            ->assertSuccessful();
+
+        \Illuminate\Support\Facades\Log::shouldHaveReceived('warning')
+            ->withArgs(fn (string $msg) => str_contains($msg, 'ML service /health is unreachable'))
+            ->once();
     }
 }

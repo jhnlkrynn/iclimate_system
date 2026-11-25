@@ -263,6 +263,11 @@ Schedule::command('auth:clear-resets')
     ->withoutOverlapping(10)
     ->appendOutputTo($automationLog('auth:clear-resets'));
 
+Schedule::command('iclimate:prune-logs --days=14')
+    ->dailyAt('03:55')
+    ->withoutOverlapping(10)
+    ->appendOutputTo($automationLog('iclimate:prune-logs'));
+
 // Audit 2026-11-18: one health check every 5 minutes; every FAIL (database down, ML or Reverb unreachable,
 // stalled queue, stopped scheduler, low disk) lands in the application log with what to do.
 Schedule::command('iclimate:health --log --restart-ml')

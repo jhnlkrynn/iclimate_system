@@ -102,7 +102,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     'url' => $request->fullUrl(),
                     'method' => $request->method(),
                     'exception' => $exception::class,
-                    'message' => $exception->getMessage(),
+                    'message' => \App\Support\LogScrubber::scrub($exception->getMessage()),
                 ]);
 
                 if ($request->is('api/*') || $request->expectsJson()) {
@@ -127,7 +127,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 'method' => $request->method(),
                 'ip' => $request->ip(),
                 'user_id' => $request->user()?->id,
-                'message' => $exception->getMessage(),
+                'message' => \App\Support\LogScrubber::scrub($exception->getMessage()),
             ]);
 
             if ($request->is('api/*') || $request->expectsJson()) {

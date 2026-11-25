@@ -100,10 +100,6 @@ class WarmFarmerYields extends Command
 
     private function checkMlHealthOnce(): bool
     {
-        if (app()->runningUnitTests()) {
-            return true;
-        }
-
         $baseUrl = rtrim((string) config('services.farming_ai.url'), '/');
         if ($baseUrl === '') {
             return false;

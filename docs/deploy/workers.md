@@ -1,140 +1,60 @@
-# Queue Worker & Scheduler Guide
+# iClimate Production Workers, Services, Cron & Deploy Guide
 
-iClimate relies on two background processes:
-1. **Queue worker** (`queue:work`) — processes yield prediction requests, Python analytics jobs, and queued broadcasts/notifications (`jobs` table when `QUEUE_CONNECTION=database`).
-2. **Scheduler** (`schedule:work` locally, or `schedule:run` every minute in production) — runs periodic weather fetches (`iclimate:refresh-weather-cache`), scheduled advisory publishing (`iclimate:publish-scheduled-alerts`), dashboard cache warm-ups (`iclimate:warm-dashboard-cache`), and database backups (`iclimate:backup-database`).
+This document describes the live production service layout for iClimate (`iclimate-queue`, `iclimate-python`, `iclimate-reverb`), the Nginx WebSocket proxy, the Laravel scheduler cron, and the standard deployment steps.
 
 ---
 
-## Local Development (macOS / Linux / XAMPP)
+## 1. Systemd Services
 
-Run each in its own terminal from the repository root (or use a local process manager such as Supervisor):
-
-```bash
-# 1. Queue worker (stop gracefully after finishing the current job with Ctrl+C)
-php artisan queue:work --tries=3 --timeout=120
-
-# 2. Laravel scheduler (runs scheduled tasks every minute in the foreground)
-php artisan schedule:work
-```
-
-> **Tip:** Make sure `QUEUE_CONNECTION=database` is set in `.env` and that `iclimate:health` passes before testing features that dispatch jobs.
-
----
-
-## Production (Linux / Hostinger VPS)
-
-### 1. Queue Worker via `systemd` (Recommended)
-
-Create `/etc/systemd/system/iclimate-queue.service`:
+### `iclimate-queue.service` (Laravel Queue Worker)
+Processes `analytics` and `default` jobs from the `database` queue.
 
 ```ini
 [Unit]
 Description=iClimate Laravel Queue Worker
-After=network.target mariadb.service
+After=network.target mysql.service
 
 [Service]
 User=www-data
 Group=www-data
+WorkingDirectory=/var/www/iclimate
+ExecStart=/usr/bin/php artisan queue:work database --queue=analytics,default --sleep=3 --tries=3 --max-time=3600 --timeout=300
 Restart=always
 RestartSec=5
-WorkingDirectory=/var/www/iclimate_system
-ExecStart=/usr/bin/php /var/www/iclimate_system/artisan queue:work database --sleep=3 --tries=3 --max-time=3600 --timeout=120
+StandardOutput=append:/var/www/iclimate/storage/logs/queue-worker.log
+StandardError=append:/var/www/iclimate/storage/logs/queue-worker.log
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-Enable and start it:
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable --now iclimate-queue.service
-sudo systemctl status iclimate-queue.service
-```
-
-After every deployment, restart workers gracefully so they pick up new code:
-
-```bash
-php artisan queue:restart
-```
-
-*(Alternatively, if using Supervisor instead of `systemd`, configure `numprocs=1` running `php /var/www/iclimate_system/artisan queue:work database --sleep=3 --tries=3 --max-time=3600`.)*
-
-### 2. Scheduler via Cron (Recommended)
-
-Add a single cron entry for the web/app user (`crontab -u www-data -e`):
-
-```cron
-* * * * * cd /var/www/iclimate_system && /usr/bin/php artisan schedule:run >> /dev/null 2>&1
-```
-
-Each scheduled command writes its own log to `storage/logs/automation-<command>.log` and records its status in `scheduled_task_runs`.
-
----
-
-## Python Analytics / ML Service (`127.0.0.1:8010`)
-
-The Python FastAPI service powers rice yield model inference, monthly weather forecasts, and `RunPythonAnalytics` background jobs.
-
-- **What breaks without it:** `RunPythonAnalytics` jobs fail with `ConnectException` (`127.0.0.1:8010`), live yield predictions cannot be generated, and `php artisan iclimate:health` reports `FAIL  ml-service`.
-
-### Local Development
-
-`composer dev` starts the Laravel server, queue worker, Pail logs, Vite, and the Python ML service (`127.0.0.1:8010`) together. To run the ML service standalone:
-
-```bash
-cd python_scripts
-uvicorn main:app --host 127.0.0.1 --port 8010 --reload
-```
-
-### Health Check & Drought Refresh
-
-- `php artisan iclimate:health --log --restart-ml` checks `127.0.0.1:8010/health`, alerts on failure, and attempts `systemctl restart iclimate-python.service` if available.
-- `php artisan iclimate:refresh-drought-risk` runs at `5,35 * * * *` (alongside `iclimate:refresh-flood-risk`) and after weather fetch/refresh commands.
-
-### Production (`systemd`)
-
-Create `/etc/systemd/system/iclimate-python.service`:
+### `iclimate-python.service` (ML & Analytics FastAPI on `:8010`)
+Serves rice-yield prediction, monthly weather random forest, drought assessment, and backtest/evaluation endpoints.
 
 ```ini
 [Unit]
-Description=iClimate Python Analytics & ML Service
+Description=iClimate Python ML Service
 After=network.target
 
 [Service]
 User=www-data
 Group=www-data
+WorkingDirectory=/var/www/iclimate/python_scripts
+EnvironmentFile=/var/www/iclimate/.env
+ExecStart=/var/www/iclimate/.venv-ml/bin/uvicorn main:app --host 127.0.0.1 --port 8010 --workers 2
 Restart=always
 RestartSec=5
-WorkingDirectory=/var/www/iclimate_system/python_scripts
-ExecStart=/var/www/iclimate_system/python_scripts/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8010
+StandardOutput=append:/var/www/iclimate/storage/logs/python-ml.log
+StandardError=append:/var/www/iclimate/storage/logs/python-ml.log
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-```bash
-sudo systemctl enable --now iclimate-python.service
-```
+> Verify health: `curl -fsS http://127.0.0.1:8010/health`
 
----
-
-## Laravel Reverb WebSocket Server (`:8080`)
-
-Reverb pushes real-time dashboard, weather, and risk invalidation events (`DashboardChanged`, weather/risk updates) to connected browsers.
-
-- **What breaks without it:** Real-time updates stop and queued broadcasts (`RetryBroadcastEvent`) fail with `BroadcastException: Reverb is unavailable`; `php artisan iclimate:health` reports `FAIL  reverb`.
-
-### Local Development
-
-```bash
-php artisan reverb:start
-```
-
-### Production (`systemd`)
-
-Create `/etc/systemd/system/iclimate-reverb.service`:
+### `iclimate-reverb.service` (Laravel Reverb WebSockets on `:8082`)
+Powers live dashboard updates, notifications, and advisory/weather broadcasts (`BROADCAST_CONNECTION=reverb`).
 
 ```ini
 [Unit]
@@ -144,36 +64,98 @@ After=network.target
 [Service]
 User=www-data
 Group=www-data
+WorkingDirectory=/var/www/iclimate
+ExecStart=/usr/bin/php artisan reverb:start --host=127.0.0.1 --port=8082
 Restart=always
 RestartSec=5
-WorkingDirectory=/var/www/iclimate_system
-ExecStart=/usr/bin/php /var/www/iclimate_system/artisan reverb:start --host=127.0.0.1 --port=8080
+StandardOutput=append:/var/www/iclimate/storage/logs/reverb.log
+StandardError=append:/var/www/iclimate/storage/logs/reverb.log
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-```bash
-sudo systemctl enable --now iclimate-reverb.service
+Required `.env` keys for Reverb:
+```dotenv
+BROADCAST_CONNECTION=reverb
+REVERB_APP_ID=iclimate
+REVERB_APP_KEY=<generated-key>
+REVERB_APP_SECRET=<generated-secret>
+REVERB_HOST=your-domain.example
+REVERB_PORT=443
+REVERB_SCHEME=https
+REVERB_SERVER_HOST=127.0.0.1
+REVERB_SERVER_PORT=8082
+VITE_REVERB_APP_KEY="${REVERB_APP_KEY}"
+VITE_REVERB_HOST="${REVERB_HOST}"
+VITE_REVERB_PORT="${REVERB_PORT}"
+VITE_REVERB_SCHEME="${REVERB_SCHEME}"
 ```
 
 ---
 
-## Health Checks & Failed Jobs
+## 2. Nginx `/app/` WebSocket Proxy Snippet
 
-Check whether the queue, scheduler, database, ML service, Reverb, and backups are healthy:
+Proxy `/app/` (and `/apps/` if needed by Pusher-compatible clients) to Reverb on `127.0.0.1:8082`:
 
-```bash
-php artisan iclimate:health
-# Machine-readable output for monitoring:
-php artisan iclimate:health --json
+```nginx
+location /app/ {
+    proxy_pass http://127.0.0.1:8082;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "Upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_read_timeout 60s;
+    proxy_send_timeout 60s;
+}
 ```
 
-Inspect or clean failed jobs:
+---
+
+## 3. Cron (`schedule:run`)
+
+Run Laravel's scheduler every minute as `www-data`:
+
+```cron
+* * * * * cd /var/www/iclimate && /usr/bin/php artisan schedule:run >> /dev/null 2>&1
+```
+
+Key scheduled tasks (defined in `routes/console.php`):
+- `iclimate:refresh-barangay-weather` (every 10 min) → also refreshes barangay risk, flood risk, and drought risk.
+- `iclimate:warm-farmer-yields` (every 3 hours) → checks `/health` once, warms farmer & barangay yield estimates.
+- `iclimate:health --log --restart-ml` (every 5 min) → monitors DB, ML, Reverb, queue, scheduler, and disk.
+- `iclimate:prune-logs --days=14` (daily at 03:55) → prunes rotated `.log` files older than 14 days.
+
+---
+
+## 4. Standard Deploy Steps
 
 ```bash
-php artisan queue:failed
-php artisan queue:retry <id>   # retry a transient failure when the target service is back
-php artisan queue:forget <id>  # remove a single stale/obsolete failed job
-php artisan queue:flush        # prune all failed jobs
+cd /var/www/iclimate
+
+# 1. Pull latest code and install dependencies
+git pull --ff-only origin main
+composer install --no-dev --optimize-autoloader
+npm ci
+NODE_ENV=development npm run build   # avoids PurgeCSS stripping dynamic classes
+
+# 2. Validate environment & run migrations
+php artisan iclimate:env-check
+php artisan migrate --force
+
+# 3. Rebuild Laravel caches
+php artisan optimize:clear
+php artisan optimize
+
+# 4. Ensure web/worker ownership and writable storage/bootstrap cache
+sudo chown -R www-data:www-data /var/www/iclimate/storage /var/www/iclimate/bootstrap/cache
+sudo chmod -R ug+rwX /var/www/iclimate/storage /var/www/iclimate/bootstrap/cache
+
+# 5. Restart services gracefully
+php artisan queue:restart
+sudo systemctl restart iclimate-queue iclimate-python iclimate-reverb
+sudo systemctl reload nginx
 ```
