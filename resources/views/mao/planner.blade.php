@@ -94,7 +94,12 @@
                             @foreach ($farmerActivities as $row)
                                 <tr>
                                     <td class="itd-nowrap">{{ $row['date']->format('M j, Y') }}</td>
-                                    <td><span class="mfd-pill {{ $row['kind'] === 'Planted' ? 'is-good' : ($row['kind'] === 'Harvested' ? 'is-info' : 'is-unk') }}">{{ $row['kind'] }}</span></td>
+                                    <td>
+                                        <span class="mfd-pill {{ $row['kind'] === 'Planted' ? 'is-good' : ($row['kind'] === 'Harvested' ? 'is-info' : 'is-unk') }}">{{ $row['kind'] }}</span>
+                                        @if (! empty($row['timing_text']))
+                                            <div class="text-muted small">{{ $row['timing_text'] }}</div>
+                                        @endif
+                                    </td>
                                     <td>{{ $row['farmer'] }}</td>
                                     <td>{{ $row['barangay'] }}</td>
                                     <td>{{ $row['farm'] }}</td>

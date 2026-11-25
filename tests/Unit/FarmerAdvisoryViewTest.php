@@ -41,9 +41,8 @@ class FarmerAdvisoryViewTest extends TestCase
         $this->assertEmpty(preg_grep('/heavy|flood|adverse|below-normal/i', $effects), 'never stronger than the advisory, no raw page text');
 
         $actions = $view->actions();
-        $this->assertSame('Check paddy water levels before watering or fertilizing.', $actions[0]);
-        $this->assertContains('Inspect field moisture before watering or fertilizing.', $actions);
-        $this->assertContains('Keep checking for new advisories and PAGASA updates.', $actions);
+        $this->assertSame('Walk your field and check water depth.', $actions[0]);
+        $this->assertContains('Keep canals and dikes clear.', $actions);
 
         $this->assertSame('PAGASA', $view->sourceName());
         $this->assertSame('All barangays in Lian', $view->area());

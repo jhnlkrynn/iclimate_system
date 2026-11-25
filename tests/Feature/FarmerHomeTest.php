@@ -98,6 +98,9 @@ class FarmerHomeTest extends TestCase
         $user = User::factory()->create($attributes + ['role' => User::ROLE_FARMER, 'name' => 'John Luke Reynon', 'barangay' => $barangay]);
         if ($barangay !== null) {
             FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => $barangay, 'farm_area' => $area, 'farm_type' => 'Irrigated']);
+            if (\App\Support\ActiveFarm::available()) {
+                \App\Models\Farm::query()->where('user_id', $user->id)->update(['verification_status' => \App\Models\Farm::VERIFICATION_APPROVED, 'verified_at' => now()]);
+            }
         }
 
         return $user;

@@ -41,8 +41,7 @@ class SavedDataStatesTest extends TestCase
         foreach (['walang datos pa', 'weather is temporarily unavailable', 'forecast is not available right now', 'please try again later'] as $gone) {
             $this->assertStringNotContainsString($gone, $text, "/mao/dashboard: {$gone}");
         }
-        foreach ([[$mao, '/weather-predictions', 'walang datos pa'], [$farmer, '/weather-predictions', 'no data yet'],
-            [$filipinoFarmer, '/weather-predictions', 'walang datos pa'], [$mao, '/planting-advisories', 'walang datos pa']] as [$user, $path, $words]) {
+        foreach ([[$mao, '/weather-predictions', 'walang datos pa'], [$mao, '/planting-advisories', 'walang datos pa']] as [$user, $path, $words]) {
             $text = $this->visible($this->actingAs($user)->get($path)->assertOk()->getContent());
 
             $this->assertStringContainsString($words, $text, $path);

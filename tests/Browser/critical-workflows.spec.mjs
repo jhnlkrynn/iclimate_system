@@ -23,7 +23,8 @@ test('ordinary staff assigns an approved chairman, requests a revision and accep
         const id=new URL(details).pathname.split('/').pop();
         await page.goto('/mao/association-reports');
         const row=page.locator('tbody tr',{hasText:`Workflow ${project}`});
-        await row.locator('input[name="user_id"]').fill(id);
+        await row.locator('[data-farmer-input]').fill(`Chairman ${project}`);
+        await row.locator('[role="listbox"] [role="option"]').first().click();
         await row.getByRole('button',{name:'Assign chairman'}).click();
         await expect(row).toContainText(`Chairman ${project}`);
         await page.locator('#periodKey').fill(`browser-${project}`);

@@ -6,6 +6,16 @@ async function signInFarmer(page) {
     await page.locator('#login-password').fill('password');
     await page.locator('[data-login-form] button[type="submit"]').click();
     await expect(page).toHaveURL(/\/farmer\/dashboard$/);
+    await page.waitForLoadState('domcontentloaded');
+    await page.evaluate(() => {
+        const m = document.getElementById('icWeatherAlertModal');
+        if (m) {
+            try { localStorage.setItem('iclimate.weather_alert_dismissed', m.getAttribute('data-alert-key') || ''); } catch (e) {}
+            m.classList.remove('is-open');
+            m.hidden = true;
+        }
+        document.documentElement.classList.remove('ic-alert-modal-lock');
+    });
 }
 
 test('farmer KPI detail opens as centered modal on desktop and bottom sheet on mobile, closes on Esc, and returns focus', async ({ page }) => {

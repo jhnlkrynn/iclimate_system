@@ -98,6 +98,7 @@ class AdvisoriesListTest extends TestCase
 
     public function test_the_severity_colours_are_green_yellow_and_red_and_the_most_severe_comes_first(): void
     {
+        $this->travelTo(CarbonImmutable::parse('2026-10-06 10:00:00', 'Asia/Manila'));
         $low = $this->advisory(['severity' => 'low']);
         $moderate = $this->advisory(['severity' => 'moderate', 'title' => 'B']);
         $critical = $this->advisory(['severity' => 'critical', 'title' => 'C']);
@@ -113,6 +114,7 @@ class AdvisoriesListTest extends TestCase
 
     public function test_planting_is_shown_first_and_other_kinds_are_chips_only_when_in_use(): void
     {
+        $this->travelTo(CarbonImmutable::parse('2026-10-06 10:00:00', 'Asia/Manila'));
         $planting = $this->advisory();
         $farmer = $this->farmer();
 
@@ -137,6 +139,7 @@ class AdvisoriesListTest extends TestCase
 
     public function test_without_a_planting_advisory_the_page_opens_on_the_kind_that_has_one(): void
     {
+        $this->travelTo(CarbonImmutable::parse('2026-10-06 10:00:00', 'Asia/Manila'));
         $weather = $this->advisory(['title' => 'Rain', 'type' => 'Climate', 'advisory_type' => 'climate']);
 
         $html = $this->actingAs($this->farmer())->get(route('planting-advisories.index'))->getContent();
@@ -157,6 +160,7 @@ class AdvisoriesListTest extends TestCase
 
     public function test_a_farmer_reads_their_barangay_and_lian_wide_advice_in_their_language(): void
     {
+        $this->travelTo(CarbonImmutable::parse('2026-10-06 10:00:00', 'Asia/Manila'));
         $own = $this->advisory(['target_barangay' => 'Prenza', 'target_scope' => 'barangay']);
         $lian = $this->advisory(['title' => 'Lian']);
         $other = $this->advisory(['title' => 'Cumba', 'target_barangay' => 'Cumba', 'target_scope' => 'barangay']);
@@ -175,7 +179,7 @@ class AdvisoriesListTest extends TestCase
 
         $this->assertStringContainsString('<h1>Mga Payo</h1>', $html);
         $this->assertStringContainsString('Mababang Panganib Prenza May bisa: ', $this->item($html, $own));
-        $this->assertStringContainsString('Gawin: Start transplanting seedlings.', $this->item($html, $own));
+        $this->assertStringContainsString('Gawin: Tingnan ang palayan at sukat ng patubig.', $this->item($html, $own));
         $this->assertStringContainsString('Buong Lian', $this->item($html, $lian));
     }
 
@@ -416,13 +420,16 @@ class AdvisoriesListTest extends TestCase
         $date = now('Asia/Manila')->addDays(2)->toDateString();
         $this->actingAs($mao)->post(route('planting-advisories.store'), $fields + ['mao_activity' => 'Seed distribution at the barangay hall', 'mao_activity_date' => $date])->assertSessionHasNoErrors();
         $advisory = PlantingAdvisory::query()->latest('id')->firstOrFail();
-        $this->assertSame(['mao_activity' => 'Seed distribution at the barangay hall', 'mao_activity_date' => $date], $advisory->metadata);
+        $this->assertSame('Seed distribution at the barangay hall', $advisory->metadata['mao_activity'] ?? null);
+        $this->assertSame($date, $advisory->metadata['mao_activity_date'] ?? null);
 
         $html = $this->actingAs($this->farmer())->get(route('planting-advisories.index'))->getContent();
         $this->assertStringContainsString('MAO activity: Seed distribution at the barangay hall', $this->item($html, $advisory));
 
         // Clearing the field removes the activity.
         $this->actingAs($mao)->put(route('planting-advisories.update', $advisory), $fields)->assertSessionHasNoErrors();
-        $this->assertNull($advisory->fresh()->metadata);
+        $metadata = $advisory->fresh()->metadata ?? [];
+        $this->assertArrayNotHasKey('mao_activity', $metadata);
+        $this->assertArrayNotHasKey('mao_activity_date', $metadata);
     }
 }

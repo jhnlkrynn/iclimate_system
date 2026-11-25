@@ -82,9 +82,9 @@ class Phase5YieldTest extends TestCase
     {
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
-        $this->actingAs($mao)->get(route('analysis.forecast'))->assertRedirect(route('mao.dashboard'));
+        $this->actingAs($mao)->get(route('analysis.forecast'))->assertOk();
         $this->actingAs($mao)->post(route('analysis.forecast.store'), ['scope' => 'municipal', 'season' => 'Wet', 'farm_type' => 'Irrigated'])
-            ->assertRedirect(route('mao.dashboard'));
+            ->assertRedirect();
     }
 
     public function test_a_barangay_forecast_needs_a_barangay(): void
@@ -92,7 +92,7 @@ class Phase5YieldTest extends TestCase
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
         $this->actingAs($mao)->post(route('analysis.forecast.store'), ['scope' => 'barangay', 'season' => 'Wet', 'farm_type' => 'Irrigated'])
-            ->assertRedirect(route('mao.dashboard'));
+            ->assertSessionHasErrors('barangay');
     }
 
     public function test_target_month_is_the_next_harvest_month_of_the_season(): void

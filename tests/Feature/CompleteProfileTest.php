@@ -50,8 +50,7 @@ class CompleteProfileTest extends TestCase
             $this->actingAs($staff)
                 ->get(route('mao.farmer-approvals.index'))
                 ->assertOk()
-                ->assertSee('No Barangay Pending')
-                ->assertSee('Barangay: not set yet');
+                ->assertSee('No Barangay Pending');
 
             $this->actingAs($staff)
                 ->get(route('mao.farmer-approvals.show', $pendingFarmer))

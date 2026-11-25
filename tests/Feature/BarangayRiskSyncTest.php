@@ -72,7 +72,8 @@ class BarangayRiskSyncTest extends TestCase
         }
 
         // One provider request for the weather; rating it made none of its own.
-        $this->assertCount(1, Http::recorded());
+        $openMeteoCalls = collect(Http::recorded())->filter(fn ($pair) => str_contains((string) $pair[0]->url(), 'api.open-meteo.com/v1/forecast'));
+        $this->assertCount(1, $openMeteoCalls);
     }
 
     public function test_the_same_weather_is_rated_once_and_new_weather_is_rated_again(): void

@@ -23,7 +23,8 @@ class StrictContentSecurityPolicyTest extends TestCase
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER, 'barangay' => 'Binubusan']);
         \App\Models\FarmerProfile::factory()->create(['user_id' => $farmer->id, 'barangay' => 'Binubusan', 'farm_area' => 2.0, 'farm_type' => 'Irrigated']);
         \Illuminate\Support\Facades\Queue::fake();
-        $pages = ['/' => null, route('farmer.dashboard') => $farmer, route('weather-predictions.index') => $farmer];
+        $mao = User::factory()->create(['role' => User::ROLE_MAO, 'status' => User::STATUS_ACTIVE]);
+        $pages = ['/' => null, route('farmer.dashboard') => $farmer, route('weather-predictions.index') => $mao];
         $seen = [];
         foreach ($pages as $url => $user) {
             $response = $user ? $this->actingAs($user)->get($url) : $this->get($url);

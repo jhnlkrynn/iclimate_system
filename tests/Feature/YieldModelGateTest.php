@@ -120,6 +120,7 @@ class YieldModelGateTest extends TestCase
         FarmerProfile::factory()->create(['user_id' => $farmer->id, 'barangay' => 'Prenza', 'farm_area' => 1.4, 'farm_type' => 'Irrigated']);
         Cache::flush();
         $farmId = (int) Farm::query()->where('user_id', $farmer->id)->where('is_primary', true)->value('id');
+        Farm::query()->whereKey($farmId)->update(['verification_status' => Farm::VERIFICATION_APPROVED, 'verified_at' => now()]);
         // An estimate cached before the gate existed: the same unvalidated model made it.
         Cache::forever(FarmerDashboardService::predictionCacheKey($farmer->id, $farmId), $this->estimate() + [
             'model_input' => self::DEPLOYED_INPUT, 'target_month' => now('Asia/Manila')->format('Y-m'), 'ran_at' => CarbonImmutable::now('Asia/Manila')->toIso8601String(),

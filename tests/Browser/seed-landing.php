@@ -87,7 +87,7 @@ foreach (['desktop-1280', 'mobile-375', 'tablet-768'] as $project) {
     foreach (['chairman' => User::STATUS_APPROVED, 'pending' => User::STATUS_PENDING, 'rejected' => User::STATUS_REJECTED, 'recovery' => User::STATUS_APPROVED] as $kind => $status) {
         User::create(['name' => ucfirst($kind).' '.$project, 'email' => $kind.'-'.$project.'@browser.test',
             'password' => Hash::make(ucfirst($kind).'-'.$project.'!23'), 'role' => User::ROLE_FARMER,
-            'status' => $status, 'barangay' => 'Prenza', 'contact_number' => '09170000003',
+            'status' => $status, 'barangay' => 'Balibago', 'contact_number' => '09170000003',
             'email_verified_at' => now(), 'privacy_agreed_at' => now()]);
     }
     \App\Models\FarmerOrganization::create(['name' => 'Workflow '.$project, 'barangay' => 'Balibago', 'farm_type' => 'Rainfed']);

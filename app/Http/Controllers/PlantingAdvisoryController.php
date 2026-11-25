@@ -250,6 +250,8 @@ class PlantingAdvisoryController extends Controller
 
         foreach ($rows as $row) {
             $bucket = implode('|', [
+                strtolower(trim((string) ($row->advisory_type ?: $row->type))),
+                strtolower(trim((string) $row->severity)),
                 strtolower(trim((string) $row->source)),
                 $row->valid_from?->toDateString() ?? '',
                 $row->valid_until?->toDateString() ?? '',

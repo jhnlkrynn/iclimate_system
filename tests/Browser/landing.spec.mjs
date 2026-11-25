@@ -461,24 +461,26 @@ test('K2 /#register opens the card in Create account mode, and a refresh keeps i
     await expect(page.locator('[data-auth-panel="login"]')).toBeVisible();
 });
 
-test('K2b registration filters associations by barangay and resets the choice when it changes', async ({ page }) => {
+test('K2b simplified registration omits barangay/association and complete-profile filters associations by barangay', async ({ page }) => {
     await page.goto('/#register');
-    const barangay = page.locator('#barangay');
-    const organization = page.locator('#farmer_organization_id');
+    await expect(page.locator('#barangay')).toHaveCount(0);
+    await expect(page.locator('#farmer_organization_id')).toHaveCount(0);
 
-    await expect(organization).toBeDisabled();
+    await page.goto('/#login');
+    await page.locator('#login-email').fill('farmer@browser.test');
+    await page.locator('#login-password').fill('password');
+    await page.locator('[data-login-form] button[type="submit"]').click();
+    await page.waitForURL('**/farmer/dashboard', { waitUntil: 'commit' });
+
+    await page.goto('/farmer/complete-profile');
+    const barangay = page.locator('#cp-barangay');
+    const organization = page.locator('#cp-association');
+    await expect(barangay).toBeVisible();
+    await expect(organization).toBeVisible();
     await barangay.selectOption('Kapito');
-    await expect(organization).toBeEnabled();
-    await expect.poll(() => organization.locator('option[data-barangay]:not([hidden]):not([disabled])').count()).toBeGreaterThan(0);
-    await organization.selectOption({ label: 'Not a member' });
-    await expect(organization).toHaveValue('');
-
-    await barangay.selectOption('Prenza');
-    await expect(organization).toHaveValue('');
-    const visibleAssociations = await organization.locator('option[data-barangay]:not([hidden]):not([disabled])').evaluateAll((options) => options.map((option) => option.dataset.barangay));
-    expect(new Set(visibleAssociations).size).toBeLessThanOrEqual(1);
-    await expect(organization.locator('option[data-association-status="not_member"]')).toHaveCount(1);
-    await expect(organization.locator('option', { hasText: 'My association isn\'t listed' })).toHaveCount(0);
+    await expect.poll(() => organization.locator('option[data-barangay="Kapito"]:not([hidden])').count()).toBeGreaterThan(0);
+    await organization.selectOption('not_member');
+    await expect(organization).toHaveValue('not_member');
 });
 
 test('K3 an empty sign-up shows its errors on the landing page in Create account mode', async ({ page }) => {
@@ -487,7 +489,7 @@ test('K3 an empty sign-up shows its errors on the landing page in Create account
     expect(new URL(page.url()).pathname).toBe('/');
     await expect(page.locator('[data-auth-card]')).toHaveAttribute('data-auth-mode', 'register');
     await expect(page.locator('#formMessage')).toBeVisible();
-    for (const id of ['firstName', 'lastName', 'email', 'barangay', 'password', 'confirmPassword', 'captcha_answer', 'agreeTerms']) {
+    for (const id of ['firstName', 'lastName', 'email', 'password', 'confirmPassword', 'captcha_answer', 'agreeTerms']) {
         await expect(page.locator(`#${id}-error`)).toBeVisible();
     }
     await expect(page.locator('#firstName')).toBeFocused();
@@ -498,7 +500,6 @@ test('K4 a sign-up the server refuses comes back to the landing page in Create a
     await page.locator('#firstName').fill('Juan');
     await page.locator('#lastName').fill('Dela Cruz');
     await page.locator('#email').fill(`juan.${Date.now()}@example.com`);
-    await page.locator('#barangay').selectOption({ index: 1 });
     await page.locator('#password').fill('Password123!');
     await page.locator('#confirmPassword').fill('Password123!');
     await page.locator('#captcha_answer').fill('WRONG');
@@ -585,7 +586,7 @@ test('K7 Create account mode: every placeholder, value and label shows in full, 
         if (width < 640) {
             const columns = await page.evaluate(() => [...document.querySelectorAll('[data-auth-panel="register"] .form-row-2col')]
                 .map((row) => getComputedStyle(row).gridTemplateColumns.split(' ').length));
-            expect(columns, `${width}px rows`).toEqual([1, 1, 1]);
+            expect(columns, `${width}px rows`).toEqual([1, 1]);
         }
     }
 });

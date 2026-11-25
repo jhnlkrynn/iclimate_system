@@ -45,11 +45,16 @@
         @include('partials.farmer-mao-contact', ['locale' => $f['locale'] ?? app()->getLocale()])
 
         @php
-            $farmerForecastSurvey = rescue(
-                fn (): ?array => app(\App\Services\Weather\WeatherFeedbackService::class)->pendingDailyPrompt(auth()->user()),
-                null,
-                false
-            );
+            $farmerUser = auth()->user();
+            $farmerForecastSurvey = $farmerUser ? (\Illuminate\Support\Facades\Cache::remember(
+                'farmer-forecast-survey:'.$farmerUser->id.':'.now('Asia/Manila')->toDateString(),
+                300,
+                fn (): array => ['prompt' => rescue(
+                    fn (): ?array => app(\App\Services\Weather\WeatherFeedbackService::class)->pendingDailyPrompt($farmerUser),
+                    null,
+                    false
+                )]
+            )['prompt'] ?? null) : null;
         @endphp
         @if (! empty($farmerForecastSurvey))
             @include('weather-predictions.partials.forecast-survey', ['survey' => $farmerForecastSurvey])

@@ -159,6 +159,6 @@ class Phase1AccountsTest extends TestCase
         $html = $this->actingAs($mao)->get(route('farmer-profiles.index'))->assertOk()->getContent();
         $this->assertStringContainsString('data-manuscript-tabs="farmers"', $html);
         $this->assertStringContainsString('href="'.route('mao.farmer-approvals.index').'"', $html);
-        $this->actingAs($mao)->get(route('mao.farmer-approvals.index'))->assertSee('data-manuscript-tabs="farmers"', false);
+        $this->actingAs($mao)->get(route('mao.farmer-approvals.index'))->assertSee('data-manuscript-tabs="approvals"', false);
     }
 }

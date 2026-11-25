@@ -285,7 +285,8 @@ class BarangayCurrentWeatherTest extends TestCase
         $this->artisan('iclimate:refresh-barangay-weather')
             ->expectsOutputToContain('already current')
             ->assertSuccessful();
-        $this->assertCount(1, Http::recorded());
+        $openMeteoCalls = collect(Http::recorded())->filter(fn ($pair) => str_contains((string) $pair[0]->url(), 'api.open-meteo.com/v1/forecast'));
+        $this->assertCount(1, $openMeteoCalls);
     }
 
     /** @return array<string, array{0: string}> */

@@ -54,7 +54,7 @@ class FarmerPagesSimplificationTest extends TestCase
 
         preg_match_all('/<span class="sidebar-label">([^<]+)<\/span>/', $menu, $m);
         // Rice Production is a staff-only page; Rice Varieties sits beside My Farm.
-        $this->assertSame(['Farmer Dashboard', 'Forecast', 'Heat Map', 'Advisories', 'My Farm', 'Rice Varieties', 'Messages'], array_slice($m[1], 0, 7));
+        $this->assertSame(['Farmer Dashboard', 'Heat Map', 'Advisories', 'Weather Analysis', 'Yield Prediction', 'My Farm', 'Explore farm results'], array_slice($m[1], 0, 7));
         foreach (['Climate Records', 'Community', 'Calendar'] as $gone) {
             $this->assertNotContains($gone, $m[1]);
         }
@@ -62,7 +62,7 @@ class FarmerPagesSimplificationTest extends TestCase
         $farmer->forceFill(['preferred_language' => 'fil'])->save();
         $html = $this->actingAs($farmer)->get(route('farmer.my-farm'))->getContent();
         preg_match_all('/<span class="sidebar-label">([^<]+)<\/span>/', substr($html, strpos($html, 'class="ic-sidebar'), 8000), $m);
-        $this->assertSame(['Farmer Dashboard', 'Taya ng Panahon', 'Mapa ng Panganib', 'Payo', 'Aking Bukid', 'Mga Binhi ng Palay', 'Mensahe'], array_slice($m[1], 0, 7));
+        $this->assertSame(['Farmer Dashboard', 'Mapa ng Panganib', 'Payo', 'Pagsusuri ng Panahon', 'Taya ng Ani', 'Aking Bukid', 'Suriin ang ani ng mga bukid'], array_slice($m[1], 0, 7));
     }
 
     // ------------------------------------------------------------ Aking Bukid
@@ -162,7 +162,8 @@ class FarmerPagesSimplificationTest extends TestCase
 
         $this->actingAs($mao)->get(route('climate-records.index'))->assertOk();
         $this->actingAs($mao)->get(route('rice-productions.index'))->assertOk();
-        $this->actingAs($mao)->get(route('community-feed.index'))->assertOk();
+        $this->actingAs($mao)->get(route('community-feed.index'))->assertRedirect(route('mao.planner.index').'#announcements');
+        $this->actingAs($mao)->get(route('mao.planner.index'))->assertOk();
     }
 
     // ------------------------------------------------------------ announcements

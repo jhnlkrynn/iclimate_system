@@ -141,7 +141,7 @@ class PrintListsTest extends TestCase
 
         $this->assertSame(20, $this->rows($html));
         $this->assertSame(1, preg_match('#<thead>(.*?)</thead>#s', $html, $m));
-        $this->assertSame('# Name Barangay Organizations Farm Type Total Farm Area Status', $this->text($m[1]));
+        $this->assertSame('# Name Barangay Farm Type Total Farm Area Status', $this->text($m[1]));
         $this->assertStringContainsString(self::HEADER.' Farmer Profiles', $this->text($html));
         $this->assertStringContainsString('Filters: Barangay: Prenza', $this->text($html));
         $this->assertStringNotContainsString('farmersByOrganizationChart', $html);                 // no chart on paper

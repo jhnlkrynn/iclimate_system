@@ -10,12 +10,22 @@ async function signIn(page, email) {
     await page.locator('#login-email').fill(`${email}@browser.test`);
     await page.locator('#login-password').fill('password');
     await page.locator('[data-login-form] button[type="submit"]').click();
+    await page.waitForLoadState('domcontentloaded');
+    await page.evaluate(() => {
+        const m = document.getElementById('icWeatherAlertModal');
+        if (m) {
+            try { localStorage.setItem('iclimate.weather_alert_dismissed', m.getAttribute('data-alert-key') || ''); } catch (e) {}
+            m.classList.remove('is-open');
+            m.hidden = true;
+        }
+        document.documentElement.classList.remove('ic-alert-modal-lock');
+    });
 }
 
 for (const [role, dashboard] of accounts) {
     test(`${role} top bar shows 72px row, greeting, flag buttons, no live clock, and responsive controls`, async ({ page }) => {
         await signIn(page, role);
-        await expect(page).toHaveURL(new RegExp(`${dashboard.replace('/', '\\/')}$`));
+        await expect(page).toHaveURL(new RegExp(dashboard.replace('/', '\\/')));
 
         const topbar = page.locator('nav.ic-topbar');
         await expect(topbar).toBeVisible();

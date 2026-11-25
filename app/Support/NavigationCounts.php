@@ -28,26 +28,29 @@ final class NavigationCounts
             ->selectRaw('COUNT(*)');
 
         $query = DB::query()->selectSub($unread, 'unread');
+        $hasPendingFarms = $user->role === User::ROLE_MAO
+            && SchemaCache::hasTable('farms')
+            && SchemaCache::hasColumn('farms', 'verification_status');
         if ($user->role === User::ROLE_MAO) {
             $pending = User::query()->where('status', User::STATUS_PENDING)->selectRaw('COUNT(*)');
             $query->selectSub($pending, 'pending');
         }
-
-        $row = $query->first();
-        $pendingFarms = 0;
-        if ($user->role === User::ROLE_MAO && SchemaCache::hasTable('farms') && SchemaCache::hasColumn('farms', 'verification_status')) {
+        if ($hasPendingFarms) {
             $scopedBarangays = MaoScope::barangays($user);
-            $pendingFarms = Farm::query()
+            $pendingFarmsQuery = Farm::query()
                 ->active()
                 ->where('verification_status', Farm::VERIFICATION_PENDING)
                 ->when($scopedBarangays !== null, fn ($q) => $q->whereIn('barangay', $scopedBarangays))
-                ->count();
+                ->selectRaw('COUNT(*)');
+            $query->selectSub($pendingFarmsQuery, 'pending_farms');
         }
+
+        $row = $query->first();
 
         $counts = [
             'unread' => (int) ($row?->unread ?? 0),
             'pending' => (int) ($row?->pending ?? 0),
-            'pending_farms' => $pendingFarms,
+            'pending_farms' => (int) ($row?->pending_farms ?? 0),
         ];
         $request?->attributes->set($key, $counts);
 

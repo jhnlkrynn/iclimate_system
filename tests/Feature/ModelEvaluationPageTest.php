@@ -47,7 +47,7 @@ class ModelEvaluationPageTest extends TestCase
 
         $this->actingAs($mao)
             ->get(route('model-evaluation.index'))
-            ->assertRedirect(route('mao.dashboard'));
+            ->assertOk();
     }
 
     public function test_farmers_and_guests_cannot_open_it(): void

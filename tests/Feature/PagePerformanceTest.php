@@ -37,7 +37,7 @@ class PagePerformanceTest extends TestCase
     use RefreshDatabase;
 
     private const PAGES = [
-        User::ROLE_FARMER => ['/farmer/dashboard', '/calendar', '/planting-advisories', '/farmer/my-farm', '/messages', '/notifications', '/weather-predictions'],
+        User::ROLE_FARMER => ['/farmer/dashboard', '/calendar', '/planting-advisories', '/farmer/my-farm', '/messages', '/notifications', '/analysis/yield'],
         User::ROLE_MAO => ['/mao/dashboard', '/reports', '/farmer-profiles', '/planting-advisories', '/weather-predictions', '/calendar', '/mao/planner'],
     ];
 

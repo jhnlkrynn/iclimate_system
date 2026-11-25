@@ -55,7 +55,7 @@ class ClimoraFarmerBriefTest extends TestCase
             $this->assertStringNotContainsStringIgnoringCase($term, $answer, "The short answer should not include \"{$term}\".");
         }
         $lines = array_values(array_filter(explode("\n", $answer)));
-        $this->assertLessThanOrEqual(3, count($lines), 'answer line, then the reason and action');
+        $this->assertLessThanOrEqual(5, count($lines), 'answer line, reason, action, and optional profile tip');
         $this->assertLessThanOrEqual(5, preg_match_all('/[.!?](\s|$)/', $answer), 'a few short sentences');
         $this->assertTrue((bool) $first->json('chat.memory.brief'));
         $details = (string) $first->json('chat.memory.details');

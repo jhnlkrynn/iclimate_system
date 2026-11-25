@@ -74,7 +74,7 @@ class DroughtRiskLayerTest extends TestCase
             $mock->shouldReceive('savedForecasts')->andReturn($savedForecasts);
         });
         $this->mock(FarmerDashboardWeatherService::class, function ($mock): void {
-            $mock->shouldReceive('current')->andReturn(['success' => false]);
+            $mock->shouldReceive('stored')->andReturn(['success' => false]);
         });
         $this->mock(PythonService::class, function ($mock): void {
             $mock->shouldReceive('farmingAssistant')->andReturn([
@@ -106,7 +106,7 @@ class DroughtRiskLayerTest extends TestCase
             $mock->shouldReceive('savedForecasts')->andReturn([]);
         });
         $this->mock(FarmerDashboardWeatherService::class, function ($mock) use ($daily): void {
-            $mock->shouldReceive('current')->andReturn([
+            $mock->shouldReceive('stored')->andReturn([
                 'success' => true,
                 'timestamps' => ['server_fetched_at' => $this->now->toIso8601String()],
                 'forecast' => array_slice($daily, 0, 7),
@@ -153,7 +153,7 @@ class DroughtRiskLayerTest extends TestCase
             $mock->shouldReceive('savedForecasts')->andReturn([]);
         });
         $this->mock(FarmerDashboardWeatherService::class, function ($mock): void {
-            $mock->shouldReceive('current')->andReturn(['success' => false]);
+            $mock->shouldReceive('stored')->andReturn(['success' => false]);
         });
 
         $drought = app(DroughtRiskService::class)->readForLayer('2weeks');

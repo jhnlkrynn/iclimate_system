@@ -36,7 +36,7 @@ test('ordinary MAO staff approves a pending registration through Account Request
     await expect(row).toContainText('mao Tester');
     await row.getByRole('link', { name: 'View Details' }).click();
     await expect(page.getByRole('heading', { name: 'Review history' })).toBeVisible();
-    await expect(page.locator('article')).toContainText('Approved');
+    await expect(page.locator('article').last()).toContainText('Approved');
     expect((await page.request.get('/users')).status()).toBe(403);
 });
 
@@ -68,5 +68,5 @@ test('staff rejection and Farmer corrections preserve the existing application',
     await expect(row).toContainText('Pending');
     await row.getByRole('link', { name: 'View Details' }).click();
     await expect(page.locator('main')).toContainText('My corrected contact details are ready for verification.');
-    await expect(page.locator('article')).toContainText('Rejected');
+    await expect(page.locator('article').last()).toContainText('Rejected');
 });

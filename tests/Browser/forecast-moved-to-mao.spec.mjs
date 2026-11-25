@@ -6,6 +6,16 @@ async function logIn(page, email, dashboard) {
     await page.locator('#login-password').fill('password');
     await page.locator('[data-login-form] button[type="submit"]').click();
     await page.waitForURL(`**${dashboard}`, { waitUntil: 'commit' });
+    await page.waitForLoadState('domcontentloaded');
+    await page.evaluate(() => {
+        const m = document.getElementById('icWeatherAlertModal');
+        if (m) {
+            try { localStorage.setItem('iclimate.weather_alert_dismissed', m.getAttribute('data-alert-key') || ''); } catch (e) {}
+            m.classList.remove('is-open');
+            m.hidden = true;
+        }
+        document.documentElement.classList.remove('ic-alert-modal-lock');
+    });
 }
 
 test('farmer has no Forecast nav link and /weather-predictions redirects to dashboard', async ({ page }, testInfo) => {

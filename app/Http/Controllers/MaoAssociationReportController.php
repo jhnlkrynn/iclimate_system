@@ -29,7 +29,7 @@ class MaoAssociationReportController extends Controller
 
         $farmersByBarangay = User::query()
             ->where('role', User::ROLE_FARMER)
-            ->where('status', User::STATUS_ACTIVE)
+            ->whereIn('status', [User::STATUS_ACTIVE, User::STATUS_APPROVED])
             ->with('farmerProfile:id,user_id,barangay')
             ->orderBy('name')
             ->get(['id', 'name', 'barangay'])

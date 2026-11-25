@@ -2,7 +2,7 @@
 @php
     $bannerUser = auth()->user();
     $missingLabels = $bannerUser ? \App\Support\FarmerProfileCompletion::missingLabels($bannerUser) : [];
-    $hasFarms = $bannerUser && \App\Support\ActiveFarm::available() && $bannerUser->farms()->active()->exists();
+    $hasFarms = $bannerUser && \App\Support\ActiveFarm::available() && \App\Support\ActiveFarm::farms($bannerUser)->isNotEmpty();
 @endphp
 @if ($missingLabels !== [])
 <div class="mb-4 rounded-xl border border-sage-200 bg-sage-50 px-4 py-3.5 text-ink flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" role="region" aria-label="{{ __('farmer.complete_profile.banner_title') }}" data-complete-profile-banner>

@@ -10,7 +10,7 @@ class MaoRemovedAnalysisPagesTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_removed_mao_analysis_pages_redirect_to_mao_dashboard_and_are_absent_from_nav(): void
+    public function test_restored_mao_analysis_pages_are_accessible_while_harvest_training_redirects(): void
     {
         $mao = User::factory()->create([
             'role' => User::ROLE_MAO,
@@ -20,19 +20,23 @@ class MaoRemovedAnalysisPagesTest extends TestCase
 
         foreach ([
             '/analysis/impact',
-            '/analysis/impact/1',
             '/analysis/forecast',
+            '/analysis/model-evaluation',
+        ] as $url) {
+            $this->actingAs($mao)->get($url)->assertOk();
+        }
+
+        foreach ([
             '/analysis/harvest-training',
             '/analysis/harvest-training/export',
-            '/analysis/model-evaluation',
         ] as $url) {
             $this->actingAs($mao)->get($url)->assertRedirect(route('mao.dashboard'));
         }
 
         $forecastHtml = $this->actingAs($mao)->get(route('weather-predictions.index'))->assertOk()->getContent();
-        $this->assertStringNotContainsString('/analysis/impact', $forecastHtml);
-        $this->assertStringNotContainsString('/analysis/forecast', $forecastHtml);
+        $this->assertStringContainsString('/analysis/impact', $forecastHtml);
+        $this->assertStringContainsString('/analysis/forecast', $forecastHtml);
+        $this->assertStringContainsString('/analysis/model-evaluation', $forecastHtml);
         $this->assertStringNotContainsString('/analysis/harvest-training', $forecastHtml);
-        $this->assertStringNotContainsString('/analysis/model-evaluation', $forecastHtml);
     }
 }

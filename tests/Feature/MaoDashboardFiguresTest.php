@@ -170,8 +170,8 @@ class MaoDashboardFiguresTest extends TestCase
         }
         $this->assertStringNotContainsString('Needs Action', $filipino);
         $this->assertMatchesRegularExpression('#<button type="submit" lang="fil" aria-pressed="true"#', $filipino);
-        // The menu follows: "Mga Magsasaka" instead of "Farmers".
-        $this->assertStringContainsString('<span class="sidebar-label">Mga Magsasaka</span>', $filipino);
+        // The menu follows: "Mga Magsasaka at Pag-apruba" instead of "Farmers & Approvals".
+        $this->assertStringContainsString('<span class="sidebar-label">Mga Magsasaka at Pag-apruba</span>', $filipino);
 
         // The figures are the same in both languages, and another MAO account still reads English.
         $this->assertSame($this->numbers($english), $this->numbers($filipino));

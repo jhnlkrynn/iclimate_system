@@ -127,8 +127,9 @@ class HeatMapDataFlowTest extends TestCase
         $this->assertStringNotContainsString('data-heat-map-updating', $first);
 
         // The scheduled refresh made ONE batched request for all 19 barangays.
-        $this->assertCount(1, Http::recorded());
-        $this->assertCount(count(LianBarangays::all()), $this->requestedPoints(Http::recorded()[0][0]));
+        $openMeteoCalls = collect(Http::recorded())->filter(fn ($pair) => str_contains((string) $pair[0]->url(), 'api.open-meteo.com/v1/forecast'))->values();
+        $this->assertCount(1, $openMeteoCalls);
+        $this->assertCount(count(LianBarangays::all()), $this->requestedPoints($openMeteoCalls[0][0]));
 
         // The same refresh rated the current risk and saved it in one pass: 19 rows, one calculation time.
         $areas = HeatmapArea::query()->whereIn('barangay', LianBarangays::all())->get();
@@ -239,7 +240,8 @@ class HeatMapDataFlowTest extends TestCase
     public function test_the_risk_reconciliation_and_the_queued_job_rerate_without_another_provider_request(): void
     {
         $this->artisan('iclimate:refresh-barangay-weather', ['--force' => true])->assertSuccessful();
-        $this->assertCount(1, Http::recorded());
+        $openMeteoCalls = collect(Http::recorded())->filter(fn ($pair) => str_contains((string) $pair[0]->url(), 'api.open-meteo.com/v1/forecast'));
+        $this->assertCount(1, $openMeteoCalls);
 
         // :05 / :35, a few minutes after the weather command: re-rated from the same shared weather.
         $this->travel(4)->minutes();
@@ -277,9 +279,10 @@ class HeatMapDataFlowTest extends TestCase
         $this->assertSame($this->levels($mao), $this->levels($mine));
         $this->assertStringContainsString('Your barangay Matabungkay High', $this->summary($mine));
         $this->assertStringContainsString('data-own-barangay="Matabungkay"', $mine);
-        preg_match('#Updated: [^<]+#', $this->summary($mao), $maoTime);
-        preg_match('#Updated: [^<]+#', $this->summary($mine), $farmerTime);
+        preg_match('#Updated:\s*\d+:\d+\s*[AP]M(?:\s*·\s*just now)?#', $this->summary($mao), $maoTime);
+        preg_match('#Updated:\s*\d+:\d+\s*[AP]M(?:\s*·\s*just now)?#', $this->summary($mine), $farmerTime);
         $this->assertSame($maoTime, $farmerTime);
-        $this->assertCount(1, Http::recorded());
+        $openMeteoCalls = collect(Http::recorded())->filter(fn ($pair) => str_contains((string) $pair[0]->url(), 'api.open-meteo.com/v1/forecast'));
+        $this->assertCount(1, $openMeteoCalls);
     }
 }

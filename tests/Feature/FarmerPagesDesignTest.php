@@ -70,13 +70,8 @@ class FarmerPagesDesignTest extends TestCase
 
     public function test_predictions_use_the_farmer_header_and_staff_keep_theirs(): void
     {
-        // One Predictions page (2026-10): farmers get the farmer page header; staff keep the staff header.
-        $html = $this->actingAs($this->farmer())->get(route('weather-predictions.index'))->assertOk()->getContent();
-
-        // Farmers (2026-10): the header is the week's plain answer (WeatherPredictionController::plainForecast).
-        $this->assertMatchesRegularExpression('#<header class="wpx-answer is-(good|careful|bad|none)" data-wpx-answer="[a-z_]+">#', $html);
-        $this->assertMatchesRegularExpression('#<h1>[^<]+</h1>#', $html);
-        $this->assertStringNotContainsString('mfd itd itp', $html);
+        // Forecast moved to MAO-only: farmers are redirected to their dashboard, staff keep the staff header.
+        $this->actingAs($this->farmer())->get(route('weather-predictions.index'))->assertRedirect(route('farmer.dashboard'));
 
         $this->actingAs(User::factory()->maoPersonnel()->create())->get(route('weather-predictions.index'))
             ->assertOk()->assertDontSee('data-wpx-answer', false)->assertSee('mfd itd itp', false);

@@ -380,7 +380,7 @@ class DroughtRiskService
     private function sharedForecastPayload(): array
     {
         try {
-            $w = $this->sharedWeather->current(false);
+            $w = $this->sharedWeather->stored();
 
             return is_array($w) && ($w['success'] ?? false) ? $w : [];
         } catch (Throwable) {

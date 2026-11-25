@@ -20,7 +20,7 @@ class KnowledgeAnswerService
     /** "What is X / ano ang X": a definition, unless X is usually asked about as live data. */
     private const WEAK_DEFINITION = '/^(what is|whats|what are|ano ang|ano yung|ano po ang|ano ba ang|ano ba)\b/';
 
-    private const HOWTO = '/^(how to|how do i|how can i|how should i|when should i|when do i|when to|paano|pano|kailan|ano ang hakbang|ano ang mga hakbang|steps to|hakbang sa)\b|\b(steps|hakbang|proseso|gabay)\b/';
+    private const HOWTO = '/^(how to|how do i|how can i|how should i|what should i do|what do i do|when should i|when do i|when to|paano|pano|kailan|ano ang hakbang|ano ang mga hakbang|ano ang dapat gawin|ano dapat gawin|steps to|hakbang sa)\b|\b(steps|hakbang|proseso|gabay)\b/';
 
     private const FILIPINO_CUES = ['ano', 'ang', 'ng', 'mga', 'ba', 'po', 'paano', 'pano', 'kailan', 'bakit', 'yung', 'yun', 'ito', 'ibig', 'sabihin', 'kahulugan', 'ipaliwanag', 'pwede', 'puwede', 'gawin', 'dapat', 'ko', 'mo', 'namin', 'natin', 'sa', 'na', 'ay', 'hindi', 'bang'];
 

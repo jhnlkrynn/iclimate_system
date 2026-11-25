@@ -176,7 +176,7 @@ class FarmerNaicelFeaturesTest extends TestCase
         $notifier->sync($farmer);
         $notifier->sync($farmer->fresh());
 
-        $this->assertSame(['setup:farm_area', 'setup:planting_date'], Notification::query()->where('user_id', $farmer->id)->orderBy('category')->pluck('category')->all());
+        $this->assertSame(['setup:complete_profile', 'setup:farm_area', 'setup:planting_date'], Notification::query()->where('user_id', $farmer->id)->orderBy('category')->pluck('category')->all());
         $this->assertSame('Add your planting date', Notification::query()->where('category', 'setup:planting_date')->value('title'));
 
         // In the farmer's language; switching the language rewrites it instead of adding another.
@@ -197,8 +197,8 @@ class FarmerNaicelFeaturesTest extends TestCase
         $this->actingAs($farmer)->get(route('farmer.my-farm'))->assertOk();
         $this->assertDatabaseMissing('notifications', ['user_id' => $farmer->id, 'category' => 'setup:farm_area']);
 
-        $this->actingAs($farmer)->post(route('farmer.activities.store'), ['date' => '2026-10-01', 'kind' => 'planted', 'farm_id' => $farm->id])->assertRedirect();
-        $this->assertSame(0, Notification::query()->where('user_id', $farmer->id)->count());
+        $this->actingAs($farmer)->post(route('farmer.activities.store'), ['date' => '2026-10-01', 'kind' => 'planted', 'farm_id' => $farm->id, 'rice_variety_id' => 'unknown'])->assertRedirect();
+        $this->assertSame(0, Notification::query()->where('user_id', $farmer->id)->where('category', 'like', 'setup:%')->where('category', '!=', 'setup:complete_profile')->count());
     }
 
     public function test_a_harvest_without_a_record_is_asked_for_and_the_bell_links_to_the_right_page(): void
@@ -210,7 +210,9 @@ class FarmerNaicelFeaturesTest extends TestCase
         app(FarmerMissingInfoNotifier::class)->sync($farmer);
         app(FarmerMissingInfoNotifier::class)->sync($noBarangay);
 
-        $items = collect($this->actingAs($farmer)->getJson(route('notifications.feed'))->assertOk()->json('items'));
+        $items = collect($this->actingAs($farmer)->getJson(route('notifications.feed'))->assertOk()->json('items'))
+            ->reject(fn (array $item): bool => ($item['title'] ?? '') === 'Complete your profile')
+            ->values();
         $this->assertSame(['Add your harvest record'], $items->pluck('title')->all());
         $this->assertSame(route('farmer.my-farm').'#activity', $items->first()['link_url']);
         $this->assertSame('Open', $items->first()['link_label']);
@@ -240,7 +242,7 @@ class FarmerNaicelFeaturesTest extends TestCase
         $this->assertSame(['Farm 1', 'Binubusan', true], [$first->farm_name, $first->barangay, $first->is_primary]);
         $second = $this->addFarm($farmer, 'Bukid sa ilog', 'Prenza', 0.75);
 
-        $this->actingAs($farmer)->post(route('farmer.activities.store'), ['date' => '2026-06-12', 'kind' => 'planted', 'farm_id' => $second->id])->assertRedirect();
+        $this->actingAs($farmer)->post(route('farmer.activities.store'), ['date' => '2026-06-12', 'kind' => 'planted', 'farm_id' => $second->id, 'rice_variety_id' => 'unknown'])->assertRedirect();
         $plan = FarmerPlantingSchedule::query()->sole();
         $this->assertSame([$second->id, 'Prenza', 'Irrigated', '0.75'], [$plan->farm_id, $plan->barangay, $plan->farm_type, $plan->farm_area_hectares]);
 
@@ -261,7 +263,7 @@ class FarmerNaicelFeaturesTest extends TestCase
         $second = $this->addFarm($farmer, 'Bukid sa ilog', 'Prenza', 0.75);
         app(\App\Services\Farms\FarmService::class)->archive($second);
 
-        $this->actingAs($farmer)->post(route('farmer.activities.store'), ['date' => '2026-06-12', 'kind' => 'planted', 'farm_id' => $second->id])
+        $this->actingAs($farmer)->post(route('farmer.activities.store'), ['date' => '2026-06-12', 'kind' => 'planted', 'farm_id' => $second->id, 'rice_variety_id' => 'unknown'])
             ->assertSessionHasErrorsIn('activity', ['farm_id']);
         $this->assertSame(0, FarmerPlantingSchedule::query()->count());
     }
@@ -273,7 +275,7 @@ class FarmerNaicelFeaturesTest extends TestCase
         $farmer = $this->farmer();
         $farm = $this->farms($farmer)->first();
 
-        $this->actingAs($farmer)->post(route('farmer.activities.store'), ['date' => '2026-06-12', 'kind' => 'planted', 'farm_id' => $farm->id])
+        $this->actingAs($farmer)->post(route('farmer.activities.store'), ['date' => '2026-06-12', 'kind' => 'planted', 'farm_id' => $farm->id, 'rice_variety_id' => 'unknown'])
             ->assertRedirect(route('farmer.my-farm', ['month' => '2026-06']).'#activity');
         $plan = FarmerPlantingSchedule::query()->sole();
         $this->assertSame([$farmer->id, $farm->id, '2026-06-12', 'Wet', 'Rainfed', 'Binubusan', '1.50'],
@@ -300,14 +302,14 @@ class FarmerNaicelFeaturesTest extends TestCase
         $post = fn (array $data) => $this->actingAs($farmer)->post(route('farmer.activities.store'), $data + ['farm_id' => $farm->id]);
 
         $post(['date' => '2026-10-05', 'kind' => 'harvested'])->assertSessionHasErrorsIn('activity', ['date' => 'Record the planting on this farm first.']);
-        $post(['date' => '2026-10-20', 'kind' => 'harvested'])->assertSessionHasErrorsIn('activity', ['date' => 'A harvest date cannot be in the future.']);
+        $post(['date' => '2026-10-20', 'kind' => 'harvested'])->assertSessionHasErrorsIn('activity', ['date' => 'Planting or harvest date cannot be in the future.']);
         $post(['date' => '2026-06-12', 'kind' => 'watered'])->assertSessionHasErrorsIn('activity', ['kind']);
-        $this->actingAs($farmer)->post(route('farmer.activities.store'), ['date' => '2026-06-12', 'kind' => 'planted', 'farm_id' => $this->farms($other)->first()->id])
+        $this->actingAs($farmer)->post(route('farmer.activities.store'), ['date' => '2026-06-12', 'kind' => 'planted', 'farm_id' => $this->farms($other)->first()->id, 'rice_variety_id' => 'unknown'])
             ->assertSessionHasErrorsIn('activity', ['farm_id']);
         $this->assertSame(0, FarmerPlantingSchedule::query()->count());
 
-        $post(['date' => '2026-06-12', 'kind' => 'planted'])->assertSessionHasNoErrors();
-        $post(['date' => '2026-06-12', 'kind' => 'planted'])->assertSessionHasErrorsIn('activity', ['date' => 'This planting is already recorded.']);
+        $post(['date' => '2026-06-12', 'kind' => 'planted', 'rice_variety_id' => 'unknown'])->assertSessionHasNoErrors();
+        $post(['date' => '2026-06-12', 'kind' => 'planted', 'rice_variety_id' => 'unknown'])->assertSessionHasErrorsIn('activity', ['date' => 'This planting is already recorded.']);
     }
 
     public function test_the_calendar_shows_only_the_farmers_own_activities(): void
@@ -387,7 +389,7 @@ class FarmerNaicelFeaturesTest extends TestCase
         $farmer = $this->farmer(attributes: ['preferred_language' => 'fil']);
         $this->storeYesterdaysForecast();
 
-        $html = $this->actingAs($farmer)->get(route('weather-predictions.index'))->assertOk()->getContent();
+        $html = $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk()->getContent();
         $this->assertStringContainsString('Tama ba ang taya ng panahon kahapon?', $html);
         $this->assertStringContainsString('Mahinang ulan', $html);                                  // what was forecast, in words
         foreach (['Tama', 'Medyo', 'Mali', 'Maaraw', 'Maulap', 'Malakas na ulan', 'Malakas na hangin', 'Laktawan'] as $word) {
@@ -403,7 +405,8 @@ class FarmerNaicelFeaturesTest extends TestCase
             [$row->user_id, $row->forecast_type, $row->forecast_date->toDateString(), $row->barangay, $row->forecast_condition, $row->accuracy, $row->observed_condition]);
 
         // One answer per day: it is not asked again, and a second answer does not replace the first.
-        $this->assertStringNotContainsString('data-forecast-survey', $this->actingAs($farmer)->get(route('weather-predictions.index'))->getContent());
+        \Illuminate\Support\Facades\Cache::forget('farmer-forecast-survey:'.$farmer->id.':'.now('Asia/Manila')->toDateString());
+        $this->assertStringNotContainsString('data-forecast-survey', $this->actingAs($farmer)->get(route('farmer.dashboard'))->getContent());
         $this->actingAs($farmer)->postJson(route('farmer.forecast-survey.store'), ['forecast_date' => '2026-10-06', 'accuracy' => 'accurate'])->assertOk();
         $this->assertSame('different', WeatherForecastFeedback::query()->sole()->accuracy);
     }
@@ -413,7 +416,7 @@ class FarmerNaicelFeaturesTest extends TestCase
         $farmer = $this->farmer();
 
         // No saved forecast for yesterday: nothing is asked and the page opens as usual.
-        $this->assertStringNotContainsString('data-forecast-survey', $this->actingAs($farmer)->get(route('weather-predictions.index'))->assertOk()->getContent());
+        $this->assertStringNotContainsString('data-forecast-survey', $this->actingAs($farmer)->get(route('farmer.dashboard'))->assertOk()->getContent());
 
         $this->storeYesterdaysForecast();
         foreach (['2026-10-07', '2026-10-01'] as $day) {

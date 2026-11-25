@@ -93,6 +93,9 @@ class PredictionsPageTest extends TestCase
     {
         $user = User::factory()->create($attributes + ['role' => User::ROLE_FARMER, 'barangay' => $barangay]);
         FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => $barangay, 'farm_area' => $area, 'farm_type' => 'Irrigated']);
+        if (\App\Support\ActiveFarm::available()) {
+            \App\Models\Farm::query()->where('user_id', $user->id)->update(['verification_status' => \App\Models\Farm::VERIFICATION_APPROVED, 'verified_at' => now()]);
+        }
 
         return $user;
     }
@@ -136,14 +139,14 @@ class PredictionsPageTest extends TestCase
     public function test_this_week_is_days_1_to_7_and_next_2_weeks_is_days_1_to_14(): void
     {
         $this->storeLianForecast(16);
-        $farmer = $this->farmer();
+        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
-        $week = $this->actingAs($farmer)->get(route('weather-predictions.index'))->getContent();
+        $week = $this->actingAs($mao)->get(route('weather-predictions.index'))->getContent();
         $this->assertStringContainsString('data-days="7"', $week);
         $this->assertSame(7, substr_count($week, '<li class="wpx-day'));
         $this->assertMatchesRegularExpression('#aria-current="page"\s*>This Week</a>#', $week);
 
-        $twoWeeks = $this->actingAs($farmer)->get(route('weather-predictions.index', ['range' => '2weeks']))->getContent();
+        $twoWeeks = $this->actingAs($mao)->get(route('weather-predictions.index', ['range' => '2weeks']))->getContent();
         $this->assertSame(14, substr_count($twoWeeks, '<li class="wpx-day'));
         $this->assertMatchesRegularExpression('#aria-current="page"\s*>Next 2 Weeks</a>#', $twoWeeks);
         $this->assertStringNotContainsString('data-kind="estimate"', $twoWeeks, 'the provider covers all 14 days');
@@ -153,8 +156,9 @@ class PredictionsPageTest extends TestCase
     {
         $this->storeLianForecast(5);
         $this->prepareMonthlyForecasts(310.0);                                      // about 10 mm a day: moderate rain
+        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
-        $html = $this->actingAs($this->farmer())->get(route('weather-predictions.index', ['range' => '2weeks']))->getContent();
+        $html = $this->actingAs($mao)->get(route('weather-predictions.index', ['range' => '2weeks']))->getContent();
 
         $this->assertSame(5, substr_count($html, 'data-kind="forecast"'));
         $this->assertSame(9, substr_count($html, 'data-kind="estimate"'));
@@ -165,8 +169,9 @@ class PredictionsPageTest extends TestCase
     public function test_without_any_monthly_forecast_a_missing_day_says_no_data_and_nothing_is_invented(): void
     {
         $this->storeLianForecast(3);
+        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
-        $html = $this->actingAs($this->farmer())->get(route('weather-predictions.index'))->getContent();
+        $html = $this->actingAs($mao)->get(route('weather-predictions.index'))->getContent();
 
         $this->assertSame(4, substr_count($html, 'data-kind="none"'));
         $this->assertStringNotContainsString('data-kind="estimate"', $html);
@@ -182,24 +187,11 @@ class PredictionsPageTest extends TestCase
 
     // ------------------------------------------------------------ words for farmers, numbers for staff
 
-    public function test_farmers_read_words_and_staff_also_see_numbers(): void
+    public function test_farmers_are_redirected_and_staff_see_numbers(): void
     {
         $this->storeLianForecast(16, rain: 12.0, code: 95);                            // thunderstorm days with 12 mm
-        $farmerHtml = $this->actingAs($this->farmer(barangay: 'Prenza'))->get(route('weather-predictions.index'))->getContent();
+        $this->actingAs($this->farmer(barangay: 'Prenza'))->get(route('weather-predictions.index'))->assertRedirect(route('farmer.dashboard'));
         $mao = $this->text($this->actingAs(User::factory()->create(['role' => User::ROLE_MAO]))->get(route('weather-predictions.index'))->getContent());
-
-        // Farmers (2026-10): one answer and plain day cards; the numbers wait under the closed "More details".
-        $this->assertStringContainsString('Rain most days this week', $this->text($farmerHtml));
-        $this->assertSame(1, preg_match('#<details class="wpx-more" data-wpx-more>(.*?)</details>#s', $farmerHtml, $more));
-        $farmer = $this->text(str_replace($more[0], '', $farmerHtml));
-        $this->assertStringContainsString('Rain and thunder', $farmer);
-        $this->assertDoesNotMatchRegularExpression('/\d\s*mm\b/', $farmer);
-        $this->assertStringNotContainsString('km/h', $farmer);
-        $this->assertStringNotContainsString('%', $farmer);
-        $details = $this->text($more[1]);
-        $this->assertStringContainsString('Moderate rain · 12.0 mm', $details);
-        $this->assertStringContainsString('80%', $details);
-        $this->assertStringContainsString('14.0 km/h', $details);
 
         $this->assertStringContainsString('12.0 mm', $mao);
         $this->assertStringContainsString('80%', $mao);
@@ -208,11 +200,6 @@ class PredictionsPageTest extends TestCase
 
     public function test_the_farmers_answer_names_the_week_in_plain_words(): void
     {
-        $this->storeLianForecast(16, rain: 60.0, code: 65);
-        $html = $this->actingAs($this->farmer(barangay: 'Prenza'))->get(route('weather-predictions.index'))->getContent();
-        $this->assertStringContainsString('<header class="wpx-answer is-bad" data-wpx-answer="heavy_rain">', $html);
-        $this->assertStringContainsString('<h1>Heavy rain today</h1>', $html);
-
         // The rules on their own: no rain is careful (hot at 35 °C), rain on most days is good, nothing saved is none.
         $day = fn (int $i, ?string $rain, float $high = 31.0) => ['kind' => 'forecast', 'date' => CarbonImmutable::now('Asia/Manila')->addDays($i), 'rain_key' => $rain,
             'icon' => $rain === 'none' ? 'sun' : 'rain', 'wind_words' => null, 'wind_kmh' => 5.0, 'high' => $high];
@@ -227,19 +214,20 @@ class PredictionsPageTest extends TestCase
     public function test_a_day_never_names_two_different_rains(): void
     {
         $this->storeLianForecast(16, rain: 4.0, code: 65);                             // "Heavy Rain" weather code, 4 mm in the day
+        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
-        $text = $this->text($this->actingAs($this->farmer(barangay: 'Prenza'))->get(route('weather-predictions.index'))->getContent());
+        $text = $this->text($this->actingAs($mao)->get(route('weather-predictions.index'))->getContent());
 
         $this->assertStringContainsString('Light rain', $text);
         $this->assertStringNotContainsString('Heavy Rain', $text);
     }
 
-    public function test_the_farmer_sees_their_barangay_in_filipino(): void
+    public function test_the_mao_sees_filipino_labels_when_selected(): void
     {
         $this->storeBarangayForecast('Prenza', 0.0);
-        $farmer = $this->farmer(barangay: 'Prenza', attributes: ['preferred_language' => 'fil']);
+        $mao = User::factory()->create(['role' => User::ROLE_MAO, 'preferred_language' => 'fil']);
 
-        $text = $this->text($this->actingAs($farmer)->get(route('weather-predictions.index'))->getContent());
+        $text = $this->text($this->actingAs($mao)->get(route('weather-predictions.index', ['barangay' => 'Prenza']))->getContent());
 
         $this->assertStringContainsString('Para sa Prenza, Lian', $text);
         $this->assertStringContainsString('Ngayong Linggo', $text);
@@ -263,7 +251,7 @@ class PredictionsPageTest extends TestCase
         $this->assertStringContainsString('For Lian, Batangas', $this->text($all));
 
         foreach ([$this->farmer()] as $other) {
-            $this->assertStringNotContainsString('data-wpx-filter', $this->actingAs($other)->get(route('weather-predictions.index', ['barangay' => 'Matabungkay']))->getContent());
+            $this->actingAs($other)->get(route('weather-predictions.index', ['barangay' => 'Matabungkay']))->assertRedirect(route('farmer.dashboard'));
         }
     }
 
@@ -271,33 +259,10 @@ class PredictionsPageTest extends TestCase
 
     // ------------------------------------------------------------ yield this season
 
-    public function test_the_farmer_sees_their_own_estimate_for_this_season_from_the_profile(): void
+    public function test_the_farmer_is_redirected_from_predictions_page(): void
     {
-        config(['prediction.rice_yield.gate' => 'off']);   // display formatting; the gate itself: YieldModelGateTest
-        $this->lianYields(4.0);
         $farmer = $this->farmer(area: 1.5);
-        $this->storeEstimate($farmer, 4.6);
-
-        $text = $this->text($this->actingAs($farmer)->get(route('weather-predictions.index'))->getContent());
-
-        $this->assertStringContainsString('4.60 t/ha', $text);
-        // The disclosure stays; the farmer card has no Normal / Higher / Lower badge (owner decision 2026-11-20).
-        $this->assertStringContainsString('Preliminary estimate', $text);
-        $this->assertStringContainsString('Accuracy not verified', $text);
-        $this->assertStringNotContainsString('Compared with the usual Lian yield', $text);
-        $this->assertStringContainsString('From your farm size (1.50 ha) and farm type (Irrigated', $text);
-        $this->assertStringContainsString(\App\Support\RiceSeason::current() === 'Wet' ? 'Wet season' : 'Dry season', $text);
-    }
-
-    public function test_a_farmer_without_a_saved_estimate_waits_for_the_background_job_and_without_a_farm_size_is_told_to_add_it(): void
-    {
-        $text = $this->text($this->actingAs($this->farmer())->get(route('weather-predictions.index'))->getContent());
-        $this->assertStringContainsString('Your estimate is being prepared.', $text);
-        Queue::assertPushed(\App\Jobs\PrepareFarmerYieldEstimate::class);
-
-        $noArea = $this->farmer(area: null, attributes: ['email' => 'noarea@example.test']);
-        Cache::put(FarmerDashboardService::predictionCacheKey($noArea->id), ['failed' => true, 'lacks_records' => false], now()->addMinutes(5));
-        $this->assertStringContainsString("Add or measure this farm's size to get a yield estimate.", $this->text($this->actingAs($noArea)->get(route('weather-predictions.index'))->getContent()));
+        $this->actingAs($farmer)->get(route('weather-predictions.index'))->assertRedirect(route('farmer.dashboard'));
     }
 
     public function test_staff_use_the_model_for_all_lian_and_saved_estimates_only_for_a_barangay_filter(): void
@@ -351,18 +316,7 @@ class PredictionsPageTest extends TestCase
             'climate_sources' => ['reanalysis_months' => [$previous], 'forecast_months' => [], 'missing_months' => []],
         ], now()->addHours(6));
 
-        $html = $this->actingAs($farmer)->get(route('weather-predictions.index'))->assertOk()->getContent();
-        $text = $this->text($html);
-
-        $this->assertStringContainsString('data-yield-record', $html);
-        $this->assertStringContainsString('How this estimate was made', $text);
-        $this->assertStringContainsString('rice_yield_model_final:687394f77677', $text);
-        $this->assertStringContainsString('3.51 – 4.21 t/ha', $text);
-        $this->assertStringContainsString('Average monthly rain, last 6 months', $text);
-        $this->assertStringContainsString('197.10 mm', $text);
-        $this->assertStringContainsString('past weather from Open-Meteo, adjusted to PAGASA Ambulong station', $text);
-        $this->assertStringNotContainsString('Compared with real harvests', $text, 'owner removed this line 2026-11-20');
-        $this->assertStringContainsString('Preliminary estimate', $text, 'the disclosure stays on the card');
+        $this->actingAs($farmer)->get(route('weather-predictions.index'))->assertRedirect(route('farmer.dashboard'));
     }
 
     public function test_all_lian_renders_a_cached_model_result_without_farmer_estimates(): void
@@ -415,7 +369,8 @@ class PredictionsPageTest extends TestCase
     {
         $this->storeLianForecast(3);
         $this->mock(\App\Services\Prediction\PredictionOrchestrator::class, fn ($mock) => $mock->shouldReceive('preparedMonthlyWeatherForecasts')->andThrow(new \RuntimeException('boom')));
+        $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
-        $this->actingAs($this->farmer())->get(route('weather-predictions.index', ['range' => '2weeks']))->assertOk()->assertDontSee('boom');
+        $this->actingAs($mao)->get(route('weather-predictions.index', ['range' => '2weeks']))->assertOk()->assertDontSee('boom');
     }
 }

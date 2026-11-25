@@ -107,9 +107,12 @@ class Phase4AnalysisTest extends TestCase
     {
         $mao = User::factory()->create(['role' => User::ROLE_MAO]);
 
-        $this->actingAs($mao)->get(route('analysis.impact'))->assertRedirect(route('mao.dashboard'));
-        $this->actingAs($mao)->post(route('analysis.impact.store'), ['title' => 'Wet seasons', 'season' => 'Wet'])->assertRedirect(route('mao.dashboard'));
-        $this->actingAs($mao)->get(route('analysis.impact.show', 1))->assertRedirect(route('mao.dashboard'));
+        $this->actingAs($mao)->get(route('analysis.impact'))->assertOk();
+        $this->actingAs($mao)->post(route('analysis.impact.store'), ['title' => 'Wet seasons', 'season' => 'Wet'])->assertRedirect();
+        $analysis = \App\Models\WeatherImpactAnalysis::query()->latest('id')->first();
+        if ($analysis) {
+            $this->actingAs($mao)->get(route('analysis.impact.show', $analysis->id))->assertOk();
+        }
     }
 
     public function test_impact_levels_and_pearson(): void

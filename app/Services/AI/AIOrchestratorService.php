@@ -142,7 +142,7 @@ class AIOrchestratorService
         }
 
         // Farmer asking when to harvest: answer directly from their active farm's VarietyHarvestEstimator.
-        if ($farmContext->isFarmer && $this->isHarvestTimingQuestion($question)) {
+        if ($farmContext->isFarmer && $farmContext->expectedHarvestDate !== null && $this->isHarvestTimingQuestion($question)) {
             return $this->harvestTiming($farmContext, $language, $memory);
         }
 
@@ -326,7 +326,10 @@ class AIOrchestratorService
             KnowledgeAnswerService::MODE_DEFINITION => $unclassified || $toolIntent,
             // "When should I harvest?" reads as a yield request to the classifier, but with no
             // numbers or "my" it is asking how, not for an estimate.
-            KnowledgeAnswerService::MODE_HOWTO => $unclassified || $recommendation || $intent === IntentClassifierService::RICE_YIELD_PREDICTION,
+            KnowledgeAnswerService::MODE_HOWTO => $unclassified || $recommendation || in_array($intent, [
+                IntentClassifierService::RICE_YIELD_PREDICTION,
+                IntentClassifierService::WEATHER_ADVISORY,
+            ], true),
             default => $unclassified,
         };
 
@@ -609,8 +612,8 @@ class AIOrchestratorService
             if (! $tool['success']) {
                 return $this->translate(
                     $language,
-                    ($barangay ? "Latest weather for {$barangay} is temporarily unavailable." : 'Current weather data is temporarily unavailable.').' Weather refreshes every 3 minutes.',
-                    ($barangay ? "Hindi available ngayon ang latest weather para sa {$barangay}." : 'Hindi available ngayon ang current weather data.').' Nagre-refresh ang panahon tuwing 3 minuto.'
+                    ($barangay ? "Latest weather for {$barangay} is temporarily unavailable." : 'Current weather data is temporarily unavailable.').' Weather refreshes every few minutes.',
+                    ($barangay ? "Hindi available ngayon ang latest weather para sa {$barangay}." : 'Hindi available ngayon ang current weather data.').' Nagre-refresh ang panahon tuwing ilang minuto.'
                 );
             }
 
@@ -717,8 +720,8 @@ class AIOrchestratorService
             if (! $tool['success']) {
                 return $this->translate(
                     $language,
-                    'The weather forecast is temporarily unavailable (weather refreshes every 3 minutes). I will not guess the forecast.',
-                    'Hindi available ngayon ang weather forecast (nagre-refresh ang panahon tuwing 3 minuto). Hindi ako manghuhula ng forecast.'
+                    'The weather forecast is temporarily unavailable (weather refreshes every few minutes). I will not guess the forecast.',
+                    'Hindi available ngayon ang weather forecast (nagre-refresh ang panahon tuwing ilang minuto). Hindi ako manghuhula ng forecast.'
                 );
             }
 
@@ -1385,6 +1388,11 @@ class AIOrchestratorService
     private function isFarmResultsExplorationQuestion(string $question): bool
     {
         $text = mb_strtolower($question);
+
+        if (preg_match('/\b(irrigate|irrigation|should i|predict|estimate|tantiya)\b/i', $text)
+            || preg_match('/\d+\s*(mm|%|c\b|°c|km\/h)/i', $text)) {
+            return false;
+        }
 
         if (! preg_match('/\b(irrigated|rainfed|may patubig|sahod[- ]?ulan)\b/i', $text)) {
             return false;

@@ -376,7 +376,7 @@ class OnlineAgriculturalAdvisorySystemTest extends TestCase
     public function test_view_opens_the_advisory_in_a_popup_and_the_full_page_still_works(): void
     {
         $farmer = User::factory()->farmer()->create(['barangay' => 'Prenza']);
-        $advisory = PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Popup advisory', 'recommended_action' => 'Check the paddy water level.']));
+        $advisory = PlantingAdvisory::query()->create($this->advisoryPayload(['title' => 'Popup advisory', 'recommended_action' => 'Check the paddy water level.', 'metadata' => ['actions_en' => ['Check the paddy water level.']]]));
 
         $list = $this->actingAs($farmer)->get(route('planting-advisories.index'))->assertOk()->getContent();
         $this->assertStringContainsString('data-fad-view', $list);                                  // a View button per card

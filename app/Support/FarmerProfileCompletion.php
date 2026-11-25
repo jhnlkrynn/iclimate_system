@@ -28,7 +28,7 @@ final class FarmerProfileCompletion
         }
 
         if (ActiveFarm::available()) {
-            $farms = $user->farms()->active()->get(['id', 'farmer_organization_id', 'association_status']);
+            $farms = ActiveFarm::farms($user);
             if ($farms->isEmpty()) {
                 $missing[] = 'farm';
                 if ($user->farmerProfile?->farmer_organization_id === null) {
@@ -74,7 +74,7 @@ final class FarmerProfileCompletion
         }
 
         if (ActiveFarm::available()) {
-            $farms = $user->farms()->active()->orderByDesc('is_primary')->orderBy('id')->get(['id', 'farm_name', 'farmer_organization_id', 'association_status']);
+            $farms = ActiveFarm::farms($user);
             if ($farms->isEmpty()) {
                 $labels[] = $fil ? 'Walang bukid na nakatala pa' : 'No farm added yet';
             } else {

@@ -160,7 +160,7 @@ class RealtimeCompletionTest extends TestCase
             'mao.alerts.index' => 'data-live-areas="advisories,notification-reads"',
             'mao.barangays.index' => 'data-live-region="barangays"',
             'mao.activity-log.index' => 'data-live-areas="mao-activity"',
-            'community-feed.index' => 'data-live-region="feed-posts"',
+            'mao.planner.index' => 'data-live-region="feed-posts"',
             'analysis.weather' => 'data-live-region="weather-analysis"',
             'analysis.impact' => 'data-live-region="impact-history"',
             'analysis.forecast' => 'data-live-region="forecast-history"',

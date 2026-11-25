@@ -48,6 +48,9 @@ class MaoDashboardHomeTest extends TestCase
     {
         $user = User::factory()->farmer()->create(['barangay' => $barangay, 'status' => User::STATUS_ACTIVE]);
         FarmerProfile::factory()->create(['user_id' => $user->id, 'barangay' => $barangay]);
+        if (\App\Support\ActiveFarm::available()) {
+            \App\Models\Farm::query()->where('user_id', $user->id)->update(['verification_status' => \App\Models\Farm::VERIFICATION_APPROVED, 'verified_at' => now()]);
+        }
 
         return $user;
     }
@@ -131,7 +134,7 @@ class MaoDashboardHomeTest extends TestCase
         $this->assertSame($sorted, $order);
         // Up to four chart cards (yield, rainfall and temperature, weather impact, planted area), each only with data: one
         // recorded season is too few for the weather-impact chart (it needs three), so that card is left out.
-        foreach (['data-mao-yield', 'data-mao-climate', 'data-mao-planted'] as $card) {
+        foreach (['data-mao-yield', 'data-mao-climate>', 'data-mao-planted'] as $card) {
             $this->assertSame(1, substr_count($html, $card), $card);
         }
         $this->assertSame(1, substr_count($html, 'data-mao-impact'));
@@ -214,8 +217,9 @@ class MaoDashboardHomeTest extends TestCase
             ['year' => 2025, 'month' => 12, 'yield' => 3.8, 'split' => null], ['year' => 2026, 'month' => 2, 'yield' => 4.2, 'split' => null],
             ['year' => 2026, 'month' => 7, 'yield' => 9.9, 'split' => null],    // the current season is never "last season"
         ]);
+        $targetMonth = \App\Support\RiceSeason::harvestMonth(now('Asia/Manila'))->format('Y-m');
         foreach ([[$this->farmer(), 4.2], [$this->farmer('Balibago'), 4.6]] as [$farmer, $yield]) {
-            Cache::put(FarmerDashboardService::predictionCacheKey($farmer->id), ['success' => true, 'yield_tons_per_hectare' => $yield, 'target_month' => '2026-10', 'ran_at' => now()->toIso8601String()], now()->addHours(6));
+            Cache::put(FarmerDashboardService::predictionCacheKey($farmer->id), ['success' => true, 'yield_tons_per_hectare' => $yield, 'target_month' => $targetMonth, 'ran_at' => now()->toIso8601String()], now()->addHours(6));
         }
 
         $html = $this->actingAs($this->mao())->get(route('mao.dashboard'))->assertOk()->getContent();
@@ -340,11 +344,11 @@ class MaoDashboardHomeTest extends TestCase
     {
         $html = $this->html();
 
-        // The menu is in the page twice (side bar and phone drawer): the same ten labels each time.
+        // The menu is in the page twice (side bar and phone drawer): the same seven labels each time.
         preg_match_all('#<span class="sidebar-label">([^<]+)</span>#', $html, $labels);
         $labels = array_map('html_entity_decode', $labels[1]);
-        $this->assertSame(['MAO Staff Dashboard', 'Heat Map', 'Advisories', 'MAO Planner', 'Records', 'Farmers', 'Account Requests', 'Rice Varieties', 'Predictions', 'Reports', 'Announcements', 'Messages', 'MAO Office', 'Association reports'], array_values(array_unique($labels)));
-        $this->assertSame(0, count($labels) % 14);
+        $this->assertSame(['MAO Staff Dashboard', 'Heat Map', 'Forecast', 'Advisories & Planner', 'Records & Reports', 'Farmers & Approvals', 'Rice Varieties'], array_values(array_unique($labels)));
+        $this->assertSame(0, count($labels) % 7);
         $this->assertStringNotContainsString('Field Reports', $html);
         $this->assertStringNotContainsString('field-reports.index', $html);
         $nav = [implode(' | ', $labels)];

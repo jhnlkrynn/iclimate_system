@@ -22,7 +22,7 @@ class PythonChatDeadlineTest extends TestCase
         $timings=app(AiTimings::class);$timings->begin();$start=microtime(true);
         try {
             try { app(PythonService::class)->farmingAssistant(['prediction_type'=>'rice_yield','features'=>[]]);$this->fail('Expected safe service failure'); }
-            catch (\RuntimeException $exception) { $this->assertStringContainsString('local rice-yield inference also failed',$exception->getMessage()); }
+            catch (\RuntimeException $exception) { $this->assertStringContainsString('local inference failed',$exception->getMessage()); }
             $this->assertLessThan(3,microtime(true)-$start,'the local fallback must respect the chat deadline');
         } finally { $timings->report();unlink($path); }
     }
