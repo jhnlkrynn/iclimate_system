@@ -3,10 +3,14 @@
 
     // Greeting uses only the account's first name; nothing else about the account is shown.
     $icAiFirstName = \Illuminate\Support\Str::of((string) auth()->user()?->name)->squish()->before(' ')->toString();
-    $icAiGreeting = $icAiFirstName !== '' ? 'Hi, '.$icAiFirstName.'! How can I help you today?' : 'Hi! How can I help you today?';
     $icAiFarmerLanguage = auth()->user()?->role === \App\Models\User::ROLE_FARMER;
     $icAiHeaderLocale = $icAiFarmerLanguage ? \App\Support\FarmerLanguage::resolve(request()) : 'en';
+    $icAiLocale = $icAiHeaderLocale;
     $icAiWidgetLang = $icAiHeaderLocale === 'fil' ? 'tl' : (auth()->user()?->aiLanguageCode() ?? 'en');
+    $icAiSelectedLang = auth()->user()?->aiLanguageCode() ?: $icAiWidgetLang;
+    $icAiGreeting = $icAiFirstName !== ''
+        ? __('farmer.climora.greeting', ['name' => $icAiFirstName], $icAiLocale)
+        : __('farmer.climora.greeting_default', [], $icAiLocale);
     $icAiFarmerChipsEn = [
         'Weather this week',
         'Can I plant now?',
@@ -627,18 +631,18 @@
             <div class="ic-ai-head-main">
                 <img src="{{ asset('images/climora-ai-icon.png') }}" alt="" class="ic-ai-logo">
                 <div class="ic-ai-head-text">
-                    <h2 id="icAiTitle" class="ic-ai-title">Climora AI</h2>
-                    <p class="ic-ai-subtitle" title="Weather, rice yield, planting, and system guidance">Weather, rice yield, planting, and system guidance</p>
+                    <h2 id="icAiTitle" class="ic-ai-title">{{ __('farmer.climora.title', [], $icAiLocale) }}</h2>
+                    <p class="ic-ai-subtitle" title="{{ __('farmer.climora.subtitle', [], $icAiLocale) }}">{{ __('farmer.climora.subtitle', [], $icAiLocale) }}</p>
                 </div>
             </div>
             @if($icAiFarmerLanguage)
-                <label class="ic-ai-language" for="icAiLanguage" title="Conversation Language">
-                    <span class="ic-ai-sr">Conversation Language</span>
+                <label class="ic-ai-language" for="icAiLanguage" title="{{ __('farmer.climora.language_label', [], $icAiLocale) }}">
+                    <span class="ic-ai-sr">{{ __('farmer.climora.language_label', [], $icAiLocale) }}</span>
                     <x-icon name="globe" class="ic-ai-language-icon" />
                     <x-icon name="chevron-down" class="ic-ai-language-chevron" stroke-width="2.25" />
-                    <select id="icAiLanguage" data-language-url="{{ route('ai-chat.language') }}" data-language-persisted="{{ auth()->user()->aiLanguageCode() ? '1' : '0' }}" data-language-db-value="{{ auth()->user()->aiLanguageCode() ?? '' }}" aria-label="Conversation Language">
-                        <option value="en" @selected(auth()->user()->aiLanguageCode() === 'en')>EN</option>
-                        <option value="tl" @selected(auth()->user()->aiLanguageCode() === 'tl')>FIL</option>
+                    <select id="icAiLanguage" data-language-url="{{ route('ai-chat.language') }}" data-language-persisted="{{ auth()->user()->aiLanguageCode() ? '1' : '0' }}" data-language-db-value="{{ auth()->user()->aiLanguageCode() ?? '' }}" aria-label="{{ __('farmer.climora.language_label', [], $icAiLocale) }}">
+                        <option value="en" @selected($icAiSelectedLang === 'en')>{{ __('farmer.climora.language_en', [], $icAiLocale) }}</option>
+                        <option value="tl" @selected($icAiSelectedLang === 'tl')>{{ __('farmer.climora.language_fil', [], $icAiLocale) }}</option>
                     </select>
                 </label>
             @endif
@@ -646,8 +650,8 @@
                 <div id="icAiLanguageNotice" class="ic-ai-language-notice" role="status" aria-live="polite"></div>
             @endif
             <div class="ic-ai-actions">
-                <button type="button" class="ic-ai-minimize" data-ai-close aria-label="Minimize chat" title="Minimize chat"><x-icon name="minus" /></button>
-                <button type="button" class="ic-ai-close" data-ai-close aria-label="Close chat" title="Close chat"><x-icon name="x" /></button>
+                <button type="button" class="ic-ai-minimize" data-ai-close aria-label="{{ __('farmer.climora.minimize', [], $icAiLocale) }}" title="{{ __('farmer.climora.minimize', [], $icAiLocale) }}"><x-icon name="minus" /></button>
+                <button type="button" class="ic-ai-close" data-ai-close aria-label="{{ __('farmer.climora.close', [], $icAiLocale) }}" title="{{ __('farmer.climora.close', [], $icAiLocale) }}"><x-icon name="x" /></button>
             </div>
         </header>
 
@@ -725,13 +729,13 @@
                     <span class="ic-ai-dot"></span>
                     <span class="ic-ai-dot"></span>
                 </span>
-                <span class="ic-ai-typing-text ic-ai-sr">Climora AI is checking iClimate...</span>
+                <span class="ic-ai-typing-text ic-ai-sr">{{ __('farmer.climora.checking', [], $icAiLocale) }}</span>
             </div>
         </div>
 
         <div class="ic-ai-suggest">
-            <button type="button" class="ic-ai-suggest-toggle" aria-expanded="true" aria-controls="icAiChips" hidden>Suggestions <x-icon name="chevron-down" stroke-width="2.25" /></button>
-            <div id="icAiChips" class="ic-ai-chips" role="group" aria-label="Suggested questions">
+            <button type="button" class="ic-ai-suggest-toggle" aria-expanded="true" aria-controls="icAiChips" hidden>{{ __('farmer.climora.suggestions', [], $icAiLocale) }} <x-icon name="chevron-down" stroke-width="2.25" /></button>
+            <div id="icAiChips" class="ic-ai-chips" role="group" aria-label="{{ __('farmer.climora.suggested_questions', [], $icAiLocale) }}">
                 @foreach($icAiChips as $chip)
                     <button type="button" class="ic-ai-chip" data-ai-chip>{{ $chip }}</button>
                 @endforeach
@@ -740,8 +744,8 @@
 
         <form id="icAiForm" class="ic-ai-form">
             @csrf
-            <textarea id="icAiInput" class="form-control" placeholder="Ask about iClimate..." rows="1" required></textarea>
-            <button id="icAiSend" type="submit" class="ic-ai-send" aria-label="Send message" disabled>
+            <textarea id="icAiInput" class="form-control" placeholder="{{ __('farmer.climora.placeholder', [], $icAiLocale) }}" rows="1" required></textarea>
+            <button id="icAiSend" type="submit" class="ic-ai-send" aria-label="{{ __('farmer.climora.send', [], $icAiLocale) }}" disabled>
                 <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
                     <path d="M3 10h12M11 5l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
@@ -749,8 +753,8 @@
         </form>
     </section>
 
-    <button type="button" class="ic-ai-toggle" data-ai-open aria-label="Open Climora AI">
-        <img src="{{ asset('images/climora-ai-icon.png') }}" alt="Climora AI">
+    <button type="button" class="ic-ai-toggle" data-ai-open aria-label="{{ __('farmer.climora.open', [], $icAiLocale) }}">
+        <img src="{{ asset('images/climora-ai-icon.png') }}" alt="{{ __('farmer.climora.title', [], $icAiLocale) }}">
     </button>
 </div>
 

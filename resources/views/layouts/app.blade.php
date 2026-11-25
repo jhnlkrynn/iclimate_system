@@ -332,13 +332,13 @@
                 @if (session('success'))
                     <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert" data-auto-dismiss="5000">
                         <strong>Success.</strong> {{ session('success') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ __('farmer.topbar.close') }}"></button>
                     </div>
                 @endif
                 @if (session('error'))
                     <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
                         <strong>Error.</strong> {{ session('error') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ __('farmer.topbar.close') }}"></button>
                     </div>
                 @endif
                 @if ($errors->any())

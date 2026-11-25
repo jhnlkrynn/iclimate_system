@@ -30,13 +30,13 @@
 @endphp
 
 {{-- Top bar of every signed-in page (all roles): single 64px white row, sage-200 bottom border. --}}
-<nav class="topbar ic-topbar" aria-label="Top bar">
+<nav class="topbar ic-topbar" aria-label="{{ __('farmer.topbar.aria_label', [], $navLocale ?? 'en') }}">
     <div class="ic-topbar-left">
-        <button class="ic-icon-btn ic-topbar-menu-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-expanded="false" aria-label="{{ __('farmer.nav.open_menu') }}">
+        <button class="ic-icon-btn ic-topbar-menu-btn" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-expanded="false" aria-label="{{ __('farmer.nav.open_menu', [], $navLocale ?? 'en') }}">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3.5 6h13M3.5 10h13M3.5 14h13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         </button>
-        <a class="ic-topbar-brand gov-brand" href="{{ route($user->dashboardRoute()) }}" aria-label="iClimate – Municipal Agriculture Office of Lian, dashboard">
-            <img class="gov-mao-logo" src="{{ asset('images/mao-lian-seal.png') }}" alt="Municipal Agriculture Office logo" width="46" height="46">
+        <a class="ic-topbar-brand gov-brand" href="{{ route($user->dashboardRoute()) }}" aria-label="{{ __('farmer.topbar.brand_aria', [], $navLocale ?? 'en') }}">
+            <img class="gov-mao-logo" src="{{ asset('images/mao-lian-seal.png') }}" alt="{{ __('farmer.topbar.office_logo_alt', [], $navLocale ?? 'en') }}" width="46" height="46">
             <img class="gov-app-logo" src="{{ asset('images/iclimate-logo.png') }}" alt="iClimate" width="48" height="38">
             <span class="gov-brand-text">
                 <span class="gov-brand-office">Municipal Agriculture Office</span>
@@ -63,7 +63,7 @@
                     <div class="dropdown-menu dropdown-menu-end ic-farm-menu">
                         @foreach ($navFarms as $navOption)
                             @php
-                                $optStatus = $navOption->isPendingVerification() ? ' · Pending MAO review' : ($navOption->isRejected() ? ' · Rejected' : '');
+                                $optStatus = $navOption->isPendingVerification() ? ' · '.__('farmer.topbar.pending_mao_review', [], $navLocale ?? 'en') : ($navOption->isRejected() ? ' · '.__('farmer.topbar.rejected', [], $navLocale ?? 'en') : '');
                                 $optLabel = $navOption->farm_name.($navOption->barangay ? ' · '.$navOption->barangay : '').$optStatus;
                             @endphp
                             <form method="POST" action="{{ route('farmer.farms.select') }}">
@@ -87,7 +87,7 @@
         @endif
 
         @if ($navLangRoute)
-            <div class="ic-lang ic-topbar-lang" role="group" aria-label="Language">
+            <div class="ic-lang ic-topbar-lang" role="group" aria-label="{{ __('farmer.topbar.language', [], $navLocale ?? 'en') }}">
                 @foreach (['en' => 'English', 'fil' => 'Filipino'] as $langCode => $langName)
                     <form method="POST" action="{{ route($navLangRoute) }}">
                         @csrf
@@ -110,14 +110,14 @@
             <a class="ic-icon-btn position-relative" href="{{ route('notifications.index') }}" data-ic-notifications aria-haspopup="dialog"
                 data-feed-url="{{ route('notifications.feed') }}" data-index-url="{{ route('notifications.index') }}" data-mark-all-url="{{ route('notifications.mark-all-read') }}"
                 data-notification-user-id="{{ $user->id }}"
-                data-fast-nav-bound="true" data-no-loader aria-label="Notifications{{ $navUnread > 0 ? ', '.$navUnread.' unread' : '' }}">
+                data-fast-nav-bound="true" data-no-loader aria-label="{{ $navUnread > 0 ? __('farmer.topbar.notifications_unread', ['count' => $navUnread], $navLocale ?? 'en') : __('farmer.topbar.notifications', [], $navLocale ?? 'en') }}">
                 <svg width="24" height="24" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M5 7.2C5 4.6 6.8 3 9 3s4 1.6 4 4.2c0 3.6 1.3 4.6 1.3 4.6H3.7S5 10.8 5 7.2Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.5 14.5a1.6 1.6 0 0 0 3 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
                 <span class="sidebar-badge topbar-bell-badge" data-ic-notif-badge @if ($navUnread <= 0) hidden @endif>{{ $navUnread > 99 ? '99+' : $navUnread }}</span>
             </a>
         @endif
 
         <div class="dropdown">
-            <button class="ic-avatar-btn" type="button" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" aria-label="{{ __('farmer.nav.account_menu', ['name' => $user->name]) }}">
+            <button class="ic-avatar-btn" type="button" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" aria-label="{{ __('farmer.nav.account_menu', ['name' => $user->name], $navLocale ?? 'en') }}">
                 <x-user-avatar :user="$user" :size="40" class="ic-avatar-inner" />
             </button>
             <div class="dropdown-menu dropdown-menu-end ic-account-menu">
@@ -126,16 +126,16 @@
                     <span class="ic-account-id">
                         <strong>{{ $user->name }}</strong>
                         <span>{{ $isMaoNav ? $user->positionLabel() : $user->roleLabel() }}{{ $navBarangay ? ' · '.$navBarangay : '' }}</span>
-                        @if ($isMaoNav)<span class="ic-account-coverage">Covers: {{ $navMaoCoverage }}</span>@endif
+                        @if ($isMaoNav)<span class="ic-account-coverage">{{ __('farmer.topbar.covers', [], $navLocale ?? 'en') }} {{ $navMaoCoverage }}</span>@endif
                     </span>
                 </div>
                 <a @class(['dropdown-item', 'active' => request()->routeIs('profile.*')]) href="{{ route('profile.edit') }}">
                     <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="6" r="2.8" stroke="currentColor" stroke-width="1.4"/><path d="M3 15c.7-3.4 2.8-5.2 6-5.2s5.3 1.8 6 5.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-                    Profile
+                    {{ __('farmer.topbar.profile', [], $navLocale ?? 'en') }}
                 </a>
                 <a class="dropdown-item" href="{{ route('profile.edit') }}#password">
                     <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="2.2" stroke="currentColor" stroke-width="1.4"/><path d="M9 2.5v1.6M9 13.9v1.6M2.5 9h1.6M13.9 9h1.6M4.4 4.4l1.1 1.1M12.5 12.5l1.1 1.1M13.6 4.4l-1.1 1.1M5.5 12.5l-1.1 1.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-                    Settings
+                    {{ __('farmer.topbar.settings', [], $navLocale ?? 'en') }}
                 </a>
                 @if ($isMaoNav && \Illuminate\Support\Facades\Route::has('mao.activity-log.index'))
                     <a @class(['dropdown-item', 'active' => request()->routeIs('mao.activity-log.*', 'mao.personnel.*')]) href="{{ route('mao.activity-log.index') }}">
@@ -144,7 +144,7 @@
                     </a>
                 @endif
                 <div class="dropdown-divider"></div>
-                @include('layouts.partials.logout-form', ['variant' => 'menu', 'label' => 'Log out'])
+                @include('layouts.partials.logout-form', ['variant' => 'menu', 'label' => __('farmer.topbar.logout', [], $navLocale ?? 'en')])
             </div>
         </div>
     </div>
@@ -153,13 +153,13 @@
     <div @class(['mao-coverage-bar', 'is-municipal' => $navMaoView === \App\Support\MaoScope::VIEW_MUNICIPAL && $navMaoCanSwitch]) data-mao-coverage>
         <span class="mao-coverage-label">
             <svg width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M9 16s5-4.6 5-8.6A5 5 0 0 0 4 7.4C4 11.4 9 16 9 16Z" stroke="currentColor" stroke-width="1.5"/><circle cx="9" cy="7.4" r="1.8" stroke="currentColor" stroke-width="1.5"/></svg>
-            <span><strong>Coverage:</strong> {{ $navMaoCoverage }}</span>
+            <span><strong>{{ __('farmer.topbar.coverage', [], $navLocale ?? 'en') }}</strong> {{ $navMaoCoverage }}</span>
         </span>
         @if ($navMaoCanSwitch)
-            <form method="POST" action="{{ route('mao.view.switch') }}" class="mao-view-switch" role="group" aria-label="Data shown">
+            <form method="POST" action="{{ route('mao.view.switch') }}" class="mao-view-switch" role="group" aria-label="{{ __('farmer.topbar.data_shown', [], $navLocale ?? 'en') }}">
                 @csrf
-                <button type="submit" name="view" value="{{ \App\Support\MaoScope::VIEW_ASSIGNED }}" aria-pressed="{{ $navMaoView === \App\Support\MaoScope::VIEW_ASSIGNED ? 'true' : 'false' }}">My barangays</button>
-                <button type="submit" name="view" value="{{ \App\Support\MaoScope::VIEW_MUNICIPAL }}" aria-pressed="{{ $navMaoView === \App\Support\MaoScope::VIEW_MUNICIPAL ? 'true' : 'false' }}">Municipal view (read-only)</button>
+                <button type="submit" name="view" value="{{ \App\Support\MaoScope::VIEW_ASSIGNED }}" aria-pressed="{{ $navMaoView === \App\Support\MaoScope::VIEW_ASSIGNED ? 'true' : 'false' }}">{{ __('farmer.topbar.my_barangays', [], $navLocale ?? 'en') }}</button>
+                <button type="submit" name="view" value="{{ \App\Support\MaoScope::VIEW_MUNICIPAL }}" aria-pressed="{{ $navMaoView === \App\Support\MaoScope::VIEW_MUNICIPAL ? 'true' : 'false' }}">{{ __('farmer.topbar.municipal_view', [], $navLocale ?? 'en') }}</button>
             </form>
         @endif
     </div>

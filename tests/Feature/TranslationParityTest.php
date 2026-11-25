@@ -25,6 +25,33 @@ class TranslationParityTest extends TestCase
         }
     }
 
+    public function test_views_do_not_introduce_literal_en_fil_labels_or_untranslated_aria_labels(): void
+    {
+        $checkedFiles = array_merge(
+            [resource_path('views/components/ai-chat-widget.blade.php')],
+            glob(resource_path('views/layouts/*.blade.php')) ?: [],
+        );
+
+        foreach ($checkedFiles as $path) {
+            $contents = file_get_contents($path) ?: '';
+            $relative = str_replace(base_path().DIRECTORY_SEPARATOR, '', $path);
+
+            $this->assertDoesNotMatchRegularExpression(
+                '/<(option|button|span|a)\b[^>]*>\s*(EN|FIL)\s*<\/\1>/i',
+                $contents,
+                "Literal EN/FIL UI text found in {$relative}."
+            );
+
+            preg_match_all('/aria-label="([^"]+)"/', $contents, $matches);
+            foreach ($matches[1] as $label) {
+                if (str_contains($label, '{{') || str_contains($label, '${')) {
+                    continue;
+                }
+                $this->fail("Untranslated literal aria-label=\"{$label}\" found in {$relative}.");
+            }
+        }
+    }
+
     /**
      * @param  array<mixed>  $array
      * @return array<string, mixed>

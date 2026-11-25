@@ -116,8 +116,8 @@
 
             <section class="cp-card">
                 <div class="cp-section-head">
-                    <h2>{{ $fil ? 'Iyong Profile at Samahan' : 'Your Profile & Association' }}</h2>
-                    <p>{{ $fil ? 'Ilagay ang iyong barangay, numero ng telepono, at pangunahing samahan.' : 'Tell us your barangay, contact number, and primary farmers’ association.' }}</p>
+                    <h2>{{ __('farmer.complete_profile.profile_section_title') }}</h2>
+                    <p>{{ __('farmer.complete_profile.profile_section_intro') }}</p>
                 </div>
 
                 <div class="grid gap-4 md:grid-cols-2">
@@ -168,7 +168,7 @@
                 <section class="cp-card">
                     <div class="cp-section-head">
                         <h2>{{ __('farmer.complete_profile.other_orgs_label') }}</h2>
-                        <p>{{ $fil ? 'Pindutin ang mga samahang kinabibilangan mo bukod sa pangunahing samahan.' : 'Tap any additional organizations you belong to.' }}</p>
+                        <p>{{ __('farmer.complete_profile.other_orgs_section_intro') }}</p>
                     </div>
                     <div class="cp-org-grid" role="group" aria-label="{{ __('farmer.complete_profile.other_orgs_label') }}" data-cp-other-orgs>
                         @foreach ($organizations as $org)
@@ -181,15 +181,15 @@
                             </label>
                         @endforeach
                     </div>
-                    <p class="cp-hint" data-cp-other-empty hidden>{{ $fil ? 'Walang ibang samahan na nakalista sa napiling barangay.' : 'No organizations listed for the selected barangay.' }}</p>
+                    <p class="cp-hint" data-cp-other-empty hidden>{{ __('farmer.complete_profile.other_orgs_empty') }}</p>
                     @error('other_organizations')<p class="text-sm text-red-700 mt-1">{{ $message }}</p>@enderror
                 </section>
             @endif
 
             <section class="cp-card">
                 <div class="cp-section-head">
-                    <h2>{{ $fil ? 'Iyong Unang Bukid' : 'Your First Farm' }}</h2>
-                    <p>{{ $fil ? 'Gagamitin ang sukat at uri ng bukid para sa tantiya ng ani.' : 'Farm size and water source help us calculate your seasonal yield estimate.' }}</p>
+                    <h2>{{ __('farmer.complete_profile.first_farm_title') }}</h2>
+                    <p>{{ __('farmer.complete_profile.first_farm_intro') }}</p>
                 </div>
 
                 <div class="grid gap-4 md:grid-cols-3">

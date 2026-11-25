@@ -25,7 +25,7 @@
     @if ($h['state'] === 'ok')
         <div class="d-flex flex-wrap align-items-baseline gap-3">
             <div>
-                <div class="small text-muted">{{ $fil ? 'Tantiya ng iClimate' : 'iClimate estimate' }}</div>
+                <div class="small text-muted">{{ __('farmer.harvest_card.iclimate_estimate') }}</div>
                 <p class="fh-big mb-0">{{ number_format($h['yield'], 2) }} <small>t/ha</small></p>
             </div>
         </div>
@@ -64,7 +64,7 @@
     @endif
 
     @if (($lastHarvest['yield'] ?? null) !== null)
-        <p class="small text-muted mt-2 mb-0" data-expected-last-harvest>{{ $fil ? 'Huling ani' : 'Last harvest' }}: {{ number_format((float) $lastHarvest['yield'], 2) }} t/ha</p>
+        <p class="small text-muted mt-2 mb-0" data-expected-last-harvest>{{ __('farmer.harvest_card.last_harvest') }}: {{ number_format((float) $lastHarvest['yield'], 2) }} t/ha</p>
     @endif
 
     @if (! empty($ey['insights']))
@@ -87,16 +87,16 @@
 
 @if ($lastHarvest)
 <section class="fh-card" aria-labelledby="fhLastHarvestTitle" data-fh-last-harvest>
-    <h2 id="fhLastHarvestTitle" class="fh-kicker">{{ $fil ? 'Huling ani' : 'Last harvest' }}</h2>
+    <h2 id="fhLastHarvestTitle" class="fh-kicker">{{ __('farmer.harvest_card.last_harvest') }}</h2>
     <p class="fh-big mb-1">
-        {{ $fil ? 'Toneladang naani:' : 'Tons harvested:' }}
+        {{ __('farmer.harvest_card.tons_harvested') }}
         {{ rtrim(rtrim(number_format((float) $lastHarvest['tons'], 2), '0'), '.') }} t
     </p>
     @if ($lastHarvest['has_area'] && $lastHarvest['yield'] !== null && $lastHarvest['area'] !== null)
         <p class="fh-muted mb-0" data-last-harvest-yield>
-            {{ $fil ? 'Ani:' : 'Yield:' }}
+            {{ __('farmer.harvest_card.yield_label') }}
             {{ rtrim(rtrim(number_format((float) $lastHarvest['yield'], 2), '0'), '.') }} t/ha
-            ({{ $fil ? 'mula sa' : 'from' }} {{ rtrim(rtrim(number_format((float) $lastHarvest['area'], 2), '0'), '.') }} ha)
+            ({{ __('farmer.harvest_card.from_area') }} {{ rtrim(rtrim(number_format((float) $lastHarvest['area'], 2), '0'), '.') }} ha)
         </p>
     @endif
     @if (! empty($lastHarvest['harvested_on']))

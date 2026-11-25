@@ -100,7 +100,7 @@
     $mobileActive = fn (array $link): bool => request()->routeIs(...($link[2] ?? []));
 @endphp
 
-<nav class="mobile-nav-shell" data-mobile-nav aria-label="Mobile navigation">
+<nav class="mobile-nav-shell" data-mobile-nav aria-label="{{ __('farmer.topbar.mobile_nav') }}">
     <div class="mobile-season-line {{ $mobileProgress === null ? 'is-plain' : 'is-progress' }}" data-mobile-season-line>
         <span style="width: {{ $mobileProgress !== null ? max(0, min(100, (int) $mobileProgress)) : 0 }}%"></span>
     </div>
@@ -180,7 +180,7 @@
                     @endif
                 @endif
                 @if ($navLangRoute)
-                    <div class="mobile-more-language" role="group" aria-label="Language">
+                    <div class="mobile-more-language" role="group" aria-label="{{ __('farmer.topbar.language') }}">
                         @foreach (['en' => 'English', 'fil' => 'Filipino'] as $mobileLangCode => $mobileLangLabel)
                             <form method="POST" action="{{ route($navLangRoute) }}"><input type="hidden" name="_token" value="{{ csrf_token() }}"><input type="hidden" name="language" value="{{ $mobileLangCode }}"><button type="submit" lang="{{ $mobileLangCode }}" aria-pressed="{{ $navLocale === $mobileLangCode ? 'true' : 'false' }}" title="{{ $mobileLangLabel }}" aria-label="{{ $mobileLangLabel }}">@include('layouts.partials.lang-flag', ['code' => $mobileLangCode])</button></form>
                         @endforeach

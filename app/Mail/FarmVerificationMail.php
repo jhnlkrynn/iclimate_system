@@ -22,10 +22,9 @@ class FarmVerificationMail extends Mailable
 
     public function envelope(): Envelope
     {
-        $fil = $this->localeCode === 'fil';
         $subject = $this->decision === Farm::VERIFICATION_APPROVED
-            ? ($fil ? 'iClimate: Aprubado na ang iyong bukid' : 'iClimate: Your farm has been approved')
-            : ($fil ? 'iClimate: Kailangan ng pagbabago sa iyong bukid' : 'iClimate: Your farm needs updates');
+            ? __('farmer.farm_verification_email.subject_approved', [], $this->localeCode)
+            : __('farmer.farm_verification_email.subject_rejected', [], $this->localeCode);
 
         return new Envelope(subject: $subject);
     }

@@ -82,10 +82,10 @@
             $navLink($nav('home'), 'dashboard', 'dashboard'),
             $navLink($nav('heat_map'), 'heatmap', 'heatmap'),
             $navLink($nav('advisories'), 'advisories', 'advisories'),
-            $navLink($farmerLocale === 'fil' ? 'Pagsusuri ng Panahon' : 'Weather Analysis', 'analysis-weather', 'weather'),
-            $navLink($farmerLocale === 'fil' ? 'Taya ng Ani' : 'Yield Prediction', 'analysis-yield', 'weather'),
+            $navLink(__('farmer.sidebar_links.weather_analysis', [], $farmerLocale), 'analysis-weather', 'weather'),
+            $navLink(__('farmer.sidebar_links.yield_prediction', [], $farmerLocale), 'analysis-yield', 'weather'),
             $navLink($nav('my_farm'), 'my-farm', 'rice-production'),
-            $navLink($farmerLocale === 'fil' ? 'Suriin ang ani ng mga bukid' : 'Explore farm results', 'explore-results', 'reports'),
+            $navLink(__('farmer.sidebar_links.explore_results', [], $farmerLocale), 'explore-results', 'reports'),
             $navLink($nav('varieties'), 'rice-varieties', 'seedling'),
         ];
         if (\Illuminate\Support\Facades\Cache::remember('navigation:association-chairman:'.$user->id, 30, fn () => $user->isAssociationChairman())) {
@@ -105,7 +105,7 @@
             $navLink($maoNav('heat_map'), 'heatmap', 'heatmap'),
             $navLink($maoNav('forecast'), 'weather', 'weather'),
             [
-                $maoLocale === 'fil' ? 'Mga Advisory at Planner' : 'Advisories & Planner',
+                __('farmer.sidebar_links.advisories_planner', [], $maoLocale),
                 'planting-advisories.index',
                 ['planting-advisories.*', 'management.advisories.*', 'mao.alerts.*', 'mao.planner.*', 'calendar.*'],
                 'advisories',
@@ -114,7 +114,7 @@
                 'advisories',
             ],
             [
-                $maoLocale === 'fil' ? 'Mga Tala at Ulat' : 'Records & Reports',
+                __('farmer.sidebar_links.records_reports', [], $maoLocale),
                 'climate-records.index',
                 ['climate-records.*', 'rice-productions.*', 'records.*', 'mao.barangays.*', 'reports.*'],
                 'climate-records',
@@ -123,7 +123,7 @@
                 'records-and-barangays',
             ],   // Manuscript – Naicel: + Import, Barangays, Reports
             [
-                $maoLocale === 'fil' ? 'Mga Magsasaka at Pag-apruba' : 'Farmers & Approvals',
+                __('farmer.sidebar_links.farmers_approvals', [], $maoLocale),
                 'farmer-profiles.index',
                 ['farmer-profiles.*', 'mao.farmer-approvals.*', 'mao.farm-associations.*', 'mao.associations.*', 'mao.farm-verification.*', 'mao.association-reports.*'],
                 'farmer-profiles',
@@ -187,11 +187,11 @@
     <div class="ic-sb-drawer-head">
         @include('layouts.partials.sidebar-brand')
         <h2 class="visually-hidden" id="mobileSidebarLabel">Menu</h2>
-        <button type="button" class="ic-sb-close" data-bs-dismiss="offcanvas" aria-label="Close menu">
+        <button type="button" class="ic-sb-close" data-bs-dismiss="offcanvas" aria-label="{{ __('farmer.topbar.close_menu') }}">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M4.5 4.5l9 9M13.5 4.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
         </button>
     </div>
-    <nav class="ic-sb-nav sidebar-nav-scroll overflow-auto" aria-label="Main menu">
+    <nav class="ic-sb-nav sidebar-nav-scroll overflow-auto" aria-label="{{ __('farmer.topbar.main_menu') }}">
         {!! $renderSidebarNav('dr') !!}
     </nav>
     {{-- Pinned under the menu, which scrolls on its own. Farmers log out here (MAO and IT from the account menu in
