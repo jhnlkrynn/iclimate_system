@@ -7,6 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
+/**
+ * @property \Illuminate\Support\Carbon|null $planting_date
+ * @property \Illuminate\Support\Carbon|null $scheduled_harvest_date
+ * @property \Illuminate\Support\Carbon|null $harvest_month
+ * @property \Illuminate\Support\Carbon|null $harvested_on
+ */
 class FarmerPlantingSchedule extends Model
 {
     use HasFactory, \App\Models\Concerns\RecordsAuthor;   // panel revision 4.4: created_by / updated_by
@@ -139,7 +145,12 @@ class FarmerPlantingSchedule extends Model
         return $this->riceVariety?->displayName();
     }
 
-    /** Eager-loads the varieties of a list of plans, once the column exists. */
+    /**
+     * Eager-loads the varieties of a list of plans, once the column exists.
+     *
+     * @param  \Illuminate\Support\Collection<int, self>  $plans
+     * @return \Illuminate\Support\Collection<int, self>
+     */
     public static function withVarieties(\Illuminate\Support\Collection $plans): \Illuminate\Support\Collection
     {
         if (\App\Support\SchemaCache::hasColumn('farmer_planting_schedules', 'rice_variety_id') && $plans instanceof \Illuminate\Database\Eloquent\Collection) {

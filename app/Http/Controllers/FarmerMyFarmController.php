@@ -30,13 +30,14 @@ class FarmerMyFarmController extends Controller
         $profile = $user->farmerProfile;
         $farms = ActiveFarm::farms($user);
         $current = ActiveFarm::current($user);
+        /** @var \Illuminate\Support\Collection<int, FarmerPlantingSchedule> $schedules */
         $schedules = SchemaCache::hasTable('farmer_planting_schedules')
             ? FarmerPlantingSchedule::query()->where('user_id', $user->id)
                 // The current farm's plans (older plans without a farm count as the primary farm's).
                 ->when($current !== null, fn ($q) => $q->where(fn ($w) => $w->where('farm_id', $current->getKey())
                     ->when($current->is_primary, fn ($p) => $p->orWhereNull('farm_id'))))
                 ->orderByDesc('planting_date')->get()
-            : collect();
+            : new \Illuminate\Database\Eloquent\Collection;
         FarmerPlantingSchedule::withVarieties($schedules);
         $farmType = $current !== null ? $current->farm_type : $profile?->farm_type;
         $type = $farmType ? strtolower((string) $farmType) : null;
@@ -48,32 +49,13 @@ class FarmerMyFarmController extends Controller
         // Farms the farmer removed (or that were archived when the account was closed): each can be brought back.
         $archivedFarms = ActiveFarm::available()
             ? Farm::query()->ownedBy($user)->whereNotNull('archived_at')->orderByDesc('archived_at')->get(['id', 'farm_name', 'barangay', 'archived_at'])
-            : collect();
+            : new \Illuminate\Database\Eloquent\Collection;
 
         return view('farmer-records.my-farm', [
             'archivedFarms' => $archivedFarms,
             'associationPrompt' => \App\Services\Farms\FarmAssociations::promptFor($user),
             'available' => ActiveFarm::available(),
-            'farms' => $farms->map(fn (Farm $f): array => [
-                'id' => $f->getKey(),
-                'name' => $f->farm_name,
-                'barangay' => $f->barangay ? HeatMapPanel::displayName($f->barangay) : null,
-                'location' => $f->location_description,
-                'size' => FarmSize::describe($f),
-                'mapped' => $f->boundary !== null,
-                'primary' => (bool) $f->is_primary,
-                'current' => $current !== null && $f->getKey() === $current->getKey(),
-                'verification_status' => $f->verification_status ?? Farm::VERIFICATION_APPROVED,
-                'rejection_reason' => $f->rejection_reason,
-                // "Samahan: …", "Not a member", "Waiting for MAO review" or not answered yet (null: before the migration).
-                'association' => $associationNames === null ? null : [
-                    'state' => $f->associationState(),
-                    'name' => $associationNames->get($f->farmer_organization_id),
-                    'note' => $f->association_note,
-                    // Answered by the MAO for the farmer (Undeclared farms); the farmer can still change it.
-                    'set_by_mao' => $f->getAttribute('association_set_by') === \App\Services\Farms\FarmAssociations::SET_BY_MAO,
-                ],
-            ])->all(),
+            'farms' => $this->formatFarmsList($farms, $current, $associationNames),
             'current' => $current,
             'farm' => [
                 'name' => $current?->farm_name,
@@ -82,14 +64,7 @@ class FarmerMyFarmController extends Controller
                 'size' => $current !== null ? FarmSize::describe($current) : null,
                 'type' => $type && Lang::has('farmer.my_farm.water.'.$type) ? __('farmer.my_farm.water.'.$type) : null,
             ],
-            'schedules' => $schedules->map(fn (FarmerPlantingSchedule $s): array => [
-                'id' => $s->id,
-                'planting_date' => $s->planting_date,
-                'harvest_date' => $s->harvestDateForPlanning(),
-                'variety' => $s->varietyLabel(),
-                'season' => $this->seasonLabel($s),
-                'status' => $this->statusLabel($s->monitoringStatus()),
-            ])->all(),
+            'schedules' => $this->formatSchedules($schedules),
             'harvests' => $this->harvests($schedules),
             'events' => $this->upcoming($schedules),
             'seasonComparison' => app(\App\Services\Farmer\SeasonYieldComparisonService::class)->compare(
@@ -101,6 +76,51 @@ class FarmerMyFarmController extends Controller
             ),
             'printedAt' => BusinessClock::now(),
         ] + $this->activityData($request, $farms, $current));
+    }
+
+    /**
+     * @param  Collection<int, Farm>  $farms
+     * @param  Collection<int|string, string>|null  $associationNames
+     * @return list<array<string, mixed>>
+     */
+    private function formatFarmsList(Collection $farms, ?Farm $current, ?Collection $associationNames): array
+    {
+        return $farms->map(fn (Farm $f): array => [
+            'id' => $f->getKey(),
+            'name' => $f->farm_name,
+            'barangay' => $f->barangay ? HeatMapPanel::displayName($f->barangay) : null,
+            'location' => $f->location_description,
+            'size' => FarmSize::describe($f),
+            'mapped' => $f->boundary !== null,
+            'primary' => (bool) $f->is_primary,
+            'current' => $current !== null && $f->getKey() === $current->getKey(),
+            'verification_status' => $f->verification_status ?? Farm::VERIFICATION_APPROVED,
+            'rejection_reason' => $f->rejection_reason,
+            // "Samahan: …", "Not a member", "Waiting for MAO review" or not answered yet (null: before the migration).
+            'association' => $associationNames === null ? null : [
+                'state' => $f->associationState(),
+                'name' => $associationNames->get($f->farmer_organization_id),
+                'note' => $f->association_note,
+                // Answered by the MAO for the farmer (Undeclared farms); the farmer can still change it.
+                'set_by_mao' => $f->getAttribute('association_set_by') === \App\Services\Farms\FarmAssociations::SET_BY_MAO,
+            ],
+        ])->values()->all();
+    }
+
+    /**
+     * @param  Collection<int, FarmerPlantingSchedule>  $schedules
+     * @return list<array<string, mixed>>
+     */
+    private function formatSchedules(Collection $schedules): array
+    {
+        return $schedules->map(fn (FarmerPlantingSchedule $s): array => [
+            'id' => $s->id,
+            'planting_date' => $s->planting_date,
+            'harvest_date' => $s->harvestDateForPlanning(),
+            'variety' => $s->varietyLabel(),
+            'season' => $this->seasonLabel($s),
+            'status' => $this->statusLabel($s->monitoringStatus()),
+        ])->values()->all();
     }
 
     private function seasonLabel(FarmerPlantingSchedule $schedule): ?string
@@ -178,9 +198,10 @@ class FarmerMyFarmController extends Controller
     private function activityData(Request $request, Collection $farms, ?Farm $current): array
     {
         $user = $request->user();
+        /** @var \Illuminate\Support\Collection<int, FarmerPlantingSchedule> $all */
         $all = SchemaCache::hasTable('farmer_planting_schedules')
             ? FarmerPlantingSchedule::query()->where('user_id', $user->id)->orderByDesc('planting_date')->get()
-            : collect();
+            : new \Illuminate\Database\Eloquent\Collection;
         FarmerPlantingSchedule::withVarieties($all);
         // Archived farms keep their records, so their names are still needed beside those records.
         $names = ActiveFarm::available() ? Farm::query()->ownedBy($user)->pluck('farm_name', 'id') : collect();
@@ -253,8 +274,8 @@ class FarmerMyFarmController extends Controller
         ksort($byDate);
 
         $weeks = [];
-        $cursor = $month->startOfWeek(\Carbon\CarbonImmutable::SUNDAY);
-        $last = $month->endOfMonth()->endOfWeek(\Carbon\CarbonImmutable::SATURDAY);
+        $cursor = $month->startOfWeek(\Carbon\CarbonInterface::SUNDAY);
+        $last = $month->endOfMonth()->endOfWeek(\Carbon\CarbonInterface::SATURDAY);
         while ($cursor <= $last) {
             $week = [];
             for ($i = 0; $i < 7; $i++) {
