@@ -304,8 +304,8 @@
                     <div>
                         <h2 id="mhdClimateTitle">{{ $t('charts.climate.title') }}</h2>
                         <p class="mtd-sub">{{ app()->getLocale() === 'fil'
-                            ? 'Buwanang ulan at init sa nakaraang 12 buwan. Mas mataas na asul na bar = mas maulan; linyang kahel = mas mainit.'
-                            : 'Monthly rain and heat over the last 12 months. Taller blue bars = more rain; orange line = warmer weather.' }}</p>
+                            ? 'Buwanang ulan sa nakaraang 12 buwan. Itutok sa bar para makita ang ulan at temperatura.'
+                            : 'Monthly rainfall over the last 12 months. Hover a bar to see rainfall and temperature.' }}</p>
                     </div>
                 </div>
                 <div class="mtd-chart">
@@ -343,8 +343,8 @@
                     <div>
                         <h2 id="mhdImpactTitle">{{ $t('charts.impact.title') }}</h2>
                         <p class="mtd-sub">{{ app()->getLocale() === 'fil'
-                            ? 'Kabuuang ulan (asul na bar) at karaniwang ani (berdeng linya) bawat taniman. Tingnan kung bumaba o tumaas ang ani kapag maulan.'
-                            : 'Total rain (blue bars) and average harvest (green line) each season. See how heavy rain affects rice yield.' }}</p>
+                            ? 'Karaniwang ani (t/ha) bawat taniman. Asul = Tag-ulan, Berde = Tag-araw.'
+                            : 'Average harvest (t/ha) each season. Blue = Wet season, Green = Dry season.' }}</p>
                     </div>
                 </div>
                 {{-- Panel revision 3.2: rainfall (bars, mm, left axis) and yield (line, t/ha, right axis) per rice season. --}}
@@ -595,18 +595,36 @@
                 const impactChart = impactEl ? new window.Chart(impactEl, {
                     type: 'bar',
                     data: { labels: [], datasets: [
-                        { type: 'bar', label: T.impact.rainSeries, data: [], yAxisID: 'rain', backgroundColor: 'rgba(0, 56, 168, .55)', borderColor: '#0038A8', borderWidth: 1, borderRadius: 4, maxBarThickness: 34, order: 2 },
-                        { type: 'line', label: T.impact.yieldSeries, data: [], yAxisID: 'yield', borderColor: '{{ config('palette.sage.500') }}', backgroundColor: '{{ config('palette.sage.500') }}', borderWidth: 3, tension: .3, pointRadius: 5, pointHoverRadius: 7, order: 1 },
+                        { label: T.impact.yieldSeries, data: [], backgroundColor: [], borderRadius: 6, borderSkipped: false, maxBarThickness: 36 },
                     ] },
                     options: { ...base(true), interaction: { mode: 'index', intersect: false },
                         scales: {
-                            rain: axis(T.impact.axisRain, { position: 'left', beginAtZero: true }),
-                            yield: axis(T.yield.axis, { position: 'right', beginAtZero: false, suggestedMin: 1, suggestedMax: 6, grid: { drawOnChartArea: false } }),
+                            y: axis(T.yield.axis, { beginAtZero: true, suggestedMax: 6 }),
                             x: { grid: { display: false }, ticks: { font: { size: 12 }, maxRotation: 35, minRotation: 0, autoSkip: false } },
                         },
-                        plugins: { legend: { display: true, position: 'top', labels: { font: FONT, usePointStyle: true } }, tooltip: { callbacks: {
-                            label: (c) => c.dataset.yAxisID === 'rain' ? `${T.impact.rainSeries}: ${c.parsed.y.toFixed(0)} mm` : `${T.impact.yieldSeries}: ${c.parsed.y.toFixed(2)} t/ha`,
-                        } } } },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    font: FONT,
+                                    usePointStyle: true,
+                                    generateLabels: () => [
+                                        { text: @json(app()->getLocale() === 'fil' ? 'Tag-ulan (mas maulan)' : 'Wet season (rainier)'), fillStyle: 'rgba(31, 111, 178, .75)', strokeStyle: '#1f6fb2', pointStyle: 'rectRounded' },
+                                        { text: @json(app()->getLocale() === 'fil' ? 'Tag-araw (mas tuyo)' : 'Dry season (drier)'), fillStyle: 'rgba({{ config('palette.rgb.500') }}, .82)', strokeStyle: '{{ config('palette.sage.700') }}', pointStyle: 'rectRounded' },
+                                    ],
+                                },
+                            },
+                            tooltip: { callbacks: {
+                                label: (c) => {
+                                    const p = impactChart.$periods?.[c.dataIndex];
+                                    const yVal = c.parsed.y != null ? c.parsed.y.toFixed(2) : '—';
+                                    const rVal = p && p.rain != null ? `${Math.round(p.rain)} mm` : '—';
+                                    return [`${T.impact.yieldSeries}: ${yVal} t/ha`, `${T.impact.rainSeries}: ${rVal}`];
+                                },
+                            } },
+                        },
+                    },
                 }) : null;
 
                 const [accEl, acc] = read('maoAccuracyChart');
@@ -664,12 +682,13 @@
                         setSum(box, 'change', pairs.length > 1 && first ? `${last - first >= 0 ? '+' : ''}${f2(last - first)} t/ha (${(((last - first) / first) * 100).toFixed(1)}%)` : '—');
                     }
 
-                    // 3.2 Weather Impact: rainfall bars and yield line per season, same range and season.
+                    // 3.2 Weather Impact: yield bars color-coded by Wet (blue) vs Dry (green) season.
                     if (impactChart) {
                         const periods = (ry.periods || []).filter((p) => inRange(p.year) && (s.season === 'all' || p.season === s.season));
+                        impactChart.$periods = periods;
                         impactChart.data.labels = periods.map((p) => `${p.season || ''} '${String(p.year).slice(-2)}`.trim());
-                        impactChart.data.datasets[0].data = periods.map((p) => p.rain);
-                        impactChart.data.datasets[1].data = periods.map((p) => p.yield);
+                        impactChart.data.datasets[0].data = periods.map((p) => p.yield);
+                        impactChart.data.datasets[0].backgroundColor = periods.map((p) => p.season === 'Wet' ? 'rgba(31, 111, 178, .75)' : 'rgba({{ config('palette.rgb.500') }}, .82)');
                         impactChart.update();
                         const reading = document.querySelector('[data-mao-impact-reading]');
                         const wetAvg = avg(periods.filter((p) => p.season === 'Wet').map((p) => p.yield));
@@ -756,23 +775,25 @@
                     data: {
                         labels: (c.labels || []).map((l) => String(l).split(' ')[0]),
                         datasets: [
-                            { type: 'bar', label: T.climate.rain, data: c.rainfall || [], yAxisID: 'rain', backgroundColor: 'rgba(31, 111, 178, .55)', borderColor: '#1f6fb2', borderWidth: 1, borderRadius: 4, maxBarThickness: 26, order: 2 },
-                            { type: 'line', label: T.climate.temp, data: c.temperature || [], yAxisID: 'temp', borderColor: '#c2570c', backgroundColor: '#c2570c', borderWidth: 3, tension: .3, pointRadius: 4, pointHoverRadius: 6, order: 1 },
+                            { label: T.climate.rain, data: c.rainfall || [], backgroundColor: 'rgba(31, 111, 178, .65)', borderColor: '#1f6fb2', borderWidth: 1, borderRadius: 5, maxBarThickness: 28 },
                         ],
                     },
-                    options: { ...base(true), interaction: { mode: 'index', intersect: false },
+                    options: { ...base(false), interaction: { mode: 'index', intersect: false },
                         scales: {
-                            rain: axis(T.climate.rain, { position: 'left', beginAtZero: true }),
-                            temp: axis(T.climate.temp, { position: 'right', beginAtZero: false, suggestedMin: 24, suggestedMax: 33, grid: { drawOnChartArea: false } }),
+                            y: axis(T.climate.rain, { beginAtZero: true }),
                             x: { grid: { display: false }, ticks: { font: { size: 12 }, maxRotation: 0, autoSkip: false } },
                         },
                         plugins: {
-                            legend: { display: true, position: 'top', labels: { font: FONT, usePointStyle: true } },
+                            legend: { display: false },
                             tooltip: { callbacks: {
                                 title: (items) => (c.labels || [])[items[0]?.dataIndex] || items[0]?.label,
-                                label: (ctx) => ctx.dataset.yAxisID === 'rain'
-                                    ? `${T.climate.rain}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(0) : '—'} mm`
-                                    : `${T.climate.temp}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(1) : '—'} °C`,
+                                label: (ctx) => {
+                                    const rainVal = ctx.parsed.y != null ? ctx.parsed.y.toFixed(0) : '—';
+                                    const tempVal = (c.temperature || [])[ctx.dataIndex];
+                                    const lines = [`${T.climate.rain}: ${rainVal} mm`];
+                                    if (tempVal != null) lines.push(`${T.climate.temp}: ${Number(tempVal).toFixed(1)} °C`);
+                                    return lines;
+                                },
                             } },
                         },
                     },

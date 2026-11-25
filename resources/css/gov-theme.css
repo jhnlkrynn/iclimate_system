@@ -511,7 +511,7 @@ html body .hmx-mine.is-moderate .hmx-mine-icon { background: #F2C230 !important;
 html body .hmx-mine.is-high .hmx-mine-icon { background: #EF6C00 !important; }
 html body .hmx-mine.is-severe .hmx-mine-icon { background: #C62828 !important; }
 html body .hmx-mine.is-nodata .hmx-mine-icon { background: #9CA3AF !important; }
-html body .mhd-reading { position: relative; z-index: 1; margin-top: 16px !important; }
+html body .mhd-reading { position: relative; z-index: 1; margin-top: 32px !important; }
 html body [data-mao-impact] .mtd-chart, html body [data-mao-accuracy] .mtd-chart { min-height: 340px; }
 
 /* 4.5: a flat, full-width government header (72px height, styled in app-shell.css). */
