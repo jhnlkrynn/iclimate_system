@@ -49,7 +49,8 @@ class UserAvatarInitialsTest extends TestCase
             ->getContent();
 
         $this->assertStringContainsString(__('farmer.nav.account_menu', ['name' => 'John Luke']), $htmlWithoutAvatar);
-        $this->assertStringContainsString('ic-user-avatar-initials">JL<', $htmlWithoutAvatar);
+        $this->assertStringContainsString('ic-user-avatar-icon', $htmlWithoutAvatar);
+        $this->assertStringNotContainsString('ic-user-avatar-initials', $htmlWithoutAvatar);
         $this->assertStringNotContainsString('<circle cx="12" cy="8.5"', $htmlWithoutAvatar);
 
         $farmer->forceFill(['avatar_path' => 'avatars/john.jpg'])->save();
@@ -60,6 +61,6 @@ class UserAvatarInitialsTest extends TestCase
             ->getContent();
 
         $this->assertStringContainsString('/storage/avatars/john.jpg', $htmlWithAvatar);
-        $this->assertStringNotContainsString('ic-user-avatar-initials', $htmlWithAvatar);
+        $this->assertStringNotContainsString('ic-user-avatar-icon', $htmlWithAvatar);
     }
 }

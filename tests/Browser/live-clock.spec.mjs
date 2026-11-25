@@ -43,7 +43,7 @@ for (const [role, dashboard] of accounts) {
         const avatarBtn = topbar.locator('.ic-avatar-btn');
         await expect(avatarBtn).toBeVisible();
         await expect(avatarBtn).toHaveAttribute('aria-label', /^Account menu for /);
-        await expect(avatarBtn.locator('.ic-user-avatar-initials')).toBeVisible();
+        await expect(avatarBtn.locator('.ic-user-avatar-icon')).toBeVisible();
 
         await avatarBtn.click();
         const menu = topbar.locator('.ic-account-menu');
