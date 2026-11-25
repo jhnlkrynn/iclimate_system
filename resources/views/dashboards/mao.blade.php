@@ -310,6 +310,25 @@
                     <canvas id="maoClimateChart" data-chart="{{ json_encode($climate) }}" data-chart-type="historical" data-chart-info-style="icon"
                         aria-label="{{ $t('charts.climate.aria', ['from' => $climate['labels'][0], 'to' => end($climate['labels'])]) }}"></canvas>
                 </div>
+                @php
+                    $cLabels = $climate['labels'] ?? [];
+                    $cRain = $climate['rainfall'] ?? [];
+                    $cTemp = $climate['temperature'] ?? [];
+                    $wetIdx = ! empty($cRain) ? array_keys($cRain, max($cRain))[0] : null;
+                    $hotIdx = ! empty($cTemp) ? array_keys($cTemp, max($cTemp))[0] : null;
+                    $cFil = app()->getLocale() === 'fil';
+                @endphp
+                @if ($wetIdx !== null || $hotIdx !== null)
+                    <p class="mhd-reading" data-mao-climate-reading>
+                        @if ($wetIdx !== null && isset($cLabels[$wetIdx]))
+                            {{ $cFil ? 'Pinakamaulan' : 'Wettest' }}: {{ $cLabels[$wetIdx] }} ({{ number_format((float) $cRain[$wetIdx], 0) }} mm)
+                        @endif
+                        @if ($wetIdx !== null && $hotIdx !== null) · @endif
+                        @if ($hotIdx !== null && isset($cLabels[$hotIdx]))
+                            {{ $cFil ? 'Pinakamainit' : 'Warmest' }}: {{ $cLabels[$hotIdx] }} ({{ number_format((float) $cTemp[$hotIdx], 1) }} °C)
+                        @endif
+                    </p>
+                @endif
             </section>
             @endif
 
@@ -524,10 +543,10 @@
             const language = document.querySelector('[data-mao-language] select');
             if (language) language.addEventListener('change', () => language.form.submit());
 
-            // Large, plain labels: this page is read by older staff.
-            const FONT = { size: 18 };
+            // Clean, readable labels sized so x-axis categories and y-axis ticks never crowd or disappear.
+            const FONT = { size: 13 };
             const T = JSON.parse(document.getElementById('mhdChartText')?.textContent || '{}');
-            const axis = (text, extra = {}) => ({ title: { display: true, text, font: { size: 18, weight: '600' } }, ticks: { font: FONT }, grid: { color: '#eef2ef' }, ...extra });
+            const axis = (text, extra = {}) => ({ title: { display: true, text, font: { size: 13, weight: '600' } }, ticks: { font: FONT, maxTicksLimit: 5, ...(extra.ticks || {}) }, grid: { color: '#eef2ef' }, ...extra });
             const read = (id, attr = 'chart') => { const el = document.getElementById(id); return el ? [el, JSON.parse(el.dataset[attr] || '{}')] : [null, {}]; };
             const base = (legend) => ({ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: legend, position: 'bottom', labels: { font: FONT, usePointStyle: true } } } });
 
@@ -576,7 +595,7 @@
                         scales: {
                             rain: axis(T.impact.axisRain, { position: 'left', beginAtZero: true }),
                             yield: axis(T.yield.axis, { position: 'right', grid: { drawOnChartArea: false } }),
-                            x: { grid: { display: false }, ticks: { font: FONT, maxRotation: 0, autoSkip: true } },
+                            x: { grid: { display: false }, ticks: { font: FONT, maxRotation: 35, minRotation: 0, autoSkip: true, maxTicksLimit: 12 } },
                         },
                         plugins: { legend: { display: true, position: 'top', labels: { font: FONT, usePointStyle: true } }, tooltip: { callbacks: {
                             label: (c) => c.dataset.yAxisID === 'rain' ? `${T.impact.rainSeries}: ${c.parsed.y.toFixed(1)} mm` : `${T.impact.yieldSeries}: ${c.parsed.y.toFixed(2)} t/ha`,
@@ -718,13 +737,26 @@
 
                 const [climateEl, c] = read('maoClimateChart');
                 if (climateEl) new window.Chart(climateEl, {
-                    type: 'line',
+                    type: 'bar',
                     data: { labels: c.labels || [], datasets: [
-                        { label: T.climate.rain, data: c.rainfall || [], yAxisID: 'rain', borderColor: '#1f6fb2', backgroundColor: '#1f6fb2', borderWidth: 3, tension: .3, pointRadius: 4 },
-                        { label: T.climate.temp, data: c.temperature || [], yAxisID: 'temp', borderColor: '#c2570c', backgroundColor: '#c2570c', borderWidth: 3, borderDash: [6, 4], tension: .3, pointRadius: 4, pointStyle: 'rectRot' },
+                        { type: 'bar', label: T.climate.rain, data: c.rainfall || [], yAxisID: 'rain', backgroundColor: 'rgba(31, 111, 178, .55)', borderColor: '#1f6fb2', borderWidth: 1, borderRadius: 4, maxBarThickness: 26, order: 2 },
+                        { type: 'line', label: T.climate.temp, data: c.temperature || [], yAxisID: 'temp', borderColor: '#c2570c', backgroundColor: '#c2570c', borderWidth: 3, tension: .3, pointRadius: 4, pointHoverRadius: 6, order: 1 },
                     ] },
                     options: { ...base(true), interaction: { mode: 'index', intersect: false },
-                        scales: { rain: axis(T.climate.rain, { position: 'left', beginAtZero: true }), temp: axis(T.climate.temp, { position: 'right', grid: { drawOnChartArea: false } }), x: { grid: { display: false }, ticks: { font: FONT, maxRotation: 0, autoSkip: true } } } },
+                        scales: {
+                            rain: axis(T.climate.rain, { position: 'left', beginAtZero: true }),
+                            temp: axis(T.climate.temp, { position: 'right', grid: { drawOnChartArea: false } }),
+                            x: { grid: { display: false }, ticks: { font: FONT, maxRotation: 0, autoSkip: true } },
+                        },
+                        plugins: {
+                            legend: { display: true, position: 'top', labels: { font: FONT, usePointStyle: true } },
+                            tooltip: { callbacks: {
+                                label: (ctx) => ctx.dataset.yAxisID === 'rain'
+                                    ? `${T.climate.rain}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(0) : '—'} mm`
+                                    : `${T.climate.temp}: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(1) : '—'} °C`,
+                            } },
+                        },
+                    },
                 });
 
                 // (Weather Impact is drawn above with the Year range / Season filter: panel revision 3.2.)
