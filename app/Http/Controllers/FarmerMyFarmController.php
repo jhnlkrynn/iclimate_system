@@ -33,45 +33,19 @@ class FarmerMyFarmController extends Controller
     private function buildPageData(Request $request): array
     {
         $user = $request->user();
-        // Farmer – Naicel (2026-10): missing farm information goes to the notification bell.
         app(\App\Services\Farmer\FarmerMissingInfoNotifier::class)->syncOnPageLoad($user);
-        $profile = $user->farmerProfile;
         $farms = ActiveFarm::farms($user);
         $current = ActiveFarm::current($user);
-        /** @var Collection<int, FarmerPlantingSchedule> $schedules */
-        $schedules = SchemaCache::hasTable('farmer_planting_schedules')
-            ? FarmerPlantingSchedule::query()->where('user_id', $user->id)
-                // The current farm's plans (older plans without a farm count as the primary farm's).
-                ->when($current !== null, fn ($q) => $q->where(fn ($w) => $w->where('farm_id', $current->getKey())
-                    ->when($current->is_primary, fn ($p) => $p->orWhereNull('farm_id'))))
-                ->orderByDesc('planting_date')->get()
-            : new \Illuminate\Database\Eloquent\Collection;
-        FarmerPlantingSchedule::withVarieties($schedules);
-        $farmType = $current !== null ? $current->farm_type : $profile?->farm_type;
-        $type = $farmType ? strtolower((string) $farmType) : null;
-
-        $associationNames = \App\Services\Farms\FarmAssociations::available()
-            ? \App\Models\FarmerOrganization::query()->whereIn('id', $farms->pluck('farmer_organization_id')->filter()->unique())->pluck('name', 'id')
-            : null;
-
-        // Farms the farmer removed (or that were archived when the account was closed): each can be brought back.
-        $archivedFarms = ActiveFarm::available()
-            ? Farm::query()->ownedBy($user)->whereNotNull('archived_at')->orderByDesc('archived_at')->get(['id', 'farm_name', 'barangay', 'archived_at'])
-            : new \Illuminate\Database\Eloquent\Collection;
+        $schedules = $this->loadSchedules($user->id, $current);
+        $associationNames = $this->loadAssociationNames($farms);
 
         return [
-            'archivedFarms' => $archivedFarms,
+            'archivedFarms' => $this->loadArchivedFarms($user),
             'associationPrompt' => \App\Services\Farms\FarmAssociations::promptFor($user),
             'available' => ActiveFarm::available(),
             'farms' => $this->formatFarmsList($farms, $current, $associationNames),
             'current' => $current,
-            'farm' => [
-                'name' => $current?->farm_name,
-                'barangay' => $current !== null ? ($current->barangay ? HeatMapPanel::displayName($current->barangay) : null) : ($user->registeredBarangay() ?? ($profile?->barangay ?: $user->barangay)),
-                'area' => $current !== null ? null : ((float) ($profile?->farm_area ?? 0) > 0 ? (float) $profile->farm_area : null),
-                'size' => $current !== null ? FarmSize::describe($current) : null,
-                'type' => $type && Lang::has('farmer.my_farm.water.'.$type) ? __('farmer.my_farm.water.'.$type) : null,
-            ],
+            'farm' => $this->formatCurrentFarm($user, $current),
             'schedules' => $this->formatSchedules($schedules),
             'harvests' => $this->harvests($schedules),
             'events' => $this->upcoming($schedules),
@@ -84,6 +58,73 @@ class FarmerMyFarmController extends Controller
             ),
             'printedAt' => BusinessClock::now(),
         ] + $this->activityData($request, $farms, $current);
+    }
+
+    /**
+     * @return Collection<int, FarmerPlantingSchedule>
+     */
+    private function loadSchedules(int $userId, ?Farm $current): Collection
+    {
+        if (! SchemaCache::hasTable('farmer_planting_schedules')) {
+            return new \Illuminate\Database\Eloquent\Collection;
+        }
+
+        $schedules = FarmerPlantingSchedule::query()->where('user_id', $userId)
+            ->when($current !== null, fn ($q) => $q->where(fn ($w) => $w->where('farm_id', $current->getKey())
+                ->when($current->is_primary, fn ($p) => $p->orWhereNull('farm_id'))))
+            ->orderByDesc('planting_date')
+            ->get();
+
+        return FarmerPlantingSchedule::withVarieties($schedules);
+    }
+
+    /**
+     * @param  Collection<int, Farm>  $farms
+     * @return Collection<int|string, string>|null
+     */
+    private function loadAssociationNames(Collection $farms): ?Collection
+    {
+        if (! \App\Services\Farms\FarmAssociations::available()) {
+            return null;
+        }
+
+        return \App\Models\FarmerOrganization::query()
+            ->whereIn('id', $farms->pluck('farmer_organization_id')->filter()->unique())
+            ->pluck('name', 'id');
+    }
+
+    /**
+     * @return Collection<int, Farm>
+     */
+    private function loadArchivedFarms(\App\Models\User $user): Collection
+    {
+        if (! ActiveFarm::available()) {
+            return new \Illuminate\Database\Eloquent\Collection;
+        }
+
+        return Farm::query()->ownedBy($user)->whereNotNull('archived_at')
+            ->orderByDesc('archived_at')
+            ->get(['id', 'farm_name', 'barangay', 'archived_at']);
+    }
+
+    /**
+     * @return array{name: ?string, barangay: ?string, area: ?float, size: ?array<string, mixed>, type: ?string}
+     */
+    private function formatCurrentFarm(\App\Models\User $user, ?Farm $current): array
+    {
+        $profile = $user->farmerProfile;
+        $farmType = $current !== null ? $current->farm_type : $profile?->farm_type;
+        $type = $farmType ? strtolower((string) $farmType) : null;
+
+        return [
+            'name' => $current?->farm_name,
+            'barangay' => $current !== null
+                ? ($current->barangay ? HeatMapPanel::displayName($current->barangay) : null)
+                : ($user->registeredBarangay() ?? ($profile?->barangay ?: $user->barangay)),
+            'area' => $current !== null ? null : ((float) ($profile?->farm_area ?? 0) > 0 ? (float) $profile->farm_area : null),
+            'size' => $current !== null ? FarmSize::describe($current) : null,
+            'type' => $type && Lang::has('farmer.my_farm.water.'.$type) ? __('farmer.my_farm.water.'.$type) : null,
+        ];
     }
 
     /**
