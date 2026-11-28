@@ -35,7 +35,7 @@
             <p class="small text-muted" data-adv-prefill-note @if (! $prefilled) hidden @endif>
                 Filled in from this week's saved forecast. Please review and edit it before publishing.
             </p>
-            <form method="POST" action="{{ $action }}" data-loading="true" data-adv-form>
+            <form method="POST" action="{{ $action }}" data-loading="true" data-adv-form data-adv-draft-key="iclimate.adv_draft.{{ auth()->id() }}.{{ $advisory->exists ? $advisory->id : 'new' }}">
                 @csrf
                 @if($method !== 'POST') @method($method) @endif
                 <div class="row g-3">
@@ -130,4 +130,52 @@
             })();
         </script>
     @endif
+    <script @nonce>
+        (() => {
+            const form = document.querySelector('[data-adv-form]');
+            if (!form) return;
+            const draftKey = form.dataset.advDraftKey;
+            const fields = [...form.querySelectorAll('input:not([type="hidden"]), select, textarea')];
+            let dirty = false;
+            const hasErrors = {{ $errors->any() ? 'true' : 'false' }};
+
+            if (draftKey && !hasErrors) {
+                try {
+                    const saved = JSON.parse(localStorage.getItem(draftKey) || 'null');
+                    if (saved && typeof saved === 'object') {
+                        fields.forEach((el) => {
+                            if (el.name && Object.prototype.hasOwnProperty.call(saved, el.name) && saved[el.name] !== el.value) {
+                                el.value = saved[el.name];
+                                dirty = true;
+                            }
+                        });
+                    }
+                } catch (e) {}
+            }
+
+            const saveDraft = () => {
+                if (!draftKey) return;
+                try {
+                    const data = {};
+                    fields.forEach((el) => { if (el.name) data[el.name] = el.value; });
+                    localStorage.setItem(draftKey, JSON.stringify(data));
+                } catch (e) {}
+            };
+
+            fields.forEach((el) => el.addEventListener('input', () => { dirty = true; saveDraft(); }));
+            fields.forEach((el) => el.addEventListener('change', () => { dirty = true; saveDraft(); }));
+
+            const onBeforeUnload = (e) => {
+                if (!dirty) return;
+                e.preventDefault();
+                e.returnValue = '';
+            };
+            window.addEventListener('beforeunload', onBeforeUnload);
+            form.addEventListener('submit', () => {
+                dirty = false;
+                window.removeEventListener('beforeunload', onBeforeUnload);
+                if (draftKey) try { localStorage.removeItem(draftKey); } catch (e) {}
+            });
+        })();
+    </script>
 </x-app-layout>

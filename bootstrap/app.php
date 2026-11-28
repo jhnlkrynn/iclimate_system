@@ -37,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
             // Panel revision 4.4 A: an account on the default MAO password chooses its own first.
             \App\Http\Middleware\EnsurePasswordChanged::class,
             \App\Http\Middleware\EnsurePrivacyAgreed::class,
+            SetFarmerLanguage::class,
         ]);
 
         $middleware->api(append: [

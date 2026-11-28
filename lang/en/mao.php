@@ -34,6 +34,7 @@ return [
     'dashboard' => [
         'office' => 'Municipal Agriculture Office',
         'title' => 'MAO Staff Dashboard',
+        'head_title' => 'MAO Head Dashboard',
         'place' => 'Lian, Batangas',
         'season' => ['wet' => 'Wet season :years', 'dry' => 'Dry season :years'],
         'season_short' => ['wet' => 'Wet', 'dry' => 'Dry'],

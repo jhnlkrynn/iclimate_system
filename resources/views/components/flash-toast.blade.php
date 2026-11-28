@@ -1,13 +1,14 @@
 @php
     $reviewFlash = session('review');
-    $flashType = session('error') || (isset($errors) && $errors->any())
+    $showValidationToast = isset($errors) && $errors->any() && request()->is('/');
+    $flashType = session('error') || $showValidationToast
         ? 'error'
         : ($reviewFlash ? 'review' : (session('success') ? 'success' : (session('status') ? 'info' : null)));
     $flashMessage = session('error')
         ?: (is_array($reviewFlash) ? ($reviewFlash['message'] ?? null) : $reviewFlash)
         ?: session('success')
         ?: session('status')
-        ?: (isset($errors) && $errors->any() ? $errors->first() : null);
+        ?: ($showValidationToast ? $errors->first() : null);
     $isFil = app()->getLocale() === 'fil';
     $flashTitle = match ($flashType) {
         'error' => $isFil ? 'Hindi nagtagumpay' : 'Action failed',

@@ -108,7 +108,7 @@ class LandingPageTest extends TestCase
         $user = User::factory()->create();
 
         $this->from('/')->post(route('login'), ['email' => $user->email, 'password' => 'wrong-password'])
-            ->assertRedirect('/')
+            ->assertRedirect(url('/').'#login')
             ->assertSessionHasErrors('email');
 
         $this->assertGuest();
@@ -282,7 +282,7 @@ class LandingPageTest extends TestCase
 
     public function test_a_failed_login_reopens_the_card_in_log_in_mode_and_register_still_works(): void
     {
-        $this->from('/')->post(route('login'), ['email' => 'nobody@example.com', 'password' => 'wrong'])->assertRedirect('/');
+        $this->from('/')->post(route('login'), ['email' => 'nobody@example.com', 'password' => 'wrong'])->assertRedirect(url('/').'#login');
         $this->get('/')->assertOk()->assertSee('data-auth-mode="login"', false)->assertSee('id="login-email-error"', false)
             ->assertDontSee('id="email-error" >', false);
 

@@ -9,8 +9,7 @@
         <title>{{ isset($title) && trim((string) $title) !== '' ? trim((string) $title).' · '.config('app.name', 'iClimate') : config('app.name', 'iClimate') }}</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-        <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
         {{-- Panel revision 4.5: one appearance, the white government (LGU) theme, set before any stylesheet loads
              (resources/js/theme.js keeps it). The dark-only stylesheet (theme-dark-pages.css) is no longer loaded. --}}
         <meta name="color-scheme" content="light">
@@ -322,6 +321,7 @@
         @include('partials.global-loader')
     </head>
     <body data-user-id="{{ auth()->id() }}" data-user-role="{{ auth()->user()?->role }}" data-server-now="{{ now('Asia/Manila')->format('Y-m-d\\TH:i:s.vP') }}" @class(['is-farmer-dashboard' => request()->routeIs('farmer.dashboard'), 'is-mao-dashboard' => request()->routeIs('mao.dashboard')])>
+        <a class="visually-hidden-focusable" href="#main-content" style="position:fixed;top:8px;left:8px;z-index:2000;background:#fff;color:#111;padding:10px 16px;border-radius:8px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.2);">Skip to main content</a>
         {{-- The landing page's rice field photo behind the account pages (account-light.css); versioned by file time so a
              replaced photo shows at once. --}}
         @if ($accountLook)
@@ -330,7 +330,7 @@
         @include('layouts.sidebar')
         <div class="app-main">
             @include('layouts.navigation')
-            <main class="page-shell">
+            <main class="page-shell" id="main-content" tabindex="-1">
                 @if (session('success'))
                     <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert" data-auto-dismiss="5000">
                         <strong>Success.</strong> {{ session('success') }}

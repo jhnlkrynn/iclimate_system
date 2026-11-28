@@ -112,6 +112,12 @@ class AuthenticatedSessionController extends Controller
 
         $user = $request->user();
         $user->forceFill(['last_login_at' => now()])->saveQuietly();   // Manuscript – Naicel: Last Login on the user list
+        if ($user->role === \App\Models\User::ROLE_FARMER && \App\Support\FarmerLanguage::isSupported($user->preferred_language)) {
+            $request->session()->put(\App\Support\FarmerLanguage::SESSION_KEY, $user->preferred_language);
+            app()->setLocale($user->preferred_language);
+        } elseif ($user->isMao() && in_array($user->preferred_language, ['en', 'fil'], true)) {
+            $request->session()->put(\App\Support\MaoLanguage::SESSION_KEY, $user->preferred_language);
+        }
 
         // Every sign-in lands on the role's own dashboard (User::dashboardRoute()). A page a guest was sent to login
         // from (the heat map, an advisory, a bookmark) is forgotten, not followed: it could be one another person

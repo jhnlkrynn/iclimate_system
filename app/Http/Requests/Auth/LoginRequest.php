@@ -81,7 +81,7 @@ class LoginRequest extends FormRequest
 
             throw ValidationException::withMessages([
                 'captcha_answer' => 'The security check answer is incorrect. Please try again.',
-            ]);
+            ])->redirectTo(url('/').'#login');
         }
 
         try {
@@ -138,7 +138,7 @@ class LoginRequest extends FormRequest
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
-            ]);
+            ])->redirectTo(url('/').'#login');
         }
 
         if (! Auth::user()?->hasApplicationAccess()) {

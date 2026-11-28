@@ -348,7 +348,7 @@ test('H5 invalid login returns to the landing page with the error in the card', 
     await page.waitForLoadState('domcontentloaded');
     expect(new URL(page.url()).pathname).toBe('/');
     await expect(page.locator('#login-email-error')).toBeVisible();
-    await expect(page.locator('#login-email-error')).toContainText('do not match');
+    await expect(page.locator('#login-email-error')).toContainText('Wrong email or password');
     await expect(page.locator('#login-email')).toHaveValue(ACCOUNTS.farmer.email);
     await expect(page.locator('#login-email')).toHaveAttribute('aria-invalid', 'true');
 });

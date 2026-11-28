@@ -73,11 +73,14 @@
             @error('scheduled_harvest_date')<div class="{{ $c['error'] }}">{{ $message }}</div>@enderror
             <div class="{{ $c['help'] }}">{{ $varietiesReady ? 'Filled in from your rice variety. Change it only if you know a different date.' : 'Use an exact date, or choose only a harvest month below.' }}</div>
         </div>
-        <div class="{{ $c['field'] }}">
-            <label class="{{ $c['label'] }}" for="harvest_month">Harvest month</label>
-            <input class="{{ $c['input'] }}{{ $invalid('harvest_month') }}" id="harvest_month" name="harvest_month" type="month" value="{{ old('harvest_month', $schedule->harvest_month?->format('Y-m')) }}">
-            @error('harvest_month')<div class="{{ $c['error'] }}">{{ $message }}</div>@enderror
-        </div>
+        <details class="{{ $c['field'] }}" @if (old('harvest_month', $schedule->harvest_month?->format('Y-m')) || $errors->has('harvest_month')) open @endif>
+            <summary class="{{ $c['help'] }}" style="cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center;">Only know the month?</summary>
+            <div class="mt-2">
+                <label class="{{ $c['label'] }}" for="harvest_month">Harvest month</label>
+                <input class="{{ $c['input'] }}{{ $invalid('harvest_month') }}" id="harvest_month" name="harvest_month" type="month" value="{{ old('harvest_month', $schedule->harvest_month?->format('Y-m')) }}">
+                @error('harvest_month')<div class="{{ $c['error'] }}">{{ $message }}</div>@enderror
+            </div>
+        </details>
         <div class="{{ $c['field'] }}">
             <label class="{{ $c['label'] }}" for="season">Season</label>
             <select class="{{ $c['select'] }}{{ $invalid('season') }}" id="season" name="season" required>

@@ -208,7 +208,7 @@ class AccountDeletionTest extends TestCase
         $farmer = $this->farmer();
         $this->deleteAccount($farmer, 'other', ['reason_other' => 'Your RSBSA record lists another farm owner.', 'note_internal' => 'SECRET-NOTE-123']);
 
-        $this->login($farmer, 'wrong-password')->assertRedirect('/')->assertSessionHasErrors('email');
+        $this->login($farmer, 'wrong-password')->assertRedirect(url('/').'#login')->assertSessionHasErrors('email');
         $this->get(route('account.deleted'))->assertRedirect('/');   // nothing to show without the right password
 
         $this->login($farmer)->assertRedirect(route('account.deleted'));

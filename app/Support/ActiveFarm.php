@@ -41,6 +41,15 @@ final class ActiveFarm
         $farms = Farm::query()->ownedBy($user)->active()
             ->with('boundary:id,farm_id,calculated_area_hectares')
             ->orderByDesc('is_primary')->orderBy('id')->get();
+        if ($farms->count() > 1 && $farms->contains(fn (Farm $f): bool => $f->farm_name !== 'Farm 1')) {
+            $farms = $farms->reject(function (Farm $f): bool {
+                if ($f->farm_name !== 'Farm 1' || $f->farm_size_hectares !== null || $f->boundary !== null) {
+                    return false;
+                }
+
+                return ! \App\Models\FarmerPlantingSchedule::query()->where('farm_id', $f->getKey())->exists();
+            })->values();
+        }
         $request?->attributes->set($key, $farms);
 
         return $farms;

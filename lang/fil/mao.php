@@ -34,6 +34,7 @@ return [
     'dashboard' => [
         'office' => 'Tanggapan ng Agrikultura ng Bayan',
         'title' => 'Dashboard ng Kawani ng MAO',
+        'head_title' => 'Dashboard ng Pinuno ng MAO',
         'place' => 'Lian, Batangas',
         'season' => ['wet' => 'Tag-ulan :years', 'dry' => 'Tag-araw :years'],
         'season_short' => ['wet' => 'Tag-ulan', 'dry' => 'Tag-araw'],

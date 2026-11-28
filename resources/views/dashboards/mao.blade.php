@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot:title>{{ __('mao.dashboard.title') }}</x-slot:title>
+    <x-slot:title>{{ auth()->user()?->isMaoHead() ? __('mao.dashboard.head_title') : __('mao.dashboard.title') }}</x-slot:title>
     {{-- MAO Dashboard (2026-10, MaoHomeService): KPI tiles, the "Needs Action" list, a small Heat Map preview and the
          charts. Everything is saved data; the pages behind each number are one click away. The former
          Operations page's parts live on their own pages (Advisories, Calendar, Reports).
@@ -129,7 +129,7 @@
         <header class="mtd-header">
             <div class="mtd-header-main">
                 <span class="mtd-kicker">{{ $t('office') }}</span>
-                <h1>{{ $t('title') }}</h1>
+                <h1>{{ auth()->user()?->isMaoHead() ? $t('head_title') : $t('title') }}</h1>
                 <p class="mtd-place">@include('dashboards.mao.icon', ['name' => 'map']){{ $t('place') }} · {{ $season }}</p>
                 {{-- Panel revision 4.4 B: which barangays the figures below cover. --}}
                 @if (! empty($mao['scope']['filtered']))

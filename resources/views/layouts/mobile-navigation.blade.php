@@ -34,10 +34,10 @@
             'user-management' => 'Users',
             'reports' => 'Reports',
             'messages' => $isFarmer && $navLocale === 'fil' ? 'Mensahe' : 'Messages',
-            'heatmap' => $isFarmer ? __('farmer.nav.heat_map', [], $navLocale ?? 'en') : 'Heat Map',
+            'heatmap' => $isFarmer && $navLocale === 'fil' ? 'Mapa' : ($isFarmer ? __('farmer.nav.heat_map', [], $navLocale ?? 'en') : 'Heat Map'),
             'advisories' => $isFarmer ? __('farmer.nav.advisories', [], $navLocale ?? 'en') : 'Advisories',
             'records-and-barangays' => 'Records',
-            'my-farm' => $isFarmer && $navLocale === 'fil' ? 'Aking Farm' : 'My Farm',
+            'my-farm' => $isFarmer && $navLocale === 'fil' ? 'Bukid' : 'My Farm',
             'weather' => $navLocale === 'fil' ? 'Panahon' : 'Forecast',
             default => $link[0],
         };
@@ -98,7 +98,7 @@
     $mobileContextVisible = $isFarmer && $mobileFarmName && ($mobileWeatherValue !== null || $mobileCrop !== null);
     $mobileContextText = $mobileContextVisible
         ? $mobileFarmName.' · '.($mobileWeatherValue !== null ? number_format((float) $mobileWeatherValue, 0).'°C' : $mobileBarangay).
-            ($mobileRain ? ' '.$mobileRain : '').($mobileCrop ? ' · '.$mobileCrop['value'].' '.($mobileCrop['unit'] ?? __('farmer.kpis.days', [], $farmerLocale ?? 'en')).' to harvest' : '')
+            ($mobileRain ? ' '.$mobileRain : '').($mobileCrop ? ' · '.$mobileCrop['value'].' '.($mobileCrop['unit'] ?? __('farmer.kpis.days', [], $farmerLocale ?? 'en')).' '.(($farmerLocale ?? $navLocale ?? 'en') === 'fil' ? 'bago mag-ani' : 'to harvest') : '')
         : null;
     $mobileProgress = $mobileCrop['progress'] ?? null;
     $mobileUnread = (int) ($navCounts['unread'] ?? $navUnread ?? 0);

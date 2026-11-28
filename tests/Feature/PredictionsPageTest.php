@@ -331,7 +331,7 @@ class PredictionsPageTest extends TestCase
         $text = $this->text($this->actingAs($mao)->get(route('weather-predictions.index'))->getContent());
 
         $this->assertStringContainsString('4.25 t/ha', $text);
-        $this->assertStringContainsString('Preliminary estimate', $text);
+        $this->assertStringContainsString('Early estimate (not final)', $text);
         $this->assertStringContainsString('Municipality-wide forecast from the trained rice-yield model', $text);
         $this->assertStringNotContainsString('No saved farmer estimates yet', $text);
         Queue::assertNotPushed(\App\Jobs\PrepareMunicipalYieldForecast::class);

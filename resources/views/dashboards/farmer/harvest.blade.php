@@ -14,6 +14,7 @@
         <h2 id="fhUsualYieldTitle" class="fh-kicker">{{ __('farmer.home.harvest.usual_title') }}</h2>
         <p class="fh-muted">{{ $h['season'] }}</p>
         <p class="fh-big">{{ number_format((float) $h['usual'], 2) }} <small>t/ha</small></p>
+        <p class="small text-muted mb-1">{{ $fil ? 'tonelada bawat ektarya' : 'tons per hectare' }}</p>
         <p class="fh-words">{{ __('farmer.home.harvest.usual_note') }}</p>
     </section>
     @endif
@@ -27,6 +28,7 @@
             <div>
                 <div class="small text-muted">{{ __('farmer.harvest_card.iclimate_estimate') }}</div>
                 <p class="fh-big mb-0">{{ number_format($h['yield'], 2) }} <small>t/ha</small></p>
+                <p class="small text-muted mb-0">{{ $fil ? 'tonelada bawat ektarya' : 'tons per hectare' }}</p>
             </div>
         </div>
     @elseif ($h['state'] === 'loading')

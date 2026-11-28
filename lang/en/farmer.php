@@ -1586,7 +1586,7 @@ return [
         'planting' => 'Planting',
         'irrigation' => 'Irrigation',
         'not_available_yet' => 'Not available yet',
-        'preliminary_estimate' => 'Preliminary estimate',
+        'preliminary_estimate' => 'Early estimate (not final)',
         'why_estimate' => 'Why this yield estimate',
     ],
     'topbar' => [
