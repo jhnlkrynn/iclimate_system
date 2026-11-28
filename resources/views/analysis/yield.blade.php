@@ -184,6 +184,10 @@
             </section>
         @endif
 
+        <div data-yield-comparison-slot data-comparison-url="{{ route('analysis.yield.comparison') }}">
+            @include('analysis.partials.yield-comparison', ['comparison' => $comparison ?? null])
+        </div>
+
         <section class="fad-card" aria-labelledby="ypHistory" data-yield-history>
             <h2 class="h5 fw-bold mb-3" id="ypHistory">{{ $Y('history') }}</h2>
             @if ($requests->isEmpty())

@@ -244,3 +244,33 @@ html[data-theme="dark"] body .wpx.is-farmer .wpx-range a.is-active { background:
         border-color: var(--sage-700);
     }
 }
+
+/* Same season, past years (analysis/partials/yield-comparison) */
+.yc-chip { display: inline-block; padding: .45rem .85rem; border-radius: 999px; background: #eef5f0; border: 1px solid var(--sage-200, #d4ddd7); color: #1b1f1d; font-size: .95rem; line-height: 1.35; }
+.yc-insight { color: #1b1f1d; font-weight: 600; }
+.yc-chart { margin: 0; }
+.yc-chart-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.yc-chart svg { display: block; width: 100%; min-width: 540px; height: auto; max-height: 280px; }
+.yc-grid { stroke: #e6ebe8; stroke-width: 1; }
+.yc-base { stroke: #9aa5a0; stroke-width: 1; }
+.yc-axis { fill: #5b6660; font-size: 12px; }
+.yc-est-label { font-weight: 700; fill: #1f6b45; }
+.yc-val { fill: #1b1f1d; font-size: 12px; font-weight: 700; paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round; }
+.yc-none { fill: #8a948f; font-size: 11px; font-style: italic; }
+.yc-bar rect { fill: #2e7d52; }
+.yc-bar.is-estimate rect { fill: #cfe6d8; stroke: #2e7d52; stroke-width: 2; stroke-dasharray: 6 4; }
+.yc-usual { stroke: #5b6660; stroke-width: 1.5; stroke-dasharray: 2 4; }
+.yc-legend { display: flex; flex-wrap: wrap; gap: .25rem 1rem; margin-top: .35rem; }
+.yc-legend span { display: inline-flex; align-items: center; gap: .35rem; }
+.yc-key { display: inline-block; width: 14px; height: 10px; border-radius: 2px; background: #2e7d52; }
+.yc-key.is-estimate { background: #cfe6d8; border: 2px dashed #2e7d52; }
+.yc-key.is-usual { height: 0; border-top: 2px dotted #5b6660; background: none; border-radius: 0; }
+.yc-table-wrap { -webkit-overflow-scrolling: touch; }
+.yc-table { min-width: 820px; }
+.yc-table td:last-child div, .yc-table td:nth-child(3) { white-space: nowrap; }
+.yc-table th:first-child { position: sticky; left: 0; z-index: 1; background: #fff; }
+.yc-table tr.yc-current > * { background: #eef5f0; }
+.yc-table tr.yc-current th { box-shadow: inset 4px 0 0 #2e7d52; }
+.yc-badge-est { background: #fff; color: #1f6b45; border: 1px dashed #2e7d52; font-weight: 600; }
+.yc-badge-act { background: #2e7d52; color: #fff; font-weight: 600; }
+

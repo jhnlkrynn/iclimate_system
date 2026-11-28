@@ -86,7 +86,7 @@ export function initPredictionRealtime() {
     if (rows.length) window.setInterval(() => { if (document.visibilityState === 'visible') refetchAll(); }, 8000);
     window.iClimatePredictionApply = renderStatus;
 
-    const form = root.querySelector('[data-yield-form]');
+    const form = document.querySelector('[data-yield-form]');
     const select = form?.querySelector('[data-yield-farm-select]');
     if (form && select) {
         let farms = {};

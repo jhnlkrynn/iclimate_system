@@ -113,6 +113,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Phase 5: Yield Prediction (farmer) and Yield Forecast (MAO). The model runs after the response.
         Route::middleware(['role:'.User::ROLE_FARMER, 'farmer.language'])->group(function () {
             Route::get('yield', [YieldPredictionController::class, 'farmer'])->name('yield');
+            Route::get('yield/comparison', [YieldPredictionController::class, 'farmerComparison'])->middleware('throttle:60,1,get-analysis-yield-comparison')->name('yield.comparison');
             Route::post('yield', [YieldPredictionController::class, 'farmerStore'])->middleware('throttle:10,1,post-analysis-yield')->name('yield.store');
             Route::post('yield/{prediction}/useful', [YieldPredictionController::class, 'useful'])->whereNumber('prediction')->middleware('throttle:30,1,post-analysis-yield-useful')->name('yield.useful');
         });

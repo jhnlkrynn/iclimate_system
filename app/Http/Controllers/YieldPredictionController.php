@@ -8,6 +8,7 @@ use App\Models\Farm;
 use App\Models\RiceProduction;
 use App\Models\User;
 use App\Models\YieldPredictionRequest;
+use App\Services\Analytics\YieldSeasonComparison;
 use App\Services\Prediction\PredictionOrchestrator;
 use App\Services\SystemAuditLogger;
 use App\Support\ActiveFarm;
@@ -67,13 +68,22 @@ class YieldPredictionController extends Controller
             $selectedFarm = $farms->firstWhere('id', (int) old('farm_id')) ?? $selectedFarm;
         }
 
+        $defaultSeason = RiceSeason::forMonth((int) now(\App\Support\BusinessClock::timezone())->month);
+        $compareSeason = in_array(old('season', $request->query('season')), [RiceSeason::WET, RiceSeason::DRY], true)
+            ? old('season', $request->query('season'))
+            : $defaultSeason;
+        if ($request->query('farm_id') !== null && ! old('farm_id')) {
+            $selectedFarm = ActiveFarm::owned($user, $request->query('farm_id')) ?? $selectedFarm;
+        }
+
         return view('analysis.yield', [
             'farms' => $farms,
             'selectedFarm' => $selectedFarm,
             'defaults' => [
-                'season' => RiceSeason::forMonth((int) now(\App\Support\BusinessClock::timezone())->month),
+                'season' => $compareSeason,
                 'farm_id' => $selectedFarm?->getKey(),
             ],
+            'comparison' => $this->comparison($user, $selectedFarm, $compareSeason),
             'requests' => YieldPredictionRequest::query()
                 ->where('user_id', $user->getKey())
                 ->with('farm:id,farm_name,barangay')
@@ -81,6 +91,31 @@ class YieldPredictionController extends Controller
                 ->limit(20)
                 ->get(),
         ]);
+    }
+
+    /** The same-season comparison alone, for the farm and season picked on the page (no outside call is made). */
+    public function farmerComparison(Request $request): View
+    {
+        app()->setLocale(FarmerLanguage::resolve($request));
+        $user = $request->user();
+        $data = $request->validate([
+            'season' => ['required', Rule::in([RiceSeason::WET, RiceSeason::DRY])],
+            'farm_id' => ['required', 'integer'],
+        ]);
+        $farm = ActiveFarm::owned($user, $data['farm_id']);
+        abort_if($farm === null, 404);
+
+        return view('analysis.partials.yield-comparison', ['comparison' => $this->comparison($user, $farm, $data['season'])]);
+    }
+
+    /** @return array<string, mixed>|null */
+    private function comparison(User $user, ?Farm $farm, string $season): ?array
+    {
+        if ($farm === null) {
+            return null;
+        }
+
+        return rescue(fn () => app(YieldSeasonComparison::class)->build($user, $farm, $season) + ['farm_id' => $farm->getKey(), 'farm_name' => $farm->farm_name ?: null], null);
     }
 
     public function farmerStore(Request $request): RedirectResponse

@@ -222,6 +222,9 @@ function initApp() {
     if (document.querySelector('[data-ic-notifications]')) {
         import('./notifications-popup').then(({ initNotificationsPopup }) => initNotificationsPopup());
     }
+    if (document.querySelector('[data-yield-comparison-slot]')) {
+        import('./yield-comparison').then(({ initYieldComparison }) => initYieldComparison());
+    }
     if (document.querySelector('[data-analytics-run], [data-prediction-status-url]')) {
         import('./prediction-realtime').then(({ initPredictionRealtime }) => initPredictionRealtime());
     }
