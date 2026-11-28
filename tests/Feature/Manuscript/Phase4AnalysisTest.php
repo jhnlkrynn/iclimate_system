@@ -91,16 +91,14 @@ class Phase4AnalysisTest extends TestCase
         $this->assertTrue(collect($june->viewData('chart')['labels'])->every(fn ($l) => str_starts_with($l, 'Jun')));
     }
 
-    public function test_farmers_read_weather_analysis_in_filipino_without_staff_sections(): void
+    public function test_farmers_are_redirected_from_weather_analysis_to_farmer_dashboard(): void
     {
         $farmer = User::factory()->create(['role' => User::ROLE_FARMER, 'preferred_language' => 'fil']);
 
-        $this->actingAs($farmer)->get(route('analysis.weather'))->assertOk()
-            ->assertSee('Pagsusuri ng Panahon')->assertSee('Tag-ulan laban sa tag-araw')
-            ->assertSee('data-wa-year-summary', false)
-            ->assertDontSee('data-climate-indicators', false)
-            ->assertDontSee('waWindTable', false);
+        $this->actingAs($farmer)->get(route('analysis.weather'))->assertRedirect(route('farmer.dashboard'));
         $this->actingAs($farmer)->get(route('weather-predictions.index'))->assertRedirect(route('farmer.dashboard'));
+        $this->actingAs($farmer)->get(route('analysis.yield'))->assertOk()
+            ->assertDontSee('data-manuscript-tabs', false);
     }
 
     public function test_impact_analysis_ranks_variables_and_can_be_saved(): void

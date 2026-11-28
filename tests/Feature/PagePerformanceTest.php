@@ -280,7 +280,6 @@ class PagePerformanceTest extends TestCase
             '/farmer/dashboard',
             '/heat-map',
             '/planting-advisories',
-            '/analysis/weather',
             '/analysis/yield',
             '/farmer/my-farm',
             '/farmer/explore-results',
@@ -302,6 +301,7 @@ class PagePerformanceTest extends TestCase
             '/farmer-profiles',
             '/mao/farmer-approvals',
             '/analysis/impact',
+            '/analysis/weather',
             '/analysis/forecast',
             '/analysis/model-evaluation',
         ] as $url) {
