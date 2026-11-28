@@ -1,6 +1,5 @@
 import './bootstrap';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
-import { initScrollAnimations } from './scroll-animations';
 // CSP build: no runtime evaluation, so the Content-Security-Policy needs no 'unsafe-eval' (components in alpine-components.js).
 import Alpine from '@alpinejs/csp';
 import { registerAlpineComponents } from './alpine-components';
@@ -11,8 +10,8 @@ import { initUiEnhancements } from './ui-enhancements';
 import { initTheme, registerChartTheme } from './theme';
 import './app-magic';
 import './mobile-navigation';
-import { watchPanelRevisions } from './panel-revisions';   // thesis panel revisions (docs/panel-revisions.md)
-import { initLiveClock } from './live-clock';
+
+const deferIdle = (fn) => (window.requestIdleCallback ? window.requestIdleCallback(fn, { timeout: 1500 }) : window.setTimeout(fn, 0));
 
 const wrapChartLabel = (label, maxLineLength = 14, maxLines = 3) => {
     const normalized = String(label ?? '').trim();
@@ -194,7 +193,7 @@ Alpine.start();
  * and no prevention of server-side validation/submission.
  */
 function initApp() {
-    initLiveClock();
+    deferIdle(() => import('./live-clock').then(({ initLiveClock }) => initLiveClock()));
     initTheme();
     bindNavbarState();
     bindMobileNavigation();
@@ -251,7 +250,7 @@ function initApp() {
         bindResponsiveTables();
         bindDeleteConfirmations();
     };
-    watchPanelRevisions();
+    deferIdle(() => import('./panel-revisions').then(({ watchPanelRevisions }) => watchPanelRevisions()));
     bindSidebarDrawer();
     bindResponsiveTables();
 }
@@ -403,7 +402,7 @@ function bindRevealMotion() {
         if (!element.dataset.revealDelay) element.dataset.revealDelay = String(Math.min(index * 70, 350));
     });
 
-    initScrollAnimations(document);
+    deferIdle(() => import('./scroll-animations').then(({ initScrollAnimations }) => initScrollAnimations(document)));
 }
 
 function bindGestureFeedback() {

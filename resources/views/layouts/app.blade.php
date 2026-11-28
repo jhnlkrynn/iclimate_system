@@ -9,7 +9,8 @@
         <title>{{ isset($title) && trim((string) $title) !== '' ? trim((string) $title).' · '.config('app.name', 'iClimate') : config('app.name', 'iClimate') }}</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+        <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
         {{-- Panel revision 4.5: one appearance, the white government (LGU) theme, set before any stylesheet loads
              (resources/js/theme.js keeps it). The dark-only stylesheet (theme-dark-pages.css) is no longer loaded. --}}
         <meta name="color-scheme" content="light">

@@ -94,11 +94,16 @@ VITE_REVERB_SCHEME="${REVERB_SCHEME}"
 
 ---
 
-## 2. Nginx `/app/` WebSocket Proxy Snippet
+## 2. Nginx `/app/` WebSocket Proxy & `/build/` Immutable Cache
 
-Proxy `/app/` (and `/apps/` if needed by Pusher-compatible clients) to Reverb on `127.0.0.1:8082`:
+Proxy `/app/` (and `/apps/` if needed by Pusher-compatible clients) to Reverb on `127.0.0.1:8082`, and serve hashed Vite assets under `/build/` with a 1-year immutable `Cache-Control` header:
 
 ```nginx
+location ^~ /build/ {
+    add_header Cache-Control "public, max-age=31536000, immutable";
+    try_files $uri =404;
+}
+
 location /app/ {
     proxy_pass http://127.0.0.1:8082;
     proxy_http_version 1.1;
@@ -111,6 +116,11 @@ location /app/ {
     proxy_read_timeout 60s;
     proxy_send_timeout 60s;
 }
+```
+
+Apply and reload Nginx:
+```bash
+sudo nginx -t && sudo systemctl reload nginx
 ```
 
 ---

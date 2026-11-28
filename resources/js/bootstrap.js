@@ -1,8 +1,5 @@
 import axios from 'axios';
-import Echo from 'laravel-echo';
-import Pusher from 'pusher-js';
 window.axios = axios;
-window.Pusher = Pusher;
 
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
@@ -26,16 +23,18 @@ const realtimeHost = import.meta.env.VITE_REVERB_HOST;
 const realtimeEnabled = document.querySelector('meta[name="iclimate-realtime"]')?.getAttribute('content') === '1';
 
 if (realtimeKey && realtimeHost && realtimeEnabled) {
-    window.Echo = new Echo({
-        broadcaster: 'reverb',
-        key: realtimeKey,
-        wsHost: import.meta.env.VITE_REVERB_HOST || window.location.hostname,
-        wsPort: Number(import.meta.env.VITE_REVERB_PORT || 8080),
-        wssPort: Number(import.meta.env.VITE_REVERB_PORT || 8080),
-        forceTLS: (import.meta.env.VITE_REVERB_SCHEME || 'http') === 'https',
-        enabledTransports: ['ws', 'wss'],
-        authEndpoint: '/broadcasting/auth',
-    });
+    Promise.all([import('laravel-echo'), import('pusher-js')]).then(([{ default: Echo }, { default: Pusher }]) => {
+        window.Pusher = Pusher;
+        window.Echo = new Echo({
+            broadcaster: 'reverb',
+            key: realtimeKey,
+            wsHost: realtimeHost,
+            wsPort: Number(import.meta.env.VITE_REVERB_PORT || 8080),
+            wssPort: Number(import.meta.env.VITE_REVERB_PORT || 8080),
+            forceTLS: (import.meta.env.VITE_REVERB_SCHEME || 'http') === 'https',
+            enabledTransports: ['ws', 'wss'],
+            authEndpoint: '/broadcasting/auth',
+        });
 
     const connection = window.Echo.connector?.pusher?.connection;
     let reconnectTimer = null;
@@ -87,6 +86,7 @@ if (realtimeKey && realtimeHost && realtimeEnabled) {
     // Back online or back on the tab: try at once instead of waiting for the next timer.
     window.addEventListener('online', reconnect);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reconnect(); });
+    });
 } else {
     setRealtimeState('disabled');
 }
