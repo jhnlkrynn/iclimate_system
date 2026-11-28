@@ -44,8 +44,17 @@ for (const [role, email, dashboard, labels] of accounts) {
         await expect(page.locator('body')).not.toHaveClass(/mobile-nav-open/);
 
         if (role === 'farmer') {
+            await nav.locator('[data-mobile-more-open]').click();
+            await expect(sheet).toBeVisible();
             await expect(sheet).not.toContainText('MAO Staff');
-            await expect(sheet).toContainText('Weather & risk');
+            await expect(sheet).toContainText(/Daily farm tools|Araw-araw na gamit/i);
+            await expect(sheet).toContainText(/Today's weather and your farm|Panahon ngayon at iyong bukid/);
+            await expect(sheet).toContainText(/Talk to the MAO|Makipag-usap sa MAO/);
+            await expect(sheet.locator('.mobile-more-row.is-active')).toHaveCount(1);
+            await page.screenshot({ path: testInfo.outputPath('farmer-more-sheet-375.png'), fullPage: false });
+            await page.screenshot({ path: '/Users/johnlukereynon/.gemini/antigravity/brain/9e1eb14f-3b21-42e9-8d83-1159b07d2ea2/farmer-more-sheet-375.png', fullPage: false });
+            await sheet.locator('button[data-mobile-more-close]').click();
+            await expect(sheet).toBeHidden();
         }
         await expect(nav.locator('[data-mobile-season-line]')).toBeVisible();
 

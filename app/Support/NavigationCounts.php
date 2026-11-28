@@ -45,10 +45,22 @@ final class NavigationCounts
             $query->selectSub($pendingFarmsQuery, 'pending_farms');
         }
 
+        $hasUnreadAdvisories = $user->role === User::ROLE_FARMER
+            && SchemaCache::hasColumn('notifications', 'planting_advisory_id');
+        if ($hasUnreadAdvisories) {
+            $unreadAdvisories = SampleData::without(Notification::query(), 'notifications')
+                ->where('user_id', $user->getKey())
+                ->where('is_read', false)
+                ->whereNotNull('planting_advisory_id')
+                ->selectRaw('COUNT(*)');
+            $query->selectSub($unreadAdvisories, 'unread_advisories');
+        }
+
         $row = $query->first();
 
         $counts = [
             'unread' => (int) ($row?->unread ?? 0),
+            'unread_advisories' => (int) ($row?->unread_advisories ?? 0),
             'pending' => (int) ($row?->pending ?? 0),
             'pending_farms' => (int) ($row?->pending_farms ?? 0),
         ];

@@ -45,13 +45,27 @@
 
     $mobileMoreGroups = [];
     if ($isFarmer) {
+        $mLoc = $farmerLocale ?? $navLocale ?? 'en';
+        $mText = fn (string $key): string => __('farmer.mobile_menu.'.$key, [], $mLoc);
+        $homeLink = $mobileLink('dashboard', $mText('home'));
+        $dailyLinks = array_values(array_filter([
+            $homeLink,
+            $mobileLink('my-farm'),
+            $mobileLink('advisories'),
+            $mobileLink('heatmap'),
+            $mobileLink('analysis-yield'),
+            $mobileLink('rice-varieties'),
+            $mobileLink('explore-results'),
+        ]));
+        $chairmanLink = $mobileLinks->first(fn (array $link): bool => ($link[1] ?? null) === 'association-chairman.dashboard');
+        $supportLinks = array_values(array_filter([
+            [$mText('talk_to_mao'), 'messages.index', ['messages.*'], 'messages', null, null, 'messages'],
+            [$mText('profile'), 'profile.edit', ['profile.*'], 'farmer-profiles', null, null, 'profile'],
+            $chairmanLink ? [$chairmanLink[0], $chairmanLink[1], $chairmanLink[2], $chairmanLink[3], null, null, 'association-chairman'] : null,
+        ]));
         $mobileMoreGroups = [
-            ['My farm', array_values(array_filter([$mobileLink('my-farm'), $mobileLink('analysis-yield'), $mobileLink('explore-results'), $mobileLink('rice-varieties')]))],
-            ['Weather & risk', array_values(array_filter([$mobileLink('heatmap'), $mobileLink('analysis-weather'), $mobileLink('advisories')]))],
-            ['Talk to the MAO', array_values(array_filter([
-                $mobileLink('messages'),
-                [($farmerLocale ?? 'en') === 'fil' ? 'Impormasyon sa tanggapan' : 'Contact info', $dashboardRoute, [$dashboardRoute], 'community', null, 'farmerMaoContact', 'contact-info'],
-            ]))],
+            [$mText('group_daily'), $dailyLinks],
+            [$mText('group_support'), $supportLinks],
         ];
     } else {
         $mobileMoreGroups = array_map(
@@ -87,12 +101,8 @@
             ($mobileRain ? ' '.$mobileRain : '').($mobileCrop ? ' · '.$mobileCrop['value'].' '.($mobileCrop['unit'] ?? __('farmer.kpis.days', [], $farmerLocale ?? 'en')).' to harvest' : '')
         : null;
     $mobileProgress = $mobileCrop['progress'] ?? null;
-    $mobileUnread = (int) ($navUnread ?? 0);
-    $mobileAdvisoryCount = $isFarmer
-        ? (is_array($mobilePayload) && array_key_exists('advisory_count', $mobilePayload)
-            ? (int) $mobilePayload['advisory_count']
-            : rescue(fn (): int => \App\Models\PlantingAdvisory::query()->published()->count(), 0, false))
-        : 0;
+    $mobileUnread = (int) ($navCounts['unread'] ?? $navUnread ?? 0);
+    $mobileAdvisoryCount = $isFarmer ? (int) ($navCounts['unread_advisories'] ?? 0) : 0;
     $mobilePendingCount = $isMao ? (int) ($navPendingCount ?? 0) : 0;
     $mobileBadge = function (string $key) use ($mobileUnread, $mobileAdvisoryCount, $mobilePendingCount): ?int {
         return match ($key) {
@@ -101,6 +111,13 @@
             'farmer-profiles-and-approvals' => (int) ($mobilePendingCount ?? 0),
             default => null,
         };
+    };
+    $formatMobileBadge = function (string $key, int $count): string {
+        if ($key === 'advisories') {
+            return $count > 9 ? '9+' : (string) $count;
+        }
+
+        return $count > 99 ? '99+' : (string) $count;
     };
     $mobileIcon = $sidebarIcon ?? fn (): string => '';
     $mobileActive = fn (array $link): bool => request()->routeIs(...($link[2] ?? []));
@@ -119,12 +136,12 @@
             <a class="mobile-tab {{ $mobileActive($link) ? 'is-active' : '' }}" href="{{ $link[5] ? route($link[1]).'#'.$link[5] : route($link[1]) }}" @if ($mobileActive($link)) aria-current="page" @endif>
                 <span class="mobile-tab-icon" aria-hidden="true">{!! $mobileIcon($link[3]) !!}</span>
                 <span class="mobile-tab-label">{{ $mobileBarLabel($link) }}</span>
-                @if (($count = $mobileBadge($linkKey)) > 0)<span class="mobile-tab-badge">{{ $count > 99 ? '99+' : $count }}</span>@endif
+                @if (($count = $mobileBadge($linkKey)) > 0)<span class="mobile-tab-badge">{{ $formatMobileBadge($linkKey, $count) }}</span>@endif
             </a>
         @endforeach
         <button class="mobile-tab mobile-more-trigger" type="button" data-mobile-more-open aria-expanded="false" aria-controls="mobileMoreSheet">
             <span class="mobile-tab-icon" aria-hidden="true">{!! $mobileIcon('system-logs') !!}</span>
-            <span class="mobile-tab-label">{{ $isFarmer && ($navLocale ?? 'en') === 'fil' ? 'Higit pa' : 'More' }}</span>
+            <span class="mobile-tab-label">{{ $isFarmer ? __('farmer.mobile_menu.more', [], $farmerLocale ?? $navLocale ?? 'en') : 'More' }}</span>
             <span class="mobile-tab-badge" data-ic-notif-badge @if ($mobileUnread <= 0) hidden @endif>{{ $mobileUnread > 99 ? '99+' : $mobileUnread }}</span>
         </button>
     </div>
@@ -133,16 +150,20 @@
 <div class="mobile-more-layer" data-mobile-more hidden>
     <div class="mobile-more-backdrop" data-mobile-more-close></div>
     <section class="mobile-more-sheet" id="mobileMoreSheet" role="dialog" aria-modal="true" aria-labelledby="mobileMoreTitle" tabindex="-1">
-        <div class="mobile-more-handle" aria-hidden="true"></div>
         <div class="mobile-more-head">
-            <div class="d-flex align-items-center gap-2 min-w-0">
-                <x-user-avatar :user="$mobileUser" :size="40" />
-                <div class="min-w-0">
-                    <h2 id="mobileMoreTitle" class="mb-0 text-truncate">{{ $mobileUser->name }}</h2>
-                    <div class="small text-muted text-truncate">{{ $mobileUser->isMao() ? $mobileUser->positionLabel() : $mobileUser->roleLabel() }}</div>
+            <div class="mobile-more-handle" aria-hidden="true"></div>
+            <div class="mobile-more-head-row">
+                <div class="d-flex align-items-center gap-2 min-w-0">
+                    <x-user-avatar :user="$mobileUser" :size="40" />
+                    <div class="min-w-0">
+                        <h2 id="mobileMoreTitle" class="mb-0 text-truncate">{{ $mobileUser->name }}</h2>
+                        <div class="mobile-more-role text-truncate">{{ $isFarmer ? __('farmer.mobile_menu.role_farmer', [], $farmerLocale ?? $navLocale ?? 'en').($mobileBarangay ? ' · '.$mobileBarangay : '') : ($mobileUser->isMao() ? $mobileUser->positionLabel() : $mobileUser->roleLabel()) }}</div>
+                    </div>
                 </div>
+                <button type="button" class="mobile-more-close" data-mobile-more-close aria-label="{{ __('farmer.mobile_menu.close_menu', [], $farmerLocale ?? $navLocale ?? 'en') }}">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 5l10 10M15 5 5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                </button>
             </div>
-            <button type="button" class="mobile-more-close" data-mobile-more-close>{{ __('farmer.nav.close') }}</button>
         </div>
         <div class="mobile-more-scroll">
             @foreach ($mobileMoreGroups as [$groupLabel, $links])
@@ -152,18 +173,25 @@
                         @foreach ($links as $link)
                             @php($linkKey = $link[6] ?? '')
                             @php($active = $mobileActive($link))
+                            @php($descLocale = $farmerLocale ?? $navLocale ?? 'en')
+                            @php($rowDesc = match ($linkKey) {
+                                'dashboard' => __('farmer.mobile_menu.home_desc', [], $descLocale),
+                                'my-farm' => __('farmer.mobile_menu.my_farm_desc', [], $descLocale),
+                                'advisories' => __('farmer.mobile_menu.advisories_desc', [], $descLocale),
+                                'heatmap' => __('farmer.mobile_menu.heatmap_desc', [], $descLocale),
+                                'analysis-yield' => __('farmer.mobile_menu.yield_prediction_desc', [], $descLocale),
+                                'rice-varieties' => __('farmer.mobile_menu.rice_varieties_desc', [], $descLocale),
+                                'explore-results' => __('farmer.mobile_menu.explore_results_desc', [], $descLocale),
+                                'messages' => __('farmer.mobile_menu.talk_to_mao_desc', [], $descLocale),
+                                'profile' => __('farmer.mobile_menu.profile_desc', [], $descLocale),
+                                'association-chairman' => __('farmer.mobile_menu.association_reports_desc', [], $descLocale),
+                                default => __('farmer.mobile_menu.open_section', [], $descLocale),
+                            })
                             <a class="mobile-more-row {{ $active ? 'is-active' : '' }}" href="{{ $link[5] ? route($link[1]).'#'.$link[5] : route($link[1]) }}" @if ($active) aria-current="page" @endif>
-                                <span><strong>{{ $link[0] }}</strong><small>{{ match ($linkKey) {
-                                    'heatmap' => 'Flood, drought and heat risk by barangay',
-                                    'weather' => 'Rain, heat and typhoon outlook for your barangay',
-                                    'advisories' => 'Planting guidance and current MAO notices',
-                                    'messages' => 'Messages from the MAO and iClimate team',
-                                    'rice-varieties' => 'Browse the rice varieties in the system',
-                                    'my-farm' => 'Farm details, planting and harvest records',
-                                    'contact-info' => 'Assigned MAO contact information',
-                                    default => 'Open this section',
-                                } }}</small></span>
-                                @if (($count = $mobileBadge($linkKey)) > 0)<em>{{ $count > 99 ? '99+' : $count }}</em>@endif
+                                <span class="mobile-more-row-icon" aria-hidden="true">{!! $mobileIcon($link[3]) !!}</span>
+                                <span class="mobile-more-row-body"><strong>{{ $link[0] }}</strong><small>{{ $rowDesc }}</small></span>
+                                @if (($count = $mobileBadge($linkKey)) > 0)<em>{{ $formatMobileBadge($linkKey, $count) }}</em>@endif
+                                <svg class="mobile-more-row-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m6 3.5 4.5 4.5L6 12.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
                             </a>
                         @endforeach
                     </section>
