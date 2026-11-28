@@ -165,7 +165,7 @@ class MaoDashboardFiguresTest extends TestCase
         $this->assertSame('fil', $mao->fresh()->preferred_language);
 
         $filipino = $this->html($mao->fresh());
-        foreach (['MAO Staff Dashboard', 'Kailangan ng Aksyon', 'Mga rehistradong magsasaka', 'Mga advisory na aaprubahan', 'Ani ng Palay Bawat Taon 2020–2025', 'Tag-ulan 2026'] as $words) {
+        foreach (['Dashboard ng Kawani ng MAO', 'Kailangan ng Aksyon', 'Mga rehistradong magsasaka', 'Mga advisory na aaprubahan', 'Ani ng Palay Bawat Taon 2020–2025', 'Tag-ulan 2026'] as $words) {
             $this->assertStringContainsString($words, $filipino, $words);
         }
         $this->assertStringNotContainsString('Needs Action', $filipino);

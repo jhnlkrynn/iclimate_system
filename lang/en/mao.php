@@ -42,6 +42,10 @@ return [
         'language_apply' => 'Apply',
         'key_figures' => 'Key figures',
         'more' => '+:count more',
+        'finder' => [
+            'label' => 'Find a farmer',
+            'placeholder' => 'Name, farmer ID, barangay or organization',
+        ],
         'tiles' => [
             // Panel revision 4.1: every registered farmer account; labelled when filtered to an MAO user's barangays.
             'farmers' => ['label' => 'Total farmers', 'label_filtered' => 'Total farmers (filtered)', 'note' => 'All registered farmer accounts',

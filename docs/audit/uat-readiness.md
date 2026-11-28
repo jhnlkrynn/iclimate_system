@@ -8,12 +8,14 @@
 
 ## Summary of Removed / Moved Features & Label Mismatches
 
-### Recently Removed or Moved Features Still Asked About in the Survey
-1. **7-day & 14-day Forecast page moved to MAO-only (`/weather-predictions`):** `weather-predictions.index` now uses `['farmer.redirect:farmer.dashboard', 'role:mao']` (`routes/web.php:809-813`), and **Forecast** was removed from the Farmer sidebar (`resources/views/layouts/sidebar.blade.php:79-86`).
-2. **"Was yesterday's forecast right?" (`forecast-survey`) unreachable for farmers:** The `forecast-survey` partial (`resources/views/weather-predictions/partials/forecast-survey.blade.php`) is only included on `weather-predictions/index.blade.php:48`, which redirects farmers to `/farmer/dashboard`.
-3. **Impact Analysis (`/analysis/impact`) removed/redirected:** `GET/POST /analysis/impact` and `GET /analysis/impact/{analysis}` all redirect to `mao.dashboard` (`routes/manuscript.php:108-110`).
-4. **Standalone MAO Yield Forecast (`/analysis/forecast`) redirected:** `GET/POST /analysis/forecast` redirects to `mao.dashboard` (`routes/manuscript.php:122-123`); yield forecast lives as a tab/section on `/weather-predictions`.
-5. **Model Evaluation (`/analysis/model-evaluation`) removed/redirected:** Redirects to `mao.dashboard` (`routes/web.php:845-850`).
+**Updated:** 2026-11-28 (Post-QA alignment)
+
+### Current Feature & Navigation Status
+1. **7-day & 14-day Forecast & Weather Analysis (`/weather-predictions`, `/analysis/weather`):** Both are **MAO-only** (`role:mao`, `farmer.redirect:farmer.dashboard`). Farmers see their barangay's 7-day & 14-day outlook on `/farmer/dashboard` and `/heat-map`.
+2. **"Was yesterday's forecast right?" (`forecast-survey`):** Shown on the **Farmer Dashboard** right after the 7-day forecast, as well as on `/weather-predictions`.
+3. **Yield Prediction (`/analysis/yield`):** Restored to the Farmer sidebar and mobile More menu.
+4. **Impact Analysis (`/analysis/impact`), Yield Forecast (`/analysis/forecast`), Model Evaluation (`/analysis/model-evaluation`):** Restored for MAO Staff & MAO Head (`200`).
+5. **Language Switcher (Header Flags):** Available in the topbar on both desktop (`1280px`) and mobile (`375px`), plus at the top of the mobile More sheet.
 
 ### Label Mismatches (Survey vs UI)
 | Survey Label | Current UI Label / Route | Location |

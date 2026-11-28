@@ -33,8 +33,11 @@ class ReportExtrasController extends Controller
         return max(50, intdiv(self::PDF_CELL_LIMIT, max(6, $columns)));
     }
 
-    public function xlsx(Request $request): BinaryFileResponse
+    public function xlsx(Request $request): BinaryFileResponse|RedirectResponse
     {
+        if (! $request->filled('report')) {
+            return redirect()->route('reports.index')->with('error', 'Generate or select a report first.');
+        }
         $report = $this->report($request);
         [$columns, $rows] = $this->table($report, $request->user());
         $path = SimpleXlsx::write($report->report_type, array_values($columns), array_map(
@@ -52,8 +55,11 @@ class ReportExtrasController extends Controller
         ])->deleteFileAfterSend();
     }
 
-    public function pdf(Request $request): Response
+    public function pdf(Request $request): Response|RedirectResponse
     {
+        if (! $request->filled('report')) {
+            return redirect()->route('reports.index')->with('error', 'Generate or select a report first.');
+        }
         $report = $this->report($request);
         [$columns, $rows] = $this->table($report, $request->user());
         $total = count($rows);

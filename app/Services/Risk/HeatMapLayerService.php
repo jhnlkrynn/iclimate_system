@@ -42,7 +42,7 @@ final class HeatMapLayerService
     {
         $days = $period === '2weeks' ? 14 : 7;
         $names = $scope === null ? LianBarangays::all() : array_values(array_filter(LianBarangays::all(), fn (string $name): bool => in_array($name, array_map(fn ($v) => LianBarangays::canonicalName($v) ?? $v, $scope), true)));
-        $source = $layer === 'weather_risk' ? 'Stored heatmap_areas / barangay weather risk' : 'Stored Open-Meteo barangay forecast and MAO barangay profile';
+        $source = $layer === 'weather_risk' ? 'Lian weather & risk data' : 'Stored Open-Meteo barangay forecast and MAO barangay profile';
         $rows = [];
         $data = ['updated_at' => null, 'barangays' => []];
         $map = ['generated_at' => null, 'barangays' => []];

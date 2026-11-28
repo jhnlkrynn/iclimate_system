@@ -22,8 +22,10 @@ const setRealtimeState = (state) => {
 window.Echo = null;
 
 const realtimeKey = import.meta.env.VITE_REVERB_APP_KEY;
+const realtimeHost = import.meta.env.VITE_REVERB_HOST;
+const realtimeEnabled = document.querySelector('meta[name="iclimate-realtime"]')?.getAttribute('content') === '1';
 
-if (realtimeKey) {
+if (realtimeKey && realtimeHost && realtimeEnabled) {
     window.Echo = new Echo({
         broadcaster: 'reverb',
         key: realtimeKey,

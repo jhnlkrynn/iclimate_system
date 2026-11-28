@@ -263,6 +263,11 @@ class DashboardController extends Controller
     /** Return one Heat Map detail panel; the page loads this only after a barangay is selected. */
     public function heatMapDetail(Request $request, string $range, string $barangay, HeatMapPanel $panel): JsonResponse
     {
+        $range = match ($range) {
+            'this_week' => 'week',
+            'two_weeks' => '2weeks',
+            default => $range,
+        };
         $user = $request->user();
         $locale = $user?->role === User::ROLE_FARMER ? FarmerLanguage::resolve($request) : 'en';
         $yieldPeriod = $request->query('period') === '2weeks' ? '2weeks' : 'week';

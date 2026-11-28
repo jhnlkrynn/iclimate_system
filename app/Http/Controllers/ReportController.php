@@ -134,11 +134,13 @@ class ReportController extends CrudController
         return $this->reportView($request, $report, null);
     }
 
-    public function print(Request $request): View
+    public function print(Request $request): View|RedirectResponse
     {
         $this->authorizeManage($request);
 
-        abort_unless($request->filled('report'), 404);
+        if (! $request->filled('report')) {
+            return redirect()->route('reports.index')->with('error', 'Generate or select a report first.');
+        }
         $report = $this->reportHistory()->findOrFail($request->integer('report'));
         $rows = collect($report->savedRecords());
         $totalRows = $rows->count();
@@ -164,11 +166,13 @@ class ReportController extends CrudController
      * (that's the point of CSV export — unlike print, it isn't row-capped)
      * doesn't hold the whole result set in PHP memory at once.
      */
-    public function exportCsv(Request $request): StreamedResponse
+    public function exportCsv(Request $request): StreamedResponse|RedirectResponse
     {
         $this->authorizeManage($request);
 
-        abort_unless($request->filled('report'), 404);
+        if (! $request->filled('report')) {
+            return redirect()->route('reports.index')->with('error', 'Generate or select a report first.');
+        }
         $report = $this->reportHistory()->findOrFail($request->integer('report'));
         $columns = $this->displayColumns($report->savedColumns(), $report->typeKey(), forExport: true);
         $records = Report::maskExportRows(

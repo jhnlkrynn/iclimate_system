@@ -26,6 +26,7 @@
         $production = $mao['production'] ?? null;
         $inEffect = $mao['advisories'] ?? null;
         $barangays = count(\App\Support\LianBarangays::all());
+        $scopedBarangays = ! empty($mao['scope']['filtered']) ? count($mao['scope']['barangays'] ?? []) : $barangays;
         $dueDays = \App\Services\Analytics\MaoHomeService::HARVEST_DUE_DAYS;
 
         // Panel revision 4.1: all registered farmer accounts; labelled "(filtered)" when limited to the MAO user's barangays.
@@ -48,7 +49,7 @@
                     ? $t('tiles.yield.last', ['season' => $seasonText($y['last_parts'] ?? null, (string) $y['last_label']), 'value' => $num($y['last'], 2)])
                     : $t('tiles.yield.no_last')],
             ['key' => 'risk', 'label' => $t('tiles.risk.label'), 'icon' => 'alert', 'href' => route('heat-map.index'),
-                'value' => $num($risk['high']), 'unit' => $t('tiles.risk.of', ['total' => $barangays]),
+                'value' => $num($risk['high']), 'unit' => $t('tiles.risk.of', ['total' => $scopedBarangays]),
                 'note' => $risk['names'] ? implode(', ', array_slice($risk['names'], 0, 3)).(count($risk['names']) > 3 ? ' '.$t('more', ['count' => count($risk['names']) - 3]) : '') : $t('tiles.risk.none')],
             // MAO Dashboard – Naicel (2026-10-08): the second row.
             ['key' => 'plans', 'label' => $t('tiles.plans.label'), 'icon' => 'calendar', 'href' => route('mao.planner.index'),
@@ -142,7 +143,7 @@
             </div>
         </header>
         {{-- Panel revision 1.4: find a farmer as you type, from the dashboard. --}}
-        @include('partials.live-search', ['url' => route('farmers.search'), 'id' => 'maoFarmerFinder', 'label' => 'Find a farmer', 'placeholder' => 'Name, farmer ID, barangay or organization', 'class' => 'mhd-finder'])
+        @include('partials.live-search', ['url' => route('farmers.search'), 'id' => 'maoFarmerFinder', 'label' => $t('finder.label'), 'placeholder' => $t('finder.placeholder'), 'class' => 'mhd-finder'])
 
         {{-- 1. KPI tiles: up to eight, four in a row on a wide screen --}}
         @if ($tiles !== [])

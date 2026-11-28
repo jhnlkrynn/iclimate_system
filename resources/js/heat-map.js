@@ -161,10 +161,23 @@ export function initHeatMap() {
         const available = rows.filter((row) => row.level !== 'unavailable').length;
         const countLines = Object.entries(counts).filter(([, count]) => Number(count) > 0).map(([level, count]) => `<li class="is-${escapeHtml(level)}"><span class="hmx-dot" style="--hmx-color:${escapeHtml(data.colors?.[level] || (level === 'flood_prone' ? '#EF6C00' : '#9CA3AF'))}"></span>${escapeHtml(String(count))}: ${escapeHtml(rows.find((row) => row.level === level)?.label || level.replace('_', ' '))}</li>`).join('');
         const list = rows.map((row) => `<li><button type="button" class="hmx-row" data-heat-map-pick="${escapeHtml(row.name)}"><span class="hmx-dot" style="--hmx-color:${escapeHtml(data.colors?.[row.level] || (row.level === 'flood_prone' ? '#EF6C00' : '#9CA3AF'))}"></span><span class="hmx-row-name">${escapeHtml(row.name)}</span><span class="hmx-row-level">${escapeHtml(row.label || row.level)}</span></button></li>`).join('');
+        const formatManila = (raw) => {
+            if (!raw) return '';
+            const d = new Date(raw);
+            if (Number.isNaN(d.getTime())) return String(raw);
+            return new Intl.DateTimeFormat('en-US', {
+                timeZone: 'Asia/Manila',
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+            }).format(d).replace(/, (\d{1,2}:)/, ' $1');
+        };
         const updatedWord = data.updatedWord || 'Updated';
         const sourceWord = data.sourceWord || 'Source';
         const metaParts = [];
-        if (payload.updated_at) metaParts.push(`${updatedWord} ${payload.updated_at}`);
+        if (payload.updated_at) metaParts.push(`${updatedWord} ${formatManila(payload.updated_at)}`);
         if (payload.source) metaParts.push(`${sourceWord}: ${payload.source}`);
         const metaLine = metaParts.length ? `<p class="hmx-source">${escapeHtml(metaParts.join(' · '))}</p>` : '';
         const noDataText = data.emptyByLayer?.[range] || `${title} — No data yet`;

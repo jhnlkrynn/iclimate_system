@@ -34,8 +34,8 @@
             'user-management' => 'Users',
             'reports' => 'Reports',
             'messages' => $isFarmer && $navLocale === 'fil' ? 'Mensahe' : 'Messages',
-            'heatmap' => 'Heat Map',
-            'advisories' => $isFarmer && $navLocale === 'fil' ? 'Advice' : 'Advisories',
+            'heatmap' => $isFarmer ? __('farmer.nav.heat_map', [], $navLocale ?? 'en') : 'Heat Map',
+            'advisories' => $isFarmer ? __('farmer.nav.advisories', [], $navLocale ?? 'en') : 'Advisories',
             'records-and-barangays' => 'Records',
             'my-farm' => $isFarmer && $navLocale === 'fil' ? 'Aking Farm' : 'My Farm',
             'weather' => $navLocale === 'fil' ? 'Panahon' : 'Forecast',
@@ -140,7 +140,9 @@
             </a>
         @endforeach
         <button class="mobile-tab mobile-more-trigger" type="button" data-mobile-more-open aria-expanded="false" aria-controls="mobileMoreSheet">
-            <span class="mobile-tab-icon" aria-hidden="true">{!! $mobileIcon('system-logs') !!}</span>
+            <span class="mobile-tab-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.6"/><rect x="11" y="3" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.6"/><rect x="3" y="11" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.6"/><rect x="11" y="11" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.6"/></svg>
+            </span>
             <span class="mobile-tab-label">{{ $isFarmer ? __('farmer.mobile_menu.more', [], $farmerLocale ?? $navLocale ?? 'en') : 'More' }}</span>
             <span class="mobile-tab-badge" data-ic-notif-badge @if ($mobileUnread <= 0) hidden @endif>{{ $mobileUnread > 99 ? '99+' : $mobileUnread }}</span>
         </button>
@@ -160,9 +162,22 @@
                         <div class="mobile-more-role text-truncate">{{ $isFarmer ? __('farmer.mobile_menu.role_farmer', [], $farmerLocale ?? $navLocale ?? 'en').($mobileBarangay ? ' · '.$mobileBarangay : '') : ($mobileUser->isMao() ? $mobileUser->positionLabel() : $mobileUser->roleLabel()) }}</div>
                     </div>
                 </div>
-                <button type="button" class="mobile-more-close" data-mobile-more-close aria-label="{{ __('farmer.mobile_menu.close_menu', [], $farmerLocale ?? $navLocale ?? 'en') }}">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 5l10 10M15 5 5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-                </button>
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                    @if ($navLangRoute)
+                        <div class="mobile-more-language" role="group" aria-label="{{ __('farmer.topbar.language', [], $navLocale ?? 'en') }}">
+                            @foreach (['en' => 'English', 'fil' => 'Filipino'] as $langCode => $langName)
+                                <form method="POST" action="{{ route($navLangRoute) }}">
+                                    @csrf
+                                    <input type="hidden" name="language" value="{{ $langCode }}">
+                                    <button type="submit" lang="{{ $langCode }}" aria-pressed="{{ ($navLocale ?? 'en') === $langCode ? 'true' : 'false' }}" title="{{ $langName }}" aria-label="{{ $langName }}">@include('layouts.partials.lang-flag', ['code' => $langCode])</button>
+                                </form>
+                            @endforeach
+                        </div>
+                    @endif
+                    <button type="button" class="mobile-more-close" data-mobile-more-close aria-label="{{ __('farmer.mobile_menu.close_menu', [], $farmerLocale ?? $navLocale ?? 'en') }}">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 5l10 10M15 5 5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    </button>
+                </div>
             </div>
         </div>
         <div class="mobile-more-scroll">

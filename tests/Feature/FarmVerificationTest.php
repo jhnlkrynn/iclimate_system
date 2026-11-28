@@ -324,6 +324,6 @@ class FarmVerificationTest extends TestCase
         $rejectedFarm->forceFill(['association_status' => null, 'farmer_organization_id' => null])->save();
         $this->actingAs($farmer)->get(route('farmer.my-farm'))
             ->assertOk()
-            ->assertSee('Farm 3: association not answered yet');
+            ->assertSee('1 farm needs association info');
     }
 }

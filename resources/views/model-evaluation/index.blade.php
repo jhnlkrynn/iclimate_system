@@ -279,7 +279,7 @@
             <div class="me-stat">
                 <div class="me-label">Best Performing Algorithm</div>
                 <div class="me-value" style="font-size: 1.15rem;">{{ $best }}</div>
-                <div class="small text-muted mt-2">Deployed model is saved as <code>rice_yield_model_final.pkl</code>.</div>
+                <div class="small text-muted mt-2">Active yield model is deployed for predictions.</div>
             </div>
         </div>
     </div>
@@ -475,7 +475,7 @@
                 </div>
                 <div class="me-panel-body">
                     <p class="mb-2">
-                        This page shows a candidate-schema comparison of Multiple Linear Regression, Random Forest, and Gradient Boosting on the current exported training data, using MAE, RMSE, and R². The strongest candidate result is highlighted for comparison only; it does not establish the accuracy of the separately deployed <code>rice_yield_model_final.pkl</code>.
+                        This page shows a candidate-schema comparison of Multiple Linear Regression, Random Forest, and Gradient Boosting on the current exported training data, using MAE, RMSE, and R². The strongest candidate result is highlighted for comparison only; it does not establish the accuracy of the separately deployed <strong>Active yield model</strong>.
                     </p>
                     <p class="mb-0 text-muted">
                         Lower RMSE and MAE indicate smaller prediction error. Higher R² indicates better explanation of yield variation. The deployed system uses the saved trained model artifact for rice yield prediction.
@@ -542,7 +542,7 @@
                         </div>
                         <div class="col-lg-4">
                             <div class="me-label">Deployed Model Artifact</div>
-                            <div class="small"><code>{{ basename((string) ($source['deployed_model'] ?? 'rice_yield_model_final.pkl')) }}</code></div>
+                            <div class="small"><strong>Active yield model</strong></div>
                         </div>
                     </div>
                 </div>
@@ -705,6 +705,7 @@
             };
 
             const syncAvailableOptions = () => {
+                if (!comparisonCount) return;
                 const count = Number(comparisonCount.value);
                 const selectedValues = selects.slice(0, count).map((select) => select.value);
 

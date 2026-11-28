@@ -760,12 +760,20 @@ html body .topbar.ic-topbar .ic-avatar-btn:focus-visible {
     html body .topbar.ic-topbar .ic-topbar-menu-btn,
     html body .topbar.ic-topbar .gov-brand-text,
     html body .topbar.ic-topbar .ic-topbar-middle,
-    html body .topbar.ic-topbar .ic-topbar-farm-wrap,
-    html body .topbar.ic-topbar .ic-topbar-lang { display: none !important; }
+    html body .topbar.ic-topbar .ic-topbar-farm-wrap { display: none !important; }
+    html body .topbar.ic-topbar .ic-topbar-lang { display: inline-flex !important; gap: 4px !important; }
+    html body .topbar.ic-topbar .ic-topbar-lang button { min-width: 30px; min-height: 30px; padding: 2px; }
+    html body .topbar.ic-topbar .ic-topbar-lang .ic-flag { width: 20px; height: 14px; }
     html body .topbar.ic-topbar .ic-topbar-left { flex: 0 0 auto; width: auto; }
-    html body .topbar.ic-topbar .gov-mao-logo { width: 44px !important; height: 44px !important; }
-    html body .topbar.ic-topbar .gov-app-logo { height: 44px !important; }
-    html body .topbar.ic-topbar .ic-topbar-right { gap: 14px !important; }
+    html body .topbar.ic-topbar .gov-mao-logo { width: 40px !important; height: 40px !important; }
+    html body .topbar.ic-topbar .gov-app-logo { height: 40px !important; }
+    html body .topbar.ic-topbar .ic-topbar-right { gap: 8px !important; }
+    html body main { padding-bottom: 108px; }
+    html body .mobile-context-strip { min-height: 44px; height: auto; display: flex; align-items: center; justify-content: center; padding: 8px 12px; }
+    html body .mfd .fh-link,
+    html body .mfd .mfd-btn,
+    html body .fh-range button,
+    html body .btn-sm { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
     html body .mobile-more-farm-form { flex: 1 1 100%; }
     html body .mobile-more-language { display: inline-flex; align-items: center; gap: 8px; }
     html body .mobile-more-language button { width: 32px; height: 32px; padding: 0; border: 2px solid transparent; border-radius: 6px; background: transparent; }
