@@ -148,12 +148,12 @@ html[data-theme="dark"] .hmx-badge.is-nodata { background: #2c363c; color: #d5dd
 
 /* Manuscript – Naicel (2026-10-08): the map layer choice (Flood-prone / Drought-prone / Expected yield), under the
    This Week / 2 Weeks switch. */
-.hmx-layer { position: absolute; top: 5.25rem; right: .75rem; z-index: 500; display: inline-flex; align-items: center; gap: .55rem; padding: .45rem .55rem .45rem .9rem; border-radius: 999px; background: #fff; border: 1px solid var(--sage-200); box-shadow: 0 4px 14px rgb(var(--sage-950-rgb) / .16); font-size: 1rem; font-weight: 700; color: var(--sage-700); white-space: nowrap; }
-.hmx-layer select { min-height: 42px; max-width: 100%; border: 0; background: var(--sage-50); border-radius: 999px; padding: .5rem .8rem; font: inherit; font-weight: 700; color: var(--sage-700); }
+.hmx-layer { position: absolute; top: 5.25rem; right: .75rem; z-index: 500; display: inline-flex; align-items: center; gap: .55rem; padding: .45rem .55rem .45rem .9rem; border-radius: 14px; background: #fff; border: 1px solid var(--sage-200); box-shadow: 0 4px 14px rgb(var(--sage-950-rgb) / .16); font-size: 1rem; font-weight: 700; color: var(--sage-700); max-width: calc(100% - 1.5rem); }
+.hmx-layer select { min-height: 44px; max-width: 100%; border: 0; background: var(--sage-50); border-radius: 10px; padding: .5rem .8rem; font: inherit; font-weight: 700; color: var(--sage-700); white-space: normal; }
 .hmx-layer:focus-within { outline: 3px solid #1d6fd8; outline-offset: 2px; }
 @media (max-width: 575.98px) {
-    .hmx-layer { top: 5.85rem; left: .75rem; right: .75rem; justify-content: space-between; }
-    .hmx-layer select { min-width: 0; max-width: 65%; }
+    .hmx-layer { top: 5.85rem; left: .75rem; right: .75rem; justify-content: space-between; flex-wrap: wrap; }
+    .hmx-layer select { min-width: 0; flex: 1 1 180px; }
 }
 .hmx-legend[hidden] { display: none; }
 html[data-theme="dark"] .hmx-layer { background: var(--sage-950); border-color: var(--sage-800); color: var(--sage-200); }

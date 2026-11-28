@@ -38,7 +38,7 @@ class Phase5YieldTest extends TestCase
             'farm_size_method' => \App\Models\Farm::SIZE_EXACT,
         ]);
 
-        $this->actingAs($farmer)->get(route('analysis.yield'))->assertOk()->assertSee('data-manuscript-tabs="analysis"', false);
+        $this->actingAs($farmer)->get(route('analysis.yield'))->assertOk();
         $this->actingAs($farmer)->post(route('analysis.yield.store'), [
             'season' => 'Wet', 'farm_id' => $farm->id,
         ])->assertRedirect(route('analysis.yield'));

@@ -30,6 +30,14 @@ test('farmer has no Forecast nav link and /weather-predictions redirects to dash
     await page.goto('/weather-predictions');
     await page.waitForURL('**/farmer/dashboard', { waitUntil: 'commit' });
     await expect(page.locator('[data-farmer-dashboard], .fh-shell, main').first()).toBeVisible();
+
+    await expect(page.locator('a[href*="/analysis/weather"]')).toHaveCount(0);
+    await page.goto('/analysis/weather');
+    await page.waitForURL('**/farmer/dashboard', { waitUntil: 'commit' });
+    await expect(page.locator('[data-farmer-dashboard], .fh-shell, main').first()).toBeVisible();
+
+    await page.goto('/analysis/yield');
+    await expect(page.locator('[data-manuscript-tabs]')).toHaveCount(0);
 });
 
 test('mao sees Forecast in nav and can open /weather-predictions', async ({ page }, testInfo) => {
@@ -47,4 +55,8 @@ test('mao sees Forecast in nav and can open /weather-predictions', async ({ page
     await page.goto('/weather-predictions');
     await expect(page.locator('h1')).toContainText(/Forecast|Taya ng Panahon/);
     await expect(page.locator('[data-wpx-weather]')).toBeVisible();
+
+    await page.goto('/analysis/weather');
+    await expect(page.locator('h1')).toContainText(/Weather Analysis|Pagsusuri ng Panahon/);
+    await expect(page.locator('[data-manuscript-tabs] a[href*="/analysis/weather"]')).toBeVisible();
 });

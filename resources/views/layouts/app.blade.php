@@ -4,6 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        <meta name="iclimate-realtime" content="{{ config('broadcasting.default') === 'reverb' ? '1' : '0' }}">
         {{-- A page can name itself in the browser tab: <x-slot:title>Dashboard</x-slot:title> gives "Dashboard · iClimate". --}}
         <title>{{ isset($title) && trim((string) $title) !== '' ? trim((string) $title).' · '.config('app.name', 'iClimate') : config('app.name', 'iClimate') }}</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">

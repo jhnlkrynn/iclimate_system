@@ -41,12 +41,10 @@ for (const [role, dashboard] of accounts) {
             await expect(topbar.locator('.ic-topbar-greeting')).toBeHidden();
         }
 
-        if (width >= 768) {
-            await expect(topbar.locator('.ic-lang')).toBeVisible();
-            await expect(topbar.locator('.ic-lang button[title="English"][aria-label="English"]')).toBeVisible();
-            await expect(topbar.locator('.ic-lang button[title="Filipino"][aria-label="Filipino"]')).toBeVisible();
-        } else {
-            await expect(topbar.locator('.ic-lang')).toBeHidden();
+        await expect(topbar.locator('.ic-lang')).toBeVisible();
+        await expect(topbar.locator('.ic-lang button[title="English"][aria-label="English"]')).toBeVisible();
+        await expect(topbar.locator('.ic-lang button[title="Filipino"][aria-label="Filipino"]')).toBeVisible();
+        if (width < 768) {
             await expect(topbar.locator('.ic-topbar-farm-wrap')).toBeHidden();
         }
 

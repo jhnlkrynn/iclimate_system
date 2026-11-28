@@ -17,7 +17,7 @@ return [
         'account_requests' => 'Mga Kahilingan sa Account',
         'association_reports' => 'Mga ulat ng samahan',
         'account_management' => 'Pamamahala ng account',
-        'dashboard' => 'MAO Staff Dashboard',
+        'dashboard' => 'Dashboard ng Kawani ng MAO',
         'heat_map' => 'Heat Map',
         'forecast' => 'Taya ng Panahon',
         'advisories' => 'Mga Advisory',
@@ -33,7 +33,7 @@ return [
     ],
     'dashboard' => [
         'office' => 'Tanggapan ng Agrikultura ng Bayan',
-        'title' => 'MAO Staff Dashboard',
+        'title' => 'Dashboard ng Kawani ng MAO',
         'place' => 'Lian, Batangas',
         'season' => ['wet' => 'Tag-ulan :years', 'dry' => 'Tag-araw :years'],
         'season_short' => ['wet' => 'Tag-ulan', 'dry' => 'Tag-araw'],
@@ -42,6 +42,10 @@ return [
         'language_apply' => 'Ilapat',
         'key_figures' => 'Mga pangunahing bilang',
         'more' => '+:count pa',
+        'finder' => [
+            'label' => 'Maghanap ng magsasaka',
+            'placeholder' => 'Pangalan, farmer ID, barangay o samahan',
+        ],
         'tiles' => [
             'farmers' => ['label' => 'Kabuuang bilang ng magsasaka', 'label_filtered' => 'Kabuuang magsasaka (naka-filter)', 'note' => 'Lahat ng rehistradong account ng magsasaka',
                 'breakdown' => ':active aktibo · :pending naghihintay ng pag-apruba', 'filtered_note' => 'Mga barangay mo lamang · Buong Lian: :all'],

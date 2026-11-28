@@ -33,17 +33,6 @@
 
         {{-- The "is this farm part of an association?" question is asked on My Farm (farmer-records/my-farm). --}}
 
-        @foreach (\App\Http\Controllers\DashboardController::FARMER_SLOTS as $name)
-            @php $html = view('dashboards.farmer.'.$name, ['f' => $f])->render(); @endphp
-            <div class="mfd-slot" data-slot="{{ $name }}" @if (trim($html) === '') hidden @endif>{!! $html !!}</div>
-        @endforeach
-
-        {{-- Farmer – Naicel: the two simple charts. Not part of the timed refresh (their numbers change with a save). --}}
-        @include('dashboards.farmer.charts')
-
-        {{-- Panel revision 4.4 C: the farmer's assigned MAO personnel. --}}
-        @include('partials.farmer-mao-contact', ['locale' => $f['locale'] ?? app()->getLocale()])
-
         @php
             $farmerUser = auth()->user();
             $farmerForecastSurvey = $farmerUser ? (\Illuminate\Support\Facades\Cache::remember(
@@ -56,9 +45,20 @@
                 )]
             )['prompt'] ?? null) : null;
         @endphp
-        @if (! empty($farmerForecastSurvey))
-            @include('weather-predictions.partials.forecast-survey', ['survey' => $farmerForecastSurvey])
-        @endif
+
+        @foreach (\App\Http\Controllers\DashboardController::FARMER_SLOTS as $name)
+            @php $html = view('dashboards.farmer.'.$name, ['f' => $f])->render(); @endphp
+            <div class="mfd-slot" data-slot="{{ $name }}" @if (trim($html) === '') hidden @endif>{!! $html !!}</div>
+            @if ($name === 'week' && ! empty($farmerForecastSurvey))
+                @include('weather-predictions.partials.forecast-survey', ['survey' => $farmerForecastSurvey])
+            @endif
+        @endforeach
+
+        {{-- Farmer – Naicel: the two simple charts. Not part of the timed refresh (their numbers change with a save). --}}
+        @include('dashboards.farmer.charts')
+
+        {{-- Panel revision 4.4 C: the farmer's assigned MAO personnel. --}}
+        @include('partials.farmer-mao-contact', ['locale' => $f['locale'] ?? app()->getLocale()])
 
         {{-- Farmer Survey – Naicel (2026-10-09): the way in to the short survey about the predictions and advice. --}}
         <section class="fh-card fh-survey" aria-labelledby="fhSurveyTitle" data-fh-survey>

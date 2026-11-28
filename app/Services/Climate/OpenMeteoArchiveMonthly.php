@@ -29,10 +29,13 @@ final class OpenMeteoArchiveMonthly
     /** Overlapping station years a calendar month needs before its archive values are put on the station scale. */
     public const MIN_CALIBRATION_YEARS = 5;
 
+    /** A day with at least this much rain (mm) counts as a rainy day. */
+    public const RAINY_DAY_MM = 1.0;
+
     /** Months the archive is fetched from for calibration: the start of the station record. */
     public const CALIBRATION_FROM = '2015-01';
 
-    /** @var array{mtime: int|false, path: string, months: array<string, object>}|null */
+    /** @var array{mtime: int|false, path: string, months: array<string, object>, fetched_at: ?string}|null */
     private static ?array $loaded = null;
 
     /** @var array{memo: string, months: array<string, object>}|null */
@@ -115,6 +118,8 @@ final class OpenMeteoArchiveMonthly
                 'temperature' => round(($tmax + $tmin) / 2, 2),
                 'humidity' => round(array_sum($col('relative_humidity_2m_mean')) / count($days), 2),
                 'wind_speed' => round(array_sum($col('wind_speed_10m_mean')) / count($days), 2),
+                // Days with at least RAINY_DAY_MM of rain (the PAGASA rainy-day threshold), for the season comparison.
+                'rainy_days' => count(array_filter($col('precipitation_sum'), fn (float $mm): bool => $mm >= self::RAINY_DAY_MM)),
                 'days' => count($days),
             ];
         }
@@ -168,7 +173,9 @@ final class OpenMeteoArchiveMonthly
         $months = [];
         if ($mtime !== false) {
             try {
-                foreach ((array) (json_decode((string) file_get_contents($path), true)['months'] ?? []) as $key => $m) {
+                $decoded = json_decode((string) file_get_contents($path), true);
+                $fetchedAt = is_string($decoded['fetched_at'] ?? null) ? $decoded['fetched_at'] : null;
+                foreach ((array) ($decoded['months'] ?? []) as $key => $m) {
                     if (! preg_match('/^\d{4}-\d{2}$/', (string) $key) || ! is_numeric($m['rainfall'] ?? null) || ! is_numeric($m['temperature'] ?? null)) {
                         continue;
                     }
@@ -178,6 +185,9 @@ final class OpenMeteoArchiveMonthly
                         'temperature' => (float) $m['temperature'],
                         'humidity' => is_numeric($m['humidity'] ?? null) ? (float) $m['humidity'] : null,
                         'wind_speed' => is_numeric($m['wind_speed'] ?? null) ? (float) $m['wind_speed'] : null,
+                        'tmax' => is_numeric($m['tmax'] ?? null) ? (float) $m['tmax'] : null,
+                        'tmin' => is_numeric($m['tmin'] ?? null) ? (float) $m['tmin'] : null,
+                        'rainy_days' => is_numeric($m['rainy_days'] ?? null) ? (int) $m['rainy_days'] : null,
                         'source' => self::SOURCE,
                         'reanalysis' => true,
                     ];
@@ -187,9 +197,18 @@ final class OpenMeteoArchiveMonthly
                 $months = [];
             }
         }
-        self::$loaded = ['path' => $path, 'mtime' => $mtime, 'months' => $months];
+        self::$loaded = ['path' => $path, 'mtime' => $mtime, 'months' => $months, 'fetched_at' => $fetchedAt ?? null];
 
         return $months;
+    }
+
+    /** When the stored months were last fetched, or null when nothing is stored. */
+    public static function fetchedAt(): ?CarbonImmutable
+    {
+        self::months();
+        $at = self::$loaded['fetched_at'] ?? null;
+
+        return $at ? rescue(fn () => CarbonImmutable::parse($at), null, false) : null;
     }
 
     /**

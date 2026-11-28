@@ -78,14 +78,18 @@ final class FarmerProfileCompletion
             if ($farms->isEmpty()) {
                 $labels[] = $fil ? 'Walang bukid na nakatala pa' : 'No farm added yet';
             } else {
+                $unanswered = 0;
                 foreach ($farms as $farm) {
                     $answered = $farm->farmer_organization_id !== null
                         || in_array($farm->association_status, ['member', 'not_member', 'pending_other'], true);
                     if (! $answered) {
-                        $labels[] = $fil
-                            ? "{$farm->farm_name}: hindi pa nasasagot ang samahan"
-                            : "{$farm->farm_name}: association not answered yet";
+                        $unanswered++;
                     }
+                }
+                if ($unanswered > 0) {
+                    $labels[] = $fil
+                        ? ($unanswered === 1 ? '1 bukid ang kulang sa impormasyon ng samahan' : "{$unanswered} bukid ang kulang sa impormasyon ng samahan")
+                        : ($unanswered === 1 ? '1 farm needs association info' : "{$unanswered} farms need association info");
                 }
             }
         } elseif ($user->farmerProfile?->farmer_organization_id === null) {

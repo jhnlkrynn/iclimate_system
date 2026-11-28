@@ -556,8 +556,12 @@
        the home bar. */
     @media (max-width: 639.98px) {
         .ic-ai-widget {
-            right: 16px;
-            bottom: max(16px, env(safe-area-inset-bottom));
+            right: 12px;
+            bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+        }
+        .ic-ai-toggle {
+            width: 52px;
+            height: 52px;
         }
 
         .ic-ai-panel {

@@ -251,14 +251,22 @@ class MaoHomeService
      */
     private function farmersWithPlan(CarbonImmutable $now): ?array
     {
-        $farmers = $this->scoped(FarmerProfile::query())->count();
+        $profileCount = $this->scoped(FarmerProfile::query())->count();
+        $userQuery = $this->scoped(User::query()->where('role', User::ROLE_FARMER));
+        $userCount = (clone $userQuery)->count();
+        $farmers = max($profileCount, $userCount);
         if ($farmers === 0 || ! SchemaCache::hasTable('farmer_planting_schedules')) {
             return null;
         }
         $season = RiceSeason::window($now);
-        $with = FarmerPlantingSchedule::query()
+        $userIds = $this->scoped(FarmerProfile::query())->pluck('user_id')
+            ->merge((clone $userQuery)->pluck('id'))
+            ->filter()
+            ->unique()
+            ->values();
+        $with = $userIds->isEmpty() ? 0 : FarmerPlantingSchedule::query()
             ->whereBetween('planting_date', [$season['start']->toDateString(), $season['end']->toDateString()])
-            ->whereIn('user_id', $this->scoped(FarmerProfile::query())->select('user_id'))
+            ->whereIn('user_id', $userIds)
             ->distinct()->count('user_id');
 
         return ['with' => $with, 'of' => $farmers, 'percent' => (int) round($with / $farmers * 100)];

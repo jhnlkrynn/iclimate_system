@@ -523,7 +523,8 @@ class User extends Authenticatable
     /** Given names only, for greetings: a three-part name drops the last word (John Luke Reynon becomes John Luke). */
     public function greetingName(): string
     {
-        $parts = preg_split('/\s+/', trim((string) $this->name), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $clean = trim((string) preg_replace('/\s*\([^)]*\)\s*$/', '', trim((string) $this->name)));
+        $parts = preg_split('/\s+/', $clean !== '' ? $clean : trim((string) $this->name), -1, PREG_SPLIT_NO_EMPTY) ?: [];
 
         // A family name can be two words ("Dela Cruz", "De Leon", "San Jose"): both are left out of the greeting.
         if (count($parts) >= 3 && in_array(strtolower($parts[count($parts) - 2]), ['de', 'del', 'dela', 'delos', 'la', 'los', 'san', 'santa', 'santo', 'sta.', 'sto.'], true)) {
